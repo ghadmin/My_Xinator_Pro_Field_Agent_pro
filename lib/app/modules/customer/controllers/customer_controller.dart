@@ -1,0 +1,84 @@
+import 'package:get/get.dart';
+
+import '../../../../utils/date_converter.dart';
+import '../../../components/global-widgets/my_snackbar.dart';
+import '../../../data/local/hive/my_hive.dart';
+import '../../../data/local/my_shared_pref.dart';
+import '../../../service/REST/api_urls.dart';
+import '../../../service/REST/dio_client.dart';
+import '../../../service/handler/exception_handler.dart';
+import '../../../service/helper/network_connectivity.dart';
+import '../models/customer_model.dart';
+
+class CustomerController extends GetxController with ExceptionHandler {
+  String businessName = "";
+  String title = "";
+  String address = "";
+  String phoneNumber = "";
+  String mobileNumber = "";
+  String email = "";
+  RxBool isCustomerEmpty = false.obs;
+
+  /// API ///
+  final customers = RxList<CustomerModel>();
+  getCustomers() async {
+    isCustomerEmpty.value = false;
+    if (await NetworkConnectivity.isNetworkAvailable()) {
+      var companyID = await MySharedPref.getCompanyID();
+      var currentDateTime = DateTime.now();
+      var response = await DioClient().get(
+        url: ApiUrl.getCustomer,
+        params: {
+          "Date": dateTimeConverter(
+              inputTime: currentDateTime.toString(),
+              outputFormat: "yyyy-MM-dd"),
+          "CompanyId": companyID,
+        },
+      ).catchError(handleError);
+
+      if (response == null) {
+        showEmptyWidget();
+        return;
+      }
+      if (response.isEmpty) {
+        customers.clear();
+
+        showEmptyWidget();
+        return;
+      }
+      customers.assignAll(
+          (response as List).map((e) => CustomerModel.fromJson(e)).toList());
+      await MyHive.saveAllCustomers(customers);
+
+      if (customers.isEmpty) {
+        showEmptyWidget();
+      }
+    } else {
+      var savedCustomers = MyHive.getAllCustomers();
+
+      if (savedCustomers.isNotEmpty) {
+        customers.assignAll(savedCustomers);
+
+        MySnackBar.showErrorToast(message: "No network!");
+        NetworkConnectivity.connectionChangeCount = 1;
+        return;
+      } else {
+        customers.clear();
+        isError.value = true;
+        NetworkConnectivity.connectionChangeCount = 1;
+
+        showEmptyWidget();
+      }
+    }
+  }
+
+  void showEmptyWidget() {
+    isCustomerEmpty.value = true;
+  }
+
+  @override
+  void onReady() async {
+    await getCustomers();
+    super.onReady();
+  }
+}

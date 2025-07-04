@@ -1,0 +1,2 @@
+/Users/moktadir/StudioProjects/CEC-IOS-App/android/app/.cxx/Debug/3p2z5gu2/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/moktadir/StudioProjects/CEC-IOS-App/android/app/.cxx/Debug/3p2z5gu2/armeabi-v7a/CMakeFiles/rebuild_cache.dir
