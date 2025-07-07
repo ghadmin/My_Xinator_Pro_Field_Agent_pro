@@ -982,7 +982,7 @@ class LoginView extends GetView<AuthController> {
                   SizedBox(height: 40.sp),
 
                   Image.asset(
-                    AppImages.kCECIcon,
+                    AppImages.kFSMProIcon,
                     width: 180.sp,
                     height: 100.sp,
                     fit: BoxFit.contain,
@@ -1009,6 +1009,7 @@ class LoginView extends GetView<AuthController> {
                     ),
                   ),
 
+                  // Validation Message
                   if (controller.emailValidator.value.isNotEmpty)
                     Padding(
                       padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
@@ -1021,50 +1022,33 @@ class LoginView extends GetView<AuthController> {
                       ),
                     ),
 
-                  SizedBox(height: 15.sp),
+                  SizedBox(height: 20.h),
 
-                  // Password Field
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: controller.passwordValidator.value.isNotEmpty
-                            ? Colors.red
-                            : LightThemeColors.buttonBorderColor,
+                  /// Password Field (next one)
+                  TextFormField(
+                    controller: controller.passwordLoginTextController,
+                    focusNode: controller.passwordFocusNode,
+                    obscureText:
+                        controller.isPasswordVisible.value ? true : false,
+                    textInputAction: TextInputAction.done,
+                    decoration: InputDecoration(
+                      hintText: "Password",
+                      prefixIcon: Icon(Remix.lock_line),
+                      suffix: GestureDetector(
+                        onTap: controller.togglePasswordVisibility,
+                        child: Icon(
+                          controller.isPasswordVisible.value
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          size: 18.sp,
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: controller.passwordLoginTextController,
-                            focusNode: controller.passwordFocusNode,
-                            obscureText: !controller.isPasswordVisible.value,
-                            cursorColor: LightThemeColors.primaryColor,
-                            textInputAction: TextInputAction.done,
-                            onTapOutside: (_) =>
-                                FocusManager.instance.primaryFocus?.unfocus(),
-                            decoration: InputDecoration(
-                              hintText: "Enter your password",
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Remix.lock_line),
-                              contentPadding:
-                                  EdgeInsets.symmetric(horizontal: 15.sp),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            controller.isPasswordVisible.value
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            size: 18.sp,
-                          ),
-                          onPressed: controller.togglePasswordVisibility,
-                        ),
-                      ],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
                     ),
                   ),
+                  SizedBox(height: 15.sp),
 
                   if (controller.passwordValidator.value.isNotEmpty)
                     Padding(

@@ -28,7 +28,7 @@ class SplashView extends GetView<SplashController> {
                     );
                   },
                   child: Image.asset(
-                    AppImages.kCECIcon,
+                    AppImages.kFSMProIcon,
                     width: 180.sp,
                     fit: BoxFit.fill,
                   ),
