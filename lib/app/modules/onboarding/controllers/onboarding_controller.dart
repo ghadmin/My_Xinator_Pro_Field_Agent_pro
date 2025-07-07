@@ -24,52 +24,53 @@ class OnboardingController extends GetxController {
   }
 
   /// Auto scroll
-  void startAutoScroll() {
-    autoScrollTimer = Timer.periodic(autoScrollDuration, (timer) {
-      if (selectedPage.value < onBoardingPages.length - 1) {
-        selectedPage.value++;
-        pageController.animateToPage(
-          selectedPage.value,
-          duration: 600.milliseconds,
-          curve: Curves.ease,
-        );
-      } else {
-        autoScrollTimer?.cancel();
-      }
-    });
-  }
+  // void startAutoScroll() {
+  //   autoScrollTimer = Timer.periodic(autoScrollDuration, (timer) {
+  //     if (selectedPage.value < onBoardingPages.length - 1) {
+  //       selectedPage.value++;
+  //       pageController.animateToPage(
+  //         selectedPage.value,
+  //         duration: 600.milliseconds,
+  //         curve: Curves.ease,
+  //       );
+  //     } else {
+  //       autoScrollTimer?.cancel();
+  //     }
+  //   });
+  // }
 
   /// List of Page
-  List<OnBoardingModel> onBoardingPages = [
-    OnBoardingModel(
-        imageAsset: Onboarding.kBoard1,
-        title: 'Welcome to CEC Servco',
-        subtitle: "",
-        description:
-            'Browse our range of services, from customer appointment scheduling to payment processing and field service management.'),
-    OnBoardingModel(
-        imageAsset: Onboarding.kBoard2,
-        title: 'Servco Features',
-        subtitle: 'Book Appointments',
-        description:
-            'Use the calendar to schedule appointments and manage your commitments seamlessly.'),
-    OnBoardingModel(
-        imageAsset: Onboarding.kBoard3,
-        title: 'Servco Features',
-        subtitle: 'Smoother Payment Process',
-        description:
-            'Use the calendar to schedule appointments and manage your commitments seamlessly.'),
-    OnBoardingModel(
-        imageAsset: Onboarding.kBoard4,
-        title: 'Servco Features',
-        subtitle: 'Manage Forms & Signatures',
-        description:
-            'Use the calendar to schedule appointments and manage your commitments seamlessly.'),
-  ];
+  // List<OnBoardingModel> onBoardingPages = [
+  //   OnBoardingModel(
+  //       imageAsset: Onboarding.kBoard1,
+  //       title: 'Welcome to CEC Servco',
+  //       subtitle: "",
+  //       description:
+  //           'Browse our range of services, from customer appointment scheduling to payment processing and field service management.'),
+  //   OnBoardingModel(
+  //       imageAsset: Onboarding.kBoard2,
+  //       title: 'Servco Features',
+  //       subtitle: 'Book Appointments',
+  //       description:
+  //           'Use the calendar to schedule appointments and manage your commitments seamlessly.'),
+  //   OnBoardingModel(
+  //       imageAsset: Onboarding.kBoard3,
+  //       title: 'Servco Features',
+  //       subtitle: 'Smoother Payment Process',
+  //       description:
+  //           'Use the calendar to schedule appointments and manage your commitments seamlessly.'),
+  //   OnBoardingModel(
+  //       imageAsset: Onboarding.kBoard4,
+  //       title: 'Servco Features',
+  //       subtitle: 'Manage Forms & Signatures',
+  //       description:
+  //           'Use the calendar to schedule appointments and manage your commitments seamlessly.'),
+  // ];
+
   @override
   void onInit() {
     super.onInit();
-    startAutoScroll();
+    // startAutoScroll();
   }
 
   @override

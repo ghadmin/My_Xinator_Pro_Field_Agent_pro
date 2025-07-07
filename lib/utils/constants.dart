@@ -13,8 +13,8 @@ class AppImages {
 }
 
 class Onboarding {
-  static String get kBoard1 => 'assets/images/onBoarding/board1.png';
-  static String get kBoard2 => 'assets/images/onBoarding/board2.png';
-  static String get kBoard3 => 'assets/images/onBoarding/board3.png';
-  static String get kBoard4 => 'assets/images/onBoarding/board4.png';
+  static String get kBoard1 =>
+      'assets/images/onBoarding/onboarding_main_icon.png';
+  static String get kBoard2 =>
+      'assets/images/onBoarding/onboarding_date_icon.png';
 }

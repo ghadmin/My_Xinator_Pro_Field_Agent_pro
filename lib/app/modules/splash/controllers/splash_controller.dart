@@ -45,7 +45,7 @@ class SplashController extends GetxController
 
   @override
   void onReady() {
-    // _navigateToNextScreen();
+    _navigateToNextScreen();
     super.onReady();
   }
 
