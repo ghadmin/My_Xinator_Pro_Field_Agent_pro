@@ -16,6 +16,7 @@ class SplashView extends GetView<SplashController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Centered Logo Animation
+
             Expanded(
               child: Center(
                 child: AnimatedBuilder(
