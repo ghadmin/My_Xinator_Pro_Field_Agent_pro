@@ -125,6 +125,15 @@ class CustomDrawer extends StatelessWidget {
                 indexClicked = indexClicked;
               },
             ),
+            _drawerItem(
+              icon: SideBar.itemsIcon,
+              text: 'Billable Items',
+              indexNumber: 7,
+              onTap: () async {
+                Get.toNamed(Routes.BILLABLE_ITEMS);
+                indexClicked = indexClicked;
+              },
+            ),
             SizedBox(
               height: 10.h,
             ),
