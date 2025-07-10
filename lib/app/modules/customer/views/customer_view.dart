@@ -95,7 +95,7 @@ class CustomerView extends GetView<CustomerController> {
                                 controller.phoneNumber = customer.phone ?? "";
                                 controller.mobileNumber = customer.mobile ?? "";
                                 controller.email = customer.email ?? "";
-
+                                controller.selectedCustomer(customer);
                                 Get.toNamed(Routes.CUSTOMER_DETAILS);
                               },
                               child: Padding(

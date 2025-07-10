@@ -20,6 +20,7 @@ class CustomerController extends GetxController with ExceptionHandler {
   final TextEditingController sortTextController = TextEditingController();
   String email = "";
   RxBool isCustomerEmpty = false.obs;
+  final selectedCustomer = Rx<CustomerModel?>(null);
 
   /// API ///
   final customers = RxList<CustomerModel>();

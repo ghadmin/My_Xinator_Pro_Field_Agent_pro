@@ -76,6 +76,7 @@ flutter:
     - assets/images/loader_icon/
     - assets/images/side_bar/
     - assets/vectors/
+    - assets/images/customers/
     - assets/fonts/
     - animations/
 
