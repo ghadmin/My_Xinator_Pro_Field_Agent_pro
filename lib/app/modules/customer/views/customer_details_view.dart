@@ -7,8 +7,30 @@ import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../controllers/customer_controller.dart';
 
-class CustomerDetailsView extends GetView<CustomerController> {
+class CustomerDetailsView extends StatefulWidget {
   const CustomerDetailsView({super.key});
+
+  @override
+  State<CustomerDetailsView> createState() => _CustomerDetailsViewState();
+}
+
+class _CustomerDetailsViewState extends State<CustomerDetailsView>
+    with SingleTickerProviderStateMixin {
+  late TabController tabController;
+  final controller = Get.find<CustomerController>();
+
+  @override
+  void initState() {
+    super.initState();
+    tabController = TabController(length: 6, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
@@ -22,6 +44,17 @@ class CustomerDetailsView extends GetView<CustomerController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            TabBar(
+              tabs: [
+                Tab(text: "Basic Details"),
+                Tab(text: "Appointments"),
+                Tab(text: "Invoice & Estimates"),
+                Tab(text: "Equipment"),
+                Tab(text: "Maintenance Aggreement"),
+                Tab(text: "Pictures")
+              ],
+              controller: tabController,
+            ),
             Expanded(
               child: SingleChildScrollView(
                 physics: BouncingScrollPhysics(),

@@ -17,7 +17,7 @@ class CustomDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var theme = Theme.of(context);
+    // var theme = Theme.of(context);
     final authController = Get.put(AuthController());
     return Drawer(
       child: Padding(
@@ -127,8 +127,17 @@ class CustomDrawer extends StatelessWidget {
             ),
             _drawerItem(
               icon: SideBar.itemsIcon,
+              text: 'Customers',
+              indexNumber: 5,
+              onTap: () async {
+                Get.toNamed(Routes.ITEM);
+                indexClicked = indexClicked;
+              },
+            ),
+            _drawerItem(
+              icon: SideBar.itemsIcon,
               text: 'Billable Items',
-              indexNumber: 7,
+              indexNumber: 6,
               onTap: () async {
                 Get.toNamed(Routes.BILLABLE_ITEMS);
                 indexClicked = indexClicked;
@@ -140,7 +149,7 @@ class CustomDrawer extends StatelessWidget {
             _drawerItem(
               icon: SideBar.settingsIcon,
               text: 'Settings',
-              indexNumber: 5,
+              indexNumber: 7,
               onTap: () async {
                 Get.toNamed(Routes.ITEM);
                 indexClicked = indexClicked;
@@ -152,7 +161,7 @@ class CustomDrawer extends StatelessWidget {
             _drawerItem(
               icon: SideBar.logoutIcon,
               text: 'Log out',
-              indexNumber: 6,
+              indexNumber: 8,
               onTap: () async {
                 Get.back();
                 showAdaptiveDialog(

@@ -32,13 +32,13 @@ class SplashController extends GetxController
       var companyID = await MySharedPref.getCompanyID();
       var email = await MySharedPref.getEmail();
       if (companyID != null && companyID != "") {
-        Get.offAllNamed(Routes.APPOINTMENT);
+        Get.offAllNamed(Routes.CUSTOMER);
       } else if ((companyID == null || companyID == "") &&
           (email != null && email != "")) {
         Get.offAllNamed(Routes.LOGIN);
       } else if ((companyID == null || companyID == "") &&
           (email == null || email == "")) {
-        Get.offAllNamed(Routes.ONBOARDING);
+        Get.offAllNamed(Routes.LOGIN);
       }
     });
   }
