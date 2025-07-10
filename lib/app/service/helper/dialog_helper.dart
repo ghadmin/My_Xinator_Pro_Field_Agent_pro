@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -174,7 +176,10 @@ class DialogHelper {
   ///show loading
   static Future<void> showLoading() async {
     if (Get.isSnackbarOpen) {
+      await Future.delayed(Duration(milliseconds: 100));
+
       Get.closeAllSnackbars();
+
       Get.dialog(
         barrierDismissible: false,
         barrierColor: Colors.black.withOpacity(.1),

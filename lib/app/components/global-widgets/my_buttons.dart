@@ -9,13 +9,17 @@ class PrimaryButton extends StatelessWidget {
       required this.title,
       required this.onPressed,
       required this.inactive,
+      this.borderColor,
       this.backgroundColor,
+      this.fontColor,
       this.foregroundColor});
   final String title;
   final VoidCallback onPressed;
   final bool inactive;
   final Color? backgroundColor;
+  final Color? borderColor;
   final Color? foregroundColor;
+  final Color? fontColor;
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
@@ -29,6 +33,9 @@ class PrimaryButton extends StatelessWidget {
           splashFactory: NoSplash.splashFactory,
           shadowColor: Colors.white,
           shape: RoundedRectangleBorder(
+            side: borderColor == null
+                ? BorderSide.none
+                : BorderSide(color: borderColor!),
             borderRadius: BorderRadius.circular(10.r),
           ),
           elevation: 0,
@@ -37,6 +44,7 @@ class PrimaryButton extends StatelessWidget {
           title,
           style: TextStyle(
             fontSize: 16.sp,
+            color: fontColor ?? Colors.white,
             fontWeight: FontWeight.w700,
           ),
         ),

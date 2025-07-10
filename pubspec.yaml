@@ -1,7 +1,7 @@
 name: xinator_fsm_pro
 description: "A new Flutter project."
 
-publish_to: 'none'
+publish_to: "none"
 version: 0.0.1+1
 
 environment:
@@ -43,12 +43,12 @@ dependencies:
   dropdown_button2: ^2.3.9
   mime: ^2.0.0
   webview_flutter: ^4.11.0
-
+  flutter_map: ^8.1.1
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
 
   flutter_lints: ^5.0.0
   mockito:
@@ -67,18 +67,16 @@ flutter_native_splash:
     image: "assets/images/icon-splash/splash_icon.png"
     icon_background_color: "#FFFFFF"
 
-
-
 flutter:
-
-
   uses-material-design: true
   assets:
     - assets/images/
     - assets/images/icon-splash/
     - assets/images/onBoarding/
     - assets/images/loader_icon/
+    - assets/images/side_bar/
     - assets/vectors/
+    - assets/images/customers/
     - assets/fonts/
     - animations/
 
@@ -99,4 +97,3 @@ flutter:
           weight: 500
         - asset: assets/fonts/Cairo-SemiBold.ttf
           weight: 900
-

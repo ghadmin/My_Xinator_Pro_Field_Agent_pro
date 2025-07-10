@@ -17,197 +17,199 @@ class CustomDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var theme = Theme.of(context);
+    // var theme = Theme.of(context);
     final authController = Get.put(AuthController());
     return Drawer(
-      child: ListView(
-        children: [
-          MediaQuery.of(context).size.shortestSide > 599
-              ? SizedBox(
-                  height: 60.sp,
-                  width: double.infinity,
-                  child: DrawerHeader(
-                    curve: Curves.fastLinearToSlowEaseIn,
-                    decoration: const BoxDecoration(
-                      color: LightThemeColors.bodyTextColor,
-                    ),
-                    margin: EdgeInsets.zero,
-                    padding: EdgeInsets.symmetric(horizontal: 20.sp),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            ClipOval(
-                              child: AssetImageBox(
-                                height: 30.sp,
-                                width: 30.sp,
-                                assetImage: AppImages.kDemoUser,
-                              ),
-                            ),
-                            SizedBox(width: 12.sp),
-                            SizedBox(
-                              width: 70.sp,
-                              child: Text(
-                                "${MySharedPref.getUserName()}",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14.sp,
-                                  color: Colors.white,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                                onPressed: () {
-                                  Get.back();
-                                },
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                )),
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                )
-              : SizedBox(
-                  height: 80.sp,
-                  width: double.infinity,
-                  child: DrawerHeader(
-                    curve: Curves.fastLinearToSlowEaseIn,
-                    decoration: const BoxDecoration(
-                      color: LightThemeColors.bodyTextColor,
-                    ),
-                    margin: EdgeInsets.zero,
-                    padding: EdgeInsets.symmetric(horizontal: 20.sp),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            ClipOval(
-                              child: AssetImageBox(
-                                height: 40.sp,
-                                width: 40.sp,
-                                assetImage: AppImages.kDemoUser,
-                              ),
-                            ),
-                            SizedBox(width: 12.sp),
-                            SizedBox(
-                              width: 116.sp,
-                              child: Text(
-                                "${MySharedPref.getUserName()}",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16.sp,
-                                  color: Colors.white,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                                onPressed: () {
-                                  Get.back();
-                                },
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                )),
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 10.sp),
-            child: Text(
-              "All",
-              style: theme.textTheme.bodyLarge,
-            ),
-          ),
-          _drawerItem(
-            icon: Remix.calendar_line,
-            text: 'Appointments',
-            indexNumber: 0,
-            onTap: () async {
-              Get.toNamed(Routes.APPOINTMENT);
-              indexClicked = indexClicked;
-            },
-          ),
-          _drawerItem(
-            icon: Remix.receipt_line,
-            text: 'Items',
-            indexNumber: 1,
-            onTap: () async {
-              Get.toNamed(Routes.ITEM);
-              indexClicked = indexClicked;
-            },
-          ),
-          SizedBox(height: 25.sp),
-          Divider(height: 2, color: LightThemeColors.bodyTextColor),
-          _drawerItem(
-            icon: Remix.logout_box_r_line,
-            text: 'Log out',
-            indexNumber: 3,
-            onTap: () async {
-              Get.back();
-              showAdaptiveDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Text(
-                        'Log out',
-                        style: TextStyle(
-                          color: Colors.red,
-                        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+        child: ListView(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ClipOval(
+                      child: AssetImageBox(
+                        height: 40.sp,
+                        width: 40.sp,
+                        assetImage: AppImages.kDemoUser,
                       ),
-                      content: const Text('Are you sure you want to log out?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Get.back();
-                          },
-                          child: const Text('Cancel'),
+                    ),
+                    SizedBox(width: 12.sp),
+                    SizedBox(
+                      width: 116.sp,
+                      child: Text(
+                        textAlign: TextAlign.center,
+                        "${MySharedPref.getUserName()}",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16.sp,
+                          color: Colors.black,
                         ),
-                        TextButton(
-                          onPressed: () async {
-                            Get.back();
-                            await authController.doLogout();
-                          },
-                          child: Text(
-                            'Log out',
-                            style: TextStyle(
-                              color: LightThemeColors.bodyTextSecondaryColor,
-                            ),
+                        overflow: TextOverflow.visible,
+                        maxLines: 2,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                    onPressed: () {
+                      Get.back();
+                    },
+                    icon: Image.asset(
+                      SideBar.profileGoIcon,
+                      color: LightThemeColors.primaryColor,
+                    )),
+              ],
+            ),
+            SizedBox(
+              height: 35.h,
+            ),
+            _drawerItem(
+              icon: SideBar.homeIcon,
+              text: 'Home',
+              indexNumber: 0,
+              onTap: () async {
+                Get.toNamed(Routes.APPOINTMENT);
+                indexClicked = indexClicked;
+              },
+            ),
+            SizedBox(
+              height: 10.h,
+            ),
+            _drawerItem(
+              icon: SideBar.customerServiceIcon,
+              text: 'Customer Service List',
+              indexNumber: 1,
+              onTap: () async {
+                Get.toNamed(Routes.APPOINTMENT);
+                indexClicked = indexClicked;
+              },
+            ),
+            SizedBox(
+              height: 10.h,
+            ),
+            _drawerItem(
+              icon: SideBar.dispatchingIcon,
+              text: 'Dispatching',
+              indexNumber: 2,
+              onTap: () async {
+                Get.toNamed(Routes.ITEM);
+                indexClicked = indexClicked;
+              },
+            ),
+            SizedBox(
+              height: 10.h,
+            ),
+            _drawerItem(
+              icon: SideBar.formIcon,
+              text: 'Forms',
+              indexNumber: 3,
+              onTap: () async {
+                Get.toNamed(Routes.ITEM);
+                indexClicked = indexClicked;
+              },
+            ),
+            SizedBox(
+              height: 10.h,
+            ),
+            _drawerItem(
+              icon: SideBar.itemsIcon,
+              text: 'Items',
+              indexNumber: 4,
+              onTap: () async {
+                Get.toNamed(Routes.ITEM);
+                indexClicked = indexClicked;
+              },
+            ),
+            _drawerItem(
+              icon: SideBar.itemsIcon,
+              text: 'Customers',
+              indexNumber: 5,
+              onTap: () async {
+                Get.toNamed(Routes.ITEM);
+                indexClicked = indexClicked;
+              },
+            ),
+            _drawerItem(
+              icon: SideBar.itemsIcon,
+              text: 'Billable Items',
+              indexNumber: 6,
+              onTap: () async {
+                Get.toNamed(Routes.BILLABLE_ITEMS);
+                indexClicked = indexClicked;
+              },
+            ),
+            SizedBox(
+              height: 10.h,
+            ),
+            _drawerItem(
+              icon: SideBar.settingsIcon,
+              text: 'Settings',
+              indexNumber: 7,
+              onTap: () async {
+                Get.toNamed(Routes.ITEM);
+                indexClicked = indexClicked;
+              },
+            ),
+            SizedBox(
+              height: 10.h,
+            ),
+            _drawerItem(
+              icon: SideBar.logoutIcon,
+              text: 'Log out',
+              indexNumber: 8,
+              onTap: () async {
+                Get.back();
+                showAdaptiveDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text(
+                          'Log out',
+                          style: TextStyle(
+                            color: Colors.red,
                           ),
                         ),
-                      ],
-                    );
-                  });
+                        content:
+                            const Text('Are you sure you want to log out?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Get.back();
+                            },
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              Get.back();
+                              await authController.doLogout();
+                            },
+                            child: Text(
+                              'Log out',
+                              style: TextStyle(
+                                color: LightThemeColors.bodyTextSecondaryColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    });
 
-              indexClicked = indexClicked;
-            },
-          ),
-        ],
+                indexClicked = indexClicked;
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _drawerItem(
-      {required IconData icon,
+      {required String icon,
       required String text,
       required int indexNumber,
       required GestureTapCallback onTap}) {
@@ -217,14 +219,9 @@ class CustomDrawer extends StatelessWidget {
       contentPadding: EdgeInsets.symmetric(horizontal: 20.sp),
       title: Row(
         children: [
-          Icon(
-            icon,
-            color: indexClicked == indexNumber
-                ? LightThemeColors.primaryColor
-                : LightThemeColors.bodyTextColor,
-          ),
+          Image.asset(height: 30.h, width: 33.w, icon),
           Padding(
-            padding: EdgeInsets.only(left: 10.sp),
+            padding: EdgeInsets.only(left: 15.sp),
             child: Text(
               text,
               style: TextStyle(

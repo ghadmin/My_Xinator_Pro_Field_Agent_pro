@@ -4,8 +4,10 @@ import 'package:get/get.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
+import '../../../components/drawer/custom_drawer.dart';
 import '../../../components/global-widgets/asset_image_box.dart';
 import '../../../components/global-widgets/empty_widget.dart';
+import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/customer_controller.dart';
@@ -16,157 +18,202 @@ class CustomerView extends GetView<CustomerController> {
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
     return Scaffold(
+      drawer: CustomDrawer(indexClicked: 5),
       appBar: AppBar(
-        title: const Text('Customers'),
+        // title: const Text('Customers'),
         actions: [
-          InkWell(
-            onTap: () {},
-            child: Padding(
-              padding: EdgeInsets.only(right: 18.sp),
-              child: SizedBox(
-                width: 35.sp, // Specify the width and height you want
-                height: 35.sp,
-                child: CircleAvatar(
-                  child: ClipOval(
-                    child: AssetImageBox(
-                      height: 35.sp,
-                      width: 35.sp,
-                      assetImage: AppImages.kDemoUser,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // InkWell(
+          //   onTap: () {},
+          //   child: Padding(
+          //     padding: EdgeInsets.only(right: 18.sp),
+          //     child: SizedBox(
+          //       width: 35.sp, // Specify the width and height you want
+          //       height: 35.sp,
+          //       child: CircleAvatar(
+          //         child: ClipOval(
+          //           child: AssetImageBox(
+          //             height: 35.sp,
+          //             width: 35.sp,
+          //             assetImage: AppImages.kDemoUser,
+          //           ),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
-      body: Obx(() => Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
-            child: controller.isCustomerEmpty.value
-                ? EmptyWidget(
-                    onPressed: () async {
-                      await controller.getCustomers();
-                    },
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Customers List",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontSize: 20.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
+      body: SafeArea(
+          child: Obx(
+        () => Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
+          child: controller.isCustomerEmpty.value
+              ? EmptyWidget(
+                  onPressed: () async {
+                    await controller.getCustomers();
+                  },
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Customers List",
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w500,
                       ),
-                      Text(
-                        "Schedule your appointment now",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: LightThemeColors.hintTextColor,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      SizedBox(height: 20.sp),
-                      // SplashContainer(
-                      //     width: 80.sp,
-                      //     color: Colors.white,
-                      //     radius: 5,
-                      //     onPressed: () {},
-                      //     child: Container(
-                      //       padding: EdgeInsets.symmetric(
-                      //         horizontal: 10.sp,
-                      //         vertical: 5.sp,
-                      //       ),
-                      //       decoration: BoxDecoration(
-                      //         border: Border.all(
-                      //           color: theme.primaryColor,
-                      //         ),
-                      //         borderRadius: BorderRadius.circular(5.r),
-                      //       ),
-                      //       child: Row(
-                      //         children: [
-                      //           Icon(
-                      //             Iconsax.filter,
-                      //             color: theme.primaryColor,
-                      //             size: 18.sp,
-                      //           ),
-                      //           SizedBox(width: 8.sp),
-                      //           Text(
-                      //             "Filter",
-                      //             style: theme.textTheme.bodyMedium?.copyWith(
-                      //               color: theme.primaryColor,
-                      //             ),
-                      //           ),
-                      //         ],
-                      //       ),
-                      //     )),
-                      // SizedBox(height: 20.sp),
-                      Expanded(
-                        child: RefreshIndicator(
-                          color: theme.primaryColor,
-                          onRefresh: () async =>
-                              await controller.getCustomers(),
-                          child: ListView.separated(
-                            padding: EdgeInsets.zero,
-                            physics: BouncingScrollPhysics(),
-                            itemCount: controller.customers.length,
-                            itemBuilder: (context, index) {
-                              final customer = controller.customers[index];
-                              return SplashContainer(
-                                radius: 8,
-                                color: Colors.white,
-                                onPressed: () {
-                                  controller.businessName =
-                                      "${customer.firstName ?? ""} ${customer.lastName ?? ""}";
-                                  controller.title = customer.jobTitle ?? "";
-                                  controller.address = "${customer.address1}, "
-                                      "${customer.city}, "
-                                      "${customer.state}, ";
-                                  controller.phoneNumber = customer.phone ?? "";
-                                  controller.mobileNumber =
-                                      customer.mobile ?? "";
-                                  controller.email = customer.email ?? "";
-
-                                  Get.toNamed(Routes.CUSTOMER_DETAILS);
-                                },
-                                child: Padding(
-                                  padding: EdgeInsets.all(15.sp),
-                                  child: IntrinsicHeight(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: GeneralTextField(
+                          hint: "Search here...",
+                          theme: theme,
+                          onChanged: (_) => controller.sortAppointmentsText(),
+                          textEditingController: controller.sortTextController),
+                    ),
+                    SizedBox(height: 20.sp),
+                    Expanded(
+                      child: RefreshIndicator(
+                        color: theme.primaryColor,
+                        onRefresh: () async => await controller.getCustomers(),
+                        child: ListView.separated(
+                          padding: EdgeInsets.zero,
+                          physics: BouncingScrollPhysics(),
+                          itemCount: controller.sortedCustomers.length,
+                          itemBuilder: (context, index) {
+                            final customer = controller.sortedCustomers[index];
+                            return SplashContainer(
+                              radius: 8,
+                              color: Colors.white,
+                              onPressed: () {
+                                controller.businessName =
+                                    "${customer.firstName ?? ""} ${customer.lastName ?? ""}";
+                                controller.title = customer.jobTitle ?? "";
+                                controller.address = "${customer.address1}, "
+                                    "${customer.city}, "
+                                    "${customer.state}, ";
+                                controller.phoneNumber = customer.phone ?? "";
+                                controller.mobileNumber = customer.mobile ?? "";
+                                controller.email = customer.email ?? "";
+                                controller.selectedCustomer(customer);
+                                Get.toNamed(Routes.CUSTOMER_DETAILS);
+                              },
+                              child: Padding(
+                                padding: EdgeInsets.all(15.sp),
+                                child: IntrinsicHeight(
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        flex: 2,
+                                        child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            SizedBox(
-                                              width: 180.sp,
+                                            Flexible(
                                               child: Text(
                                                 "${customer.firstName ?? ""} ${customer.lastName ?? ""}",
                                                 style: theme
                                                     .textTheme.headlineSmall
                                                     ?.copyWith(
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                            SizedBox(height: 2.sp),
-                                            customer.jobTitle == ""
-                                                ? SizedBox.shrink()
-                                                : Text(customer.jobTitle ?? ""),
-                                            SizedBox(
-                                              width: 180.sp,
-                                              child:
-                                                  Text("${customer.address1}, "
-                                                      "${customer.city}, "
-                                                      "${customer.state}, "),
-                                            ),
+                                            SizedBox(height: 2.h),
+                                            Row(children: [
+                                              Icon(
+                                                Icons.mail_outline,
+                                                size: 15.sp,
+                                                color: Colors.grey,
+                                              ),
+                                              customer.email == ""
+                                                  ? Text(" N/A",
+                                                      style: theme
+                                                          .textTheme.bodyMedium!
+                                                          .copyWith(
+                                                              color:
+                                                                  Colors.grey))
+                                                  : Flexible(
+                                                      child: Text(
+                                                          " ${customer.email ?? " N/A"}",
+                                                          style: theme.textTheme
+                                                              .bodyMedium!
+                                                              .copyWith(
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
+                                                                  color: Colors
+                                                                      .grey)),
+                                                    )
+                                            ]),
+                                            Row(children: [
+                                              Icon(
+                                                Icons.location_on_outlined,
+                                                size: 15.sp,
+                                                color: Colors.grey,
+                                              ),
+                                              customer.address1 == ""
+                                                  ? Text(" N/A",
+                                                      style: theme
+                                                          .textTheme.bodyMedium!
+                                                          .copyWith(
+                                                              color:
+                                                                  Colors.grey))
+                                                  : Flexible(
+                                                      child: Text(
+                                                          " ${customer.address1 ?? " N/A"}",
+                                                          style: theme.textTheme
+                                                              .bodyMedium!
+                                                              .copyWith(
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
+                                                                  color: Colors
+                                                                      .grey)),
+                                                    )
+                                            ]),
+                                            Row(children: [
+                                              Icon(
+                                                Icons.phone_outlined,
+                                                size: 15.sp,
+                                                color: Colors.grey,
+                                              ),
+                                              customer.phone == ""
+                                                  ? Text(" N/A",
+                                                      style: theme
+                                                          .textTheme.bodyMedium!
+                                                          .copyWith(
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              color:
+                                                                  Colors.grey))
+                                                  : Text(
+                                                      " ${customer.phone ?? " N/A"}",
+                                                      style: theme
+                                                          .textTheme.bodyMedium!
+                                                          .copyWith(
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              color:
+                                                                  Colors.grey))
+                                            ]),
                                           ],
                                         ),
-                                        Column(
+                                      ),
+                                      SizedBox(
+                                        width: 2,
+                                      ),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Column(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           crossAxisAlignment:
@@ -200,31 +247,51 @@ class CustomerView extends GetView<CustomerController> {
                                             //     ),
                                             //   ),
                                             // ),
+                                            Container(
+                                              alignment: Alignment.center,
+                                              height: 30.h,
+                                              width: 85.h,
+                                              padding: EdgeInsets.all(5),
+                                              decoration: BoxDecoration(
+                                                  color: Colors.green,
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          20)),
+                                              child: Text(
+                                                'Scheduled',
+                                                style: theme
+                                                    .textTheme.bodyLarge!
+                                                    .copyWith(
+                                                        color: Colors.white),
+                                              ),
+                                            ),
                                             Text(
                                               "Click to see details",
                                               style: theme.textTheme.bodySmall
                                                   ?.copyWith(
                                                 color: theme.primaryColor,
-                                                fontSize: 11.sp,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: 10.sp,
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
                                           ],
-                                        )
-                                      ],
-                                    ),
+                                        ),
+                                      )
+                                    ],
                                   ),
                                 ),
-                              );
-                            },
-                            separatorBuilder: (context, index) =>
-                                SizedBox(height: 15.sp),
-                          ),
+                              ),
+                            );
+                          },
+                          separatorBuilder: (context, index) =>
+                              SizedBox(height: 15.sp),
                         ),
                       ),
-                    ],
-                  ),
-          )),
+                    ),
+                  ],
+                ),
+        ),
+      )),
     );
   }
 }

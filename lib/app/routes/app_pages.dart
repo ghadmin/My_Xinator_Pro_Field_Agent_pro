@@ -6,6 +6,8 @@ import '../modules/appointment/views/appointment_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/sign_up_view.dart';
+import '../modules/billAbleItem/bindings/billable_item_binding.dart';
+import '../modules/billAbleItem/views/billable_item_screen.dart';
 import '../modules/customer/bindings/customer_binding.dart';
 import '../modules/customer/views/customer_details_view.dart';
 import '../modules/customer/views/customer_view.dart';
@@ -71,6 +73,11 @@ class AppPages {
       name: _Paths.SETTINGS,
       page: () => const SettingsView(),
       binding: SettingsBinding(),
+    ),
+    GetPage(
+      name: _Paths.BILLABLE_ITEMS,
+      page: () => BillableItemsMobileScreen(),
+      binding: BillableItemBinding(),
     ),
     GetPage(
       name: _Paths.APPOINTMENT_SETTINGS,

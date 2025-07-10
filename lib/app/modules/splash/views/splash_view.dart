@@ -16,6 +16,7 @@ class SplashView extends GetView<SplashController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Centered Logo Animation
+
             Expanded(
               child: Center(
                 child: AnimatedBuilder(
@@ -27,7 +28,7 @@ class SplashView extends GetView<SplashController> {
                     );
                   },
                   child: Image.asset(
-                    AppImages.kCECIcon,
+                    AppImages.kFSMProIcon,
                     width: 180.sp,
                     fit: BoxFit.fill,
                   ),

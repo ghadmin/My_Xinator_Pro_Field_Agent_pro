@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -87,6 +89,7 @@ class AuthController extends GetxController with ExceptionHandler {
 
     hideLoading();
     if (response["IsValid"] == true) {
+      log("Profile all data: ${response.toString()}");
       await storeUserData(response);
 
       MySnackBar.showToast(message: "Login Successful");

@@ -40,27 +40,32 @@ class MyStyles {
         bodyLarge: (MyFonts.bodyTextStyle).copyWith(
             fontWeight: FontWeight.bold,
             fontSize: MyFonts.body1TextSize,
+            overflow: TextOverflow.ellipsis,
             color: isLightTheme
                 ? LightThemeColors.bodyTextColor
                 : DarkThemeColors.bodyTextColor),
         bodyMedium: (MyFonts.bodyTextStyle).copyWith(
             fontSize: MyFonts.body2TextSize,
+            overflow: TextOverflow.ellipsis,
             color: isLightTheme
                 ? LightThemeColors.bodyTextColor
                 : DarkThemeColors.bodyTextColor),
         bodySmall: (MyFonts.bodyTextStyle).copyWith(
             fontSize: MyFonts.body3TextSize,
+            overflow: TextOverflow.ellipsis,
             color: isLightTheme
                 ? LightThemeColors.bodyTextColor
                 : DarkThemeColors.bodyTextColor),
         displayLarge: (MyFonts.headlineTextStyle).copyWith(
             fontSize: MyFonts.headline1TextSize,
+            overflow: TextOverflow.ellipsis,
             fontWeight: FontWeight.bold,
             color: isLightTheme
                 ? LightThemeColors.headlinesTextColor
                 : DarkThemeColors.headlinesTextColor),
         displayMedium: (MyFonts.headlineTextStyle).copyWith(
             fontSize: MyFonts.headline2TextSize,
+            overflow: TextOverflow.ellipsis,
             fontWeight: FontWeight.bold,
             color: isLightTheme
                 ? LightThemeColors.headlinesTextColor
@@ -68,29 +73,34 @@ class MyStyles {
         displaySmall: (MyFonts.headlineTextStyle).copyWith(
             fontSize: MyFonts.headline3TextSize,
             fontWeight: FontWeight.bold,
+            overflow: TextOverflow.ellipsis,
             color: isLightTheme
                 ? LightThemeColors.headlinesTextColor
                 : DarkThemeColors.headlinesTextColor),
         headlineLarge: (MyFonts.headlineTextStyle).copyWith(
             fontSize: MyFonts.headline3TextSize,
+            overflow: TextOverflow.ellipsis,
             fontWeight: FontWeight.bold,
             color: isLightTheme
                 ? LightThemeColors.headlinesTextColor
                 : DarkThemeColors.headlinesTextColor),
         headlineMedium: (MyFonts.headlineTextStyle).copyWith(
             fontSize: MyFonts.headline4TextSize,
+            overflow: TextOverflow.ellipsis,
             fontWeight: FontWeight.bold,
             color: isLightTheme
                 ? LightThemeColors.headlinesTextColor
                 : DarkThemeColors.headlinesTextColor),
         headlineSmall: (MyFonts.headlineTextStyle).copyWith(
             fontSize: MyFonts.headline5TextSize,
+            overflow: TextOverflow.ellipsis,
             fontWeight: FontWeight.bold,
             color: isLightTheme
                 ? LightThemeColors.headlinesTextColor
                 : DarkThemeColors.headlinesTextColor),
         titleLarge: (MyFonts.headlineTextStyle).copyWith(
             fontSize: MyFonts.headline6TextSize,
+            overflow: TextOverflow.ellipsis,
             fontWeight: FontWeight.bold,
             color: isLightTheme
                 ? LightThemeColors.headlinesTextColor
