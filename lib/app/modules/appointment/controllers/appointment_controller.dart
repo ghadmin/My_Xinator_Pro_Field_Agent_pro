@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/controllers/customer_controller.dart';
+import 'package:xinator_fsm_pro/app/modules/customer/models/customer_model.dart';
 import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/settings/controllers/settings_controller.dart';
+import 'package:xinator_fsm_pro/app/modules/settings/models/appointment_status_setting.dart';
 
 import '../../../../utils/date_converter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
@@ -15,6 +17,7 @@ import '../../../service/REST/api_urls.dart';
 import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
 import '../../../service/helper/network_connectivity.dart';
+import '../../settings/models/ticket_status_model.dart';
 import '../models/appointment_model.dart';
 
 class AppointmentController extends GetxController with ExceptionHandler {
@@ -45,7 +48,6 @@ class AppointmentController extends GetxController with ExceptionHandler {
   String customerTitle = "";
   String notes = "";
   final selectedDate = Rx<DateTime?>(null);
-
   RxInt selectedAptIndex = 0.obs;
   RxBool isAppointmentEmpty = false.obs;
 
@@ -56,6 +58,68 @@ class AppointmentController extends GetxController with ExceptionHandler {
   final appointments = RxList<Appointments>();
   final sortedAppointments = RxList<Appointments>();
   final selectedDateString = RxString('');
+
+  void selectSingleAppointments(Appointments appointment, int index) {
+    log("all appointment in json : ${appointment.toJson()}");
+    customerController.selectedCustomer(
+        CustomerModel.fromJson(appointment.customer!.toJson()));
+    settingController.selectedAppointmentsStatus(AppointmentStatusSetting(
+        companyId: appointment.status?.companyId,
+        statusId: appointment.status?.statusId,
+        statusName: appointment.status?.statusName));
+    settingController.selectedTicket(TicketStatusSettings(
+        companyId: appointment.ticketStatus?.companyId,
+        statusId: appointment.ticketStatus?.statusId,
+        statusName: appointment.ticketStatus?.statusName));
+    var createdDateTime = dateTimeConverter(
+        inputFormat: "yyyy/MM/dd hh:mm a",
+        inputTime: appointment.createdDateTime.toString(),
+        outputFormat: "MM/dd/yyyy hh:mm a");
+    var startTime = dateTimeConverter(
+        inputFormat: "yyyy/MM/dd hh:mm a",
+        inputTime: appointment.startDateTime.toString(),
+        outputFormat: "MM/dd/yyyy hh:mm a");
+    var endTime = dateTimeConverter(
+        inputFormat: "yyyy/MM/dd hh:mm a",
+        inputTime: appointment.endDateTime.toString(),
+        outputFormat: "MM/dd/yyyy hh:mm a");
+    createdBy = appointment.createdBy ?? "";
+    appointmentID = "${appointment.apptID ?? ""}";
+    appointmentUID = appointment.appoinmentUId ?? "";
+    customerID = "${appointment.customerID ?? ""}";
+    promoCode = appointment.promoCode ?? "";
+    serviceTypeID = appointment.serviceTypeId ?? "";
+    resourceID = appointment.resourceID!;
+    timeSlotID = appointment.timeSlotId!;
+    contactName =
+        "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
+    address = "${appointment.customer?.address1}, "
+        "${appointment.customer?.city}, "
+        "${appointment.customer?.state}, ";
+    mobileNumber = appointment.customer?.mobile ?? "";
+    phoneNumber = appointment.customer?.phone ?? "";
+    customerTitle =
+        "${appointment.customer?.title ?? ""} ${appointment.customer?.title2 ?? ""}";
+    email = appointment.customer?.email ?? "";
+    invoiceController.toTextController.text = appointment.customer?.email ?? "";
+    invoiceController.customerFirstName.value =
+        appointment.customer?.firstName ?? "";
+    requestDate = createdDateTime;
+    startDate = startTime;
+    endDate = endTime;
+    timeSlot = appointment.timeSlot ?? "";
+    serviceType = appointment.serviceType?.serviceName ?? "";
+
+    selectedStatusValue.value = appointment.status?.statusId ?? 0;
+    selectedTicketStatusValue.value = appointment.ticketStatus?.statusId ?? 0;
+    resource = appointment.resource?.name ?? "";
+
+    notes = appointment.note ?? "";
+    noteTextController.text = appointment.note ?? "";
+    selectedAptIndex.value = index;
+    mobileNumber = appointment.customer?.mobile ?? "";
+  }
+
   Future<void> pickDate() async {
     selectedDateString('');
     final context = Get.context!;
@@ -239,10 +303,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
   }
   // update appointment
 
-  updateAppointment(
-    String ticketStatusId,
-    String aptStatusId,
-  ) async {
+  updateAppointment() async {
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
@@ -277,8 +338,9 @@ class AppointmentController extends GetxController with ExceptionHandler {
           "TimeSlot": timeSlot,
           "Note": noteTextController.text,
           "PromoCode": promoCode,
-          "StatusId": aptStatusId,
-          "TicketStatusId": ticketStatusId,
+          "StatusId":
+              settingController.selectedAppointmentsStatus.value!.statusId,
+          "TicketStatusId": settingController.selectedTicket.value!.statusId,
           "UserID": userID,
           "CreatedBy": createdBy
         }
