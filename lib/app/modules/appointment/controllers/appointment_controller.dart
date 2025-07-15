@@ -3,6 +3,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:xinator_fsm_pro/app/modules/appointment/views/appointment_details_view.dart'
+    show ResourceItem;
 import 'package:xinator_fsm_pro/app/modules/customer/controllers/customer_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/models/customer_model.dart';
 import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
@@ -26,6 +28,14 @@ class AppointmentController extends GetxController with ExceptionHandler {
   final customerController = Get.put(CustomerController());
   final TextEditingController noteTextController = TextEditingController();
   final TextEditingController sortTextController = TextEditingController();
+  final isExpanded = RxBool(false);
+  List<ResourceItem> resources = [
+    ResourceItem(title: "Fill Gas"),
+    ResourceItem(title: "Wash Indoor"),
+    ResourceItem(title: "Wash Outdoor"),
+    ResourceItem(title: "Check Circuit"),
+  ];
+
   String appointmentID = "";
   String appointmentUID = "";
   String customerID = "";
