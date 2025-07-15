@@ -59,6 +59,13 @@ class AppointmentController extends GetxController with ExceptionHandler {
   final sortedAppointments = RxList<Appointments>();
   final selectedDateString = RxString('');
 
+  List<String> historyNotes = <String>[
+    "History note one ",
+    "History note two ",
+    "History note three ",
+    "History note four "
+  ];
+
   void selectSingleAppointments(Appointments appointment, int index) {
     log("all appointment in json : ${appointment.toJson()}");
     customerController.selectedCustomer(

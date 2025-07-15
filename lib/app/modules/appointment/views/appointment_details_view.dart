@@ -470,6 +470,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               child: TabBarView(
                 controller: _tabController,
                 children: [
+                  //********************************* Tab One Info*********************************/
                   SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,12 +590,46 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                       ],
                     ),
                   ),
+
+                  //********************************* Tab Two  Notes *********************************/
                   Padding(
                     padding:
                         EdgeInsets.symmetric(vertical: 8.sp, horizontal: 12.sp),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(
+                          "Office Notes:",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text("Do not forget to bring the required tools."),
+                        SizedBox(height: 10.h),
+
+                        // --- 2. History Notes ---
+
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Previous Notes:",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            ...controller.historyNotes.map(
+                              (note) => Padding(
+                                padding: EdgeInsets.symmetric(vertical: 4.h),
+                                child: Text(
+                                  "${"07/09/2025"} • $note",
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 10.h),
+                          ],
+                        ),
                         Text(
                           "Notes",
                           style: theme.textTheme.bodyLarge?.copyWith(
@@ -629,6 +664,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                       ],
                     ),
                   ),
+                  //********************************* Tab Three Estimate/Invoice *********************************/
                   SingleChildScrollView(
                     child: Column(
                       children: [
