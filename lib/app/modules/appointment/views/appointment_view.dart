@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -138,76 +141,11 @@ class AppointmentView extends GetView<AppointmentController> {
                                 radius: 8,
                                 color: Colors.white,
                                 onPressed: () {
-                                  var createdDateTime = dateTimeConverter(
-                                      inputFormat: "yyyy/MM/dd hh:mm a",
-                                      inputTime: appointment.createdDateTime
-                                          .toString(),
-                                      outputFormat: "MM/dd/yyyy hh:mm a");
-                                  var startTime = dateTimeConverter(
-                                      inputFormat: "yyyy/MM/dd hh:mm a",
-                                      inputTime:
-                                          appointment.startDateTime.toString(),
-                                      outputFormat: "MM/dd/yyyy hh:mm a");
-                                  var endTime = dateTimeConverter(
-                                      inputFormat: "yyyy/MM/dd hh:mm a",
-                                      inputTime:
-                                          appointment.endDateTime.toString(),
-                                      outputFormat: "MM/dd/yyyy hh:mm a");
-                                  controller.createdBy =
-                                      appointment.createdBy ?? "";
-                                  controller.appointmentID =
-                                      "${appointment.apptID ?? ""}";
-                                  controller.appointmentUID =
-                                      appointment.appoinmentUId ?? "";
-                                  controller.customerID =
-                                      "${appointment.customerID ?? ""}";
-                                  controller.promoCode =
-                                      appointment.promoCode ?? "";
-                                  controller.serviceTypeID =
-                                      appointment.serviceTypeId ?? "";
-                                  controller.resourceID =
-                                      appointment.resourceID!;
-                                  controller.timeSlotID =
-                                      appointment.timeSlotId!;
-                                  controller.contactName =
-                                      "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
-                                  controller.address =
-                                      "${appointment.customer?.address1}, "
-                                      "${appointment.customer?.city}, "
-                                      "${appointment.customer?.state}, ";
-                                  controller.mobileNumber =
-                                      appointment.customer?.mobile ?? "";
-                                  controller.phoneNumber =
-                                      appointment.customer?.phone ?? "";
-                                  controller.customerTitle =
-                                      "${appointment.customer?.title ?? ""} ${appointment.customer?.title2 ?? ""}";
-                                  controller.email =
-                                      appointment.customer?.email ?? "";
-                                  controller.invoiceController.toTextController
-                                      .text = appointment.customer?.email ?? "";
-                                  controller.invoiceController.customerFirstName
-                                          .value =
-                                      appointment.customer?.firstName ?? "";
-                                  controller.requestDate = createdDateTime;
-                                  controller.startDate = startTime;
-                                  controller.endDate = endTime;
-                                  controller.timeSlot =
-                                      appointment.timeSlot ?? "";
-                                  controller.serviceType =
-                                      appointment.serviceType?.serviceName ??
-                                          "";
+                                  log(json.encode(appointment),
+                                      name: "appointment");
+                                  controller.selectSingleAppointments(
+                                      appointment, index);
 
-                                  controller.selectedStatusValue.value =
-                                      appointment.status?.statusId ?? 0;
-                                  controller.selectedTicketStatusValue.value =
-                                      appointment.ticketStatus?.statusId ?? 0;
-                                  controller.resource =
-                                      appointment.resource?.name ?? "";
-
-                                  controller.notes = appointment.note ?? "";
-                                  controller.noteTextController.text =
-                                      appointment.note ?? "";
-                                  controller.selectedAptIndex.value = index;
                                   Get.toNamed(Routes.APPOINTMENT_DETAILS);
                                 },
                                 child: Padding(

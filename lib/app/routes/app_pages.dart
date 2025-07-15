@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../modules/appointment/bindings/appointment_binding.dart';
@@ -66,7 +67,7 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.APPOINTMENT_DETAILS,
-      page: () => const AppointmentDetailsView(),
+      page: () => AppointmentDetailsView(),
       binding: AppointmentBinding(),
     ),
     GetPage(

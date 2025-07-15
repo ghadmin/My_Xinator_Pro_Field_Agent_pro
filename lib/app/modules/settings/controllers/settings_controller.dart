@@ -13,6 +13,7 @@ import '../models/ticket_status_model.dart';
 class SettingsController extends GetxController with ExceptionHandler {
   /// API ///
   final tickets = RxList<TicketStatusSettings>();
+  final selectedTicket = Rx<TicketStatusSettings?>(null);
   getTicketStatus() async {
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
@@ -51,6 +52,7 @@ class SettingsController extends GetxController with ExceptionHandler {
   }
 
   final appointmentsStatus = RxList<AppointmentStatusSetting>();
+  final selectedAppointmentsStatus = Rx<AppointmentStatusSetting?>(null);
   getAppointmentStatus() async {
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
@@ -67,11 +69,13 @@ class SettingsController extends GetxController with ExceptionHandler {
       appointmentsStatus.assignAll((response as List)
           .map((e) => AppointmentStatusSetting.fromJson(e))
           .toList());
+      selectedAppointmentsStatus(appointmentsStatus.first);
       await MyHive.saveAllAppointmentStatusSetting(appointmentsStatus);
     } else {
       var savedAppointments = MyHive.getAllAppointmentStatusSetting();
       if (savedAppointments.isNotEmpty) {
         appointmentsStatus.assignAll(savedAppointments);
+        selectedAppointmentsStatus(appointmentsStatus.first);
 
         MySnackBar.showErrorToast(message: "No network!");
         NetworkConnectivity.connectionChangeCount = 1;

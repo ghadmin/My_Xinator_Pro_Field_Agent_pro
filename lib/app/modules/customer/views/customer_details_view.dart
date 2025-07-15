@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/models/customer_model.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
@@ -320,7 +321,14 @@ class BasicDetailsWidget extends StatelessWidget {
                         child: SizedBox(
                           child: Text(
                             customer.createdDateTime != null
-                                ? customer.createdDateTime!.toLocal().toString()
+                                ? customer.createdDateTime.runtimeType == String
+                                    ? DateFormat("M/d/yyyy h:mm:ss a")
+                                        .parse(customer.createdDateTime!)
+                                        .toLocal()
+                                        .toString()
+                                    : customer.createdDateTime!
+                                        .toLocal()
+                                        .toString()
                                 : "N/A",
                             textAlign: TextAlign.end,
                             style: theme.textTheme.bodyLarge?.copyWith(

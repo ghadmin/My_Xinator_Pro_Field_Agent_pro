@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-
-import '../../../../config/theme/light_theme_colors.dart';
-import '../../../../utils/constants.dart';
 import '../../../components/drawer/custom_drawer.dart';
-import '../../../components/global-widgets/asset_image_box.dart';
 import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/splash_container.dart';

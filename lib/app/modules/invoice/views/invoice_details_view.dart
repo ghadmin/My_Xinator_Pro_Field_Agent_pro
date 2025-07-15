@@ -813,7 +813,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     },
                     child: Container(
                       margin: EdgeInsets.only(
-                          right: screenWidth > 374 ? 30.sp : 50.sp),
+                          right: screenWidth > 374 ? 30.sp : 25.sp),
                       padding: EdgeInsets.symmetric(
                           horizontal: 10.sp, vertical: 5.sp),
                       decoration: BoxDecoration(
@@ -1077,7 +1077,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   );
                 }),
                 trailing: SizedBox(
-                  width: screenWidth > 374 ? 150.sp : 165.sp,
+                  width: screenWidth > 374 ? 150.sp : 140.sp,
                   child: Text(
                     "\$${((controller.invoiceSubtotal.value - controller.invoiceDiscount.value) - controller.nonTaxableTotalInDetails.value).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
                     style: theme.textTheme.bodyLarge?.copyWith(
