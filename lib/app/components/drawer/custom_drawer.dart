@@ -78,45 +78,45 @@ class CustomDrawer extends StatelessWidget {
                 indexClicked = indexClicked;
               },
             ),
-            SizedBox(
-              height: 10.h,
-            ),
-            _drawerItem(
-              icon: SideBar.customerServiceIcon,
-              text: 'Customer Service List',
-              indexNumber: 1,
-              onTap: () async {
-                Get.toNamed(Routes.APPOINTMENT);
-                indexClicked = indexClicked;
-              },
-            ),
-            SizedBox(
-              height: 10.h,
-            ),
-            _drawerItem(
-              icon: SideBar.dispatchingIcon,
-              text: 'Dispatching',
-              indexNumber: 2,
-              onTap: () async {
-                Get.toNamed(Routes.ITEM);
-                indexClicked = indexClicked;
-              },
-            ),
-            SizedBox(
-              height: 10.h,
-            ),
-            _drawerItem(
-              icon: SideBar.formIcon,
-              text: 'Forms',
-              indexNumber: 3,
-              onTap: () async {
-                Get.toNamed(Routes.ITEM);
-                indexClicked = indexClicked;
-              },
-            ),
-            SizedBox(
-              height: 10.h,
-            ),
+            // SizedBox(
+            //   height: 10.h,
+            // ),
+            // _drawerItem(
+            //   icon: SideBar.customerServiceIcon,
+            //   text: 'Customer Service List',
+            //   indexNumber: 1,
+            //   onTap: () async {
+            //     Get.toNamed(Routes.APPOINTMENT);
+            //     indexClicked = indexClicked;
+            //   },
+            // ),
+            // SizedBox(
+            //   height: 10.h,
+            // ),
+            // _drawerItem(
+            //   icon: SideBar.dispatchingIcon,
+            //   text: 'Dispatching',
+            //   indexNumber: 2,
+            //   onTap: () async {
+            //     Get.toNamed(Routes.ITEM);
+            //     indexClicked = indexClicked;
+            //   },
+            // ),
+            // SizedBox(
+            //   height: 10.h,
+            // ),
+            // _drawerItem(
+            //   icon: SideBar.formIcon,
+            //   text: 'Forms',
+            //   indexNumber: 3,
+            //   onTap: () async {
+            //     Get.toNamed(Routes.ITEM);
+            //     indexClicked = indexClicked;
+            //   },
+            // ),
+            // SizedBox(
+            //   height: 10.h,
+            // ),
             _drawerItem(
               icon: SideBar.itemsIcon,
               text: 'Items',
@@ -131,31 +131,31 @@ class CustomDrawer extends StatelessWidget {
               text: 'Customers',
               indexNumber: 5,
               onTap: () async {
-                Get.toNamed(Routes.ITEM);
+                Get.toNamed(Routes.CUSTOMER);
                 indexClicked = indexClicked;
               },
             ),
-            _drawerItem(
-              icon: SideBar.itemsIcon,
-              text: 'Billable Items',
-              indexNumber: 6,
-              onTap: () async {
-                Get.toNamed(Routes.BILLABLE_ITEMS);
-                indexClicked = indexClicked;
-              },
-            ),
+            // _drawerItem(
+            //   icon: SideBar.itemsIcon,
+            //   text: 'Billable Items',
+            //   indexNumber: 6,
+            //   onTap: () async {
+            //     Get.toNamed(Routes.BILLABLE_ITEMS);
+            //     indexClicked = indexClicked;
+            //   },
+            // ),
             SizedBox(
               height: 10.h,
             ),
-            _drawerItem(
-              icon: SideBar.settingsIcon,
-              text: 'Settings',
-              indexNumber: 7,
-              onTap: () async {
-                Get.toNamed(Routes.ITEM);
-                indexClicked = indexClicked;
-              },
-            ),
+            // _drawerItem(
+            //   icon: SideBar.settingsIcon,
+            //   text: 'Settings',
+            //   indexNumber: 7,
+            //   onTap: () async {
+            //     Get.toNamed(Routes.ITEM);
+            //     indexClicked = indexClicked;
+            //   },
+            // ),
             SizedBox(
               height: 10.h,
             ),
