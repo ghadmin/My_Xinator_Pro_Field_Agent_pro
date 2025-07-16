@@ -1,4 +1,6 @@
 //ignore_for_file: must_be_immutable
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -120,16 +122,16 @@ class CustomDrawer extends StatelessWidget {
             _drawerItem(
               icon: SideBar.itemsIcon,
               text: 'Items',
-              indexNumber: 4,
+              indexNumber: 1,
               onTap: () async {
                 Get.toNamed(Routes.ITEM);
                 indexClicked = indexClicked;
               },
             ),
             _drawerItem(
-              icon: SideBar.itemsIcon,
+              icon: SideBar.customerServiceIcon,
               text: 'Customers',
-              indexNumber: 5,
+              indexNumber: 2,
               onTap: () async {
                 Get.toNamed(Routes.CUSTOMER);
                 indexClicked = indexClicked;
@@ -162,7 +164,7 @@ class CustomDrawer extends StatelessWidget {
             _drawerItem(
               icon: SideBar.logoutIcon,
               text: 'Log out',
-              indexNumber: 8,
+              indexNumber: 3,
               onTap: () async {
                 Get.back();
                 showAdaptiveDialog(
@@ -222,7 +224,7 @@ class CustomDrawer extends StatelessWidget {
       contentPadding: EdgeInsets.symmetric(horizontal: 20.sp),
       title: Row(
         children: [
-          Image.asset(height: 30.h, width: 33.w, icon),
+          Image.asset(height: 25.h, width: 25.w, icon),
           Padding(
             padding: EdgeInsets.only(left: 15.sp),
             child: Text(

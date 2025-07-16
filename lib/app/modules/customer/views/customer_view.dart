@@ -14,7 +14,7 @@ class CustomerView extends GetView<CustomerController> {
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
     return Scaffold(
-      drawer: CustomDrawer(indexClicked: 5),
+      drawer: CustomDrawer(indexClicked: 2),
       appBar: AppBar(
         // title: const Text('Customers'),
         actions: [

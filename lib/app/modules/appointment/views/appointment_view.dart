@@ -141,8 +141,6 @@ class AppointmentView extends GetView<AppointmentController> {
                                 radius: 8,
                                 color: Colors.white,
                                 onPressed: () {
-                                  log(json.encode(appointment),
-                                      name: "appointment");
                                   controller.selectSingleAppointments(
                                       appointment, index);
 

@@ -118,18 +118,70 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   child: Material(
                                     shape: const CircleBorder(),
                                     color: LightThemeColors.primaryColor
-                                        .withValues(alpha: .5),
+                                        .withValues(alpha: .3),
                                     elevation: 6,
                                     child: Padding(
                                       padding: const EdgeInsets.all(
                                           6), // Reduced padding
                                       child: CircleAvatar(
-                                        backgroundColor: LightThemeColors
-                                            .primaryColor
-                                            .withValues(alpha: .5),
-                                        foregroundColor: LightThemeColors
-                                            .primaryColor
-                                            .withValues(alpha: .5),
+                                        backgroundColor: controller
+                                                    .settingController
+                                                    .selectedAppointmentsStatus
+                                                    .value
+                                                    ?.statusName ==
+                                                "Installation In Progress"
+                                            ? Color(0xffE98862)
+                                            : controller
+                                                        .settingController
+                                                        .selectedAppointmentsStatus
+                                                        .value
+                                                        ?.statusName ==
+                                                    "Installation in Progress"
+                                                ? Color(0xffE98862)
+                                                : controller
+                                                            .settingController
+                                                            .selectedAppointmentsStatus
+                                                            .value
+                                                            ?.statusName ==
+                                                        "Scheduled"
+                                                    ? Color(0xff2E888B)
+                                                    : controller
+                                                                .settingController
+                                                                .selectedAppointmentsStatus
+                                                                .value
+                                                                ?.statusName ==
+                                                            "Cancelled"
+                                                        ? Colors.red
+                                                        : Color(0xff0CBC8B),
+                                        foregroundColor: controller
+                                                    .settingController
+                                                    .selectedAppointmentsStatus
+                                                    .value
+                                                    ?.statusName ==
+                                                "Installation In Progress"
+                                            ? Color(0xffE98862)
+                                            : controller
+                                                        .settingController
+                                                        .selectedAppointmentsStatus
+                                                        .value
+                                                        ?.statusName ==
+                                                    "Installation in Progress"
+                                                ? Color(0xffE98862)
+                                                : controller
+                                                            .settingController
+                                                            .selectedAppointmentsStatus
+                                                            .value
+                                                            ?.statusName ==
+                                                        "Scheduled"
+                                                    ? Color(0xff2E888B)
+                                                    : controller
+                                                                .settingController
+                                                                .selectedAppointmentsStatus
+                                                                .value
+                                                                ?.statusName ==
+                                                            "Cancelled"
+                                                        ? Colors.red
+                                                        : Color(0xff0CBC8B),
                                       ),
                                     ),
                                   ),
@@ -175,11 +227,41 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 padding: const EdgeInsets.all(
                                                     6), // Reduced padding
                                                 child: CircleAvatar(
-                                                  backgroundColor:
-                                                      LightThemeColors
-                                                          .primaryColor
-                                                          .withValues(
-                                                              alpha: .5),
+                                                  backgroundColor: controller
+                                                              .settingController
+                                                              .selectedAppointmentsStatus
+                                                              .value
+                                                              ?.statusName ==
+                                                          "Installation in Progress"
+                                                      ? Color(0xffE98862)
+                                                      : controller
+                                                                  .settingController
+                                                                  .selectedAppointmentsStatus
+                                                                  .value
+                                                                  ?.statusName ==
+                                                              "On Hold"
+                                                          ? Color.fromARGB(
+                                                              255, 243, 18, 18)
+                                                          : controller
+                                                                      .settingController
+                                                                      .selectedAppointmentsStatus
+                                                                      .value
+                                                                      ?.statusName ==
+                                                                  "Parts on Order"
+                                                              ? Color.fromARGB(
+                                                                  255,
+                                                                  21,
+                                                                  234,
+                                                                  242)
+                                                              : controller
+                                                                          .settingController
+                                                                          .selectedAppointmentsStatus
+                                                                          .value
+                                                                          ?.statusName ==
+                                                                      "Completed"
+                                                                  ? Color(
+                                                                      0xff0CBC8B)
+                                                                  : Colors.red,
                                                   foregroundColor:
                                                       LightThemeColors
                                                           .primaryColor
@@ -454,14 +536,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Request Date",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.requestDate,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -472,14 +554,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Start Date",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.startDate,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -490,14 +572,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "End Date",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.endDate,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -508,14 +590,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Time Slot",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.timeSlot,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -526,14 +608,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Service Type",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.serviceType,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -544,14 +626,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Resource",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.resource,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 10.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1024,7 +1106,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               proposal.number ?? "",
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                fontSize: 10.sp,
+                                                fontSize: 14.sp,
                                                 fontWeight: FontWeight.w500,
                                                 color: proposal.type ==
                                                             "Estimate" &&
@@ -1215,7 +1297,6 @@ showDialogTicketStatus(BuildContext context, AppointmentController controller) {
                     onTap: () async {
                       controller.settingController.selectedTicket(status);
                       await controller.updateAppointment();
-                      Navigator.of(context).pop(); // close dialog
                     },
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -1228,8 +1309,16 @@ showDialogTicketStatus(BuildContext context, AppointmentController controller) {
                             padding: const EdgeInsets.all(6),
                             child: CircleAvatar(
                               radius: 20,
-                              backgroundColor: LightThemeColors.primaryColor
-                                  .withOpacity(0.5),
+                              backgroundColor: status.statusName ==
+                                      "Installation in Progress"
+                                  ? Color(0xffE98862)
+                                  : status.statusName == "On Hold"
+                                      ? Color.fromARGB(255, 243, 18, 18)
+                                      : status.statusName == "Parts on Order"
+                                          ? Color.fromARGB(255, 21, 234, 242)
+                                          : status.statusName == "Completed"
+                                              ? Color(0xff0CBC8B)
+                                              : Colors.red,
                             ),
                           ),
                         ),
@@ -1322,8 +1411,17 @@ void showDialogScheduled(
                             padding: const EdgeInsets.all(6),
                             child: CircleAvatar(
                               radius: 20,
-                              backgroundColor: LightThemeColors.primaryColor
-                                  .withOpacity(0.5),
+                              backgroundColor: status.statusName ==
+                                      "Installation In Progress"
+                                  ? Color(0xffE98862)
+                                  : status.statusName ==
+                                          "Installation in Progress"
+                                      ? Color(0xffE98862)
+                                      : status.statusName == "Scheduled"
+                                          ? Color(0xff2E888B)
+                                          : status.statusName == "Cancelled"
+                                              ? Colors.red
+                                              : Color(0xff0CBC8B),
                             ),
                           ),
                         ),
