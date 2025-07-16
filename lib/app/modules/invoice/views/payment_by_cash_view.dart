@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
 
 import '../../../components/global-widgets/general_text_field.dart';
+import '../../../components/global-widgets/my_buttons.dart';
 import '../controllers/invoice_controller.dart';
 
 class PaymentByCashView extends GetView<InvoiceController> {

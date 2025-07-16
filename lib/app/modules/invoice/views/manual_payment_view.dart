@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
-import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
+
+import '../../../components/global-widgets/my_buttons.dart';
+import '../controllers/invoice_controller.dart';
 
 class ManualPaymentView extends GetView<InvoiceController> {
   const ManualPaymentView({super.key});

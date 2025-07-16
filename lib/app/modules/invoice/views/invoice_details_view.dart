@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/main_divider.dart';
+import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/invoice_controller.dart';
@@ -257,7 +257,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       child: SecondaryButtonWithIcon(
                         title: "Add Item",
                         iconData: Icons.add_circle_outline,
-                        onPressed: () => _showAddItemDialog(context),
+                        onPressed: () {
+                          controller.itemController.sortTextController.clear();
+                          controller.itemController.sortItems();
+                          return _showAddItemDialog(context, theme);
+                        },
                         inactive: false,
                       ),
                     ),
@@ -501,7 +505,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 onPressed: () {
                                   showAdaptiveDialog(
                                     context: context,
-                                    barrierDismissible: true,
+                                    barrierDismissible: false,
                                     builder: (context) {
                                       return Dialog(
                                         insetPadding: EdgeInsets.symmetric(
@@ -519,8 +523,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 padding: EdgeInsets.all(16.sp),
                                                 child: Text(
                                                   'Edit Item',
-                                                  style:
-                                                      theme.textTheme.bodyLarge,
+                                                  style: theme
+                                                      .textTheme.bodyLarge
+                                                      ?.copyWith(
+                                                          color: theme
+                                                              .primaryColor),
                                                 ),
                                               ),
 
@@ -618,6 +625,53 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                             },
                                                           ),
                                                         ),
+                                                      ],
+                                                    ),
+                                                    SizedBox(height: 10.sp),
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          "Taxable:",
+                                                          style: theme.textTheme
+                                                              .bodyLarge,
+                                                        ),
+                                                        SizedBox(width: 30.sp),
+                                                        Obx(() =>
+                                                            DropdownButton<
+                                                                bool>(
+                                                              value: controller
+                                                                      .selectedItemList[
+                                                                          index]
+                                                                      .isTaxable ??
+                                                                  true,
+                                                              dropdownColor:
+                                                                  Colors.white,
+                                                              items: [
+                                                                DropdownMenuItem(
+                                                                  value: true,
+                                                                  child: Text(
+                                                                      "Yes"),
+                                                                ),
+                                                                DropdownMenuItem(
+                                                                  value: false,
+                                                                  child: Text(
+                                                                      "No"),
+                                                                ),
+                                                              ],
+                                                              onChanged:
+                                                                  (value) {
+                                                                controller
+                                                                    .selectedItemList[
+                                                                        index]
+                                                                    .isTaxable = value;
+
+                                                                controller
+                                                                    .createTotalForEdit();
+                                                                controller
+                                                                    .selectedItemList
+                                                                    .refresh();
+                                                              },
+                                                            )),
                                                       ],
                                                     ),
                                                   ],
@@ -813,7 +867,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     },
                     child: Container(
                       margin: EdgeInsets.only(
-                          right: screenWidth > 374 ? 30.sp : 25.sp),
+                          right: screenWidth > 374 ? 30.sp : 50.sp),
                       padding: EdgeInsets.symmetric(
                           horizontal: 10.sp, vertical: 5.sp),
                       decoration: BoxDecoration(
@@ -1077,7 +1131,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   );
                 }),
                 trailing: SizedBox(
-                  width: screenWidth > 374 ? 150.sp : 140.sp,
+                  width: screenWidth > 374 ? 150.sp : 165.sp,
                   child: Text(
                     "\$${((controller.invoiceSubtotal.value - controller.invoiceDiscount.value) - controller.nonTaxableTotalInDetails.value).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
                     style: theme.textTheme.bodyLarge?.copyWith(
@@ -1323,13 +1377,18 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     inactive: controller.selectedItemList.isEmpty),
               ),
               SizedBox(height: 10.sp),
+
               SizedBox(
                 height: 48.sp,
                 width: double.infinity,
-                // width: .5.sw,
                 child: PrimaryButton(
                   title: "Pay Now",
                   onPressed: () async {
+                    //
+                    // MySnackBar.showErrorToast(
+                    //     message: "Please update the invoice first.");
+                    // return;
+
                     Get.toNamed(Routes.PAYMENT_METHOD_SELECTION);
                   },
                   inactive: controller.selectedItemList.isEmpty,
@@ -1340,8 +1399,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
         ));
   }
 
-  void _showAddItemDialog(BuildContext context) {
+  void _showAddItemDialog(BuildContext context, theme) {
     showDialog(
+      barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return Dialog(
@@ -1349,76 +1409,137 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: Container(
-            height: .6.sh,
+            height: .8.sh,
             padding: EdgeInsets.all(20.sp),
-            child: ListView(
-              children: controller.itemController.items.map((item) {
-                return ListTile(
-                  title: Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 5.sp, vertical: 10.sp),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8.sp),
-                      border: Border.all(
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 40.sp,
+                  child: GeneralTextField(
+                      hint: "Search item",
+                      suffixIcon: Icon(
+                        Icons.search,
                         color: LightThemeColors.bodyTextSecondaryColor,
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name ?? "",
-                          style: TextStyle(
-                            color: LightThemeColors.primaryColor,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 16.sp,
-                          ),
-                        ),
-                        SizedBox(height: 5.sp),
-                        item.description == ""
-                            ? SizedBox.shrink()
-                            : Text(item.description ?? ""),
-                        SizedBox(height: 8.sp),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Price: \$${item.price}",
-                              style: TextStyle(
-                                color: LightThemeColors.bodyTextSecondaryColor,
-                                fontSize: 14.sp,
+                      theme: theme,
+                      textInputAction: TextInputAction.search,
+                      onChanged: (_) => controller.itemController.sortItems(),
+                      textEditingController:
+                          controller.itemController.sortTextController),
+                ),
+                SizedBox(
+                  height: 10.sp,
+                ),
+                Expanded(
+                  child: Obx(() => ListView(
+                        children:
+                            controller.itemController.sortedItems.map((item) {
+                          final alreadySelected = controller.selectedItemList
+                              .any((selected) => selected.id == item.id);
+                          return CheckboxListTile(
+                            activeColor: theme.primaryColor,
+                            value: alreadySelected,
+                            onChanged: (checked) {
+                              if (checked == true && !alreadySelected) {
+                                controller.selectedItemList.add(item);
+                                controller.editAmountControllers.add(
+                                    TextEditingController(
+                                        text: item.price.toString()));
+                                controller.editDescriptionControllers.add(
+                                    TextEditingController(
+                                        text: item.description ?? ""));
+                                controller.editQuantityControllers
+                                    .add(TextEditingController(text: '1'));
+                                controller.createTotalForEdit();
+                              } else if (checked == false && alreadySelected) {
+                                final index = controller.selectedItemList
+                                    .indexWhere(
+                                        (selected) => selected.id == item.id);
+                                if (index != -1) {
+                                  controller.selectedItemList.removeAt(index);
+                                  controller.editAmountControllers
+                                      .removeAt(index);
+                                  controller.editDescriptionControllers
+                                      .removeAt(index);
+                                  controller.editQuantityControllers
+                                      .removeAt(index);
+                                  controller.createTotalForEdit();
+                                }
+                              }
+                            },
+                            title: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 5.sp, vertical: 10.sp),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.sp),
+                                border: Border.all(
+                                  color:
+                                      LightThemeColors.bodyTextSecondaryColor,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.name ?? "",
+                                    style: TextStyle(
+                                      color: LightThemeColors.primaryColor,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16.sp,
+                                    ),
+                                  ),
+                                  SizedBox(height: 5.sp),
+                                  item.description == ""
+                                      ? SizedBox.shrink()
+                                      : Text(item.description ?? ""),
+                                  SizedBox(height: 8.sp),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "Price: ",
+                                        style: TextStyle(
+                                          color: LightThemeColors
+                                              .bodyTextSecondaryColor,
+                                          fontSize: 12.sp,
+                                        ),
+                                      ),
+                                      Text(
+                                        "\$${item.price}",
+                                        style: TextStyle(
+                                          color: theme.primaryColor,
+                                          fontSize: 12.sp,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 5.sp),
+                                  Text(
+                                    "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
+                                    style: TextStyle(
+                                      color: LightThemeColors
+                                          .bodyTextSecondaryColor,
+                                      fontSize: 12.sp,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Text(
-                              "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
-                              style: TextStyle(
-                                color: LightThemeColors.bodyTextSecondaryColor,
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  onTap: () {
-                    final alreadySelected = controller.selectedItemList
-                        .any((selected) => selected.id == item.id);
-                    if (!alreadySelected) {
-                      controller.selectedItemList.add(item);
-                      controller.editAmountControllers.add(
-                          TextEditingController(text: item.price.toString()));
-
-                      controller.editDescriptionControllers.add(
-                          TextEditingController(text: item.description ?? ""));
-                      controller.editQuantityControllers
-                          .add(TextEditingController(text: '1'));
-                    }
-                    controller.createTotalForEdit();
-                    Get.back();
-                  },
-                );
-              }).toList(),
+                          );
+                        }).toList(),
+                      )),
+                ),
+                SizedBox(height: 20.sp),
+                SizedBox(
+                  height: 42.sp,
+                  width: 150.sp,
+                  child: PrimaryButton(
+                      title: "Close",
+                      onPressed: () {
+                        Get.back();
+                      },
+                      inactive: false),
+                ),
+              ],
             ),
           ),
         );

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
-import 'package:xinator_fsm_pro/app/routes/app_pages.dart';
-import 'package:xinator_fsm_pro/config/theme/light_theme_colors.dart';
 
+import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/date_converter.dart';
+import '../../../routes/app_pages.dart';
+import '../controllers/invoice_controller.dart';
 
 class PaymentMethodSelectionView extends GetView<InvoiceController> {
   const PaymentMethodSelectionView({super.key});

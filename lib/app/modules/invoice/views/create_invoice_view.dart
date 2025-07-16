@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/asset_image_box.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
-import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
-import 'package:xinator_fsm_pro/utils/constants.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
+import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../../utils/url_launcher.dart';
+import '../../../components/global-widgets/asset_image_box.dart';
+import '../../../components/global-widgets/general_text_field.dart';
+import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/splash_container.dart';
+import '../controllers/invoice_controller.dart';
 
 class CreateInvoiceView extends GetView<InvoiceController> {
   const CreateInvoiceView({super.key});
@@ -500,7 +500,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                       showAdaptiveDialog(
                                                         context: context,
                                                         barrierDismissible:
-                                                            true,
+                                                            false,
                                                         builder: (context) {
                                                           return Dialog(
                                                             insetPadding: EdgeInsets
@@ -527,7 +527,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                       'Edit Item',
                                                                       style: theme
                                                                           .textTheme
-                                                                          .bodyLarge,
+                                                                          .bodyLarge
+                                                                          ?.copyWith(
+                                                                              color: theme.primaryColor),
                                                                     ),
                                                                   ),
 
@@ -608,6 +610,39 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                             ),
                                                                           ],
                                                                         ),
+                                                                        SizedBox(
+                                                                            height:
+                                                                                10.sp),
+                                                                        Row(
+                                                                          children: [
+                                                                            Text(
+                                                                              "Taxable:",
+                                                                              style: theme.textTheme.bodyLarge,
+                                                                            ),
+                                                                            SizedBox(width: 30.sp),
+                                                                            Obx(() =>
+                                                                                DropdownButton<bool>(
+                                                                                  value: controller.selectedItemList[index].isTaxable ?? true,
+                                                                                  dropdownColor: Colors.white,
+                                                                                  items: [
+                                                                                    DropdownMenuItem(
+                                                                                      value: true,
+                                                                                      child: Text("Yes"),
+                                                                                    ),
+                                                                                    DropdownMenuItem(
+                                                                                      value: false,
+                                                                                      child: Text("No"),
+                                                                                    ),
+                                                                                  ],
+                                                                                  onChanged: (value) {
+                                                                                    controller.selectedItemList[index].isTaxable = value;
+
+                                                                                    controller.createTotal();
+                                                                                    controller.selectedItemList.refresh();
+                                                                                  },
+                                                                                )),
+                                                                          ],
+                                                                        ),
                                                                       ],
                                                                     ),
                                                                   ),
@@ -662,7 +697,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                         child: SecondaryButtonWithIcon(
                           title: "Add item",
                           onPressed: () {
+                            controller.itemController.sortTextController
+                                .clear();
+                            controller.itemController.sortItems();
                             showDialog(
+                              barrierDismissible: false,
                               context: context,
                               builder: (BuildContext context) {
                                 return Dialog(
@@ -670,120 +709,179 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                     borderRadius: BorderRadius.circular(8.r),
                                   ),
                                   child: Container(
-                                    height: .6.sh,
+                                    height: .8.sh,
                                     padding: EdgeInsets.all(20.sp),
                                     child: Column(
                                       children: [
-                                        GeneralTextField(
-                                            maxLine: 2,
-                                            hint: "Search here...",
-                                            theme: theme,
-                                            onChanged: (_) => controller
-                                                .itemController
-                                                .sortItems(),
-                                            textEditingController: controller
-                                                .itemController
-                                                .sortTextController),
                                         SizedBox(
-                                          height: 10.h,
+                                          height: 40.sp,
+                                          child: GeneralTextField(
+                                              hint: "Search item",
+                                              suffixIcon: Icon(
+                                                Icons.search,
+                                                color: LightThemeColors
+                                                    .bodyTextSecondaryColor,
+                                              ),
+                                              theme: theme,
+                                              textInputAction:
+                                                  TextInputAction.search,
+                                              onChanged: (_) => controller
+                                                  .itemController
+                                                  .sortItems(),
+                                              textEditingController: controller
+                                                  .itemController
+                                                  .sortTextController),
+                                        ),
+                                        SizedBox(
+                                          height: 10.sp,
                                         ),
                                         Expanded(
-                                          child: ListView(
-                                            children: controller
-                                                .itemController.sortedItems
-                                                .map((item) {
-                                              return ListTile(
-                                                title: Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                      horizontal: 5.sp,
-                                                      vertical: 10.sp),
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8.sp),
-                                                    border: Border.all(
-                                                      color: LightThemeColors
-                                                          .bodyTextSecondaryColor,
-                                                    ),
-                                                  ),
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        item.name ?? "",
-                                                        style: TextStyle(
-                                                          color:
-                                                              LightThemeColors
-                                                                  .primaryColor,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          fontSize: 16.sp,
+                                          child: Obx(() => ListView(
+                                                children: controller
+                                                    .itemController.sortedItems
+                                                    .map((item) {
+                                                  final isSelected = controller
+                                                      .selectedItemList
+                                                      .contains(item);
+
+                                                  return CheckboxListTile(
+                                                    activeColor:
+                                                        theme.primaryColor,
+                                                    value: isSelected,
+                                                    onChanged: (checked) {
+                                                      if (checked == true &&
+                                                          !isSelected) {
+                                                        controller
+                                                            .selectedItemList
+                                                            .add(item);
+                                                        controller
+                                                            .amountControllers
+                                                            .add(TextEditingController(
+                                                                text: item.price
+                                                                    .toString()));
+                                                        controller
+                                                            .descriptionControllers
+                                                            .add(TextEditingController(
+                                                                text:
+                                                                    item.description ??
+                                                                        ""));
+                                                        controller
+                                                            .quantityControllers
+                                                            .add(
+                                                                TextEditingController(
+                                                                    text: '1'));
+                                                      } else if (checked ==
+                                                              false &&
+                                                          isSelected) {
+                                                        final idx = controller
+                                                            .selectedItemList
+                                                            .indexOf(item);
+                                                        controller
+                                                            .selectedItemList
+                                                            .removeAt(idx);
+                                                        controller
+                                                            .amountControllers
+                                                            .removeAt(idx);
+                                                        controller
+                                                            .descriptionControllers
+                                                            .removeAt(idx);
+                                                        controller
+                                                            .quantityControllers
+                                                            .removeAt(idx);
+                                                      }
+                                                      controller.createTotal();
+                                                    },
+                                                    title: Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 5.sp,
+                                                              vertical: 10.sp),
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8.sp),
+                                                        border: Border.all(
+                                                          color: LightThemeColors
+                                                              .bodyTextSecondaryColor,
                                                         ),
                                                       ),
-                                                      SizedBox(height: 5.sp),
-                                                      item.description == ""
-                                                          ? SizedBox.shrink()
-                                                          : Text(
-                                                              item.description ??
-                                                                  ""),
-                                                      SizedBox(height: 8.sp),
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
                                                         children: [
                                                           Text(
-                                                            "Price: \$${item.price}",
+                                                            item.name ?? "",
                                                             style: TextStyle(
                                                               color: LightThemeColors
-                                                                  .bodyTextSecondaryColor,
-                                                              fontSize: 14.sp,
+                                                                  .primaryColor,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              fontSize: 16.sp,
                                                             ),
                                                           ),
+                                                          SizedBox(
+                                                              height: 5.sp),
+                                                          item.description == ""
+                                                              ? SizedBox
+                                                                  .shrink()
+                                                              : Text(
+                                                                  item.description ??
+                                                                      ""),
+                                                          SizedBox(
+                                                              height: 8.sp),
+                                                          Row(
+                                                            children: [
+                                                              Text(
+                                                                "Price: ",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: LightThemeColors
+                                                                      .bodyTextSecondaryColor,
+                                                                  fontSize:
+                                                                      12.sp,
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                "\$${item.price}",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: theme
+                                                                      .primaryColor,
+                                                                  fontSize:
+                                                                      12.sp,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          SizedBox(
+                                                              height: 5.sp),
                                                           Text(
                                                             "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
                                                             style: TextStyle(
                                                               color: LightThemeColors
                                                                   .bodyTextSecondaryColor,
-                                                              fontSize: 14.sp,
+                                                              fontSize: 12.sp,
                                                             ),
                                                           ),
                                                         ],
                                                       ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                onTap: () {
-                                                  if (!controller
-                                                      .selectedItemList
-                                                      .contains(item)) {
-                                                    controller.selectedItemList
-                                                        .add(item);
-                                                    controller.amountControllers
-                                                        .add(TextEditingController(
-                                                            text: item.price
-                                                                .toString()));
-
-                                                    controller
-                                                        .descriptionControllers
-                                                        .add(TextEditingController(
-                                                            text:
-                                                                item.description ??
-                                                                    ""));
-                                                    controller
-                                                        .quantityControllers
-                                                        .add(
-                                                            TextEditingController(
-                                                                text: '1'));
-                                                  }
-                                                  controller.createTotal();
-                                                  Get.back();
-                                                },
-                                              );
-                                            }).toList(),
-                                          ),
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              )),
+                                        ),
+                                        SizedBox(height: 16.sp),
+                                        SizedBox(
+                                          height: 42.sp,
+                                          width: double.infinity,
+                                          child: PrimaryButton(
+                                              title: "Close",
+                                              onPressed: () {
+                                                Get.back();
+                                              },
+                                              inactive: false),
                                         ),
                                       ],
                                     ),
