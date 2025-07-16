@@ -19,7 +19,7 @@ class MyApp extends GetView {
       rebuildFactor: (old, data) => true,
       builder: (context, widget) {
         return GetMaterialApp(
-          title: "XinatorBMS FieldAgent",
+          title: "XinatorBMS Field Agent Pro",
           useInheritedMediaQuery: true,
           debugShowCheckedModeBanner: false,
 

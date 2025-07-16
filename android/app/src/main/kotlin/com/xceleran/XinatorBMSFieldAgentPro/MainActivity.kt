@@ -1,4 +1,4 @@
-package com.xceleran.fsmpro
+package com.xceleran.XinatorBMSFieldAgentPro
 
 import io.flutter.embedding.android.FlutterActivity
 
