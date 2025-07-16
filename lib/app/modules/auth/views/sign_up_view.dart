@@ -205,6 +205,7 @@ class SignUpView extends GetView<AuthController> {
                           padding: EdgeInsets.only(top: 5.sp, left: 15.sp),
                           child: Text(
                             controller.emailValidator.value,
+                            textScaler: TextScaler.linear(1.0),
                             style: TextStyle(
                               color: Colors.red,
                               fontSize: 12.sp,
@@ -321,6 +322,7 @@ class SignUpView extends GetView<AuthController> {
                         },
                         child: Text(
                           "Go here",
+                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(
                             color: LightThemeColors.primaryColor,
                             fontSize: MyFonts.body1TextSize,

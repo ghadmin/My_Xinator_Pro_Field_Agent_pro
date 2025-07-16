@@ -60,10 +60,12 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                       children: [
                         Text(
                           'Total Amount',
+                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(color: Colors.white70),
                         ),
                         Text(
                           '\$${double.parse(controller.total.value).toStringAsFixed(2)}',
+                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 26.sp,
@@ -73,10 +75,12 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                         SizedBox(height: 6.sp),
                         Text(
                           'Deposit Amount',
+                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(color: Colors.white70),
                         ),
                         Text(
                           '\$${double.parse(controller.depositAmount.value).toStringAsFixed(2)}',
+                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 26.sp,
@@ -86,6 +90,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                         SizedBox(height: 3.sp),
                         Text(
                           'Due by ${dateTimeConverter(inputTime: DateTime.now().toString(), outputFormat: "MM/dd/yyyy")}',
+                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(color: Colors.white70),
                         ),
                       ],

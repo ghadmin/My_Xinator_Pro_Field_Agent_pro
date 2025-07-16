@@ -44,6 +44,7 @@ class CustomDrawer extends StatelessWidget {
                       child: Text(
                         textAlign: TextAlign.center,
                         "${MySharedPref.getUserName()}",
+                        textScaler: TextScaler.linear(1.0),
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 16.sp,
@@ -170,6 +171,7 @@ class CustomDrawer extends StatelessWidget {
                       return AlertDialog(
                         title: const Text(
                           'Log out',
+                          textScaler: TextScaler.linear(1.0),
                           style: TextStyle(
                             color: Colors.red,
                           ),
@@ -190,6 +192,7 @@ class CustomDrawer extends StatelessWidget {
                             },
                             child: Text(
                               'Log out',
+                              textScaler: TextScaler.linear(1.0),
                               style: TextStyle(
                                 color: LightThemeColors.bodyTextSecondaryColor,
                               ),
@@ -224,6 +227,7 @@ class CustomDrawer extends StatelessWidget {
             padding: EdgeInsets.only(left: 15.sp),
             child: Text(
               text,
+              textScaler: TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w400,

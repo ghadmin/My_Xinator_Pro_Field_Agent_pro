@@ -42,6 +42,7 @@ class PrimaryButton extends StatelessWidget {
         ),
         child: Text(
           title,
+          textScaler: TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 16.sp,
             color: fontColor ?? Colors.white,
@@ -82,6 +83,7 @@ class SecondaryButton extends StatelessWidget {
         ),
         child: Text(
           title,
+          textScaler: TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w700,
@@ -131,6 +133,7 @@ class SecondaryButtonWithIcon extends StatelessWidget {
             SizedBox(width: 15.w),
             Text(
               title,
+              textScaler: TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w700,
@@ -178,6 +181,7 @@ class PrimaryButtonWithIcon extends StatelessWidget {
             SizedBox(width: 15.w),
             Text(
               title,
+              textScaler: TextScaler.linear(1.0),
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w700,

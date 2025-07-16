@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/modules/customer/views/customer_details_view.dart';
 
 import '../modules/appointment/bindings/appointment_binding.dart';
 import '../modules/appointment/views/appointment_details_view.dart';
@@ -10,7 +10,6 @@ import '../modules/auth/views/sign_up_view.dart';
 import '../modules/billAbleItem/bindings/billable_item_binding.dart';
 import '../modules/billAbleItem/views/billable_item_screen.dart';
 import '../modules/customer/bindings/customer_binding.dart';
-import '../modules/customer/views/customer_details_view.dart';
 import '../modules/customer/views/customer_view.dart';
 import '../modules/invoice/bindings/invoice_binding.dart';
 import '../modules/invoice/views/create_invoice_view.dart';

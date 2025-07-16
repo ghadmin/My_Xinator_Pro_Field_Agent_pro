@@ -21,6 +21,7 @@ class PaymentByACHView extends GetView<InvoiceController> {
             children: [
               Text(
                 'Thank you for selecting the payment method. Please select your desired credit or add a new',
+                textScaler: TextScaler.linear(1.0),
                 style: TextStyle(fontSize: 16),
               ),
               SizedBox(height: 16),
@@ -42,6 +43,7 @@ class PaymentByACHView extends GetView<InvoiceController> {
               SizedBox(height: 32),
               Text(
                 'Invoice Summary',
+                textScaler: TextScaler.linear(1.0),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
@@ -49,6 +51,7 @@ class PaymentByACHView extends GetView<InvoiceController> {
               SizedBox(height: 32),
               Text(
                 'Bank Account',
+                textScaler: TextScaler.linear(1.0),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),

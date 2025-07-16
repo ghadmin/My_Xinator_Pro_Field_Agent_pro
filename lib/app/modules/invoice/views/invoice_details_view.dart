@@ -708,6 +708,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     context: context,
                                     builder: (context) => AlertDialog(
                                       title: Text("Delete Item",
+                                          textScaler: TextScaler.linear(1.0),
                                           style: TextStyle(color: Colors.red)),
                                       content: Text(
                                           "Are you sure you want to delete this item?"),
@@ -1069,6 +1070,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                             value: "",
                             child: Text(
                               "NO TAX",
+                              textScaler: TextScaler.linear(1.0),
                               style: TextStyle(color: Colors.red),
                             ),
                           ),
@@ -1482,6 +1484,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 children: [
                                   Text(
                                     item.name ?? "",
+                                    textScaler: TextScaler.linear(1.0),
                                     style: TextStyle(
                                       color: LightThemeColors.primaryColor,
                                       fontWeight: FontWeight.w500,
@@ -1497,6 +1500,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     children: [
                                       Text(
                                         "Price: ",
+                                        textScaler: TextScaler.linear(1.0),
                                         style: TextStyle(
                                           color: LightThemeColors
                                               .bodyTextSecondaryColor,
@@ -1505,6 +1509,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                       ),
                                       Text(
                                         "\$${item.price}",
+                                        textScaler: TextScaler.linear(1.0),
                                         style: TextStyle(
                                           color: theme.primaryColor,
                                           fontSize: 12.sp,
@@ -1515,6 +1520,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   SizedBox(height: 5.sp),
                                   Text(
                                     "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
+                                    textScaler: TextScaler.linear(1.0),
                                     style: TextStyle(
                                       color: LightThemeColors
                                           .bodyTextSecondaryColor,

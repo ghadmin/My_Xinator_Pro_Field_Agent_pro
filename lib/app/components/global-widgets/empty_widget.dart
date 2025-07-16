@@ -27,6 +27,7 @@ class EmptyWidget extends StatelessWidget {
         Center(
           child: Text(
             Strings.empty.tr,
+            textScaler: TextScaler.linear(1.0),
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w500,
@@ -54,6 +55,7 @@ class EmptyWidget extends StatelessWidget {
         const SizedBox(height: 5),
         Text(
           Strings.refresh.tr,
+          textScaler: TextScaler.linear(1.0),
           style: TextStyle(
             color: theme.hintColor.withOpacity(.5),
           ),

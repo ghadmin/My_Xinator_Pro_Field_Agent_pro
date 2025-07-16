@@ -52,6 +52,7 @@ class DialogHelper {
                 SizedBox(height: 15.sp),
                 Text(
                   title,
+                  textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w400,
@@ -100,6 +101,7 @@ class DialogHelper {
                   children: [
                     Text(
                       "Download PDF?",
+                      textScaler: TextScaler.linear(1.0),
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 16.sp,
@@ -121,6 +123,7 @@ class DialogHelper {
                 SizedBox(height: 20.sp),
                 Text(
                   fileName,
+                  textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
                     color: LightThemeColors.bodyTextSecondaryColor,
                     fontWeight: FontWeight.w400,
@@ -130,6 +133,7 @@ class DialogHelper {
                 SizedBox(height: 8.sp),
                 Text(
                   "Download the PDF of this conversation?",
+                  textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
                     color: LightThemeColors.bodyTextSecondaryColor,
                     fontWeight: FontWeight.w400,

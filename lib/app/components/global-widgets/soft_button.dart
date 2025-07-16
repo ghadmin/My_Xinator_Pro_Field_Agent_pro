@@ -29,6 +29,7 @@ class SoftButton extends StatelessWidget {
         ),
         child: Text(
           title,
+          textScaler: TextScaler.linear(1.0),
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w400,

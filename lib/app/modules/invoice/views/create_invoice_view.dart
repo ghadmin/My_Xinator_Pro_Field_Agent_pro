@@ -812,6 +812,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                         children: [
                                                           Text(
                                                             item.name ?? "",
+                                                            textScaler:
+                                                                TextScaler
+                                                                    .linear(
+                                                                        1.0),
                                                             style: TextStyle(
                                                               color: LightThemeColors
                                                                   .primaryColor,
@@ -859,6 +863,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                               height: 5.sp),
                                                           Text(
                                                             "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
+                                                            textScaler:
+                                                                TextScaler
+                                                                    .linear(
+                                                                        1.0),
                                                             style: TextStyle(
                                                               color: LightThemeColors
                                                                   .bodyTextSecondaryColor,
@@ -1242,6 +1250,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                           value: "",
                                           child: Text(
                                             "NO TAX",
+                                            textScaler: TextScaler.linear(1.0),
                                             style: TextStyle(color: Colors.red),
                                           ),
                                         ),

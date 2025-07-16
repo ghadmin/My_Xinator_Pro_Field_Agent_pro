@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -66,28 +65,28 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                 children: [
                   GestureDetector(
                     onTap: () async {
-                      controller.showLoading();
-                      await controller.customerController.getCustomers();
-                      controller.customerController.businessName =
-                          controller.contactName;
-                      controller.customerController.title =
-                          controller.customerTitle;
-                      controller.customerController.address =
-                          controller.address;
-                      controller.customerController.phoneNumber =
-                          controller.phoneNumber;
-                      controller.customerController.mobileNumber =
-                          controller.mobileNumber;
-                      controller.customerController.email = controller.email;
+                      // controller.showLoading();
+                      // await controller.customerController.getCustomers();
+                      // controller.customerController.businessName =
+                      //     controller.contactName;
+                      // controller.customerController.title =
+                      //     controller.customerTitle;
+                      // controller.customerController.address =
+                      //     controller.address;
+                      // controller.customerController.phoneNumber =
+                      //     controller.phoneNumber;
+                      // controller.customerController.mobileNumber =
+                      //     controller.mobileNumber;
+                      // controller.customerController.email = controller.email;
 
-                      controller.hideLoading();
+                      // controller.hideLoading();
 
-                      Get.toNamed(Routes.CUSTOMER_DETAILS);
+                      // Get.toNamed(Routes.CUSTOMER_DETAILS);
                     },
                     child: Text(
                       controller.contactName,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        fontSize: 20.sp,
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
                         color: theme.primaryColor,
                       ),
@@ -113,52 +112,26 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                           child: Obx(
                             () => Column(
                               children: [
-                                Material(
-                                  shape: const CircleBorder(),
-                                  color: LightThemeColors.primaryColor,
-                                  elevation: 10,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(10),
-                                    child: Icon(
-                                        controller
-                                                    .settingController
-                                                    .selectedAppointmentsStatus
-                                                    .value
-                                                    ?.statusName ==
-                                                "Pending"
-                                            ? Icons.pending_actions
-                                            : controller
-                                                        .settingController
-                                                        .selectedAppointmentsStatus
-                                                        .value
-                                                        ?.statusName ==
-                                                    "Scheduled"
-                                                ? Icons.event
-                                                : controller
-                                                            .settingController
-                                                            .selectedAppointmentsStatus
-                                                            .value
-                                                            ?.statusName ==
-                                                        "Cancelled"
-                                                    ? Icons.cancel
-                                                    : controller
-                                                                .settingController
-                                                                .selectedAppointmentsStatus
-                                                                .value
-                                                                ?.statusName ==
-                                                            "Closed"
-                                                        ? Icons.close
-                                                        : controller
-                                                                    .settingController
-                                                                    .selectedAppointmentsStatus
-                                                                    .value
-                                                                    ?.statusName ==
-                                                                "Installation In Progress"
-                                                            ? Icons.play_arrow
-                                                            : Icons
-                                                                .check_circle,
-                                        color: Colors.white,
-                                        size: 28.sp),
+                                SizedBox(
+                                  height: 30.h,
+                                  width: 30.w,
+                                  child: Material(
+                                    shape: const CircleBorder(),
+                                    color: LightThemeColors.primaryColor
+                                        .withValues(alpha: .5),
+                                    elevation: 6,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(
+                                          6), // Reduced padding
+                                      child: CircleAvatar(
+                                        backgroundColor: LightThemeColors
+                                            .primaryColor
+                                            .withValues(alpha: .5),
+                                        foregroundColor: LightThemeColors
+                                            .primaryColor
+                                            .withValues(alpha: .5),
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 SizedBox(
@@ -174,10 +147,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   maxLines: 2,
                                   textAlign: TextAlign.center,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black,
-                                      fontSize: 13),
+                                      fontSize: 10.sp),
                                 ),
                                 SizedBox(
                                   height: 10.h,
@@ -189,40 +162,32 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   child: Obx(
                                     () => Column(
                                       children: [
-                                        Material(
-                                          shape: const CircleBorder(),
-                                          color: LightThemeColors.primaryColor,
-                                          elevation: 10,
-                                          child: Padding(
-                                            padding: EdgeInsets.all(10),
-                                            child: Icon(
-                                                controller
-                                                            .settingController
-                                                            .selectedTicket
-                                                            .value
-                                                            ?.statusName ==
-                                                        "On Hold"
-                                                    ? Icons.pause_circle
-                                                    : controller
-                                                                .settingController
-                                                                .selectedTicket
-                                                                .value
-                                                                ?.statusName ==
-                                                            "Parts on Order"
-                                                        ? Icons.inventory_2
-                                                        : controller
-                                                                    .settingController
-                                                                    .selectedTicket
-                                                                    .value
-                                                                    ?.statusName ==
-                                                                "Installation In Progress"
-                                                            ? Icons.play_arrow
-                                                            : Icons
-                                                                .check_circle,
-                                                color: Colors.white,
-                                                size: 28.sp),
-                                          ),
-                                        ),
+                                        SizedBox(
+                                            height: 30.h,
+                                            width: 30.w,
+                                            child: Material(
+                                              shape: const CircleBorder(),
+                                              color: LightThemeColors
+                                                  .primaryColor
+                                                  .withValues(alpha: .5),
+                                              elevation: 6,
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                    6), // Reduced padding
+                                                child: CircleAvatar(
+                                                  backgroundColor:
+                                                      LightThemeColors
+                                                          .primaryColor
+                                                          .withValues(
+                                                              alpha: .5),
+                                                  foregroundColor:
+                                                      LightThemeColors
+                                                          .primaryColor
+                                                          .withValues(
+                                                              alpha: .5),
+                                                ),
+                                              ),
+                                            )),
                                         SizedBox(
                                           height: 10.h,
                                         ),
@@ -249,10 +214,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           maxLines: 2,
                                           textAlign: TextAlign.center,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
+                                          textScaler: TextScaler.linear(1.0),
+                                          style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               color: Colors.black,
-                                              fontSize: 13),
+                                              fontSize: 10.sp),
                                         )
                                       ],
                                     ),
@@ -275,6 +241,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                               Row(
                                 children: [
                                   Icon(
+                                    size: 15.sp,
                                     Icons.location_on_outlined,
                                     color: LightThemeColors.primaryColor,
                                   ),
@@ -291,7 +258,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         controller.address,
                                         style:
                                             theme.textTheme.bodyLarge?.copyWith(
-                                          fontSize: 14.sp,
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.w500,
                                         ),
                                         textAlign: TextAlign.start,
@@ -315,6 +282,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 child: Row(
                                   children: [
                                     Icon(
+                                      size: 15.sp,
                                       Icons.phone_android_rounded,
                                       color: LightThemeColors.primaryColor,
                                     ),
@@ -328,7 +296,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             : controller.mobileNumber,
                                         style:
                                             theme.textTheme.bodyLarge?.copyWith(
-                                          fontSize: 14.sp,
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -349,6 +317,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 child: Row(
                                   children: [
                                     Icon(
+                                      size: 15.sp,
                                       Icons.call,
                                       color: LightThemeColors.primaryColor,
                                     ),
@@ -362,7 +331,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             : controller.phoneNumber,
                                         style:
                                             theme.textTheme.bodyLarge?.copyWith(
-                                          fontSize: 14.sp,
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -384,6 +353,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   children: [
                                     Icon(
                                       Icons.email,
+                                      size: 15.sp,
                                       color: LightThemeColors.primaryColor,
                                     ),
                                     SizedBox(
@@ -397,7 +367,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         maxLines: 2,
                                         style:
                                             theme.textTheme.bodyLarge?.copyWith(
-                                          fontSize: 14.sp,
+                                          fontSize: 12.sp,
                                           overflow: TextOverflow.visible,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -438,7 +408,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
-                              fontSize: 13.sp),
+                              fontSize: 10.sp),
                         ),
                         Text(
                           "Notes",
@@ -448,7 +418,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
-                              fontSize: 13.sp),
+                              fontSize: 10.sp),
                         ),
                         Text(
                           "Estimate/Invoice",
@@ -458,7 +428,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
-                              fontSize: 13.sp),
+                              fontSize: 10.sp),
                         ),
                       ],
                     ),
@@ -484,14 +454,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Request Date",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.requestDate,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -502,14 +472,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Start Date",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.startDate,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -520,14 +490,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "End Date",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.endDate,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -538,14 +508,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Time Slot",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.timeSlot,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -556,14 +526,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Service Type",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.serviceType,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -574,14 +544,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             "Resource",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           trailing: Text(
                             controller.resource,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              fontSize: 14.sp,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -598,43 +568,43 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Office Notes:",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text("Do not forget to bring the required tools."),
-                        SizedBox(height: 10.h),
+                        // Text(
+                        //   "Office Notes:",
+                        //   style: theme.textTheme.bodyMedium?.copyWith(
+                        //     fontWeight: FontWeight.bold,
+                        //   ),
+                        // ),
+                        // Text("Do not forget to bring the required tools."),
+                        // SizedBox(height: 10.h),
 
-                        // --- 2. History Notes ---
+                        // // --- 2. History Notes ---
 
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Previous Notes:",
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            ...controller.historyNotes.map(
-                              (note) => Padding(
-                                padding: EdgeInsets.symmetric(vertical: 4.h),
-                                child: Text(
-                                  "${"07/09/2025"} • $note",
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 10.h),
-                          ],
-                        ),
+                        // Column(
+                        //   crossAxisAlignment: CrossAxisAlignment.start,
+                        //   children: [
+                        //     Text(
+                        //       "Previous Notes:",
+                        //       style: theme.textTheme.bodyMedium?.copyWith(
+                        //         fontWeight: FontWeight.bold,
+                        //       ),
+                        //     ),
+                        //     ...controller.historyNotes.map(
+                        //       (note) => Padding(
+                        //         padding: EdgeInsets.symmetric(vertical: 4.h),
+                        //         child: Text(
+                        //           "${"07/09/2025"} • $note",
+                        //           style: theme.textTheme.bodySmall,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //     SizedBox(height: 10.h),
+                        //   ],
+                        // ),
                         Text(
                           "Notes",
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: LightThemeColors.hintTextColor,
-                            fontSize: 14.sp,
+                            fontSize: 10.sp,
                             fontWeight: FontWeight.w500,
                           ),
                           textAlign: TextAlign.start,
@@ -1030,7 +1000,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ?.copyWith(
                                               color: LightThemeColors
                                                   .hintTextColor,
-                                              fontSize: 14.sp,
+                                              fontSize: 10.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1054,7 +1024,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               proposal.number ?? "",
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                fontSize: 14.sp,
+                                                fontSize: 10.sp,
                                                 fontWeight: FontWeight.w500,
                                                 color: proposal.type ==
                                                             "Estimate" &&
@@ -1074,7 +1044,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ?.copyWith(
                                               color: LightThemeColors
                                                   .hintTextColor,
-                                              fontSize: 14.sp,
+                                              fontSize: 10.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1091,7 +1061,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   style: theme
                                                       .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                    fontSize: 14.sp,
+                                                    fontSize: 10.sp,
                                                     fontWeight: FontWeight.w500,
                                                   ),
                                                 )
@@ -1105,7 +1075,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ?.copyWith(
                                               color: LightThemeColors
                                                   .hintTextColor,
-                                              fontSize: 14.sp,
+                                              fontSize: 10.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1113,7 +1083,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              fontSize: 14.sp,
+                                              fontSize: 10.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1126,7 +1096,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ?.copyWith(
                                               color: LightThemeColors
                                                   .hintTextColor,
-                                              fontSize: 14.sp,
+                                              fontSize: 10.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1134,7 +1104,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              fontSize: 14.sp,
+                                              fontSize: 10.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1204,148 +1174,180 @@ showDialogTicketStatus(BuildContext context, AppointmentController controller) {
   showDialog(
     barrierDismissible: true,
     context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.6),
+    barrierColor: Colors.black.withOpacity(0.8),
     builder: (context) => Dialog(
       insetPadding: const EdgeInsets.all(16),
       backgroundColor: Colors.transparent,
-      child: GestureDetector(
-        onTap: () {
-          Get.back();
-        },
-        child: SizedBox.expand(
-          child: Center(
-            child: GridView.builder(
-              shrinkWrap: true,
-              itemCount: controller.settingController.tickets.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                childAspectRatio: .8,
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                onPressed: () {
+                  Get.close(1);
+                },
+                icon: Icon(Icons.close, color: Colors.redAccent, size: 32),
               ),
-              itemBuilder: (context, index) {
-                final status = controller.settingController.tickets[index];
-                return GestureDetector(
-                  onTap: () async {
-                    controller.settingController.selectedTicket(status);
-                    await controller.updateAppointment();
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.green.shade100,
-                        child: Icon(
-                          status.statusName == "On Hold"
-                              ? Icons.pause_circle
-                              : status.statusName == "Parts on Order"
-                                  ? Icons.inventory_2
-                                  : status.statusName ==
-                                          "Installation In Progress"
-                                      ? Icons.play_arrow
-                                      : Icons.check_circle,
-                          size: 28,
-                          color: Colors.green.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          status.statusName ?? "",
-                          maxLines: 2,
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
             ),
-          ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 300, // control height
+              child: GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: controller.settingController.tickets.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  childAspectRatio: .8,
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemBuilder: (context, index) {
+                  final status = controller.settingController.tickets[index];
+                  return GestureDetector(
+                    onTap: () async {
+                      controller.settingController.selectedTicket(status);
+                      await controller.updateAppointment();
+                      Navigator.of(context).pop(); // close dialog
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Material(
+                          shape: const CircleBorder(),
+                          color: LightThemeColors.yellowColor.withOpacity(0.5),
+                          elevation: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: LightThemeColors.primaryColor
+                                  .withOpacity(0.5),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            status.statusName ?? "",
+                            maxLines: 2,
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13.sp,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     ),
   );
 }
 
-showDialogScheduled(BuildContext context, AppointmentController controller) {
+void showDialogScheduled(
+    BuildContext context, AppointmentController controller) {
   showDialog(
     barrierDismissible: true,
     context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.6),
+    barrierColor: Colors.black.withOpacity(0.7),
     builder: (context) => Dialog(
       insetPadding: const EdgeInsets.all(16),
       backgroundColor: Colors.transparent,
-      child: GestureDetector(
-        onTap: () {
-          Get.back();
-        },
-        child: SizedBox.expand(
-          child: Center(
-            child: GridView.builder(
-              shrinkWrap: true,
-              itemCount: controller.settingController.appointmentsStatus.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                childAspectRatio: .8,
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                onPressed: () {
+                  Get.close(1);
+                },
+                icon: Icon(Icons.close, color: Colors.redAccent, size: 32),
               ),
-              itemBuilder: (context, index) {
-                final status =
-                    controller.settingController.appointmentsStatus[index];
-                return GestureDetector(
-                  onTap: () async {
-                    controller.settingController
-                        .selectedAppointmentsStatus(status);
-                    await controller.updateAppointment();
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.green.shade100,
-                        child: Icon(
-                          status.statusName == "Pending"
-                              ? Icons.pending_actions
-                              : status.statusName == "Scheduled"
-                                  ? Icons.event
-                                  : status.statusName == "Cancelled"
-                                      ? Icons.cancel
-                                      : status.statusName == "Closed"
-                                          ? Icons.close
-                                          : status.statusName ==
-                                                  "Installation In Progress"
-                                              ? Icons.play_arrow
-                                              : Icons.check_circle,
-                          size: 28,
-                          color: Colors.green.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          status.statusName ?? "",
-                          maxLines: 2,
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
             ),
-          ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 300, // Limit height of grid
+              child: GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount:
+                    controller.settingController.appointmentsStatus.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  childAspectRatio: .8,
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemBuilder: (context, index) {
+                  final status =
+                      controller.settingController.appointmentsStatus[index];
+                  return GestureDetector(
+                    onTap: () async {
+                      controller.settingController
+                          .selectedAppointmentsStatus(status);
+                      await controller.updateAppointment();
+                      Navigator.of(context).pop(); // Close dialog
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Material(
+                          shape: const CircleBorder(),
+                          color: LightThemeColors.yellowColor.withOpacity(0.5),
+                          elevation: 6,
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: LightThemeColors.primaryColor
+                                  .withOpacity(0.5),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            status.statusName ?? "",
+                            maxLines: 2,
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     ),

@@ -100,6 +100,7 @@ class MapViewTab extends StatelessWidget {
           // Row 4: Dropdown
           const Text(
             "Work Order Status",
+            textScaler: TextScaler.linear(1.0),
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),

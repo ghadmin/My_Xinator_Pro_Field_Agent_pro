@@ -14,6 +14,7 @@ class BnplView extends GetView {
       body: const Center(
         child: Text(
           'BnplView is working',
+          textScaler: TextScaler.linear(1.0),
           style: TextStyle(fontSize: 20),
         ),
       ),

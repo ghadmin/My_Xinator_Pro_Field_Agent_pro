@@ -33,6 +33,7 @@ class LightThemeColors {
   static const Color headlinesTextColor = appBlackColor;
   static const Color captionTextColor = Colors.grey;
   static const Color hintTextColor = Color(0xff686868);
+  static const Color yellowColor = Colors.yellow;
 
   //chip
   static const Color chipBackground = primaryColor;
