@@ -1082,7 +1082,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ?.copyWith(
                                               color: LightThemeColors
                                                   .hintTextColor,
-                                              fontSize: 10.sp,
+                                              fontSize: 14.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1126,7 +1126,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ?.copyWith(
                                               color: LightThemeColors
                                                   .hintTextColor,
-                                              fontSize: 10.sp,
+                                              fontSize: 14.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1143,7 +1143,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   style: theme
                                                       .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                    fontSize: 10.sp,
+                                                    fontSize: 14.sp,
                                                     fontWeight: FontWeight.w500,
                                                   ),
                                                 )
@@ -1157,7 +1157,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ?.copyWith(
                                               color: LightThemeColors
                                                   .hintTextColor,
-                                              fontSize: 10.sp,
+                                              fontSize: 14.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1165,7 +1165,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              fontSize: 10.sp,
+                                              fontSize: 14.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1178,7 +1178,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ?.copyWith(
                                               color: LightThemeColors
                                                   .hintTextColor,
-                                              fontSize: 10.sp,
+                                              fontSize: 14.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1186,7 +1186,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              fontSize: 10.sp,
+                                              fontSize: 14.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
