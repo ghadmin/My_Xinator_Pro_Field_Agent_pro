@@ -229,38 +229,36 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 child: CircleAvatar(
                                                   backgroundColor: controller
                                                               .settingController
-                                                              .selectedAppointmentsStatus
+                                                              .selectedTicket
                                                               .value
-                                                              ?.statusName ==
+                                                              ?.statusName!
+                                                              .toLowerCase() ==
                                                           "Installation in Progress"
+                                                              .toLowerCase()
                                                       ? Color(0xffE98862)
                                                       : controller
                                                                   .settingController
-                                                                  .selectedAppointmentsStatus
+                                                                  .selectedTicket
                                                                   .value
-                                                                  ?.statusName ==
+                                                                  ?.statusName!
+                                                                  .toLowerCase() ==
                                                               "On Hold"
+                                                                  .toLowerCase()
                                                           ? Color.fromARGB(
                                                               255, 243, 18, 18)
                                                           : controller
                                                                       .settingController
-                                                                      .selectedAppointmentsStatus
+                                                                      .selectedTicket
                                                                       .value
-                                                                      ?.statusName ==
+                                                                      ?.statusName!
+                                                                      .toLowerCase() ==
                                                                   "Parts on Order"
+                                                                      .toLowerCase()
                                                               ? Color.fromARGB(
-                                                                  255,
-                                                                  21,
-                                                                  234,
-                                                                  242)
-                                                              : controller
-                                                                          .settingController
-                                                                          .selectedAppointmentsStatus
-                                                                          .value
-                                                                          ?.statusName ==
-                                                                      "Completed"
-                                                                  ? Color(
-                                                                      0xff0CBC8B)
+                                                                  255, 21, 234, 242)
+                                                              : controller.settingController.selectedTicket.value?.statusName!.toLowerCase() ==
+                                                                      "Completed".toLowerCase()
+                                                                  ? Color(0xff0CBC8B)
                                                                   : Colors.red,
                                                   foregroundColor:
                                                       LightThemeColors
@@ -1082,7 +1080,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ?.copyWith(
                                               color: LightThemeColors
                                                   .hintTextColor,
-                                              fontSize: 14.sp,
+                                              fontSize: 12.sp,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -1106,7 +1104,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               proposal.number ?? "",
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                fontSize: 14.sp,
+                                                fontSize: 12.sp,
                                                 fontWeight: FontWeight.w500,
                                                 color: proposal.type ==
                                                             "Estimate" &&
@@ -1309,14 +1307,18 @@ showDialogTicketStatus(BuildContext context, AppointmentController controller) {
                             padding: const EdgeInsets.all(6),
                             child: CircleAvatar(
                               radius: 20,
-                              backgroundColor: status.statusName ==
-                                      "Installation in Progress"
+                              backgroundColor: status.statusName!
+                                          .toLowerCase() ==
+                                      "Installation in Progress".toLowerCase()
                                   ? Color(0xffE98862)
-                                  : status.statusName == "On Hold"
+                                  : status.statusName!.toLowerCase() ==
+                                          "On Hold".toLowerCase()
                                       ? Color.fromARGB(255, 243, 18, 18)
-                                      : status.statusName == "Parts on Order"
+                                      : status.statusName!.toLowerCase() ==
+                                              "Parts on Order".toLowerCase()
                                           ? Color.fromARGB(255, 21, 234, 242)
-                                          : status.statusName == "Completed"
+                                          : status.statusName! ==
+                                                  "Completed".toLowerCase()
                                               ? Color(0xff0CBC8B)
                                               : Colors.red,
                             ),
