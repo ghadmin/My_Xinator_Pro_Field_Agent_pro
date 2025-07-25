@@ -27,6 +27,7 @@ abstract class Routes {
   static const PAYMENT_BY_BANK_TRANSFER = _Paths.PAYMENT_BY_BANK_TRANSFER;
   static const MANUAL_PAYMENT = _Paths.MANUAL_PAYMENT;
   static const BILLABLE_ITEMS = _Paths.BILLABLE_ITEMS;
+  static const SIGNATURE = _Paths.SIGNATURE;
 }
 
 abstract class _Paths {
@@ -36,6 +37,7 @@ abstract class _Paths {
   static const LOGIN = '/login';
   static const SIGNUP = '/signup';
   static const APPOINTMENT = '/appointment';
+  static const SIGNATURE = '/signature';
   static const APPOINTMENT_DETAILS = '/appointment_list';
   static const BILLABLE_ITEMS = '/billable_items';
   static const SETTINGS = '/settings';

@@ -2,9 +2,11 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 import 'api_header.dart';
@@ -12,10 +14,10 @@ import 'api_header.dart';
 class DioClient {
   static const int TIME_OUT_DURATION = 20;
 
-  final _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: TIME_OUT_DURATION),
-    receiveTimeout: const Duration(seconds: TIME_OUT_DURATION),
-    sendTimeout: const Duration(seconds: TIME_OUT_DURATION),
+  final Dio _dio = Dio(BaseOptions(
+    connectTimeout: Duration(seconds: TIME_OUT_DURATION),
+    receiveTimeout: Duration(seconds: TIME_OUT_DURATION),
+    sendTimeout: Duration(seconds: TIME_OUT_DURATION),
   ))
     ..interceptors.add(PrettyDioLogger(
       requestHeader: false,
@@ -26,6 +28,23 @@ class DioClient {
       compact: true,
       maxWidth: 90,
     ));
+
+  DioClient() {
+    // Bypass certificate verification - DEV ONLY
+    bool isInDebug = const bool.fromEnvironment('dart.vm.product') == false;
+
+    if (isInDebug) {
+      (_dio.httpClientAdapter as IOHttpClientAdapter).onHttpClientCreate =
+          (HttpClient client) {
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) {
+          print("⚠️ Accepting bad certificate from: $host");
+          return true; // Accept all certificates (development only)
+        };
+        return client;
+      };
+    }
+  }
 
   //GET
 
@@ -38,7 +57,9 @@ class DioClient {
           options: Options(headers: {}), queryParameters: params);
 
       return response.data;
-    } catch (e) {
+    } catch (e, s) {
+      log("message: $e", name: "AuthController");
+      log("stack: $s", name: "AuthController");
       rethrow;
     }
   }
@@ -106,8 +127,8 @@ class DioClient {
     var formData = FormData.fromMap(body);
     for (var files in docFileList!) {
       filepath = files.path;
-      formData.files.addAll(
-          [MapEntry(key, await MultipartFile.fromFile(filepath))]);
+      formData.files
+          .addAll([MapEntry(key, await MultipartFile.fromFile(filepath))]);
     }
 
     try {
@@ -123,12 +144,13 @@ class DioClient {
 
   //MULTIPART FOR SINGLE FILE UPLOAD
 
-  Future<dynamic> multipartSingleFile(
-      {required String url,
-      Map<String, dynamic>? params,
-      required Map<String, dynamic> body,
-      String? filepath,
-      required String key,}) async {
+  Future<dynamic> multipartSingleFile({
+    required String url,
+    Map<String, dynamic>? params,
+    required Map<String, dynamic> body,
+    String? filepath,
+    required String key,
+  }) async {
     var formData = FormData.fromMap(body);
     if (filepath != null) {
       formData.files.add(MapEntry(key, await MultipartFile.fromFile(filepath)));

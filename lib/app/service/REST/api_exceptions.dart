@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 
@@ -7,6 +9,7 @@ class DioExceptions implements Exception {
   String message = "";
 
   DioExceptions.fromDioError(DioException dioException) {
+    log("message: ${dioException.message}", name: "DioExceptions");
     switch (dioException.type) {
       case DioExceptionType.cancel:
         message = Strings.requestCanceled.tr;

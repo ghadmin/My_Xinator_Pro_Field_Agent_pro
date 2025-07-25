@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -20,6 +22,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight:
+            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
         title: Text('Create ${controller.selectedCreateType.value}'),
         actions: [
           Obx(() {

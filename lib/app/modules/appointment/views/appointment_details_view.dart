@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
+import 'package:xinator_fsm_pro/app/modules/settings/controllers/settings_controller.dart';
+import 'package:xinator_fsm_pro/app/modules/settings/models/appointment_status_setting.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/date_converter.dart';
@@ -46,7 +48,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: Text("Appointment Details"),
+        toolbarHeight:
+            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
+        title: Text(
+          "Appointment Details",
+          textScaler: TextScaler.linear(1.0),
+        ),
         centerTitle: false,
       ),
       body: Padding(
@@ -258,7 +265,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   255, 21, 234, 242)
                                                               : controller.settingController.selectedTicket.value?.statusName!.toLowerCase() ==
                                                                       "Completed".toLowerCase()
-                                                                  ? Color(0xff0CBC8B)
+                                                                  ? Color.fromARGB(255, 11, 197, 145)
                                                                   : Colors.red,
                                                   foregroundColor:
                                                       LightThemeColors
@@ -1250,208 +1257,250 @@ Future<void> openMapWithRoute(String destinationAddress) async {
   }
 }
 
-showDialogTicketStatus(BuildContext context, AppointmentController controller) {
+void showDialogTicketStatus(
+    BuildContext context, AppointmentController controller) {
+  final tickets = controller.settingController.tickets;
+
   showDialog(
     barrierDismissible: true,
     context: context,
-    barrierColor: Colors.black.withOpacity(0.8),
+    barrierColor: Colors.black.withOpacity(0.7),
     builder: (context) => Dialog(
-      insetPadding: const EdgeInsets.all(16),
+      insetPadding: EdgeInsets.all(16.w),
       backgroundColor: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                onPressed: () {
-                  Get.close(1);
-                },
-                icon: Icon(Icons.close, color: Colors.redAccent, size: 32),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 300, // control height
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: controller.settingController.tickets.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  childAspectRatio: .8,
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
+      child: Material(
+        borderRadius: BorderRadius.circular(12.r),
+
+        color: Colors.white.withValues(
+            alpha: 0.05), // Make sure background is NOT fully transparent
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque, // Ensures touch detection
+                  onTap: () {
+                    Navigator.of(context).pop(); // or Get.back();
+                  },
+                  child:
+                      Icon(Icons.close, color: Colors.redAccent, size: 28.sp),
                 ),
-                itemBuilder: (context, index) {
-                  final status = controller.settingController.tickets[index];
-                  return GestureDetector(
-                    onTap: () async {
-                      controller.settingController.selectedTicket(status);
-                      await controller.updateAppointment();
-                    },
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Material(
-                          shape: const CircleBorder(),
-                          color: LightThemeColors.yellowColor.withOpacity(0.5),
-                          elevation: 6,
-                          child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: status.statusName!
-                                          .toLowerCase() ==
-                                      "Installation in Progress".toLowerCase()
-                                  ? Color(0xffE98862)
-                                  : status.statusName!.toLowerCase() ==
-                                          "On Hold".toLowerCase()
-                                      ? Color.fromARGB(255, 243, 18, 18)
-                                      : status.statusName!.toLowerCase() ==
-                                              "Parts on Order".toLowerCase()
-                                          ? Color.fromARGB(255, 21, 234, 242)
-                                          : status.statusName! ==
-                                                  "Completed".toLowerCase()
-                                              ? Color(0xff0CBC8B)
-                                              : Colors.red,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        SizedBox(
-                          width: 80,
-                          child: Text(
-                            status.statusName ?? "",
-                            maxLines: 2,
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13.sp,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
               ),
-            ),
-          ],
+              SizedBox(height: 12.h),
+              ..._buildTicketRows(tickets, controller, context),
+            ],
+          ),
         ),
       ),
     ),
   );
 }
 
+Color _getTicketColor(String? name) {
+  final status = name?.toLowerCase() ?? "";
+  if (status == "installation in progress") {
+    return const Color(0xffE98862);
+  } else if (status == "on hold") {
+    return const Color.fromARGB(255, 243, 18, 18);
+  } else if (status == "parts on order") {
+    return const Color.fromARGB(255, 21, 234, 242);
+  } else if (status == "completed") {
+    return const Color(0xff0CBC8B);
+  }
+  return Colors.red;
+}
+
+List<Widget> _buildTicketRows(
+  List<dynamic> tickets,
+  AppointmentController controller,
+  BuildContext context,
+) {
+  List<Widget> rows = [];
+
+  for (int i = 0; i < tickets.length; i += 3) {
+    final chunk = tickets.skip(i).take(3).toList();
+
+    rows.add(
+      Padding(
+        padding: EdgeInsets.only(bottom: 12.h),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: chunk.map((status) {
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w),
+                child: GestureDetector(
+                  onTap: () async {
+                    controller.settingController.selectedTicket(status);
+                    await controller.updateAppointment();
+                    Get.back();
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Material(
+                        shape: const CircleBorder(),
+                        color: LightThemeColors.yellowColor.withOpacity(0.5),
+                        elevation: 6,
+                        child: Padding(
+                          padding: EdgeInsets.all(6.w),
+                          child: CircleAvatar(
+                            radius: 22.r,
+                            backgroundColor: _getTicketColor(status.statusName),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      SizedBox(
+                        width: 80.w,
+                        child: Text(
+                          status.statusName ?? "",
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13.sp,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  return rows;
+}
+
 void showDialogScheduled(
-    BuildContext context, AppointmentController controller) {
+  BuildContext context,
+  AppointmentController controller,
+) {
   showDialog(
     barrierDismissible: true,
     context: context,
-    barrierColor: Colors.black.withOpacity(0.7),
+    barrierColor: Colors.black.withValues(alpha: 0.7),
     builder: (context) => Dialog(
-      insetPadding: const EdgeInsets.all(16),
+      insetPadding: EdgeInsets.all(16.sp),
       backgroundColor: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                onPressed: () {
-                  Get.close(1);
-                },
-                icon: Icon(Icons.close, color: Colors.redAccent, size: 32),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 300, // Limit height of grid
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount:
-                    controller.settingController.appointmentsStatus.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  childAspectRatio: .8,
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
+      child: Material(
+        // <-- Ensures proper hit detection
+        borderRadius: BorderRadius.circular(12.r),
+        color: Colors.white.withValues(alpha: 0.05), // Slight opacity
+        child: Padding(
+          padding: EdgeInsets.all(16.sp),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop(); // or Get.back()
+                  },
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.redAccent,
+                    size: 32.sp,
+                  ),
                 ),
-                itemBuilder: (context, index) {
-                  final status =
-                      controller.settingController.appointmentsStatus[index];
-                  return GestureDetector(
-                    onTap: () async {
-                      controller.settingController
-                          .selectedAppointmentsStatus(status);
-                      await controller.updateAppointment();
-                      Navigator.of(context).pop(); // Close dialog
-                    },
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Material(
-                          shape: const CircleBorder(),
-                          color: LightThemeColors.yellowColor.withOpacity(0.5),
-                          elevation: 6,
-                          child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: status.statusName ==
-                                      "Installation In Progress"
-                                  ? Color(0xffE98862)
-                                  : status.statusName ==
-                                          "Installation in Progress"
-                                      ? Color(0xffE98862)
-                                      : status.statusName == "Scheduled"
-                                          ? Color(0xff2E888B)
-                                          : status.statusName == "Cancelled"
-                                              ? Colors.red
-                                              : Color(0xff0CBC8B),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        SizedBox(
-                          width: 80,
-                          child: Text(
-                            status.statusName ?? "",
-                            maxLines: 2,
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
               ),
-            ),
-          ],
+              SizedBox(height: 12.h),
+              buildStatusGrid(
+                context,
+                controller.settingController,
+                controller,
+              ),
+            ],
+          ),
         ),
       ),
     ),
   );
+}
+
+Widget buildStatusGrid(BuildContext context, SettingsController controller,
+    AppointmentController appointmentController) {
+  final rows = <Widget>[];
+
+  for (int i = 0; i < controller.appointmentsStatus.length; i += 3) {
+    final rowItems = controller.appointmentsStatus.skip(i).take(3).toList();
+
+    rows.add(
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: rowItems.map((status) {
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(4.0.sp),
+              child: GestureDetector(
+                onTap: () async {
+                  controller.selectedAppointmentsStatus(status);
+                  await appointmentController.updateAppointment();
+                  Get.back();
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Material(
+                      shape: CircleBorder(),
+                      color:
+                          LightThemeColors.yellowColor.withValues(alpha: 0.5),
+                      elevation: 6,
+                      child: Padding(
+                        padding: EdgeInsets.all(6.sp),
+                        child: CircleAvatar(
+                          radius: 20.r,
+                          backgroundColor: status.statusName ==
+                                  "Installation In Progress"
+                              ? Color(0xffE98862)
+                              : status.statusName == "Installation in Progress"
+                                  ? Color(0xffE98862)
+                                  : status.statusName == "Scheduled"
+                                      ? Color(0xff2E888B)
+                                      : status.statusName == "Cancelled"
+                                          ? Colors.red
+                                          : Color(0xff0CBC8B),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 6.h),
+                    SizedBox(
+                      width: 80.w,
+                      child: Text(
+                        status.statusName ?? "",
+                        maxLines: 2,
+                        textScaler: TextScaler.linear(1.0),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  return Column(children: rows);
 }
 
 // import 'package:dropdown_button2/dropdown_button2.dart';

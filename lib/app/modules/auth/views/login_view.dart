@@ -960,154 +960,152 @@ class LoginView extends GetView<AuthController> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.sp),
-            child: Obx(
-              () => Column(
-                children: [
-                  SizedBox(
-                    height: 20.h,
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Login",
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        color: LightThemeColors.bodyTextColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 40.sp),
-
-                  Image.asset(
-                    AppImages.kFSMProIcon,
-                    width: 180.sp,
-                    height: 100.sp,
-                    fit: BoxFit.contain,
-                  ),
-                  SizedBox(height: 40.sp),
-
-                  // Email Field
-                  TextFormField(
-                    controller: controller.emailLoginTextController,
-                    focusNode: controller.emailFocusNode,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    cursorColor: LightThemeColors.primaryColor,
-                    onTapOutside: (_) =>
-                        FocusManager.instance.primaryFocus?.unfocus(),
-                    onEditingComplete: () => FocusScope.of(context)
-                        .requestFocus(controller.passwordFocusNode),
-                    decoration: InputDecoration(
-                      hintText: "Email",
-                      prefixIcon: Icon(Remix.mail_line),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                    ),
-                  ),
-
-                  // Validation Message
-                  if (controller.emailValidator.value.isNotEmpty)
-                    Padding(
-                      padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          controller.emailValidator.value,
-                          style: TextStyle(color: Colors.red, fontSize: 12.sp),
+        child: Stack(
+          children: [
+            // Scrollable Form Content
+            Obx(
+              () => SingleChildScrollView(
+                reverse: true, // Helps push focused field above keyboard
+                padding: EdgeInsets.symmetric(horizontal: 20.sp),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(height: 20.h),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Login",
+                        style: theme.textTheme.headlineLarge?.copyWith(
+                          color: LightThemeColors.bodyTextColor,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-
-                  SizedBox(height: 20.h),
-
-                  /// Password Field (next one)
-                  TextFormField(
-                    controller: controller.passwordLoginTextController,
-                    focusNode: controller.passwordFocusNode,
-                    obscureText:
-                        controller.isPasswordVisible.value ? true : false,
-                    textInputAction: TextInputAction.done,
-                    decoration: InputDecoration(
-                      hintText: "Password",
-                      prefixIcon: Icon(Remix.lock_line),
-                      suffix: GestureDetector(
-                        onTap: controller.togglePasswordVisibility,
-                        child: Icon(
-                          controller.isPasswordVisible.value
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          size: 18.sp,
-                        ),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 15.sp),
-
-                  if (controller.passwordValidator.value.isNotEmpty)
-                    Padding(
-                      padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          controller.passwordValidator.value,
-                          style: TextStyle(color: Colors.red, fontSize: 12.sp),
-                        ),
-                      ),
-                    ),
-
-                  SizedBox(height: 25.sp),
-
-                  // Sign In Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 45.sp,
-                    child: PrimaryButton(
-                      title: "Sign in",
-                      onPressed: () async {
-                        final email = controller.emailLoginTextController.text;
-                        final password =
-                            controller.passwordLoginTextController.text;
-
-                        if (email.isNotEmpty && password.length > 5) {
-                          controller.emailValidator.value = '';
-                          controller.passwordValidator.value = '';
-                          await controller.login(email, password);
-                        } else {
-                          controller.emailValidator.value = email.isEmpty
-                              ? "Email address is not valid!"
-                              : '';
-                          controller.passwordValidator.value = password.length <
-                                  6
-                              ? "Password should be at least 6 characters long!"
-                              : '';
-                        }
-                      },
-                      inactive: !controller.isButtonActive.value,
-                    ),
-                  ),
-                  Spacer(),
-
-                  if (!controller.isTextFieldFocused.value)
+                    SizedBox(height: 40.sp),
                     Image.asset(
-                      AppImages.kCECBrand,
-                      width: 130.sp,
-                      fit: BoxFit.cover,
+                      AppImages.kFSMProIcon,
+                      width: 180.sp,
+                      height: 100.sp,
+                      fit: BoxFit.contain,
                     ),
+                    SizedBox(height: 40.sp),
 
-                  SizedBox(
-                    height: 20.h,
-                  )
-                ],
+                    // Email Field
+                    TextFormField(
+                      controller: controller.emailLoginTextController,
+                      focusNode: controller.emailFocusNode,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      cursorColor: LightThemeColors.primaryColor,
+                      onTapOutside: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
+                      onEditingComplete: () => FocusScope.of(context)
+                          .requestFocus(controller.passwordFocusNode),
+                      decoration: InputDecoration(
+                        hintText: "Email",
+                        prefixIcon: Icon(Remix.mail_line),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                    ),
+                    if (controller.emailValidator.value.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            controller.emailValidator.value,
+                            style:
+                                TextStyle(color: Colors.red, fontSize: 12.sp),
+                          ),
+                        ),
+                      ),
+                    SizedBox(height: 20.h),
+
+                    // Password Field
+                    TextFormField(
+                      controller: controller.passwordLoginTextController,
+                      focusNode: controller.passwordFocusNode,
+                      obscureText: !controller.isPasswordVisible.value,
+                      textInputAction: TextInputAction.done,
+                      decoration: InputDecoration(
+                        hintText: "Password",
+                        prefixIcon: Icon(Remix.lock_line),
+                        suffixIcon: IconButton(
+                          icon: Icon(controller.isPasswordVisible.value
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          onPressed: controller.togglePasswordVisibility,
+                          iconSize: 18.sp,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                      ),
+                    ),
+                    if (controller.passwordValidator.value.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            controller.passwordValidator.value,
+                            style:
+                                TextStyle(color: Colors.red, fontSize: 12.sp),
+                          ),
+                        ),
+                      ),
+                    SizedBox(height: 25.sp),
+
+                    // Sign In Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 45.sp,
+                      child: PrimaryButton(
+                        title: "Sign in",
+                        onPressed: () async {
+                          final email =
+                              controller.emailLoginTextController.text;
+                          final password =
+                              controller.passwordLoginTextController.text;
+                          if (email.isNotEmpty && password.length > 5) {
+                            controller.emailValidator.value = '';
+                            controller.passwordValidator.value = '';
+                            await controller.login(email, password);
+                          } else {
+                            controller.emailValidator.value = email.isEmpty
+                                ? "Email address is not valid!"
+                                : '';
+                            controller.passwordValidator.value = password
+                                        .length <
+                                    6
+                                ? "Password should be at least 6 characters long!"
+                                : '';
+                          }
+                        },
+                        inactive: !controller.isButtonActive.value,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+
+            // Image Always at Bottom
+            if (!controller.isTextFieldFocused.value)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 20.sp),
+                  child: Image.asset(
+                    AppImages.kCECBrand,
+                    width: 130.sp,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

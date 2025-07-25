@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 
@@ -16,7 +18,13 @@ mixin class ExceptionHandler {
     var errorText = DioExceptions.fromDioError(error).toString();
 
     showErrorDialog("Error", errorText);
-    Logger().e(errorText);
+    log(errorText, name: "ExceptionHandler", level: Level.error.index);
+
+    /// for toast view
+    MySnackBar.showErrorToast(message: errorText);
+
+    /// for dialog view
+    // DialogHelper.showErrorDialog("Error", errorText);
   }
 
   showLoading() {

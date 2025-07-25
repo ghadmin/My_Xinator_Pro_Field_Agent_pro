@@ -8,6 +8,7 @@ import 'package:mime/mime.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/controllers/appointment_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/appointment_model.dart';
+import 'package:xinator_fsm_pro/app/modules/signature/controllers/signature_controller.dart';
 
 import '../../../../utils/date_converter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
@@ -62,6 +63,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxString selectedCreateType = "Invoice".obs;
 
   final authController = Get.put(AuthController());
+  final signatureController = Get.put(SignatureGetxController());
   final itemController = Get.put(ItemController());
   final TextEditingController itemSearchController = TextEditingController();
   final TextEditingController noteTextController = TextEditingController();

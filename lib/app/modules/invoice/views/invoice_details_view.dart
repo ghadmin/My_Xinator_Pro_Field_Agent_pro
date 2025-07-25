@@ -343,7 +343,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       ),
                     ),
                     SizedBox(height: 8.sp),
-                    paymentDetails(theme),
+                    paymentDetails(theme, context),
                   ],
                 ),
               ),
@@ -743,7 +743,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           );
   }
 
-  paymentDetails(ThemeData theme) {
+  paymentDetails(ThemeData theme, BuildContext context) {
     double screenWidth = Get.width;
     return Obx(() => Card(
           elevation: 0,
@@ -883,7 +883,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                             "Discount",
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: LightThemeColors.bodyTextSecondaryColor,
-                              fontSize: 16.sp,
+                              fontSize: 10.sp,
                             ),
                           ),
                           SizedBox(width: 5.sp),
@@ -1114,14 +1114,14 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                             color: LightThemeColors.primaryColor, width: 1.sp),
                       ),
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text("Tax Rate",
+                              maxLines: 1,
                               style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              )),
+                                  color: LightThemeColors.hintTextColor,
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w500,
+                                  overflow: TextOverflow.visible)),
                           SizedBox(width: 5.sp),
                           Icon(
                             Icons.arrow_drop_down,
@@ -1307,7 +1307,60 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   ),
                 ),
               ),
+              SizedBox(
+                height: 10,
+              ),
+              Obx(
+                () => Padding(
+                  padding:
+                      EdgeInsets.symmetric(vertical: 8.sp, horizontal: 12.sp),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Customer Signature",
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: LightThemeColors.hintTextColor,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                      controller.signatureController.savedImageFile.value !=
+                              null
+                          ? GestureDetector(
+                              onTap: () {
+                                showGivePhoneMessage(context);
+                              },
+                              child: Container(
+                                height: 50.sp,
+                                width: 50.sp,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                  image: DecorationImage(
+                                    image: FileImage(controller
+                                        .signatureController
+                                        .savedImageFile
+                                        .value!),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : IconButton(
+                              icon: Icon(Remix.add_line, size: 20.sp),
+                              onPressed: () {
+                                showGivePhoneMessage(context);
+                              },
+                            )
+                    ],
+                  ),
+                ),
+              ),
 
+              SizedBox(
+                height: 10,
+              ),
               Padding(
                 padding:
                     EdgeInsets.symmetric(vertical: 8.sp, horizontal: 12.sp),
@@ -1399,6 +1452,25 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             ],
           ),
         ));
+  }
+
+  void showGivePhoneMessage(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Customer Signature'),
+        content: Text('Please give your phone to the customer for signature.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+              Get.toNamed(Routes.SIGNATURE);
+            },
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAddItemDialog(BuildContext context, theme) {

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -12,7 +14,10 @@ class MyApp extends GetView {
 
   @override
   Widget build(BuildContext context) {
+    log("width : ${MediaQuery.of(context).size.width} height : ${MediaQuery.of(context).size.height}",
+        name: "MyApp");
     return ScreenUtilInit(
+      designSize: ScreenUtil.defaultSize,
       minTextAdapt: true,
       splitScreenMode: true,
       useInheritedMediaQuery: true,

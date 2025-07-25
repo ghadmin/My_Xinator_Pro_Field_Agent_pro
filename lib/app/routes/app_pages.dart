@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/bindings/customer_binding.dart';
+import 'package:xinator_fsm_pro/app/modules/signature/bindings/signature_binding.dart';
+import 'package:xinator_fsm_pro/app/modules/signature/views/signature_view.dart';
 
 import '../modules/appointment/bindings/appointment_binding.dart';
 import '../modules/appointment/views/appointment_details_view.dart';
@@ -47,6 +49,11 @@ class AppPages {
       name: _Paths.SPLASH,
       page: () => const SplashView(),
       binding: SplashBinding(),
+    ),
+    GetPage(
+      name: _Paths.SIGNATURE,
+      page: () => const SignatureScreen(),
+      binding: SignatureBinding(),
     ),
     GetPage(
       name: _Paths.LOGIN,

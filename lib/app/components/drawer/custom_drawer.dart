@@ -1,10 +1,6 @@
-//ignore_for_file: must_be_immutable
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:remixicon/remixicon.dart';
 
 import '../../../config/theme/light_theme_colors.dart';
 import '../../../utils/constants.dart';
@@ -20,8 +16,10 @@ class CustomDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // var theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
     final authController = Get.put(AuthController());
     return Drawer(
+      width: size.width > 600 ? 230.w : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15.0),
         child: ListView(
