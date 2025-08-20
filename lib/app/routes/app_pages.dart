@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/bindings/customer_binding.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/bindings/form_binding.dart';
+import 'package:xinator_fsm_pro/app/modules/forms/views/create_form_template.dart'
+    show FormBuilderScreen;
 import 'package:xinator_fsm_pro/app/modules/invoice/views/payment_web_view.dart';
 import 'package:xinator_fsm_pro/app/modules/signature/bindings/signature_binding.dart';
 import 'package:xinator_fsm_pro/app/modules/signature/views/signature_view.dart';
@@ -152,6 +154,11 @@ class AppPages {
       name: _Paths.PAYMENT_BY_CHECK,
       page: () => const PaymentByCheckView(),
       binding: InvoiceBinding(),
+    ),
+    GetPage(
+      name: _Paths.FORMS_CREATE_DRAGG_DROP,
+      page: () => const FormBuilderScreen(),
+      binding: FormBinding(),
     ),
     GetPage(
       name: _Paths.PAYMENT_BY_BANK_TRANSFER,

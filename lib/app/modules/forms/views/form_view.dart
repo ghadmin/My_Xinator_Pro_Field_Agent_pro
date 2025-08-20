@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/empty_widget.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
+import 'package:xinator_fsm_pro/app/routes/app_pages.dart';
 import 'package:xinator_fsm_pro/config/theme/light_theme_colors.dart';
 
 class FormView extends GetView<FormController> {
@@ -288,7 +289,10 @@ class FormView extends GetView<FormController> {
                                                           color: Colors.blue),
                                                     ),
                                                     IconButton(
-                                                      onPressed: () {},
+                                                      onPressed: () {
+                                                        Get.toNamed(Routes
+                                                            .FORMS_CREATE_DRAGG_DROP);
+                                                      },
                                                       icon: Icon(Icons.settings,
                                                           color: Colors.cyan),
                                                     ),
