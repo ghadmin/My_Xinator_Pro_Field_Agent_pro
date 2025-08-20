@@ -1,19 +1,18 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/asset_image_box.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
+import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
+import 'package:xinator_fsm_pro/utils/constants.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
-import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../../utils/url_launcher.dart';
-import '../../../components/global-widgets/asset_image_box.dart';
-import '../../../components/global-widgets/general_text_field.dart';
-import '../../../components/global-widgets/my_buttons.dart';
+import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/splash_container.dart';
-import '../controllers/invoice_controller.dart';
 
 class CreateInvoiceView extends GetView<InvoiceController> {
   const CreateInvoiceView({super.key});
@@ -21,212 +20,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight:
-            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
-        title: Text('Create ${controller.selectedCreateType.value}'),
-        actions: [
-          Obx(() {
-            return controller.isInvoiceSaved.value
-                ? Padding(
-                    padding: EdgeInsets.only(right: 15.sp),
-                    child: IconButton(
-                      onPressed: () async {
-                        await controller.getEmailAutofill(
-                            emailType: controller.selectedCreateType.value);
-                        if (context.mounted) {
-                          showModalBottomSheet(
-                            context: context,
-                            showDragHandle: true,
-                            isScrollControlled: true,
-                            useSafeArea: true,
-                            enableDrag: true,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20)),
-                            ),
-                            builder: (BuildContext context) {
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom:
-                                      MediaQuery.of(context).viewInsets.bottom,
-                                ),
-                                child: Container(
-                                  padding: EdgeInsets.only(
-                                      left: 20.sp,
-                                      right: 20.sp,
-                                      bottom: 20.sp,
-                                      top: 5.sp),
-                                  child: SingleChildScrollView(
-                                    physics: BouncingScrollPhysics(),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text("Send Email",
-                                            style: theme.textTheme.bodyLarge
-                                                ?.copyWith(
-                                              fontSize: 18.sp,
-                                              fontWeight: FontWeight.w500,
-                                            )),
-                                        SizedBox(height: 15.sp),
-                                        GeneralTextField(
-                                          hint: "To",
-                                          theme: theme,
-                                          textInputType:
-                                              TextInputType.emailAddress,
-                                          textEditingController:
-                                              controller.toTextController,
-                                        ),
-                                        SizedBox(height: 10.sp),
-                                        GeneralTextField(
-                                          hint: "Bcc",
-                                          theme: theme,
-                                          textInputType:
-                                              TextInputType.emailAddress,
-                                          textEditingController:
-                                              controller.bccTextController,
-                                        ),
-                                        SizedBox(height: 10.sp),
-                                        GeneralTextField(
-                                          hint: "Subject",
-                                          maxLine: 3,
-                                          theme: theme,
-                                          textEditingController:
-                                              controller.subjectTextController,
-                                        ),
-                                        SizedBox(height: 10.sp),
-                                        GeneralTextField(
-                                          hint: "Email body",
-                                          theme: theme,
-                                          maxLine: 6,
-                                          textEditingController: controller
-                                              .emailBodyTextController,
-                                        ),
-                                        SizedBox(height: 10.sp),
-                                        // Obx(() => SizedBox(
-                                        //       height: controller
-                                        //                   .selectedFiles.length <
-                                        //               5
-                                        //           ? controller
-                                        //                   .selectedFiles.length *
-                                        //               50.sp
-                                        //           : 200.sp,
-                                        //       child: ListView.builder(
-                                        //         shrinkWrap: true,
-                                        //         physics: controller.selectedFiles
-                                        //                     .length <
-                                        //                 4
-                                        //             ? NeverScrollableScrollPhysics()
-                                        //             : BouncingScrollPhysics(),
-                                        //         itemCount: controller
-                                        //             .selectedFiles.length,
-                                        //         itemBuilder: (context, index) {
-                                        //           return ListTile(
-                                        //             leading: Icon(
-                                        //               Remix.file_2_line,
-                                        //               color: Colors.green,
-                                        //               size: 16.sp,
-                                        //             ),
-                                        //             title: Text(controller
-                                        //                 .selectedFiles[index].path
-                                        //                 .split('/')
-                                        //                 .last),
-                                        //             trailing: IconButton(
-                                        //               icon: Icon(
-                                        //                 Icons.remove_circle,
-                                        //                 color:
-                                        //                     Colors.red.shade300,
-                                        //               ),
-                                        //               onPressed: () {
-                                        //                 controller.selectedFiles
-                                        //                     .removeAt(index);
-                                        //                 controller.docFileList =
-                                        //                     RxList.from(controller
-                                        //                         .selectedFiles); // Update docFileList for upload
-                                        //               },
-                                        //             ),
-                                        //           );
-                                        //         },
-                                        //       ),
-                                        //     )),
-                                        // SizedBox(
-                                        //   height: 48.sp,
-                                        //   child: SecondaryButtonWithIcon(
-                                        //       title: "Add Attachment",
-                                        //       onPressed: () async {
-                                        //         await controller.pickFiles();
-                                        //       },
-                                        //       iconData: Remix.attachment_line,
-                                        //       inactive: false),
-                                        // ),
-                                        SizedBox(height: 10.sp),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 48.sp,
-                                                child: SecondaryButton(
-                                                  title: "Cancel",
-                                                  onPressed: () {
-                                                    controller.toTextController
-                                                        .clear();
-                                                    controller.bccTextController
-                                                        .clear();
-                                                    controller
-                                                        .subjectTextController
-                                                        .clear();
-                                                    controller
-                                                        .emailBodyTextController
-                                                        .clear();
-                                                    controller.selectedFiles
-                                                        .clear();
-                                                    Get.back();
-                                                  },
-                                                  inactive: false,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: 10.sp),
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 48.sp,
-                                                child: PrimaryButton(
-                                                    title: "Send",
-                                                    onPressed: () async {
-                                                      await controller.sendEmail(
-                                                          pdfType: controller
-                                                              .selectedCreateType
-                                                              .value,
-                                                          emailType: controller
-                                                              .selectedCreateType
-                                                              .value);
-                                                    },
-                                                    inactive: false),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 50.sp),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      },
-                      icon: Icon(
-                        Remix.telegram_2_fill,
-                        color: theme.primaryColor,
-                      ),
-                    ),
-                  )
-                : SizedBox.shrink();
-          }),
-        ],
-        centerTitle: false,
-      ),
+      appBar: buildAppBar(context, theme),
       body: Obx(() => SafeArea(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
@@ -816,10 +610,6 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                         children: [
                                                           Text(
                                                             item.name ?? "",
-                                                            textScaler:
-                                                                TextScaler
-                                                                    .linear(
-                                                                        1.0),
                                                             style: TextStyle(
                                                               color: LightThemeColors
                                                                   .primaryColor,
@@ -852,7 +642,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                 ),
                                                               ),
                                                               Text(
-                                                                "\$${item.price}",
+                                                                "\$${(item.price ?? 0.00).toStringAsFixed(2)}",
                                                                 style:
                                                                     TextStyle(
                                                                   color: theme
@@ -867,10 +657,6 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                               height: 5.sp),
                                                           Text(
                                                             "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
-                                                            textScaler:
-                                                                TextScaler
-                                                                    .linear(
-                                                                        1.0),
                                                             style: TextStyle(
                                                               color: LightThemeColors
                                                                   .bodyTextSecondaryColor,
@@ -987,124 +773,137 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                             //     style: theme.textTheme.bodyLarge,
                             //   ),
                             // ),
-                            ListTile(
-                              title: Builder(builder: (context) {
-                                return SplashContainer(
-                                  color: Colors.white,
-                                  radius: 8,
-                                  onPressed: () {
-                                    RenderBox renderBox =
-                                        context.findRenderObject() as RenderBox;
-                                    Offset offset = renderBox
-                                        .localToGlobal(Offset(0, 32.sp));
-                                    final RenderBox overlay =
-                                        Overlay.of(context)
-                                            .context
+
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8.sp, vertical: 10.sp),
+                              child: Row(
+                                children: [
+                                  Builder(builder: (context) {
+                                    return SplashContainer(
+                                      color: Colors.white,
+                                      radius: 8,
+                                      onPressed: () {
+                                        RenderBox renderBox = context
                                             .findRenderObject() as RenderBox;
-                                    showMenu(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(8.r)),
-                                      ),
-                                      context: context,
-                                      position: RelativeRect.fromRect(
-                                          offset &
-                                              Size(
-                                                  32.sp,
-                                                  32
-                                                      .sp), // smaller rect, the touch area
-                                          Offset.zero &
-                                              overlay
-                                                  .size // Bigger rect, the entire screen
+                                        Offset offset = renderBox
+                                            .localToGlobal(Offset(0, 32.sp));
+                                        final RenderBox overlay =
+                                            Overlay.of(context)
+                                                    .context
+                                                    .findRenderObject()
+                                                as RenderBox;
+                                        showMenu(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(
+                                                Radius.circular(8.r)),
                                           ),
-                                      items:
-                                          controller.discountOptions.map((e) {
-                                        return PopupMenuItem(
-                                          value: e["value"],
-                                          child: Text(e["name"] ?? ""),
-                                        );
-                                      }).toList(),
-                                    ).then((selectedValue) {
-                                      if (selectedValue != null) {
-                                        final selectedDiscount = controller
-                                            .discountOptions
-                                            .firstWhere((element) =>
-                                                element["value"] ==
-                                                selectedValue);
+                                          context: context,
+                                          position: RelativeRect.fromRect(
+                                              offset &
+                                                  Size(
+                                                      32.sp,
+                                                      32
+                                                          .sp), // smaller rect, the touch area
+                                              Offset.zero &
+                                                  overlay
+                                                      .size // Bigger rect, the entire screen
+                                              ),
+                                          items: controller.discountOptions
+                                              .map((e) {
+                                            return PopupMenuItem(
+                                              value: e["value"],
+                                              child: Text(e["name"] ?? ""),
+                                            );
+                                          }).toList(),
+                                        ).then((selectedValue) {
+                                          if (selectedValue != null) {
+                                            final selectedDiscount = controller
+                                                .discountOptions
+                                                .firstWhere((element) =>
+                                                    element["value"] ==
+                                                    selectedValue);
+                                            controller.selectedDiscountOption
+                                                    .value =
+                                                selectedDiscount["value"];
+                                            controller.createTotal();
+                                          }
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 10.sp, vertical: 5.sp),
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(5.r),
+                                          border: Border.all(
+                                              color:
+                                                  LightThemeColors.primaryColor,
+                                              width: 1.sp),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              "Discount",
+                                              style: theme.textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                color: LightThemeColors
+                                                    .bodyTextSecondaryColor,
+                                                fontSize: 16.sp,
+                                              ),
+                                            ),
+                                            SizedBox(width: 5.sp),
+                                            Icon(
+                                              Icons.arrow_drop_down,
+                                              color:
+                                                  LightThemeColors.primaryColor,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                  Spacer(),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text(
                                         controller.selectedDiscountOption
-                                            .value = selectedDiscount["value"];
-                                        controller.createTotal();
-                                      }
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 10.sp, vertical: 5.sp),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(5.r),
-                                      border: Border.all(
-                                          color: LightThemeColors.primaryColor,
-                                          width: 1.sp),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          "Discount",
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                            color: LightThemeColors
-                                                .bodyTextSecondaryColor,
-                                            fontSize: 16.sp,
-                                          ),
+                                                    .value ==
+                                                "2"
+                                            ? "\$"
+                                            : "%",
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                        SizedBox(width: 5.sp),
-                                        Icon(
-                                          Icons.arrow_drop_down,
-                                          color: LightThemeColors.primaryColor,
+                                      ),
+                                      SizedBox(width: 5.sp),
+                                      SizedBox(
+                                        height: Get.size.width <= 440
+                                            ? 35.sp
+                                            : null,
+                                        width: 100.sp,
+                                        child: GeneralTextField(
+                                          hint: "0.00",
+                                          textInputType:
+                                              TextInputType.numberWithOptions(
+                                                  decimal: true),
+                                          theme: theme,
+                                          textAlignment: TextAlign.end,
+                                          textEditingController: controller
+                                              .createDiscountTextController,
+                                          onChanged: (value) {
+                                            controller.createTotal();
+                                          },
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
-                                );
-                              }),
-                              trailing: SizedBox(
-                                width: 155.sp,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      controller.selectedDiscountOption.value ==
-                                              "2"
-                                          ? "\$"
-                                          : "%",
-                                      style:
-                                          theme.textTheme.bodyLarge?.copyWith(
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SizedBox(width: 5.sp),
-                                    SizedBox(
-                                      height: 35.sp,
-                                      width: 100.sp,
-                                      child: GeneralTextField(
-                                        hint: "0.00",
-                                        textInputType:
-                                            TextInputType.numberWithOptions(
-                                                decimal: true),
-                                        theme: theme,
-                                        textAlignment: TextAlign.end,
-                                        textEditingController: controller
-                                            .createDiscountTextController,
-                                        onChanged: (value) {
-                                          controller.createTotal();
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                ],
                               ),
                             ),
                             Padding(
@@ -1165,36 +964,13 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "\$${((controller.invoiceSubtotal.value) - (controller.invoiceDiscount.value)).toStringAsFixed(2)}",
+                                    "\$${(controller.amountAfterDiscount.value).toStringAsFixed(2)}",
                                     style: theme.textTheme.bodyLarge,
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 10.sp),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Total Price of Non-Taxable Items",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 10.sp,
-                                      color: LightThemeColors
-                                          .bodyTextSecondaryColor),
-                                ),
-                                SizedBox(width: 20.sp),
-                                Padding(
-                                  padding: EdgeInsets.only(right: 12.sp),
-                                  child: Text(
-                                    "- \$${controller.nonTaxableItemTotalInCreate.value.toStringAsFixed(2)}",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+
                             SizedBox(height: 10.sp),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
@@ -1210,7 +986,31 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "\$${((controller.invoiceSubtotal.value - controller.invoiceDiscount.value) - controller.nonTaxableItemTotalInCreate.value).toStringAsFixed(2)}",
+                                    "\$${(controller.invoiceSubtotal.value - controller.nonTaxableItemTotalInCreate.value).toStringAsFixed(2)}",
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 10.sp),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(
+                                  "Discounted Taxable total",
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontSize: 10.sp,
+                                      color: LightThemeColors
+                                          .bodyTextSecondaryColor),
+                                ),
+                                SizedBox(width: 20.sp),
+                                Padding(
+                                  padding: EdgeInsets.only(right: 12.sp),
+                                  child: Text(
+                                    "\$${(controller.discountedTaxableTotalInCreate.value).toStringAsFixed(2)}",
                                     style: theme.textTheme.bodyLarge?.copyWith(
                                       fontSize: 14.sp,
                                       fontWeight: FontWeight.w500,
@@ -1254,7 +1054,6 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                           value: "",
                                           child: Text(
                                             "NO TAX",
-                                            textScaler: TextScaler.linear(1.0),
                                             style: TextStyle(color: Colors.red),
                                           ),
                                         ),
@@ -1323,7 +1122,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                               trailing: SizedBox(
                                 width: 165.sp,
                                 child: Text(
-                                  "\$${((controller.invoiceSubtotal.value - controller.invoiceDiscount.value) - controller.nonTaxableItemTotalInCreate.value).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
+                                  "\$${(controller.discountedTaxableTotalInCreate.value).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w500,
@@ -1379,7 +1178,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "+\$${(((controller.invoiceSubtotal.value - controller.invoiceDiscount.value) - controller.nonTaxableItemTotalInCreate.value) * (double.tryParse(controller.tax.value) ?? 0) / 100).toStringAsFixed(2)}",
+                                    "+\$${(controller.invoiceTax.value).toStringAsFixed(2)}",
                                     style: theme.textTheme.bodyLarge,
                                   ),
                                 ),
@@ -1404,7 +1203,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "\$${(((controller.invoiceSubtotal.value - controller.invoiceDiscount.value) - controller.nonTaxableItemTotalInCreate.value) * (double.tryParse(controller.tax.value) ?? 0) / 100 + ((controller.invoiceSubtotal.value) - (controller.invoiceDiscount.value))).toStringAsFixed(2)}",
+                                    "\$${controller.invoiceTotal.value}",
                                     style: theme.textTheme.bodyLarge,
                                   ),
                                 ),
@@ -1421,7 +1220,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 style: theme.textTheme.bodyLarge,
                               ),
                               trailing: Text(
-                                "\$${(((controller.invoiceSubtotal.value - controller.invoiceDiscount.value) - controller.nonTaxableItemTotalInCreate.value) * (double.tryParse(controller.tax.value) ?? 0) / 100 + ((controller.invoiceSubtotal.value) - (controller.invoiceDiscount.value))).toStringAsFixed(2)}",
+                                "\$${controller.invoiceTotal.value}",
                                 style: theme.textTheme.bodyLarge,
                               ),
                             ),
@@ -1433,12 +1232,13 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                         theme: theme,
                         maxLine: 4,
                         textEditingController: controller.noteTextController),
+                    MainDivider(),
                     SizedBox(height: 20.sp),
                     SizedBox(
                       height: 48.sp,
                       width: double.infinity,
                       child: PrimaryButton(
-                        title: "Save",
+                        title: "Create",
                         onPressed: () async {
                           await controller.createInvoice();
                         },
@@ -1451,5 +1251,438 @@ class CreateInvoiceView extends GetView<InvoiceController> {
             ),
           )),
     );
+  }
+
+  buildAppBar(BuildContext context, ThemeData theme) {
+    return Get.size.width <= 440
+        ? AppBar(
+            title: Text('Create ${controller.selectedCreateType.value}'),
+            actions: [
+              Obx(() {
+                return controller.isInvoiceSaved.value
+                    ? Padding(
+                        padding: EdgeInsets.only(right: 15.sp),
+                        child: IconButton(
+                          onPressed: () async {
+                            await controller.getEmailAutofill(
+                                emailType: controller.selectedCreateType.value);
+                            if (context.mounted) {
+                              showModalBottomSheet(
+                                context: context,
+                                showDragHandle: true,
+                                isScrollControlled: true,
+                                useSafeArea: true,
+                                enableDrag: true,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20)),
+                                ),
+                                builder: (BuildContext context) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: MediaQuery.of(context)
+                                          .viewInsets
+                                          .bottom,
+                                    ),
+                                    child: Container(
+                                      padding: EdgeInsets.only(
+                                          left: 20.sp,
+                                          right: 20.sp,
+                                          bottom: 20.sp,
+                                          top: 5.sp),
+                                      child: SingleChildScrollView(
+                                        physics: BouncingScrollPhysics(),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text("Send Email",
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
+                                                  fontSize: 18.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                )),
+                                            SizedBox(height: 15.sp),
+                                            GeneralTextField(
+                                              hint: "To",
+                                              theme: theme,
+                                              textInputType:
+                                                  TextInputType.emailAddress,
+                                              textEditingController:
+                                                  controller.toTextController,
+                                            ),
+                                            SizedBox(height: 10.sp),
+                                            GeneralTextField(
+                                              hint: "Bcc",
+                                              theme: theme,
+                                              textInputType:
+                                                  TextInputType.emailAddress,
+                                              textEditingController:
+                                                  controller.bccTextController,
+                                            ),
+                                            SizedBox(height: 10.sp),
+                                            GeneralTextField(
+                                              hint: "Subject",
+                                              maxLine: 3,
+                                              theme: theme,
+                                              textEditingController: controller
+                                                  .subjectTextController,
+                                            ),
+                                            SizedBox(height: 10.sp),
+                                            GeneralTextField(
+                                              hint: "Email body",
+                                              theme: theme,
+                                              maxLine: 6,
+                                              textEditingController: controller
+                                                  .emailBodyTextController,
+                                            ),
+                                            SizedBox(height: 10.sp),
+                                            // Obx(() => SizedBox(
+                                            //       height: controller
+                                            //                   .selectedFiles.length <
+                                            //               5
+                                            //           ? controller
+                                            //                   .selectedFiles.length *
+                                            //               50.sp
+                                            //           : 200.sp,
+                                            //       child: ListView.builder(
+                                            //         shrinkWrap: true,
+                                            //         physics: controller.selectedFiles
+                                            //                     .length <
+                                            //                 4
+                                            //             ? NeverScrollableScrollPhysics()
+                                            //             : BouncingScrollPhysics(),
+                                            //         itemCount: controller
+                                            //             .selectedFiles.length,
+                                            //         itemBuilder: (context, index) {
+                                            //           return ListTile(
+                                            //             leading: Icon(
+                                            //               Remix.file_2_line,
+                                            //               color: Colors.green,
+                                            //               size: 16.sp,
+                                            //             ),
+                                            //             title: Text(controller
+                                            //                 .selectedFiles[index].path
+                                            //                 .split('/')
+                                            //                 .last),
+                                            //             trailing: IconButton(
+                                            //               icon: Icon(
+                                            //                 Icons.remove_circle,
+                                            //                 color:
+                                            //                     Colors.red.shade300,
+                                            //               ),
+                                            //               onPressed: () {
+                                            //                 controller.selectedFiles
+                                            //                     .removeAt(index);
+                                            //                 controller.docFileList =
+                                            //                     RxList.from(controller
+                                            //                         .selectedFiles); // Update docFileList for upload
+                                            //               },
+                                            //             ),
+                                            //           );
+                                            //         },
+                                            //       ),
+                                            //     )),
+                                            // SizedBox(
+                                            //   height: 48.sp,
+                                            //   child: SecondaryButtonWithIcon(
+                                            //       title: "Add Attachment",
+                                            //       onPressed: () async {
+                                            //         await controller.pickFiles();
+                                            //       },
+                                            //       iconData: Remix.attachment_line,
+                                            //       inactive: false),
+                                            // ),
+                                            SizedBox(height: 10.sp),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: SizedBox(
+                                                    height: 48.sp,
+                                                    child: SecondaryButton(
+                                                      title: "Cancel",
+                                                      onPressed: () {
+                                                        controller
+                                                            .toTextController
+                                                            .clear();
+                                                        controller
+                                                            .bccTextController
+                                                            .clear();
+                                                        controller
+                                                            .subjectTextController
+                                                            .clear();
+                                                        controller
+                                                            .emailBodyTextController
+                                                            .clear();
+                                                        controller.selectedFiles
+                                                            .clear();
+                                                        Get.back();
+                                                      },
+                                                      inactive: false,
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: 10.sp),
+                                                Expanded(
+                                                  child: SizedBox(
+                                                    height: 48.sp,
+                                                    child: PrimaryButton(
+                                                        title: "Send",
+                                                        onPressed: () async {
+                                                          await controller.sendEmail(
+                                                              pdfType: controller
+                                                                  .selectedCreateType
+                                                                  .value,
+                                                              emailType: controller
+                                                                  .selectedCreateType
+                                                                  .value);
+                                                        },
+                                                        inactive: false),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            SizedBox(height: 50.sp),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            }
+                          },
+                          icon: Icon(
+                            Remix.telegram_2_fill,
+                            color: theme.primaryColor,
+                          ),
+                        ),
+                      )
+                    : SizedBox.shrink();
+              }),
+            ],
+            centerTitle: false,
+          )
+        : PreferredSize(
+            preferredSize: Size.fromHeight(40.sp),
+            child: Padding(
+              padding: EdgeInsets.only(top: 15.sp),
+              child: AppBar(
+                title: Text('Create ${controller.selectedCreateType.value}'),
+                actions: [
+                  Obx(() {
+                    return controller.isInvoiceSaved.value
+                        ? Padding(
+                            padding: EdgeInsets.only(right: 15.sp),
+                            child: IconButton(
+                              onPressed: () async {
+                                await controller.getEmailAutofill(
+                                    emailType:
+                                        controller.selectedCreateType.value);
+                                if (context.mounted) {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    showDragHandle: true,
+                                    isScrollControlled: true,
+                                    useSafeArea: true,
+                                    enableDrag: true,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(20)),
+                                    ),
+                                    builder: (BuildContext context) {
+                                      return Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: MediaQuery.of(context)
+                                              .viewInsets
+                                              .bottom,
+                                        ),
+                                        child: Container(
+                                          padding: EdgeInsets.only(
+                                              left: 20.sp,
+                                              right: 20.sp,
+                                              bottom: 20.sp,
+                                              top: 5.sp),
+                                          child: SingleChildScrollView(
+                                            physics: BouncingScrollPhysics(),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text("Send Email",
+                                                    style: theme
+                                                        .textTheme.bodyLarge
+                                                        ?.copyWith(
+                                                      fontSize: 18.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    )),
+                                                SizedBox(height: 15.sp),
+                                                GeneralTextField(
+                                                  hint: "To",
+                                                  theme: theme,
+                                                  textInputType: TextInputType
+                                                      .emailAddress,
+                                                  textEditingController:
+                                                      controller
+                                                          .toTextController,
+                                                ),
+                                                SizedBox(height: 10.sp),
+                                                GeneralTextField(
+                                                  hint: "Bcc",
+                                                  theme: theme,
+                                                  textInputType: TextInputType
+                                                      .emailAddress,
+                                                  textEditingController:
+                                                      controller
+                                                          .bccTextController,
+                                                ),
+                                                SizedBox(height: 10.sp),
+                                                GeneralTextField(
+                                                  hint: "Subject",
+                                                  maxLine: 3,
+                                                  theme: theme,
+                                                  textEditingController:
+                                                      controller
+                                                          .subjectTextController,
+                                                ),
+                                                SizedBox(height: 10.sp),
+                                                GeneralTextField(
+                                                  hint: "Email body",
+                                                  theme: theme,
+                                                  maxLine: 6,
+                                                  textEditingController: controller
+                                                      .emailBodyTextController,
+                                                ),
+                                                SizedBox(height: 10.sp),
+                                                // Obx(() => SizedBox(
+                                                //       height: controller
+                                                //                   .selectedFiles.length <
+                                                //               5
+                                                //           ? controller
+                                                //                   .selectedFiles.length *
+                                                //               50.sp
+                                                //           : 200.sp,
+                                                //       child: ListView.builder(
+                                                //         shrinkWrap: true,
+                                                //         physics: controller.selectedFiles
+                                                //                     .length <
+                                                //                 4
+                                                //             ? NeverScrollableScrollPhysics()
+                                                //             : BouncingScrollPhysics(),
+                                                //         itemCount: controller
+                                                //             .selectedFiles.length,
+                                                //         itemBuilder: (context, index) {
+                                                //           return ListTile(
+                                                //             leading: Icon(
+                                                //               Remix.file_2_line,
+                                                //               color: Colors.green,
+                                                //               size: 16.sp,
+                                                //             ),
+                                                //             title: Text(controller
+                                                //                 .selectedFiles[index].path
+                                                //                 .split('/')
+                                                //                 .last),
+                                                //             trailing: IconButton(
+                                                //               icon: Icon(
+                                                //                 Icons.remove_circle,
+                                                //                 color:
+                                                //                     Colors.red.shade300,
+                                                //               ),
+                                                //               onPressed: () {
+                                                //                 controller.selectedFiles
+                                                //                     .removeAt(index);
+                                                //                 controller.docFileList =
+                                                //                     RxList.from(controller
+                                                //                         .selectedFiles); // Update docFileList for upload
+                                                //               },
+                                                //             ),
+                                                //           );
+                                                //         },
+                                                //       ),
+                                                //     )),
+                                                // SizedBox(
+                                                //   height: 48.sp,
+                                                //   child: SecondaryButtonWithIcon(
+                                                //       title: "Add Attachment",
+                                                //       onPressed: () async {
+                                                //         await controller.pickFiles();
+                                                //       },
+                                                //       iconData: Remix.attachment_line,
+                                                //       inactive: false),
+                                                // ),
+                                                SizedBox(height: 10.sp),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: SizedBox(
+                                                        height: 48.sp,
+                                                        child: SecondaryButton(
+                                                          title: "Cancel",
+                                                          onPressed: () {
+                                                            controller
+                                                                .toTextController
+                                                                .clear();
+                                                            controller
+                                                                .bccTextController
+                                                                .clear();
+                                                            controller
+                                                                .subjectTextController
+                                                                .clear();
+                                                            controller
+                                                                .emailBodyTextController
+                                                                .clear();
+                                                            controller
+                                                                .selectedFiles
+                                                                .clear();
+                                                            Get.back();
+                                                          },
+                                                          inactive: false,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    SizedBox(width: 10.sp),
+                                                    Expanded(
+                                                      child: SizedBox(
+                                                        height: 48.sp,
+                                                        child: PrimaryButton(
+                                                            title: "Send",
+                                                            onPressed:
+                                                                () async {
+                                                              await controller.sendEmail(
+                                                                  pdfType: controller
+                                                                      .selectedCreateType
+                                                                      .value,
+                                                                  emailType:
+                                                                      controller
+                                                                          .selectedCreateType
+                                                                          .value);
+                                                            },
+                                                            inactive: false),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 50.sp),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                }
+                              },
+                              icon: Icon(
+                                Remix.telegram_2_fill,
+                                color: theme.primaryColor,
+                              ),
+                            ),
+                          )
+                        : SizedBox.shrink();
+                  }),
+                ],
+                centerTitle: false,
+              ),
+            ),
+          );
   }
 }

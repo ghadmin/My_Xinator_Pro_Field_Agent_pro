@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/views/appointment_details_view.dart'
     show ResourceItem;
 import 'package:xinator_fsm_pro/app/modules/customer/controllers/customer_controller.dart';
@@ -22,6 +23,12 @@ import '../../../service/helper/network_connectivity.dart';
 import '../../settings/models/ticket_status_model.dart';
 import '../models/appointment_model.dart';
 
+class MediaModel {
+  String time;
+  List<String> images;
+  MediaModel({required this.time, required this.images});
+}
+
 class AppointmentController extends GetxController with ExceptionHandler {
   final settingController = Get.put(SettingsController());
   final invoiceController = Get.put(InvoiceController());
@@ -29,6 +36,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
   final TextEditingController noteTextController = TextEditingController();
   final TextEditingController sortTextController = TextEditingController();
   final isExpanded = RxBool(false);
+  final mediaList = RxList<MediaModel>([]);
   List<ResourceItem> resources = [
     ResourceItem(title: "Fill Gas"),
     ResourceItem(title: "Wash Indoor"),
@@ -144,16 +152,17 @@ class AppointmentController extends GetxController with ExceptionHandler {
     final choice = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Choose Date Selection'),
-        content: Text('Do you want to pick a single date or a date range?'),
+        title: TextWidget(text: 'Choose Date Selection'),
+        content: TextWidget(
+            text: 'Do you want to pick a single date or a date range?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop('single'),
-            child: Text('Single Date'),
+            child: TextWidget(text: 'Single Date'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop('range'),
-            child: Text('Date Range'),
+            child: TextWidget(text: 'Date Range'),
           ),
         ],
       ),
@@ -208,64 +217,71 @@ class AppointmentController extends GetxController with ExceptionHandler {
   }
 
   getAppointments() async {
-    showLoading();
-    isAppointmentEmpty.value = false;
-    if (await NetworkConnectivity.isNetworkAvailable()) {
-      var companyID = await MySharedPref.getCompanyID();
-      var userID = await MySharedPref.getUserName();
-      var currentDateTime = DateTime.now();
+    try {
+      showLoading();
+      isAppointmentEmpty.value = false;
+      if (await NetworkConnectivity.isNetworkAvailable()) {
+        var companyID = await MySharedPref.getCompanyID();
+        var userID = await MySharedPref.getUserName();
+        var currentDateTime = DateTime.now();
 
-      var response = await DioClient().get(
-        url: ApiUrl.getAppointment,
-        params: {
-          "appointmentDate": dateTimeConverter(
-              inputTime: currentDateTime.toString(),
-              outputFormat: "yyyy/MM/dd"),
-          "CompanyId": companyID,
-          "userId": userID,
-        },
-      ).catchError(handleError);
+        var response = await DioClient().get(
+          url: ApiUrl.getAppointment,
+          params: {
+            "appointmentDate": dateTimeConverter(
+                inputTime: currentDateTime.toString(),
+                outputFormat: "yyyy/MM/dd"),
+            "CompanyId": companyID,
+            "userId": userID,
+          },
+        ).catchError(handleError);
 
-      if (response == null) {
-        hideLoading();
-        showEmptyWidget();
-        return;
-      }
+        if (response == null) {
+          showEmptyWidget();
+          return;
+        }
 
-      if (response.isEmpty) {
-        appointments.clear();
-        hideLoading();
-        showEmptyWidget();
-        return;
-      }
+        if (response.isEmpty) {
+          appointments.clear();
 
-      appointments.assignAll(
-          (response as List).map((e) => Appointments.fromJson(e)).toList());
-      sortedAppointments
-          .assignAll((response).map((e) => Appointments.fromJson(e)).toList());
-      await MyHive.saveAllAppointments(appointments);
-      hideLoading();
+          showEmptyWidget();
+          return;
+        }
 
-      if (appointments.isEmpty) {
-        showEmptyWidget();
-      }
-    } else {
-      var savedAppointments = MyHive.getAllAppointments();
+        appointments.assignAll(
+            (response as List).map((e) => Appointments.fromJson(e)).toList());
+        sortedAppointments.assignAll(
+            (response).map((e) => Appointments.fromJson(e)).toList());
+        await MyHive.saveAllAppointments(appointments);
 
-      if (savedAppointments.isNotEmpty) {
-        appointments.assignAll(savedAppointments);
-        savedAppointments.assignAll(savedAppointments);
-        hideLoading();
-        MySnackBar.showErrorToast(message: "No network!");
-        NetworkConnectivity.connectionChangeCount = 1;
+        if (appointments.isEmpty) {
+          showEmptyWidget();
+        }
       } else {
-        appointments.clear();
-        savedAppointments.clear();
-        isError.value = true;
-        NetworkConnectivity.connectionChangeCount = 1;
-        hideLoading();
-        showEmptyWidget();
+        var savedAppointments = MyHive.getAllAppointments();
+
+        if (savedAppointments.isNotEmpty) {
+          appointments.assignAll(savedAppointments);
+          savedAppointments.assignAll(savedAppointments);
+
+          MySnackBar.showErrorToast(message: "No network!");
+          NetworkConnectivity.connectionChangeCount = 1;
+        } else {
+          appointments.clear();
+          savedAppointments.clear();
+          isError.value = true;
+          NetworkConnectivity.connectionChangeCount = 1;
+
+          showEmptyWidget();
+        }
       }
+    } catch (e) {
+      log("Error in getAppointments: $e");
+
+      showEmptyWidget();
+      return;
+    } finally {
+      hideLoading();
     }
   }
 

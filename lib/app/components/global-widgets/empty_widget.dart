@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:lottie/lottie.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../config/translations/strings_enum.dart';
 
@@ -25,9 +26,8 @@ class EmptyWidget extends StatelessWidget {
           fit: BoxFit.cover,
         ),
         Center(
-          child: Text(
-            Strings.empty.tr,
-            textScaler: TextScaler.linear(1.0),
+          child: TextWidget(
+            text: Strings.empty.tr,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w500,
@@ -53,9 +53,8 @@ class EmptyWidget extends StatelessWidget {
               )),
         ),
         const SizedBox(height: 5),
-        Text(
-          Strings.refresh.tr,
-          textScaler: TextScaler.linear(1.0),
+        TextWidget(
+          text: Strings.refresh.tr,
           style: TextStyle(
             color: theme.hintColor.withOpacity(.5),
           ),

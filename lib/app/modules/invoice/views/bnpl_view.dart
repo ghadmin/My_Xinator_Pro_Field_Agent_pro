@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 class BnplView extends GetView {
   const BnplView({super.key});
@@ -8,13 +9,12 @@ class BnplView extends GetView {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BnplView'),
+        title: const TextWidget(text: 'BnplView'),
         centerTitle: true,
       ),
       body: const Center(
-        child: Text(
-          'BnplView is working',
-          textScaler: TextScaler.linear(1.0),
+        child: TextWidget(
+          text: 'BnplView is working',
           style: TextStyle(fontSize: 20),
         ),
       ),

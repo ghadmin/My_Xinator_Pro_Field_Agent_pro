@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
+import 'package:xinator_fsm_pro/app/service/payment_services.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
@@ -26,9 +28,8 @@ class AppointmentView extends GetView<AppointmentController> {
       appBar: AppBar(
         toolbarHeight:
             Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
-        title: Text(
-          "Appointments",
-          textScaler: TextScaler.linear(1.0),
+        title: TextWidget(
+          text: "Appointments",
         ),
         actions: [
           InkWell(
@@ -63,15 +64,15 @@ class AppointmentView extends GetView<AppointmentController> {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Appointment List",
+                        TextWidget(
+                          text: "Appointment List",
                           style: theme.textTheme.bodyLarge?.copyWith(
                             fontSize: 20.sp,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Text(
-                          "Schedule your appointment now",
+                        TextWidget(
+                          text: "Schedule your appointment now",
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: LightThemeColors.hintTextColor,
                             fontSize: 16.sp,
@@ -108,9 +109,9 @@ class AppointmentView extends GetView<AppointmentController> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
+                              TextWidget(
+                                text: controller.selectedDateString.value,
                                 textAlign: TextAlign.center,
-                                controller.selectedDateString.value,
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   color: LightThemeColors.hintTextColor,
                                   fontSize: 16.sp,
@@ -164,8 +165,9 @@ class AppointmentView extends GetView<AppointmentController> {
                                             children: [
                                               SizedBox(
                                                 width: 180.sp,
-                                                child: Text(
-                                                  "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
+                                                child: TextWidget(
+                                                  text:
+                                                      "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
                                                   style: theme
                                                       .textTheme.headlineSmall
                                                       ?.copyWith(
@@ -177,25 +179,28 @@ class AppointmentView extends GetView<AppointmentController> {
                                                 ),
                                               ),
                                               SizedBox(height: 2.sp),
-                                              Text(appointment.serviceType
-                                                      ?.serviceName ??
-                                                  ""),
+                                              TextWidget(
+                                                  text: appointment.serviceType
+                                                          ?.serviceName ??
+                                                      ""),
                                               SizedBox(
                                                 width: 180.sp,
-                                                child: Text(
-                                                    "${appointment.customer?.address1}, "
-                                                    "${appointment.customer?.city}, "
-                                                    "${appointment.customer?.state}, "),
+                                                child: TextWidget(
+                                                    text:
+                                                        "${appointment.customer?.address1}, "
+                                                        "${appointment.customer?.city}, "
+                                                        "${appointment.customer?.state}, "),
                                               ),
                                               SizedBox(height: 4.sp),
-                                              Text(dateTimeConverter(
-                                                  inputFormat:
-                                                      "yyyy/MM/dd hh:mm a",
-                                                  inputTime: appointment
-                                                      .startDateTime
-                                                      .toString(),
-                                                  outputFormat:
-                                                      "MM/dd/yyyy hh:mm a")),
+                                              TextWidget(
+                                                  text: dateTimeConverter(
+                                                      inputFormat:
+                                                          "yyyy/MM/dd hh:mm a",
+                                                      inputTime: appointment
+                                                          .startDateTime
+                                                          .toString(),
+                                                      outputFormat:
+                                                          "MM/dd/yyyy hh:mm a")),
                                             ],
                                           ),
                                           Column(
@@ -233,8 +238,8 @@ class AppointmentView extends GetView<AppointmentController> {
                                                                   : Color(
                                                                       0xff0CBC8B),
                                                 ),
-                                                child: Text(
-                                                  appointment.status
+                                                child: TextWidget(
+                                                  text: appointment.status
                                                               ?.statusName ==
                                                           "Installation In Progress"
                                                       ? "In Progress"
@@ -253,8 +258,8 @@ class AppointmentView extends GetView<AppointmentController> {
                                                   ),
                                                 ),
                                               ),
-                                              Text(
-                                                "Click to see details",
+                                              TextWidget(
+                                                text: "Click to see details",
                                                 style: theme.textTheme.bodySmall
                                                     ?.copyWith(
                                                   color: theme.primaryColor,

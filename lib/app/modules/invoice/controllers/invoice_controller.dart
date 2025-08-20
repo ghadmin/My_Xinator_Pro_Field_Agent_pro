@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -14,6 +15,7 @@ import '../../../../utils/date_converter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/hive/my_hive.dart';
 import '../../../data/local/my_shared_pref.dart';
+import '../../../routes/app_pages.dart';
 import '../../../service/REST/api_urls.dart';
 import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
@@ -26,26 +28,103 @@ class InvoiceController extends GetxController with ExceptionHandler {
   late final WebViewController webController;
   bool isWebControllerInitialized = false;
   final ScrollController scrollController = ScrollController();
-  Future<void> initializeWebController() async {
+  final xpayLinkLoading = RxBool(false);
+  Future<void> paymentViaXpayLink() async {
+    try {
+      xpayLinkLoading(true);
+      var companyID = await MySharedPref.getCompanyID();
+      var userName = await MySharedPref.getUserName();
+      final body = {
+        'companyId': companyID,
+        'customerId': customerID,
+        'invoiceId': invoiceNumber,
+        'customerName': customerName,
+        'email': userName,
+        'amount': total.value, // or '10' if the API expects string
+      };
+      var response = await DioClient()
+          .get(
+            url: ApiUrl.xpayLink,
+            params: body,
+          )
+          .catchError(handleError);
+
+      if (response == null) return;
+      log("Xpay Link Response: $response");
+      log("Xpay Link body: $body");
+      if (response['XPayLink'] != '') {
+        log("XPayLink: ${response['XPayLink']} and condition = ${response['XPayLink'] != ''} ");
+        await initializeWebXpayLinkController(response['XPayLink']);
+        Get.toNamed(Routes.X_PAY_LINK_WEB);
+      } else {
+        MySnackBar.showErrorToast(message: "Failed to fetch payment.");
+      }
+    } catch (e, s) {
+      log("Error fetching tax: $e");
+      log("Error stack trace: $s");
+      MySnackBar.showErrorToast(message: "Failed to fetch payment.");
+    } finally {
+      xpayLinkLoading(false);
+    }
+  }
+
+  Future<void> initializeWebController(String amount) async {
     if (isWebControllerInitialized) {
       return;
     }
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
+
     var platform = Platform.isIOS ? "iOS" : "Android";
     final url =
-        "https://dev-services.myserviceforce.com/xceleranccportal/CCPayment.aspx?appname=cec&device=$platform&cid=$companyID&uid=$userID&inv=$invoiceNumber&amount=${finalCollectionAmount.value}";
+        "https://paymentportal.xceleran.com/webterminal/Clearent/AppCCPayment_CL.aspx?appname=cec&device=$platform&cid=$companyID&uid=$userID&inv=$invoiceNumber&amount=$amount";
 
     Logger().i('WebView URL: $url');
+    webController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..enableZoom(true)
+      ..setBackgroundColor(Colors.white)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (url) {
+            isLoading.value = true;
+            Logger().i('Page started: $url');
+          },
+          onPageFinished: (url) {
+            isLoading.value = false;
+            webController.runJavaScript("""
+      var meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, initial-scale=.8, maximum-scale=1.0 user-scalable=no';
+      document.getElementsByTagName('head')[0].appendChild(meta);
+      document.body.style.zoom = "1"; 
+    """);
+            Logger().i('Page finished: $url');
+          },
+          onNavigationRequest: (request) {
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(url));
+    isWebControllerInitialized = true;
+  }
+
+  Future<void> initializeWebXpayLinkController(String url) async {
+    if (isWebControllerInitialized) {
+      return;
+    }
+
+    log('WebView URL: $url');
     webController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
-            Logger().i('Page started: $url');
+            // Logger().i('Page started: $url');
           },
           onPageFinished: (url) {
-            Logger().i('Page finished: $url');
+            // Logger().i('Page finished: $url');
           },
           onNavigationRequest: (request) {
             return NavigationDecision.navigate;
@@ -135,6 +214,24 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxString selectedTaxID = "".obs;
   RxDouble invoiceDiscount = 0.00.obs;
 
+  RxDouble discountedTaxableTotalInEdit = 0.00.obs;
+  RxDouble discountedTaxableTotalInCreate = 0.00.obs;
+  RxDouble amountAfterDiscount = 0.00.obs;
+  final isDirty = false.obs;
+
+  // Call this whenever a change is made
+  void markAsDirty() {
+    isDirty.value = true;
+  }
+
+  @override
+  void onReady() async {
+    await itemController.getItems();
+    isDirty.value = false;
+    // Logger().d(Get.size);
+    super.onReady();
+  }
+
   RxDouble get nonTaxableTotalInDetails {
     RxDouble total = 0.0.obs;
     if (!selectedItemList.any((item) => item.isTaxable == true)) {
@@ -175,7 +272,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
   void createTotal() {
     double subTotal = 0.00;
-
     // Calculate subtotal based on selected items
     for (int i = 0; i < selectedItemList.length; i++) {
       double price = double.tryParse(amountControllers[i].text) ??
@@ -198,20 +294,23 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     invoiceDiscount.value = discountAmount;
 
-    // Surcharge
-    double surcharge =
-        isApplyingSurcharge.value ? double.parse(surcharges) * 0.03 : 0.00;
-
+    amountAfterDiscount.value = subTotal - discountAmount;
+    double discountRatio = discount / subTotal;
+    double discountedTaxableTotal = selectedDiscountOption.value ==
+            "1" // Percentage discount
+        ? ((subTotal - nonTaxableItemTotalInCreate.value) * (discount / 100))
+        : (subTotal - nonTaxableItemTotalInCreate.value) * discountRatio;
+    discountedTaxableTotalInCreate.value =
+        (subTotal - nonTaxableItemTotalInCreate.value) - discountedTaxableTotal;
     double taxPercentage = double.parse(tax.value);
 
-    // New: tax on discount as percentage of discountAmount
-    double taxOnDiscount = (subTotal - discountAmount) * (taxPercentage / 100);
+    double taxOnTaxableTotal =
+        (discountedTaxableTotalInCreate.value) * (taxPercentage / 100);
 
-    // Final total: subtotal + surcharge - discount + standard tax + tax on discount
-    double total = (subTotal + surcharge - discountAmount + taxOnDiscount);
+    double total = (amountAfterDiscount.value + taxOnTaxableTotal);
 
     // Update observable values
-    invoiceTax.value = double.parse((taxOnDiscount).toStringAsFixed(2));
+    invoiceTax.value = double.parse((taxOnTaxableTotal).toStringAsFixed(2));
     invoiceTotal.value = total.toStringAsFixed(2);
   }
 
@@ -240,21 +339,23 @@ class InvoiceController extends GetxController with ExceptionHandler {
         : discount;
 
     invoiceDiscount.value = discountAmount;
-
-    // Surcharge
-    double surcharge =
-        isApplyingSurcharge.value ? double.parse(surcharges) * 0.03 : 0.00;
+    amountAfterDiscount.value = subTotal - discountAmount;
+    double discountRatio = discount / subTotal;
+    double discountedTaxableTotal = selectedDiscountOption.value == "1"
+        ? ((subTotal - nonTaxableTotalInDetails.value) * (discount / 100))
+        : (subTotal - nonTaxableTotalInDetails.value) * discountRatio;
+    discountedTaxableTotalInEdit.value =
+        (subTotal - nonTaxableTotalInDetails.value) - discountedTaxableTotal;
 
     double taxPercentage = double.parse(tax.value);
 
-    // New: tax on discount as percentage of discountAmount
-    double taxOnDiscount = (subTotal - discountAmount) * (taxPercentage / 100);
+    double taxOnTaxableTotal =
+        (discountedTaxableTotalInEdit.value) * (taxPercentage / 100);
 
-    // Final total: subtotal + surcharge - discount + standard tax + tax on discount
-    double total = (subTotal + surcharge - discountAmount + taxOnDiscount);
+    double total = (amountAfterDiscount.value + taxOnTaxableTotal);
 
     // Update observable values
-    invoiceTax.value = double.parse((taxOnDiscount).toStringAsFixed(2));
+    invoiceTax.value = double.parse((taxOnTaxableTotal).toStringAsFixed(2));
     invoiceTotal.value = total.toStringAsFixed(2);
   }
 
@@ -360,6 +461,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     isInvoiceEmpty.value = true;
   }
 
+  final RxBool isLoading = true.obs;
   final RxList<ItemListModel> selectedItemList = <ItemListModel>[].obs;
 
   void selectItem(ItemListModel item) {
@@ -482,7 +584,34 @@ class InvoiceController extends GetxController with ExceptionHandler {
     }
   }
 
+  RxBool depositRequestPay = false.obs;
+  final TextEditingController requestedDepositAmountEditTextController =
+      TextEditingController();
+  final TextEditingController requestDepositRateEditTextController =
+      TextEditingController();
   RxBool convertToInvoice = false.obs;
+  void updateRequestedDepositAmount() {
+    final rate =
+        double.tryParse(requestDepositRateEditTextController.text) ?? 0.0;
+    final total = ((invoiceSubtotal.value - invoiceDiscount.value) -
+                nonTaxableTotalInDetails.value) *
+            (double.tryParse(tax.value) ?? 0) /
+            100 +
+        ((invoiceSubtotal.value) - (invoiceDiscount.value));
+    final depositAmount =
+        ((total - double.parse(this.depositAmount.value)) * rate / 100)
+            .toStringAsFixed(2);
+    requestedDepositAmountEditTextController.text = depositAmount;
+  }
+
+  RxString selectedDepositRequestOption = "0".obs; // percentage
+  RxString selectedDepositRequestOptionName = "No Deposit Request".obs;
+  List depositRequestOptions = [
+    {"name": "No Request", "value": "0"},
+    {"name": "Requested Deposit Amount:(%)", "value": "1"},
+    {"name": "Requested Deposit Amount:(\$)", "value": "2"},
+  ];
+
   editInvoice() async {
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
@@ -501,19 +630,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
           "UserId": userID,
           "Subtotal": invoiceSubtotal.value,
           "Discount": invoiceDiscount.value,
-          "Tax": double.parse(
-              (((invoiceSubtotal.value - invoiceDiscount.value) -
-                          nonTaxableTotalInDetails.value) *
-                      (double.tryParse(tax.value) ?? 0) /
-                      100)
-                  .toStringAsFixed(2)),
-          "Total": double.parse(
-              ((((invoiceSubtotal.value - invoiceDiscount.value) -
-                              nonTaxableTotalInDetails.value) *
-                          (double.tryParse(tax.value) ?? 0) /
-                          100) +
-                      (invoiceSubtotal.value - invoiceDiscount.value))
-                  .toStringAsFixed(2)),
+          "Tax": double.parse(invoiceTax.value.toStringAsFixed(2)),
+          "Total": double.parse(invoiceTotal.value).toStringAsFixed(2),
           "Status": 1,
           "InvoiceType": null,
           "ModifiedBy": null,
@@ -525,7 +643,13 @@ class InvoiceController extends GetxController with ExceptionHandler {
               outputFormat: "yyyy/MM/dd"),
           "ModifiedDate": dateTimeConverter(
               inputTime: DateTime.now().toString(), outputFormat: "yyyy/MM/dd"),
-          "AmountCollect": 0.00,
+          "RequestedDepositAmount":
+              requestedDepositAmountEditTextController.text,
+          "RequestedDepositPercentage":
+              selectedDepositRequestOption.value == "2"
+                  ? "0.00"
+                  : requestDepositRateEditTextController.text,
+          "RequestedAmtType": int.parse(selectedDepositRequestOption.value),
           "TaxType": initialTaxID.value,
           "AppointmentId": appointmentID,
           "Type": type.value,
@@ -536,7 +660,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
           "ExpirationDate": null,
           "SyncToken": "",
           "QboPaymentID": "",
-          "DepositAmount": depositAmount.value,
+          "AmountCollect": double.parse(depositAmount.value).toStringAsFixed(2),
+          "DepositAmount": double.parse(depositAmount.value).toStringAsFixed(2),
           "LoanStatus": null,
           "IsConverted": false,
           "items": selectedItemList.map((item) {
@@ -568,10 +693,9 @@ class InvoiceController extends GetxController with ExceptionHandler {
       convertToInvoice.value = false;
       isConverted.value = true;
     }
+    isDirty.value = false;
     hideLoading();
     await Get.find<AppointmentController>().getAppointments();
-
-    MySnackBar.showToast(message: "${type.value} updated successfully!");
   }
 
   convertEstimate() async {
@@ -720,13 +844,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
       Get.back();
       MySnackBar.showToast(message: "Payment successful");
     }
-  }
-
-  @override
-  void onReady() async {
-    await itemController.getItems();
-
-    super.onReady();
   }
 
   @override

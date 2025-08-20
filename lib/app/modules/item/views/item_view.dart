@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
@@ -17,7 +20,9 @@ class ItemView extends GetView<ItemController> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Items'),
+        toolbarHeight:
+            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
+        title: const TextWidget(text: 'Items'),
         actions: [
           InkWell(
             onTap: () {
@@ -61,15 +66,15 @@ class ItemView extends GetView<ItemController> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                "Item List",
+                              TextWidget(
+                                text: "Item List",
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   fontSize: 20.sp,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              Text(
-                                "Create  items now",
+                              TextWidget(
+                                text: "Create  items now",
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   color: LightThemeColors.hintTextColor,
                                   fontSize: 16.sp,
@@ -102,7 +107,7 @@ class ItemView extends GetView<ItemController> {
                           //             size: 18.sp,
                           //           ),
                           //           SizedBox(width: 8.sp),
-                          //           Text(
+                          //            TextWidget(text:
                           //             "Create New",
                           //             style:
                           //                 theme.textTheme.bodyMedium?.copyWith(
@@ -155,8 +160,8 @@ class ItemView extends GetView<ItemController> {
                                           children: [
                                             SizedBox(
                                               width: 200.sp,
-                                              child: Text(
-                                                item.name ?? "",
+                                              child: TextWidget(
+                                                text: item.name ?? "",
                                                 style: theme
                                                     .textTheme.headlineSmall
                                                     ?.copyWith(
@@ -174,14 +179,16 @@ class ItemView extends GetView<ItemController> {
                                                     child: Padding(
                                                       padding: EdgeInsets.only(
                                                           bottom: 2.sp),
-                                                      child: Text(
-                                                          item.description ??
-                                                              ""),
+                                                      child: TextWidget(
+                                                          text:
+                                                              item.description ??
+                                                                  ""),
                                                     ),
                                                   ),
                                             item.barcode == ""
                                                 ? SizedBox.shrink()
-                                                : Text(item.barcode ?? ""),
+                                                : TextWidget(
+                                                    text: item.barcode ?? ""),
                                           ],
                                         ),
                                         Column(
@@ -190,8 +197,8 @@ class ItemView extends GetView<ItemController> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.end,
                                           children: [
-                                            Text(
-                                              "\$${item.price ?? ""}",
+                                            TextWidget(
+                                              text: "\$${item.price ?? ""}",
                                               style: theme
                                                   .textTheme.headlineSmall
                                                   ?.copyWith(

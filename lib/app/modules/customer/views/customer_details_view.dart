@@ -38,7 +38,7 @@
 //     var theme = Theme.of(context);
 //     return Scaffold(
 //       appBar: AppBar(
-//         title: const Text('Customer Details'),
+//         title: const  TextWidget(text:'Customer Details'),
 //         centerTitle: true,
 //       ),
 //       body: Padding(
@@ -110,7 +110,7 @@
 //             child: Column(
 //                 crossAxisAlignment: CrossAxisAlignment.center,
 //                 children: [
-//                   Text(
+//                    TextWidget(text:
 //                     fullName,
 //                     style: theme.textTheme.bodyLarge?.copyWith(
 //                       color: LightThemeColors.appBlackColor,
@@ -134,7 +134,7 @@
 //                             SizedBox(
 //                               width: 5,
 //                             ),
-//                             Text(
+//                              TextWidget(text:
 //                               "Email",
 //                               style: theme.textTheme.bodyLarge?.copyWith(
 //                                 color: LightThemeColors.hintTextColor,
@@ -148,7 +148,7 @@
 //                       Expanded(
 //                         flex: 2,
 //                         child: SizedBox(
-//                           child: Text(
+//                           child:  TextWidget(text:
 //                             customer.email ?? "N/A",
 //                             style: theme.textTheme.bodyLarge?.copyWith(
 //                               fontSize: 14.sp,
@@ -176,7 +176,7 @@
 //                             SizedBox(
 //                               width: 5,
 //                             ),
-//                             Text(
+//                              TextWidget(text:
 //                               "Address",
 //                               style: theme.textTheme.bodyLarge?.copyWith(
 //                                 color: LightThemeColors.hintTextColor,
@@ -190,7 +190,7 @@
 //                       Expanded(
 //                         flex: 2,
 //                         child: SizedBox(
-//                           child: Text(
+//                           child:  TextWidget(text:
 //                             customer.address1 ?? "N/A",
 //                             textAlign: TextAlign.end,
 //                             style: theme.textTheme.bodyLarge?.copyWith(
@@ -218,7 +218,7 @@
 //                             SizedBox(
 //                               width: 5,
 //                             ),
-//                             Text(
+//                              TextWidget(text:
 //                               "Phone",
 //                               style: theme.textTheme.bodyLarge?.copyWith(
 //                                 color: LightThemeColors.hintTextColor,
@@ -232,7 +232,7 @@
 //                       Expanded(
 //                         flex: 2,
 //                         child: SizedBox(
-//                           child: Text(
+//                           child:  TextWidget(text:
 //                             customer.phone ?? "N/A",
 //                             textAlign: TextAlign.end,
 //                             style: theme.textTheme.bodyLarge?.copyWith(
@@ -262,7 +262,7 @@
 //                             SizedBox(
 //                               width: 5,
 //                             ),
-//                             Text(
+//                              TextWidget(text:
 //                               "Status",
 //                               style: theme.textTheme.bodyLarge?.copyWith(
 //                                 color: LightThemeColors.hintTextColor,
@@ -276,7 +276,7 @@
 //                       Expanded(
 //                         flex: 2,
 //                         child: SizedBox(
-//                           child: Text(
+//                           child:  TextWidget(text:
 //                             "Scheduled",
 //                             textAlign: TextAlign.end,
 //                             style: theme.textTheme.bodyLarge?.copyWith(
@@ -305,7 +305,7 @@
 //                             SizedBox(
 //                               width: 5,
 //                             ),
-//                             Text(
+//                              TextWidget(text:
 //                               "Created On",
 //                               style: theme.textTheme.bodyLarge?.copyWith(
 //                                 color: LightThemeColors.hintTextColor,
@@ -319,7 +319,7 @@
 //                       Expanded(
 //                         flex: 3,
 //                         child: SizedBox(
-//                           child: Text(
+//                           child:  TextWidget(text:
 //                             customer.createdDateTime != null
 //                                 ? customer.createdDateTime.runtimeType == String
 //                                     ? DateFormat("M/d/yyyy h:mm:ss a")
@@ -359,7 +359,7 @@
 //                   //           SizedBox(
 //                   //             width: 5,
 //                   //           ),
-//                   //           Text(
+//                   //            TextWidget(text:
 //                   //             "Special Instruction",
 //                   //             style: theme.textTheme.bodyLarge?.copyWith(
 //                   //               color: LightThemeColors.hintTextColor,
@@ -374,7 +374,7 @@
 //                   //     Expanded(
 //                   //       flex: 3,
 //                   //       child: SizedBox(
-//                   //         child: Text(
+//                   //         child:  TextWidget(text:
 //                   //           customer.jobTitle ?? "N/A",
 //                   //           textAlign: TextAlign.end,
 //                   //           style: theme.textTheme.bodyLarge?.copyWith(
@@ -394,9 +394,13 @@
 //   }
 // }
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart'
+    show TextWidget;
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/url_launcher.dart';
@@ -410,7 +414,9 @@ class CustomerDetailsView extends GetView<CustomerController> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Customer Details'),
+        toolbarHeight:
+            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
+        title: const TextWidget(text: 'Customer Details'),
         centerTitle: true,
       ),
       body: Padding(
@@ -430,16 +436,16 @@ class CustomerDetailsView extends GetView<CustomerController> {
                       child: Column(
                         children: [
                           ListTile(
-                            title: Text(
-                              "Business Name",
+                            title: TextWidget(
+                              text: "Business Name",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            trailing: Text(
-                              controller.businessName,
+                            trailing: TextWidget(
+                              text: controller.businessName,
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
@@ -449,16 +455,16 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Title",
+                            title: TextWidget(
+                              text: "Title",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            trailing: Text(
-                              controller.title,
+                            trailing: TextWidget(
+                              text: controller.title,
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 fontSize: 14.sp,
                                 fontWeight: FontWeight.w500,
@@ -468,8 +474,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Address",
+                            title: TextWidget(
+                              text: "Address",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
@@ -478,8 +484,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                             ),
                             trailing: SizedBox(
                               width: 200.sp,
-                              child: Text(
-                                controller.address,
+                              child: TextWidget(
+                                text: controller.address,
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
@@ -490,8 +496,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Mobile",
+                            title: TextWidget(
+                              text: "Mobile",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
@@ -503,8 +509,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                                 await UrlLauncher.phoneCall(
                                     controller.mobileNumber);
                               },
-                              child: Text(
-                                controller.mobileNumber,
+                              child: TextWidget(
+                                text: controller.mobileNumber,
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
@@ -514,8 +520,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Phone",
+                            title: TextWidget(
+                              text: "Phone",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
@@ -527,8 +533,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                                 await UrlLauncher.phoneCall(
                                     controller.phoneNumber);
                               },
-                              child: Text(
-                                controller.phoneNumber,
+                              child: TextWidget(
+                                text: controller.phoneNumber,
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
@@ -538,8 +544,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Email",
+                            title: TextWidget(
+                              text: "Email",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
@@ -552,8 +558,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                                 onTap: () async {
                                   await UrlLauncher.email(controller.email);
                                 },
-                                child: Text(
-                                  controller.email,
+                                child: TextWidget(
+                                  text: controller.email,
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w500,
@@ -566,8 +572,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Invoices",
+                            title: TextWidget(
+                              text: "Invoices",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
@@ -578,8 +584,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                               width: 200.sp,
                               child: InkWell(
                                 onTap: () {},
-                                child: Text(
-                                  "See Invoices >",
+                                child: TextWidget(
+                                  text: "See Invoices >",
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w500,
@@ -592,8 +598,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Estimates",
+                            title: TextWidget(
+                              text: "Estimates",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
@@ -604,8 +610,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                               width: 200.sp,
                               child: InkWell(
                                 onTap: () {},
-                                child: Text(
-                                  "See Estimates >",
+                                child: TextWidget(
+                                  text: "See Estimates >",
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w500,
@@ -618,8 +624,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Appointments",
+                            title: TextWidget(
+                              text: "Appointments",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
@@ -628,8 +634,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                             ),
                             trailing: InkWell(
                               onTap: () {},
-                              child: Text(
-                                "See Appointments >",
+                              child: TextWidget(
+                                text: "See Appointments >",
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
@@ -641,8 +647,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Files",
+                            title: TextWidget(
+                              text: "Files",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
@@ -653,8 +659,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                               width: 200.sp,
                               child: InkWell(
                                 onTap: () {},
-                                child: Text(
-                                  'View Files >',
+                                child: TextWidget(
+                                  text: 'View Files >',
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w500,
@@ -667,8 +673,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                           ),
                           MainDivider(),
                           ListTile(
-                            title: Text(
-                              "Email History",
+                            title: TextWidget(
+                              text: "Email History",
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: LightThemeColors.hintTextColor,
                                 fontSize: 14.sp,
@@ -677,8 +683,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
                             ),
                             trailing: InkWell(
                               onTap: () {},
-                              child: Text(
-                                'See History >',
+                              child: TextWidget(
+                                text: 'See History >',
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,

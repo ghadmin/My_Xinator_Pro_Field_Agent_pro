@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart'
+    show TextWidget;
 
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/my_buttons.dart';
@@ -14,7 +16,7 @@ class PaymentByCheckView extends GetView<InvoiceController> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Payment by Check'),
+        title: TextWidget(text: 'Payment by Check'),
         centerTitle: false,
       ),
       body: Padding(
@@ -24,7 +26,7 @@ class PaymentByCheckView extends GetView<InvoiceController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Text(
+                //  TextWidget(text:
                 //   'Thank you for selecting the payment method. Please add your billing info to continue.',
                 //   style: TextStyle(fontSize: 16),
                 // ),
@@ -45,7 +47,7 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                 //           children: [
                 //             Icon(Icons.email),
                 //             SizedBox(width: 8.sp),
-                //             Text('Email Receipt'),
+                //              TextWidget(text:'Email Receipt'),
                 //           ],
                 //         ),
                 //       ),
@@ -53,23 +55,23 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                 //   ],
                 // ),
                 // SizedBox(height: 32.sp),
-                Text(
-                  'Invoice Summary',
+                TextWidget(
+                  text: 'Invoice Summary',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8.sp),
                 _buildInvoiceSummary(),
                 SizedBox(height: 32.sp),
-                Text(
-                  'Billing Info',
+                TextWidget(
+                  text: 'Billing Info',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8.sp),
-                Text('Payment by Check'),
+                TextWidget(text: 'Payment by Check'),
                 SizedBox(height: 8.sp),
                 Divider(height: 1, color: Colors.grey),
                 SizedBox(height: 32.sp),
-                Text('Check Name'), SizedBox(height: 8.sp),
+                TextWidget(text: 'Check Name'), SizedBox(height: 8.sp),
                 SizedBox(
                   height: 42.sp,
                   width: double.infinity,
@@ -82,7 +84,7 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                   ),
                 ),
                 SizedBox(height: 8.sp),
-                Text('Check Number'), SizedBox(height: 8.sp),
+                TextWidget(text: 'Check Number'), SizedBox(height: 8.sp),
                 SizedBox(
                   height: 42.sp,
                   width: double.infinity,
@@ -97,28 +99,28 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                 SizedBox(height: 25.sp),
                 Row(
                   children: [
-                    Text("Total Amount"),
+                    TextWidget(text: "Total Amount"),
                     Spacer(),
-                    Text("\$ ${controller.total.value}"),
+                    TextWidget(text: "\$ ${controller.total.value}"),
                   ],
                 ),
                 SizedBox(height: 8.sp),
                 Row(
                   children: [
-                    Text("Deposit Amount"),
+                    TextWidget(text: "Deposit Amount"),
                     Spacer(),
-                    Text("- \$ ${controller.depositAmount.value}"),
+                    TextWidget(text: "- \$ ${controller.depositAmount.value}"),
                   ],
                 ),
 
                 SizedBox(height: 8.sp),
                 Row(
                   children: [
-                    Text('Payable Amount'),
+                    TextWidget(text: 'Payable Amount'),
                     Spacer(),
                     Row(
                       children: [
-                        Text("\$"),
+                        TextWidget(text: "\$"),
                         SizedBox(width: 8.sp),
                         SizedBox(
                           height: 35.sp,
@@ -219,46 +221,48 @@ class PaymentByCheckView extends GetView<InvoiceController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("${controller.type.value}: ${controller.invoiceNumber}"),
+            TextWidget(
+                text: "${controller.type.value}: ${controller.invoiceNumber}"),
             SizedBox(height: 10.sp),
             Row(
               children: [
-                Text('Customer Name'),
+                TextWidget(text: 'Customer Name'),
                 Spacer(),
-                Text(controller.customerName),
+                TextWidget(text: controller.customerName),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Address'),
+                TextWidget(text: 'Address'),
                 Spacer(),
-                Text(controller.address),
+                TextWidget(text: controller.address),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Type'),
+                TextWidget(text: 'Type'),
                 Spacer(),
-                Text(controller.type.value),
+                TextWidget(text: controller.type.value),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Total Amount'),
+                TextWidget(text: 'Total Amount'),
                 Spacer(),
-                Text(
-                    '\$${double.parse(controller.total.value).toStringAsFixed(2)}'),
+                TextWidget(
+                    text:
+                        '\$${double.parse(controller.total.value).toStringAsFixed(2)}'),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Date'),
+                TextWidget(text: 'Date'),
                 Spacer(),
-                Text(controller.showingDate.value),
+                TextWidget(text: controller.showingDate.value),
               ],
             ),
           ],

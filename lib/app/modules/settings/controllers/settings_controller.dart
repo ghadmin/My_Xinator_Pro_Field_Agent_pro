@@ -69,7 +69,9 @@ class SettingsController extends GetxController with ExceptionHandler {
       appointmentsStatus.assignAll((response as List)
           .map((e) => AppointmentStatusSetting.fromJson(e))
           .toList());
-      selectedAppointmentsStatus(appointmentsStatus.first);
+      if (appointmentsStatus.isNotEmpty) {
+        selectedAppointmentsStatus(appointmentsStatus.first);
+      }
       await MyHive.saveAllAppointmentStatusSetting(appointmentsStatus);
     } else {
       var savedAppointments = MyHive.getAllAppointmentStatusSetting();

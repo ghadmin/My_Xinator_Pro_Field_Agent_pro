@@ -51,7 +51,7 @@
 //           Row(
 //             mainAxisAlignment: MainAxisAlignment.start,
 //             children: [
-//               Text(
+//                TextWidget(text:
 //                 "Login",
 //                 style: theme.textTheme.headlineLarge?.copyWith(
 //                   color: LightThemeColors.bodyTextColor,
@@ -149,7 +149,7 @@
 //               ? const SizedBox.shrink()
 //               : Padding(
 //                   padding: EdgeInsets.only(top: 5.sp, left: 15.sp),
-//                   child: Text(
+//                   child:  TextWidget(text:
 //                     controller.emailValidator.value,
 //                     style: TextStyle(
 //                       color: Colors.red,
@@ -244,7 +244,7 @@
 //               ? const SizedBox.shrink()
 //               : Padding(
 //                   padding: EdgeInsets.only(top: 5.sp, left: 15.sp),
-//                   child: Text(
+//                   child:  TextWidget(text:
 //                     controller.passwordValidator.value,
 //                     style: TextStyle(
 //                       color: Colors.red,
@@ -303,12 +303,12 @@
 //           // SizedBox(height: 20.sp),
 //           // Column(
 //           //   children: [
-//           //     Text("Forgot password?", style: theme.textTheme.bodyMedium),
+//           //      TextWidget(text:"Forgot password?", style: theme.textTheme.bodyMedium),
 //           //     SizedBox(height: 5.sp),
 //           //     Row(
 //           //       mainAxisAlignment: MainAxisAlignment.center,
 //           //       children: [
-//           //         Text("Don't have an account? ",
+//           //          TextWidget(text:"Don't have an account? ",
 //           //             style: theme.textTheme.bodyMedium),
 //           //         TextButton(
 //           //           style: ButtonStyle(
@@ -321,7 +321,7 @@
 //           //           onPressed: () {
 //           //             Get.toNamed(Routes.SIGNUP);
 //           //           },
-//           //           child: Text(
+//           //           child:  TextWidget(text:
 //           //             "Create new",
 //           //             style: TextStyle(
 //           //               color: LightThemeColors.primaryColor,
@@ -349,7 +349,7 @@
 //           Row(
 //             mainAxisAlignment: MainAxisAlignment.start,
 //             children: [
-//               Text(
+//                TextWidget(text:
 //                 "Login",
 //                 style: theme.textTheme.headlineLarge?.copyWith(
 //                   color: LightThemeColors.bodyTextColor,
@@ -448,7 +448,7 @@
 //               ? const SizedBox.shrink()
 //               : Padding(
 //                   padding: EdgeInsets.only(top: 5.sp, left: 15.sp),
-//                   child: Text(
+//                   child:  TextWidget(text:
 //                     controller.emailValidator.value,
 //                     style: TextStyle(
 //                       color: Colors.red,
@@ -543,7 +543,7 @@
 //               ? const SizedBox.shrink()
 //               : Padding(
 //                   padding: EdgeInsets.only(top: 5.sp, left: 15.sp),
-//                   child: Text(
+//                   child:  TextWidget(text:
 //                     controller.passwordValidator.value,
 //                     style: TextStyle(
 //                       color: Colors.red,
@@ -602,12 +602,12 @@
 //           // SizedBox(height: 20.sp),
 //           // Column(
 //           //   children: [
-//           //     Text("Forgot password?", style: theme.textTheme.bodyMedium),
+//           //      TextWidget(text:"Forgot password?", style: theme.textTheme.bodyMedium),
 //           //     SizedBox(height: 5.sp),
 //           //     Row(
 //           //       mainAxisAlignment: MainAxisAlignment.center,
 //           //       children: [
-//           //         Text("Don't have an account? ",
+//           //          TextWidget(text:"Don't have an account? ",
 //           //             style: theme.textTheme.bodyMedium),
 //           //         TextButton(
 //           //           style: ButtonStyle(
@@ -620,7 +620,7 @@
 //           //           onPressed: () {
 //           //             Get.toNamed(Routes.SIGNUP);
 //           //           },
-//           //           child: Text(
+//           //           child:  TextWidget(text:
 //           //             "Create new",
 //           //             style: TextStyle(
 //           //               color: LightThemeColors.primaryColor,
@@ -648,7 +648,7 @@
 //           Row(
 //             mainAxisAlignment: MainAxisAlignment.start,
 //             children: [
-//               Text(
+//                TextWidget(text:
 //                 "Login",
 //                 style: theme.textTheme.headlineLarge?.copyWith(
 //                   color: LightThemeColors.bodyTextColor,
@@ -747,7 +747,7 @@
 //               ? const SizedBox.shrink()
 //               : Padding(
 //                   padding: EdgeInsets.only(top: 5.sp, left: 15.sp),
-//                   child: Text(
+//                   child:  TextWidget(text:
 //                     controller.emailValidator.value,
 //                     style: TextStyle(
 //                       color: Colors.red,
@@ -845,7 +845,7 @@
 //               ? const SizedBox.shrink()
 //               : Padding(
 //                   padding: EdgeInsets.only(top: 5.sp, left: 15.sp),
-//                   child: Text(
+//                   child:  TextWidget(text:
 //                     controller.passwordValidator.value,
 //                     style: TextStyle(
 //                       color: Colors.red,
@@ -904,12 +904,12 @@
 //           // SizedBox(height: 20.sp),
 //           // Column(
 //           //   children: [
-//           //     Text("Forgot password?", style: theme.textTheme.bodyMedium),
+//           //      TextWidget(text:"Forgot password?", style: theme.textTheme.bodyMedium),
 //           //     SizedBox(height: 5.sp),
 //           //     Row(
 //           //       mainAxisAlignment: MainAxisAlignment.center,
 //           //       children: [
-//           //         Text("Don't have an account? ",
+//           //          TextWidget(text:"Don't have an account? ",
 //           //             style: theme.textTheme.bodyMedium),
 //           //         TextButton(
 //           //           style: ButtonStyle(
@@ -922,7 +922,7 @@
 //           //           onPressed: () {
 //           //             Get.toNamed(Routes.SIGNUP);
 //           //           },
-//           //           child: Text(
+//           //           child:  TextWidget(text:
 //           //             "Create new",
 //           //             style: TextStyle(
 //           //               color: LightThemeColors.primaryColor,
@@ -941,10 +941,14 @@
 //   }
 // }
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart'
+    show TextWidget;
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
@@ -973,8 +977,8 @@ class LoginView extends GetView<AuthController> {
                     SizedBox(height: 20.h),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Login",
+                      child: TextWidget(
+                        text: "Login",
                         style: theme.textTheme.headlineLarge?.copyWith(
                           color: LightThemeColors.bodyTextColor,
                           fontWeight: FontWeight.bold,
@@ -1014,8 +1018,8 @@ class LoginView extends GetView<AuthController> {
                         padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
                         child: Align(
                           alignment: Alignment.centerLeft,
-                          child: Text(
-                            controller.emailValidator.value,
+                          child: TextWidget(
+                            text: controller.emailValidator.value,
                             style:
                                 TextStyle(color: Colors.red, fontSize: 12.sp),
                           ),
@@ -1049,8 +1053,8 @@ class LoginView extends GetView<AuthController> {
                         padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
                         child: Align(
                           alignment: Alignment.centerLeft,
-                          child: Text(
-                            controller.passwordValidator.value,
+                          child: TextWidget(
+                            text: controller.passwordValidator.value,
                             style:
                                 TextStyle(color: Colors.red, fontSize: 12.sp),
                           ),

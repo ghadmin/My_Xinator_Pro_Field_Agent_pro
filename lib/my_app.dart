@@ -14,8 +14,6 @@ class MyApp extends GetView {
 
   @override
   Widget build(BuildContext context) {
-    log("width : ${MediaQuery.of(context).size.width} height : ${MediaQuery.of(context).size.height}",
-        name: "MyApp");
     return ScreenUtilInit(
       designSize: ScreenUtil.defaultSize,
       minTextAdapt: true,

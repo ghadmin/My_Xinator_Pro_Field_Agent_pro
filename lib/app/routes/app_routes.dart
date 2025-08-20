@@ -28,6 +28,8 @@ abstract class Routes {
   static const MANUAL_PAYMENT = _Paths.MANUAL_PAYMENT;
   static const BILLABLE_ITEMS = _Paths.BILLABLE_ITEMS;
   static const SIGNATURE = _Paths.SIGNATURE;
+  static const X_PAY_LINK_WEB = _Paths.X_PAY_LINK_WEB;
+  static const FORMS = _Paths.FORMS;
 }
 
 abstract class _Paths {
@@ -46,6 +48,7 @@ abstract class _Paths {
   static const CUSTOMER_DETAILS = '/customer-details';
   static const INVOICE = '/invoice';
   static const INVOICE_CREATE = '/invoice-create';
+  static const X_PAY_LINK_WEB = '/PayLinkScreen';
   static const INVOICE_DETAILS = '/invoice-details';
   static const TICKET_STATUS = '/ticket-status';
   static const APPOINTMENT_STATUS = '/appointment-status';
@@ -55,4 +58,5 @@ abstract class _Paths {
   static const PAYMENT_BY_CHECK = '/payment-by-check';
   static const PAYMENT_BY_BANK_TRANSFER = '/payment-by-bank-transfer';
   static const MANUAL_PAYMENT = '/manual-payment';
+  static const FORMS = '/forms';
 }

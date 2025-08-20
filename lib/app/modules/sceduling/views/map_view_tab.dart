@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 class MapViewTab extends StatelessWidget {
   const MapViewTab({super.key});
@@ -42,7 +43,7 @@ class MapViewTab extends StatelessWidget {
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: () {},
-                child: const Text("Reload"),
+                child: const TextWidget(text: "Reload"),
               ),
             ],
           ),
@@ -56,11 +57,11 @@ class MapViewTab extends StatelessWidget {
             children: [
               ElevatedButton(
                 onPressed: () {},
-                child: const Text("Optimize Route"),
+                child: const TextWidget(text: "Optimize Route"),
               ),
               ElevatedButton(
                 onPressed: () {},
-                child: const Text("Add Custom Marker"),
+                child: const TextWidget(text: "Add Custom Marker"),
               ),
               ToggleButtons(
                 isSelected: const [true, false],
@@ -71,11 +72,11 @@ class MapViewTab extends StatelessWidget {
                 children: const [
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text("Map"),
+                    child: TextWidget(text: "Map"),
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text("Satellite"),
+                    child: TextWidget(text: "Satellite"),
                   ),
                 ],
               ),
@@ -98,9 +99,8 @@ class MapViewTab extends StatelessWidget {
           const SizedBox(height: 10),
 
           // Row 4: Dropdown
-          const Text(
-            "Work Order Status",
-            textScaler: TextScaler.linear(1.0),
+          const TextWidget(
+            text: "Work Order Status",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
@@ -113,9 +113,12 @@ class MapViewTab extends StatelessWidget {
             value: "All Statuses",
             items: const [
               DropdownMenuItem(
-                  value: "All Statuses", child: Text("All Statuses")),
-              DropdownMenuItem(value: "Pending", child: Text("Pending")),
-              DropdownMenuItem(value: "Arrived", child: Text("Arrived")),
+                  value: "All Statuses",
+                  child: TextWidget(text: "All Statuses")),
+              DropdownMenuItem(
+                  value: "Pending", child: TextWidget(text: "Pending")),
+              DropdownMenuItem(
+                  value: "Arrived", child: TextWidget(text: "Arrived")),
             ],
             onChanged: (value) {},
           ),
@@ -164,7 +167,7 @@ class _StatusDot extends StatelessWidget {
       children: [
         Icon(Icons.circle, color: color, size: 10),
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(color: Colors.white)),
+        TextWidget(text: label, style: const TextStyle(color: Colors.white)),
       ],
     );
   }

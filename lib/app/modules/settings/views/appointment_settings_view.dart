@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../components/global-widgets/splash_container.dart';
@@ -15,7 +16,7 @@ class AppointmentSettingsView extends GetView<SettingsController> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text("Appointment Settings"),
+        title: TextWidget(text: "Appointment Settings"),
         centerTitle: false,
       ),
       body: Padding(
@@ -31,7 +32,7 @@ class AppointmentSettingsView extends GetView<SettingsController> {
                 //   color: Colors.white,
                 //   onPressed: () {},
                 //   child: ListTile(
-                //     title: Text(
+                //     title:  TextWidget(text:
                 //       "Blocks & Availability",
                 //       style: theme.textTheme.bodyLarge?.copyWith(
                 //         fontSize: 18.sp,
@@ -50,7 +51,7 @@ class AppointmentSettingsView extends GetView<SettingsController> {
                 //   color: Colors.white,
                 //   onPressed: () {},
                 //   child: ListTile(
-                //     title: Text(
+                //     title:  TextWidget(text:
                 //       "Appointment Types",
                 //       style: theme.textTheme.bodyLarge?.copyWith(
                 //         fontSize: 18.sp,
@@ -72,8 +73,8 @@ class AppointmentSettingsView extends GetView<SettingsController> {
                     Get.toNamed(Routes.APPOINTMENT_STATUS);
                   },
                   child: ListTile(
-                    title: Text(
-                      "Appointment Status",
+                    title: TextWidget(
+                      text: "Appointment Status",
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontSize: 18.sp,
                         fontWeight: FontWeight.w500,
@@ -91,7 +92,7 @@ class AppointmentSettingsView extends GetView<SettingsController> {
                 //   color: Colors.white,
                 //   onPressed: () {},
                 //   child: ListTile(
-                //     title: Text(
+                //     title:  TextWidget(text:
                 //       "Appointment Resources",
                 //       style: theme.textTheme.bodyLarge?.copyWith(
                 //         fontSize: 18.sp,
@@ -113,8 +114,8 @@ class AppointmentSettingsView extends GetView<SettingsController> {
                     Get.toNamed(Routes.TICKET_STATUS);
                   },
                   child: ListTile(
-                    title: Text(
-                      "Ticket Status",
+                    title: TextWidget(
+                      text: "Ticket Status",
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontSize: 18.sp,
                         fontWeight: FontWeight.w500,

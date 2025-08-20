@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/date_converter.dart';
@@ -17,7 +18,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Payment'),
+        title: TextWidget(text: 'Payment'),
         centerTitle: false,
       ),
       body: Padding(
@@ -25,8 +26,8 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Select your preferred method',
+            TextWidget(
+              text: 'Select your preferred method',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: LightThemeColors.bodyTextSecondaryColor,
                 fontWeight: FontWeight.w400,
@@ -58,14 +59,13 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Total Amount',
-                          textScaler: TextScaler.linear(1.0),
+                        TextWidget(
+                          text: 'Total Amount',
                           style: TextStyle(color: Colors.white70),
                         ),
-                        Text(
-                          '\$${double.parse(controller.total.value).toStringAsFixed(2)}',
-                          textScaler: TextScaler.linear(1.0),
+                        TextWidget(
+                          text:
+                              '\$${double.parse(controller.total.value).toStringAsFixed(2)}',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 26.sp,
@@ -73,14 +73,13 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                           ),
                         ),
                         SizedBox(height: 6.sp),
-                        Text(
-                          'Deposit Amount',
-                          textScaler: TextScaler.linear(1.0),
+                        TextWidget(
+                          text: 'Deposit Amount',
                           style: TextStyle(color: Colors.white70),
                         ),
-                        Text(
-                          '\$${double.parse(controller.depositAmount.value).toStringAsFixed(2)}',
-                          textScaler: TextScaler.linear(1.0),
+                        TextWidget(
+                          text:
+                              '\$${double.parse(controller.depositAmount.value).toStringAsFixed(2)}',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 26.sp,
@@ -88,9 +87,9 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                           ),
                         ),
                         SizedBox(height: 3.sp),
-                        Text(
-                          'Due by ${dateTimeConverter(inputTime: DateTime.now().toString(), outputFormat: "MM/dd/yyyy")}',
-                          textScaler: TextScaler.linear(1.0),
+                        TextWidget(
+                          text:
+                              'Due by ${dateTimeConverter(inputTime: DateTime.now().toString(), outputFormat: "MM/dd/yyyy")}',
                           style: TextStyle(color: Colors.white70),
                         ),
                       ],
@@ -154,8 +153,17 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                       (double.parse(controller.total.value) -
                               double.parse(controller.depositAmount.value))
                           .toStringAsFixed(2);
-                  await controller.initializeWebController();
-                  Get.toNamed(Routes.MANUAL_PAYMENT);
+                  await controller.initializeWebController(
+                      controller.requestedDepositAmountEditTextController.text);
+                  Get.toNamed(Routes.INVOICE_CREATE);
+                }),
+            SizedBox(height: 8.sp),
+            PaymentOption(
+                icon: Remix.bank_card_line,
+                loading: controller.xpayLinkLoading.value,
+                label: 'XPayLink',
+                onTap: () async {
+                  controller.paymentViaXpayLink();
                 }),
             // SizedBox(height: 8.sp),
             // PaymentOption(
@@ -186,10 +194,12 @@ class PaymentOption extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool loading;
 
   const PaymentOption(
       {super.key,
       required this.icon,
+      this.loading = false,
       required this.label,
       required this.onTap});
 
@@ -202,7 +212,17 @@ class PaymentOption extends StatelessWidget {
       ),
       child: ListTile(
         leading: Icon(icon),
-        title: Text(label),
+        title: loading
+            ? SizedBox(
+                height: 15,
+                width: 15,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                  ),
+                ),
+              )
+            : TextWidget(text: label),
         trailing: Icon(Icons.arrow_forward_ios),
         onTap: onTap,
       ),

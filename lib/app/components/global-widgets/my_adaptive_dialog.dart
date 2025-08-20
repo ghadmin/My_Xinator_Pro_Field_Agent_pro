@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 enum AdaptiveDialogAction { yes, no, cancel }
 
@@ -77,7 +78,7 @@ class MyAdaptiveDialog {
             noAction?.call(); // Call custom "No" action if provided
             Navigator.of(context).pop(AdaptiveDialogAction.no);
           },
-          child: Text(noLabel),
+          child: TextWidget(text: noLabel),
         ),
       );
     }
@@ -90,17 +91,16 @@ class MyAdaptiveDialog {
             yesAction?.call(); // Call custom "Yes" action if provided
             Navigator.of(context).pop(AdaptiveDialogAction.yes);
           },
-          child: Text(yesLabel),
+          child: TextWidget(text: yesLabel),
         ),
       );
     }
 
     return await showDialog<AdaptiveDialogAction>(
       context: context,
-
       builder: (context) => AlertDialog(
-        title: Text(
-          title,
+        title: TextWidget(
+          text: title,
           textAlign: centerTitle ? TextAlign.center : TextAlign.start,
           style: titleTextStyle,
         ),
@@ -134,7 +134,7 @@ class MyAdaptiveDialog {
             Navigator.of(context).pop(AdaptiveDialogAction.no);
           },
           textStyle: noColor != null ? TextStyle(color: noColor) : null,
-          child: Text(noLabel),
+          child: TextWidget(text: noLabel),
         ),
       );
     }
@@ -148,7 +148,7 @@ class MyAdaptiveDialog {
             Navigator.of(context).pop(AdaptiveDialogAction.yes);
           },
           textStyle: yesColor != null ? TextStyle(color: yesColor) : null,
-          child: Text(yesLabel),
+          child: TextWidget(text: yesLabel),
         ),
       );
     }
@@ -156,8 +156,8 @@ class MyAdaptiveDialog {
     return await showCupertinoDialog<AdaptiveDialogAction>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: Text(
-          title,
+        title: TextWidget(
+          text: title,
           textAlign: centerTitle ? TextAlign.center : TextAlign.start,
           style: titleTextStyle,
         ),

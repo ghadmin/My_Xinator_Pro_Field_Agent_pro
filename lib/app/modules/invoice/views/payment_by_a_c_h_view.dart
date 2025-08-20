@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../controllers/invoice_controller.dart';
 
@@ -10,7 +11,7 @@ class PaymentByACHView extends GetView<InvoiceController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Payment by ACH'),
+        title: TextWidget(text: 'Payment by ACH'),
         centerTitle: false,
       ),
       body: Padding(
@@ -19,9 +20,9 @@ class PaymentByACHView extends GetView<InvoiceController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Thank you for selecting the payment method. Please select your desired credit or add a new',
-                textScaler: TextScaler.linear(1.0),
+              TextWidget(
+                text:
+                    'Thank you for selecting the payment method. Please select your desired credit or add a new',
                 style: TextStyle(fontSize: 16),
               ),
               SizedBox(height: 16),
@@ -34,24 +35,22 @@ class PaymentByACHView extends GetView<InvoiceController> {
                       children: [
                         Icon(Icons.email),
                         SizedBox(width: 8),
-                        Text('Email Receipt'),
+                        TextWidget(text: 'Email Receipt'),
                       ],
                     ),
                   ),
                 ],
               ),
               SizedBox(height: 32),
-              Text(
-                'Invoice Summary',
-                textScaler: TextScaler.linear(1.0),
+              TextWidget(
+                text: 'Invoice Summary',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
               _buildInvoiceSummary(),
               SizedBox(height: 32),
-              Text(
-                'Bank Account',
-                textScaler: TextScaler.linear(1.0),
+              TextWidget(
+                text: 'Bank Account',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
@@ -71,7 +70,7 @@ class PaymentByACHView extends GetView<InvoiceController> {
                       items: ['Checking', 'Savings'].map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Text(value),
+                          child: TextWidget(text: value),
                         );
                       }).toList(),
                       onChanged: (String? value) {},
@@ -88,9 +87,9 @@ class PaymentByACHView extends GetView<InvoiceController> {
               SizedBox(height: 32),
               Row(
                 children: [
-                  Text('Collection Amount'),
+                  TextWidget(text: 'Collection Amount'),
                   Spacer(),
-                  Text('\$150.00'),
+                  TextWidget(text: '\$150.00'),
                 ],
               ),
               SizedBox(height: 32),
@@ -98,12 +97,12 @@ class PaymentByACHView extends GetView<InvoiceController> {
                 children: [
                   ElevatedButton(
                     onPressed: () {},
-                    child: Text('Cancel'),
+                    child: TextWidget(text: 'Cancel'),
                   ),
                   Spacer(),
                   ElevatedButton(
                     onPressed: () {},
-                    child: Text('Confirm'),
+                    child: TextWidget(text: 'Confirm'),
                   ),
                 ],
               ),
@@ -120,45 +119,45 @@ class PaymentByACHView extends GetView<InvoiceController> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Text('Invoice Number: Inv-7369-100243'),
+            TextWidget(text: 'Invoice Number: Inv-7369-100243'),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Customer Name'),
+                TextWidget(text: 'Customer Name'),
                 Spacer(),
-                Text('AdamApple'),
+                TextWidget(text: 'AdamApple'),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Address'),
+                TextWidget(text: 'Address'),
                 Spacer(),
-                Text('123 Main St. Anywhere\nPA 10000'),
+                TextWidget(text: '123 Main St. Anywhere\nPA 10000'),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Type'),
+                TextWidget(text: 'Type'),
                 Spacer(),
-                Text('Invoice'),
+                TextWidget(text: 'Invoice'),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Total Amount'),
+                TextWidget(text: 'Total Amount'),
                 Spacer(),
-                Text('\$150.00'),
+                TextWidget(text: '\$150.00'),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                Text('Date'),
+                TextWidget(text: 'Date'),
                 Spacer(),
-                Text('04/20/2025'),
+                TextWidget(text: '04/20/2025'),
               ],
             ),
           ],

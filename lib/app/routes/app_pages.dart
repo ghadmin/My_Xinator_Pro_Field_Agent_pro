@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/bindings/customer_binding.dart';
+import 'package:xinator_fsm_pro/app/modules/forms/bindings/form_binding.dart';
+import 'package:xinator_fsm_pro/app/modules/invoice/views/payment_web_view.dart';
 import 'package:xinator_fsm_pro/app/modules/signature/bindings/signature_binding.dart';
 import 'package:xinator_fsm_pro/app/modules/signature/views/signature_view.dart';
 
@@ -12,6 +14,7 @@ import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/sign_up_view.dart';
 import '../modules/customer/views/customer_details_view.dart';
 import '../modules/customer/views/customer_view.dart';
+import '../modules/forms/views/form_view.dart';
 import '../modules/invoice/bindings/invoice_binding.dart';
 import '../modules/invoice/views/create_invoice_view.dart';
 import '../modules/invoice/views/invoice_details_view.dart';
@@ -110,6 +113,15 @@ class AppPages {
       name: _Paths.INVOICE_DETAILS,
       page: () => const InvoiceDetailsView(),
       binding: InvoiceBinding(),
+    ),
+    GetPage(
+      name: _Paths.FORMS,
+      page: () => const FormView(),
+      binding: FormBinding(),
+    ),
+    GetPage(
+      name: _Paths.X_PAY_LINK_WEB,
+      page: () => XPayLinkScreen(),
     ),
     GetPage(
       name: _Paths.TICKET_STATUS,

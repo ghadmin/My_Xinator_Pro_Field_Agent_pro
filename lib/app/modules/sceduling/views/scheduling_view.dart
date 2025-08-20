@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 import 'package:xinator_fsm_pro/app/modules/sceduling/views/map_view_tab.dart';
 
 class SchedulingView extends StatelessWidget {
@@ -12,14 +13,14 @@ class SchedulingView extends StatelessWidget {
       length: 4,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Dispatch Calendar"),
+          title: const TextWidget(text: "Dispatch Calendar"),
           actions: [
             TextButton(
               onPressed: () {
                 // Navigate to CEC Appointments
               },
-              child: Text(
-                "CEC Appointments",
+              child: TextWidget(
+                text: "CEC Appointments",
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 10.sp,
                   fontWeight: FontWeight.w500,
@@ -101,8 +102,8 @@ class _DateViewTab extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(onPressed: () {}, icon: const Icon(Icons.chevron_left)),
-        Text(
-          "Mon, Jul 7",
+        TextWidget(
+          text: "Mon, Jul 7",
           style: theme.textTheme.bodySmall?.copyWith(
             fontSize: 10.sp,
             fontWeight: FontWeight.w500,
@@ -111,7 +112,8 @@ class _DateViewTab extends StatelessWidget {
         IconButton(onPressed: () {}, icon: const Icon(Icons.chevron_right)),
         TextButton(
             onPressed: () {},
-            child: Text("Today",
+            child: TextWidget(
+                text: "Today",
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 10.sp,
                   fontWeight: FontWeight.w500,
@@ -128,7 +130,8 @@ class _DateViewTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Center(
-          child: Text("Calendar View Placeholder",
+          child: TextWidget(
+              text: "Calendar View Placeholder",
               style: theme.textTheme.bodySmall?.copyWith(
                 fontSize: 10.sp,
                 fontWeight: FontWeight.w500,
@@ -140,7 +143,8 @@ class _DateViewTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Unassigned Appointments",
+        TextWidget(
+            text: "Unassigned Appointments",
             style: theme.textTheme.bodySmall
                 ?.copyWith(fontSize: 10.sp, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
@@ -176,7 +180,8 @@ class _DateViewTab extends StatelessWidget {
       items: items
           .map((item) => DropdownMenuItem(
               value: item,
-              child: Text(item,
+              child: TextWidget(
+                  text: item,
                   style: theme.textTheme.bodySmall?.copyWith(
                       fontSize: 10.sp, fontWeight: FontWeight.bold))))
           .toList(),
@@ -217,7 +222,8 @@ class _ViewIcon extends StatelessWidget {
         children: [
           Icon(icon, size: 80, color: Colors.blue),
           const SizedBox(height: 10),
-          Text(label,
+          TextWidget(
+              text: label,
               style: theme.textTheme.bodySmall
                   ?.copyWith(fontSize: 10.sp, fontWeight: FontWeight.bold)),
         ],

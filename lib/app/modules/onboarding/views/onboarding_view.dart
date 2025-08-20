@@ -67,7 +67,7 @@
 //                                         EdgeInsets.symmetric(horizontal: 25.sp),
 //                                     child: SizedBox(
 //                                       width: 300.w,
-//                                       child: Text(
+//                                       child:  TextWidget(text:
 //                                         controller.onBoardingPages[index].title,
 //                                         style: TextStyle(
 //                                           fontSize: 20.sp,
@@ -87,7 +87,7 @@
 //                                             SizedBox(height: 10.sp),
 //                                             SizedBox(
 //                                               width: 300.w,
-//                                               child: Text(
+//                                               child:  TextWidget(text:
 //                                                 controller
 //                                                     .onBoardingPages[index]
 //                                                     .subtitle,
@@ -106,7 +106,7 @@
 //                                         ),
 //                                   SizedBox(
 //                                     width: 300.w,
-//                                     child: Text(
+//                                     child:  TextWidget(text:
 //                                       controller
 //                                           .onBoardingPages[index].description,
 //                                       textAlign: TextAlign.center,
@@ -156,7 +156,7 @@
 //                           onPressed: () {
 //                             Get.offAllNamed(Routes.LOGIN);
 //                           },
-//                           child: Text(
+//                           child:  TextWidget(text:
 //                             "Skip",
 //                             style: TextStyle(
 //                               color: Colors.white,
@@ -265,7 +265,7 @@
 //                                         EdgeInsets.symmetric(horizontal: 25.sp),
 //                                     child: SizedBox(
 //                                       width: 300.w,
-//                                       child: Text(
+//                                       child:  TextWidget(text:
 //                                         controller.onBoardingPages[index].title,
 //                                         style: TextStyle(
 //                                           fontSize: 20.sp,
@@ -285,7 +285,7 @@
 //                                             SizedBox(height: 10.sp),
 //                                             SizedBox(
 //                                               width: 300.w,
-//                                               child: Text(
+//                                               child:  TextWidget(text:
 //                                                 controller
 //                                                     .onBoardingPages[index]
 //                                                     .subtitle,
@@ -304,7 +304,7 @@
 //                                         ),
 //                                   SizedBox(
 //                                     width: 300.w,
-//                                     child: Text(
+//                                     child:  TextWidget(text:
 //                                       controller
 //                                           .onBoardingPages[index].description,
 //                                       textAlign: TextAlign.center,
@@ -354,7 +354,7 @@
 //                           onPressed: () {
 //                             Get.offAllNamed(Routes.LOGIN);
 //                           },
-//                           child: Text(
+//                           child:  TextWidget(text:
 //                             "Skip",
 //                             style: TextStyle(
 //                               color: Colors.white,
@@ -463,7 +463,7 @@
 //                                         EdgeInsets.symmetric(horizontal: 25.sp),
 //                                     child: SizedBox(
 //                                       width: 300.w,
-//                                       child: Text(
+//                                       child:  TextWidget(text:
 //                                         controller.onBoardingPages[index].title,
 //                                         style: TextStyle(
 //                                           fontSize: 30.sp,
@@ -483,7 +483,7 @@
 //                                             SizedBox(height: 20.sp),
 //                                             SizedBox(
 //                                               width: 300.w,
-//                                               child: Text(
+//                                               child:  TextWidget(text:
 //                                                 controller
 //                                                     .onBoardingPages[index]
 //                                                     .subtitle,
@@ -502,7 +502,7 @@
 //                                         ),
 //                                   SizedBox(
 //                                     width: 300.w,
-//                                     child: Text(
+//                                     child:  TextWidget(text:
 //                                       controller
 //                                           .onBoardingPages[index].description,
 //                                       textAlign: TextAlign.center,
@@ -552,7 +552,7 @@
 //                           onPressed: () {
 //                             Get.offAllNamed(Routes.LOGIN);
 //                           },
-//                           child: Text(
+//                           child:  TextWidget(text:
 //                             "Skip",
 //                             style: TextStyle(
 //                               color: Colors.white,
@@ -619,6 +619,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
@@ -691,8 +692,8 @@ class OnboardingView extends GetView<OnboardingController> {
                       padding: EdgeInsets.symmetric(horizontal: 25.sp),
                       child: SizedBox(
                         width: 300.w,
-                        child: Text(
-                          "Welcome to",
+                        child: TextWidget(
+                          text: "Welcome to",
                           style: TextStyle(
                             fontSize: 30.sp,
                             fontWeight: FontWeight.w900,
@@ -706,8 +707,8 @@ class OnboardingView extends GetView<OnboardingController> {
                     SizedBox(height: 10.sp),
                     SizedBox(
                       width: 300.w,
-                      child: Text(
-                        "XinatorBMS FA PRO",
+                      child: TextWidget(
+                        text: "XinatorBMS FA PRO",
                         style: TextStyle(
                           fontSize: 29.sp,
                           fontWeight: FontWeight.bold,
@@ -722,8 +723,9 @@ class OnboardingView extends GetView<OnboardingController> {
                       padding: EdgeInsets.symmetric(horizontal: 20.0.sp),
                       child: SizedBox(
                         width: double.infinity,
-                        child: Text(
-                          "XinatorBMS FA Pro is a modular ERP built for service-first small businesses. It helps automate customer-focused operations with simplicity and control.",
+                        child: TextWidget(
+                          text:
+                              "XinatorBMS FA Pro is a modular ERP built for service-first small businesses. It helps automate customer-focused operations with simplicity and control.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14.sp,

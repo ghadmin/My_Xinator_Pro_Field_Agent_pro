@@ -8,6 +8,7 @@ import '../../data/local/my_shared_pref.dart';
 import '../../modules/auth/controllers/auth_controller.dart';
 import '../../routes/app_pages.dart';
 import '../global-widgets/asset_image_box.dart';
+import '../global-widgets/text_widget.dart';
 
 class CustomDrawer extends StatelessWidget {
   CustomDrawer({super.key, required this.indexClicked});
@@ -41,10 +42,9 @@ class CustomDrawer extends StatelessWidget {
                     SizedBox(width: 12.sp),
                     SizedBox(
                       width: 116.sp,
-                      child: Text(
+                      child: TextWidget(
+                        text: "${MySharedPref.getUserName()}",
                         textAlign: TextAlign.center,
-                        "${MySharedPref.getUserName()}",
-                        textScaler: TextScaler.linear(1.0),
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 16.sp,
@@ -102,34 +102,37 @@ class CustomDrawer extends StatelessWidget {
             //     indexClicked = indexClicked;
             //   },
             // ),
-            // SizedBox(
-            //   height: 10.h,
-            // ),
-            // _drawerItem(
-            //   icon: SideBar.formIcon,
-            //   text: 'Forms',
-            //   indexNumber: 3,
-            //   onTap: () async {
-            //     Get.toNamed(Routes.ITEM);
-            //     indexClicked = indexClicked;
-            //   },
-            // ),
-            // SizedBox(
-            //   height: 10.h,
-            // ),
+            SizedBox(
+              height: 10.h,
+            ),
+            _drawerItem(
+              icon: SideBar.formIcon,
+              text: 'Forms',
+              indexNumber: 1,
+              onTap: () async {
+                Get.toNamed(Routes.FORMS);
+                indexClicked = indexClicked;
+              },
+            ),
+            SizedBox(
+              height: 10.h,
+            ),
             _drawerItem(
               icon: SideBar.itemsIcon,
               text: 'Items',
-              indexNumber: 1,
+              indexNumber: 2,
               onTap: () async {
                 Get.toNamed(Routes.ITEM);
                 indexClicked = indexClicked;
               },
             ),
+            SizedBox(
+              height: 10.h,
+            ),
             _drawerItem(
               icon: SideBar.customerServiceIcon,
               text: 'Customers',
-              indexNumber: 2,
+              indexNumber: 3,
               onTap: () async {
                 Get.toNamed(Routes.CUSTOMER);
                 indexClicked = indexClicked;
@@ -162,37 +165,35 @@ class CustomDrawer extends StatelessWidget {
             _drawerItem(
               icon: SideBar.logoutIcon,
               text: 'Log out',
-              indexNumber: 3,
+              indexNumber: 4,
               onTap: () async {
                 Get.back();
                 showAdaptiveDialog(
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        title: const Text(
-                          'Log out',
-                          textScaler: TextScaler.linear(1.0),
+                        title: const TextWidget(
+                          text: 'Log out',
                           style: TextStyle(
                             color: Colors.red,
                           ),
                         ),
-                        content:
-                            const Text('Are you sure you want to log out?'),
+                        content: const TextWidget(
+                            text: 'Are you sure you want to log out?'),
                         actions: [
                           TextButton(
                             onPressed: () {
                               Get.back();
                             },
-                            child: const Text('Cancel'),
+                            child: const TextWidget(text: 'Cancel'),
                           ),
                           TextButton(
                             onPressed: () async {
                               Get.back();
                               await authController.doLogout();
                             },
-                            child: Text(
-                              'Log out',
-                              textScaler: TextScaler.linear(1.0),
+                            child: TextWidget(
+                              text: 'Log out',
                               style: TextStyle(
                                 color: LightThemeColors.bodyTextSecondaryColor,
                               ),
@@ -225,9 +226,8 @@ class CustomDrawer extends StatelessWidget {
           Image.asset(height: 25.h, width: 25.w, icon),
           Padding(
             padding: EdgeInsets.only(left: 15.sp),
-            child: Text(
-              text,
-              textScaler: TextScaler.linear(1.0),
+            child: TextWidget(
+              text: text,
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w400,

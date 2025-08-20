@@ -1,22 +1,29 @@
-import 'dart:io';
-
+import 'dart:io' hide log;
+import 'dart:developer';
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:video_player/video_player.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
 import 'package:xinator_fsm_pro/app/modules/settings/controllers/settings_controller.dart';
-import 'package:xinator_fsm_pro/app/modules/settings/models/appointment_status_setting.dart';
-
+import 'package:xinator_fsm_pro/app/service/helper/network_connectivity.dart';
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/splash_container.dart';
+import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
 import '../../item/models/item_list_model.dart';
 import '../controllers/appointment_controller.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:path_provider/path_provider.dart';
 
 class AppointmentDetailsView extends StatefulWidget {
   const AppointmentDetailsView({super.key});
@@ -32,7 +39,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -50,9 +57,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
       appBar: AppBar(
         toolbarHeight:
             Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
-        title: Text(
-          "Appointment Details",
-          textScaler: TextScaler.linear(1.0),
+        title: TextWidget(
+          text: "Appointment Details",
         ),
         centerTitle: false,
       ),
@@ -90,8 +96,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                       // Get.toNamed(Routes.CUSTOMER_DETAILS);
                     },
-                    child: Text(
-                      controller.contactName,
+                    child: TextWidget(
+                      text: controller.contactName,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
@@ -196,8 +202,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 SizedBox(
                                   height: 10.h,
                                 ),
-                                Text(
-                                  controller
+                                TextWidget(
+                                  text: controller
                                           .settingController
                                           .selectedAppointmentsStatus
                                           .value
@@ -278,8 +284,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         SizedBox(
                                           height: 10.h,
                                         ),
-                                        Text(
-                                          (controller
+                                        TextWidget(
+                                          text: (controller
                                                           .settingController
                                                           .selectedTicket
                                                           .value
@@ -301,7 +307,6 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           maxLines: 2,
                                           textAlign: TextAlign.center,
                                           overflow: TextOverflow.ellipsis,
-                                          textScaler: TextScaler.linear(1.0),
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               color: Colors.black,
@@ -341,8 +346,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         await openMapWithRoute(
                                             controller.address);
                                       },
-                                      child: Text(
-                                        controller.address,
+                                      child: TextWidget(
+                                        text: controller.address,
                                         style:
                                             theme.textTheme.bodyLarge?.copyWith(
                                           fontSize: 12.sp,
@@ -377,8 +382,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                       width: 5,
                                     ),
                                     Expanded(
-                                      child: Text(
-                                        controller.mobileNumber == ""
+                                      child: TextWidget(
+                                        text: controller.mobileNumber == ""
                                             ? "N/A"
                                             : controller.mobileNumber,
                                         style:
@@ -412,8 +417,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                       width: 5,
                                     ),
                                     Expanded(
-                                      child: Text(
-                                        controller.phoneNumber == ""
+                                      child: TextWidget(
+                                        text: controller.phoneNumber == ""
                                             ? "N/A"
                                             : controller.phoneNumber,
                                         style:
@@ -447,8 +452,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                       width: 5,
                                     ),
                                     Expanded(
-                                      child: Text(
-                                        controller.email == ""
+                                      child: TextWidget(
+                                        text: controller.email == ""
                                             ? "N/A"
                                             : controller.email,
                                         maxLines: 2,
@@ -487,8 +492,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                           Colors.grey, // unselected tab text/icon color
                       indicatorWeight: 3.0, controller: _tabController,
                       tabs: [
-                        Text(
-                          "Info",
+                        TextWidget(
+                          text: "Info",
                           maxLines: 2,
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
@@ -497,8 +502,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                               color: Colors.black,
                               fontSize: 10.sp),
                         ),
-                        Text(
-                          "Notes",
+                        TextWidget(
+                          text: "Notes",
                           maxLines: 2,
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
@@ -507,8 +512,18 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                               color: Colors.black,
                               fontSize: 10.sp),
                         ),
-                        Text(
-                          "Estimate/Invoice",
+                        TextWidget(
+                          text: "Estimate/Invoice",
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                              fontSize: 10.sp),
+                        ),
+                        TextWidget(
+                          text: "Evidence",
                           maxLines: 2,
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
@@ -537,16 +552,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         ),
                         MainDivider(),
                         ListTile(
-                          title: Text(
-                            "Request Date",
+                          title: TextWidget(
+                            text: "Request Date",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          trailing: Text(
-                            controller.requestDate,
+                          trailing: TextWidget(
+                            text: controller.requestDate,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
@@ -555,16 +570,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         ),
                         MainDivider(),
                         ListTile(
-                          title: Text(
-                            "Start Date",
+                          title: TextWidget(
+                            text: "Start Date",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          trailing: Text(
-                            controller.startDate,
+                          trailing: TextWidget(
+                            text: controller.startDate,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
@@ -573,16 +588,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         ),
                         MainDivider(),
                         ListTile(
-                          title: Text(
-                            "End Date",
+                          title: TextWidget(
+                            text: "End Date",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          trailing: Text(
-                            controller.endDate,
+                          trailing: TextWidget(
+                            text: controller.endDate,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
@@ -591,16 +606,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         ),
                         MainDivider(),
                         ListTile(
-                          title: Text(
-                            "Time Slot",
+                          title: TextWidget(
+                            text: "Time Slot",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          trailing: Text(
-                            controller.timeSlot,
+                          trailing: TextWidget(
+                            text: controller.timeSlot,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
@@ -609,16 +624,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         ),
                         MainDivider(),
                         ListTile(
-                          title: Text(
-                            "Service Type",
+                          title: TextWidget(
+                            text: "Service Type",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          trailing: Text(
-                            controller.serviceType,
+                          trailing: TextWidget(
+                            text: controller.serviceType,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
@@ -627,16 +642,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         ),
                         MainDivider(),
                         ListTile(
-                          title: Text(
-                            "Resource",
+                          title: TextWidget(
+                            text: "Resource",
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: LightThemeColors.hintTextColor,
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          trailing: Text(
-                            controller.resource,
+                          trailing: TextWidget(
+                            text: controller.resource,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w500,
@@ -655,13 +670,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Text(
+                        //   TextWidget(text:
                         //   "Office Notes:",
                         //   style: theme.textTheme.bodyMedium?.copyWith(
                         //     fontWeight: FontWeight.bold,
                         //   ),
                         // ),
-                        // Text("Do not forget to bring the required tools."),
+                        //   TextWidget(text: "Do not forget to bring the required tools."),
                         // SizedBox(height: 10.h),
 
                         // // --- 2. History Notes ---
@@ -669,7 +684,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         // Column(
                         //   crossAxisAlignment: CrossAxisAlignment.start,
                         //   children: [
-                        //     Text(
+                        //       TextWidget(text:
                         //       "Previous Notes:",
                         //       style: theme.textTheme.bodyMedium?.copyWith(
                         //         fontWeight: FontWeight.bold,
@@ -678,7 +693,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         //     ...controller.historyNotes.map(
                         //       (note) => Padding(
                         //         padding: EdgeInsets.symmetric(vertical: 4.h),
-                        //         child: Text(
+                        //         child:   TextWidget(text:
                         //           "${"07/09/2025"} • $note",
                         //           style: theme.textTheme.bodySmall,
                         //         ),
@@ -687,8 +702,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         //     SizedBox(height: 10.h),
                         //   ],
                         // ),
-                        Text(
-                          "Notes",
+                        TextWidget(
+                          text: "Notes",
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: LightThemeColors.hintTextColor,
                             fontSize: 10.sp,
@@ -728,14 +743,25 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         SizedBox(
                           height: 20.h,
                         ),
+                        // ElevatedButton(
+                        //     onPressed: () {
+                        //       showProductDialog(context);
+                        //     },
+                        //     child: Padding(
+                        //       padding: const EdgeInsets.all(2.0),
+                        //       child: Text("Store locator "),
+                        //     )),
+                        SizedBox(
+                          height: 10.h,
+                        ),
                         Padding(
                           padding: EdgeInsets.only(left: 10.0.sp),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Center(
-                                child: Text(
-                                  "Estimate/Invoice Details",
+                                child: TextWidget(
+                                  text: "Estimate/Invoice Details",
                                   style:
                                       theme.textTheme.headlineSmall?.copyWith(
                                     fontWeight: FontWeight.w500,
@@ -780,7 +806,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           .map((e) {
                                         return PopupMenuItem(
                                           value: e["name"],
-                                          child: Text("${e["name"]}"),
+                                          child:
+                                              TextWidget(text: "${e["name"]}"),
                                         );
                                       }).toList(),
                                     ).then((v) async {
@@ -862,8 +889,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           size: 18.sp,
                                         ),
                                         SizedBox(width: 5.sp),
-                                        Text(
-                                          "Create New",
+                                        TextWidget(
+                                          text: "Create New",
                                           style: theme.textTheme.bodyLarge
                                               ?.copyWith(
                                             color: Colors.white,
@@ -892,6 +919,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                     controller.showLoading();
 
                                     // Clear previous selection if needed
+
+                                    log("customerId: ${proposal.customerId} invoiceID: ${proposal.invoiceID} email : }");
                                     controller
                                         .invoiceController.selectedItemList
                                         .clear();
@@ -1081,8 +1110,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           CrossAxisAlignment.start,
                                       children: [
                                         ListTile(
-                                          title: Text(
-                                            "${proposal.type ?? ""} Number",
+                                          title: TextWidget(
+                                            text:
+                                                "${proposal.type ?? ""} Number",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
                                               color: LightThemeColors
@@ -1107,8 +1137,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       ? Colors.green
                                                       : Colors.yellow,
                                             ),
-                                            child: Text(
-                                              proposal.number ?? "",
+                                            child: TextWidget(
+                                              text: proposal.number ?? "",
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
                                                 fontSize: 12.sp,
@@ -1125,8 +1155,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         ),
                                         MainDivider(),
                                         ListTile(
-                                          title: Text(
-                                            "Date",
+                                          title: TextWidget(
+                                            text: "Date",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
                                               color: LightThemeColors
@@ -1136,8 +1166,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             ),
                                           ),
                                           trailing: proposal.invoiceDate != ""
-                                              ? Text(
-                                                  dateTimeConverter(
+                                              ? TextWidget(
+                                                  text: dateTimeConverter(
                                                       inputFormat:
                                                           "yyyy/MM/dd hh:mm a",
                                                       inputTime: proposal
@@ -1152,12 +1182,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     fontWeight: FontWeight.w500,
                                                   ),
                                                 )
-                                              : Text(""),
+                                              : TextWidget(text: ""),
                                         ),
                                         MainDivider(),
                                         ListTile(
-                                          title: Text(
-                                            "Required Amount",
+                                          title: TextWidget(
+                                            text: "Required Amount",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
                                               color: LightThemeColors
@@ -1166,8 +1196,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                          trailing: Text(
-                                            "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
+                                          trailing: TextWidget(
+                                            text:
+                                                "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
                                               fontSize: 14.sp,
@@ -1177,8 +1208,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         ),
                                         MainDivider(),
                                         ListTile(
-                                          title: Text(
-                                            "Amount Received",
+                                          title: TextWidget(
+                                            text: "Amount Received",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
                                               color: LightThemeColors
@@ -1187,8 +1218,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                          trailing: Text(
-                                            "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
+                                          trailing: TextWidget(
+                                            text:
+                                                "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
                                               fontSize: 14.sp,
@@ -1216,6 +1248,203 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         SizedBox(height: 15.sp),
                       ],
                     ),
+                  ),
+
+                  //********************************* Tab Four Evidence *********************************/
+
+                  SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 20.h,
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: () {
+                              showMediaBottomSheet(context, -1);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: DottedBorder(
+                                  options: RectDottedBorderOptions(
+                                      dashPattern: [3, 2]),
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 25.sp,
+                                  )),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 15.sp),
+                        Obx(() => ListView.separated(
+                              itemBuilder: (context, index) {
+                                final item = controller.mediaList[index];
+                                return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      TextWidget(text: item.time),
+                                      SizedBox(
+                                        height: 10.h,
+                                      ),
+                                      SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          children: [
+                                            ...item.images.map((e) {
+                                              if (_isVideo(e)) {
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    showMediaDialog(context, e);
+                                                  },
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            right: 8.0),
+                                                    child:
+                                                        FutureBuilder<String?>(
+                                                      future:
+                                                          generateVideoThumbnail(
+                                                              e),
+                                                      builder:
+                                                          (context, snapshot) {
+                                                        if (snapshot
+                                                                .connectionState ==
+                                                            ConnectionState
+                                                                .waiting) {
+                                                          return Container(
+                                                            height: 150,
+                                                            width: 150,
+                                                            alignment: Alignment
+                                                                .center,
+                                                            child:
+                                                                const CircularProgressIndicator(),
+                                                          );
+                                                        }
+                                                        if (snapshot.hasData &&
+                                                            snapshot.data !=
+                                                                null) {
+                                                          return Stack(
+                                                            children: [
+                                                              Container(
+                                                                height: 150,
+                                                                width: 150,
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              10.r),
+                                                                  image:
+                                                                      DecorationImage(
+                                                                    fit: BoxFit
+                                                                        .fill,
+                                                                    image: FileImage(File(
+                                                                        snapshot
+                                                                            .data!)),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              const Positioned
+                                                                  .fill(
+                                                                child: Center(
+                                                                  child: Icon(
+                                                                      Icons
+                                                                          .play_circle_fill,
+                                                                      size: 40,
+                                                                      color: Colors
+                                                                          .white),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          );
+                                                        }
+                                                        return Container(
+                                                          height: 150,
+                                                          width: 150,
+                                                          color:
+                                                              Colors.grey[300],
+                                                          child: const Icon(Icons
+                                                              .play_circle_fill),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                );
+                                              } else {
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    showMediaDialog(context, e);
+                                                  },
+                                                  child: Container(
+                                                    height: 150,
+                                                    width: 150,
+                                                    margin: EdgeInsets.only(
+                                                        right:
+                                                            20), // spacing between items
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10.r),
+                                                      image: DecorationImage(
+                                                        fit: BoxFit.fill,
+                                                        image:
+                                                            FileImage(File(e)),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            }),
+                                            GestureDetector(
+                                              onTap: () {
+                                                showMediaBottomSheet(
+                                                    context, index);
+                                              },
+                                              child: Container(
+                                                height: 150,
+                                                width: 150,
+                                                margin:
+                                                    EdgeInsets.only(right: 8),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[200],
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          10.r),
+                                                  border: Border.all(
+                                                      color: Colors.grey),
+                                                ),
+                                                child: const Icon(Icons.add,
+                                                    size: 40,
+                                                    color: Colors.grey),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: 10.h,
+                                      ),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: () {},
+                                          child: const Text("Save"),
+                                        ),
+                                      )
+                                    ]);
+                              },
+                              separatorBuilder:
+                                  (BuildContext context, int index) =>
+                                      SizedBox(height: 8.sp),
+                              itemCount: controller.mediaList.length,
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                            )),
+                        SizedBox(height: 15.sp),
+                      ],
+                    ),
                   )
                 ],
               ),
@@ -1225,6 +1454,85 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
       ),
     );
   }
+}
+
+void showMediaDialog(BuildContext context, String path) {
+  if (_isVideo(path)) {
+    showDialog(
+      context: context,
+      builder: (_) => _VideoDialog(videoPath: path),
+    );
+  } else {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        child: InteractiveViewer(
+          child: Image.file(File(path), fit: BoxFit.contain),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoDialog extends StatefulWidget {
+  final String videoPath;
+  const _VideoDialog({required this.videoPath});
+
+  @override
+  State<_VideoDialog> createState() => _VideoDialogState();
+}
+
+class _VideoDialogState extends State<_VideoDialog> {
+  late VideoPlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.file(File(widget.videoPath))
+      ..initialize().then((_) {
+        setState(() {});
+        _controller.play();
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: _controller.value.isInitialized
+          ? AspectRatio(
+              aspectRatio: _controller.value.aspectRatio,
+              child: Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  VideoPlayer(_controller),
+                  VideoProgressIndicator(_controller, allowScrubbing: true),
+                ],
+              ),
+            )
+          : SizedBox(
+              height: 150,
+              width: 150,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+    );
+  }
+}
+
+Future<String?> generateVideoThumbnail(String videoPath) async {
+  final tempDir = await getTemporaryDirectory();
+  return await VideoThumbnail.thumbnailFile(
+    video: videoPath,
+    thumbnailPath: tempDir.path,
+    imageFormat: ImageFormat.PNG,
+    maxWidth: 150, // thumbnail width
+    quality: 75,
+  );
 }
 
 Future<void> openMapWithRoute(String destinationAddress) async {
@@ -1257,6 +1565,11 @@ Future<void> openMapWithRoute(String destinationAddress) async {
   }
 }
 
+bool _isVideo(String path) {
+  final ext = path.split('.').last.toLowerCase();
+  return ['mp4', 'mov', 'avi', 'mkv'].contains(ext);
+}
+
 void showDialogTicketStatus(
     BuildContext context, AppointmentController controller) {
   final tickets = controller.settingController.tickets;
@@ -1264,7 +1577,7 @@ void showDialogTicketStatus(
   showDialog(
     barrierDismissible: true,
     context: context,
-    barrierColor: Colors.black.withOpacity(0.7),
+    barrierColor: Colors.black.withValues(alpha: 0.7),
     builder: (context) => Dialog(
       insetPadding: EdgeInsets.all(16.w),
       backgroundColor: Colors.transparent,
@@ -1297,6 +1610,217 @@ void showDialogTicketStatus(
       ),
     ),
   );
+}
+
+void showMediaBottomSheet(BuildContext context, int index) {
+  final appointmentC = Get.find<AppointmentController>();
+  final TextEditingController tagController = TextEditingController();
+
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    isScrollControlled: true,
+    builder: (_) {
+      return Padding(
+        padding: MediaQuery.of(context).viewInsets,
+        child: SizedBox(
+          height: 200,
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextFormField(
+                  controller: tagController,
+                  decoration: InputDecoration(
+                    labelText: 'Tag Name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _MediaButton(
+                    icon: Icons.photo_library,
+                    title: 'Gallery',
+                    onTap: () async {
+                      if (tagController.text.trim().isEmpty && index == -1) {
+                        ScaffoldMessenger.of(context).showMaterialBanner(
+                          MaterialBanner(
+                            content: const Text('Please add a tag first!'),
+                            backgroundColor: Colors.red,
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context)
+                                      .hideCurrentMaterialBanner();
+                                },
+                                child: const Text('OK',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        Future.delayed(const Duration(seconds: 2), () {
+                          ScaffoldMessenger.of(context)
+                              .hideCurrentMaterialBanner();
+                        });
+                        return;
+                      }
+
+                      final List<XFile?> files =
+                          await ImagePicker().pickMultipleMedia();
+                      if (files.isNotEmpty) {
+                        final newImages = files.map((e) => e!.path).toList();
+                        if (index != -1) {
+                          appointmentC.mediaList[index].images
+                              .addAll(newImages);
+                        } else {
+                          appointmentC.mediaList.add(MediaModel(
+                            time:
+                                "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
+                            images: newImages,
+                          ));
+                        }
+                        appointmentC.update();
+                      }
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _MediaButton(
+                    icon: Icons.camera_alt,
+                    title: 'Photo',
+                    onTap: () async {
+                      if (tagController.text.trim().isEmpty && index == -1) {
+                        ScaffoldMessenger.of(context).showMaterialBanner(
+                          MaterialBanner(
+                            content: const Text('Please add a tag first!'),
+                            backgroundColor: Colors.red,
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context)
+                                      .hideCurrentMaterialBanner();
+                                },
+                                child: const Text('OK',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        Future.delayed(const Duration(seconds: 2), () {
+                          ScaffoldMessenger.of(context)
+                              .hideCurrentMaterialBanner();
+                        });
+
+                        return;
+                      }
+
+                      final XFile? file = await ImagePicker()
+                          .pickImage(source: ImageSource.camera);
+                      if (file != null) {
+                        if (index != -1) {
+                          appointmentC.mediaList[index].images.add(file.path);
+                        } else {
+                          appointmentC.mediaList.add(MediaModel(
+                            time:
+                                "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
+                            images: [file.path],
+                          ));
+                        }
+                        appointmentC.update();
+                      }
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _MediaButton(
+                    icon: Icons.videocam,
+                    title: 'Video',
+                    onTap: () async {
+                      if (tagController.text.trim().isEmpty && index == -1) {
+                        ScaffoldMessenger.of(context).showMaterialBanner(
+                          MaterialBanner(
+                            content: const Text('Please add a tag first!'),
+                            backgroundColor: Colors.red,
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context)
+                                      .hideCurrentMaterialBanner();
+                                },
+                                child: const Text('OK',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        Future.delayed(const Duration(seconds: 2), () {
+                          ScaffoldMessenger.of(context)
+                              .hideCurrentMaterialBanner();
+                        });
+                        return;
+                      }
+
+                      final XFile? file = await ImagePicker()
+                          .pickVideo(source: ImageSource.camera);
+                      if (file != null) {
+                        if (index != -1) {
+                          appointmentC.mediaList[index].images.add(file.path);
+                        } else {
+                          appointmentC.mediaList.add(MediaModel(
+                            time:
+                                "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
+                            images: [file.path],
+                          ));
+                        }
+                        appointmentC.update();
+                      }
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _MediaButton extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _MediaButton({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 30, color: Colors.blue),
+          const SizedBox(height: 4),
+          Text(title, style: const TextStyle(fontSize: 14)),
+        ],
+      ),
+    );
+  }
 }
 
 Color _getTicketColor(String? name) {
@@ -1358,8 +1882,8 @@ List<Widget> _buildTicketRows(
                       SizedBox(height: 6.h),
                       SizedBox(
                         width: 80.w,
-                        child: Text(
-                          status.statusName ?? "",
+                        child: TextWidget(
+                          text: status.statusName ?? "",
                           maxLines: 2,
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
@@ -1478,10 +2002,9 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
                     SizedBox(height: 6.h),
                     SizedBox(
                       width: 80.w,
-                      child: Text(
-                        status.statusName ?? "",
+                      child: TextWidget(
+                        text: status.statusName ?? "",
                         maxLines: 2,
-                        textScaler: TextScaler.linear(1.0),
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -1526,7 +2049,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //     var theme = Theme.of(context);
 //     return Scaffold(
 //       appBar: AppBar(
-//         title: Text("Appointment Details"),
+//         title:   TextWidget(text: "Appointment Details"),
 //         centerTitle: false,
 //       ),
 //       body: Padding(
@@ -1622,7 +2145,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                                       const SizedBox(height: 6),
 //                                                       SizedBox(
 //                                                         width: 80,
-//                                                         child: Text(
+//                                                         child:   TextWidget(text:
 //                                                           status.statusName ??
 //                                                               "",
 //                                                           maxLines: 2,
@@ -1702,7 +2225,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                           SizedBox(
 //                                             height: 10.h,
 //                                           ),
-//                                           Text(
+//                                             TextWidget(text:
 //                                             controller
 //                                                     .settingController
 //                                                     .selectedAppointmentsStatus
@@ -1726,7 +2249,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                     child: Column(
 //                                   mainAxisAlignment: MainAxisAlignment.start,
 //                                   children: [
-//                                     Text(
+//                                       TextWidget(text:
 //                                       controller.contactName,
 //                                       style:
 //                                           theme.textTheme.bodyLarge?.copyWith(
@@ -1761,7 +2284,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 
 //                                 Get.toNamed(Routes.CUSTOMER_DETAILS);
 //                               },
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Contact Name",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1769,7 +2292,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   fontWeight: FontWeight.w500,
 //                                 ),
 //                               ),
-//                               trailing: Text(
+//                               trailing:   TextWidget(text:
 //                                 controller.contactName,
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   fontSize: 14.sp,
@@ -1780,7 +2303,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Address",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1790,7 +2313,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                               ),
 //                               trailing: SizedBox(
 //                                 width: 200.sp,
-//                                 child: Text(
+//                                 child:   TextWidget(text:
 //                                   controller.address,
 //                                   style: theme.textTheme.bodyLarge?.copyWith(
 //                                     fontSize: 14.sp,
@@ -1802,7 +2325,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Request Date",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1810,7 +2333,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   fontWeight: FontWeight.w500,
 //                                 ),
 //                               ),
-//                               trailing: Text(
+//                               trailing:   TextWidget(text:
 //                                 controller.requestDate,
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   fontSize: 14.sp,
@@ -1820,7 +2343,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Start Date",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1828,7 +2351,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   fontWeight: FontWeight.w500,
 //                                 ),
 //                               ),
-//                               trailing: Text(
+//                               trailing:   TextWidget(text:
 //                                 controller.startDate,
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   fontSize: 14.sp,
@@ -1838,7 +2361,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "End Date",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1846,7 +2369,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   fontWeight: FontWeight.w500,
 //                                 ),
 //                               ),
-//                               trailing: Text(
+//                               trailing:   TextWidget(text:
 //                                 controller.endDate,
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   fontSize: 14.sp,
@@ -1856,7 +2379,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Time Slot",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1864,7 +2387,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   fontWeight: FontWeight.w500,
 //                                 ),
 //                               ),
-//                               trailing: Text(
+//                               trailing:   TextWidget(text:
 //                                 controller.timeSlot,
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   fontSize: 14.sp,
@@ -1874,7 +2397,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Service Type",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1882,7 +2405,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   fontWeight: FontWeight.w500,
 //                                 ),
 //                               ),
-//                               trailing: Text(
+//                               trailing:   TextWidget(text:
 //                                 controller.serviceType,
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   fontSize: 14.sp,
@@ -1892,7 +2415,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Mobile",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1905,7 +2428,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   await UrlLauncher.phoneCall(
 //                                       controller.mobileNumber);
 //                                 },
-//                                 child: Text(
+//                                 child:   TextWidget(text:
 //                                   controller.mobileNumber,
 //                                   style: theme.textTheme.bodyLarge?.copyWith(
 //                                     fontSize: 14.sp,
@@ -1916,7 +2439,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Phone",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1929,7 +2452,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   await UrlLauncher.phoneCall(
 //                                       controller.phoneNumber);
 //                                 },
-//                                 child: Text(
+//                                 child:   TextWidget(text:
 //                                   controller.phoneNumber,
 //                                   style: theme.textTheme.bodyLarge?.copyWith(
 //                                     fontSize: 14.sp,
@@ -1940,7 +2463,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Email",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1954,7 +2477,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   onTap: () async {
 //                                     await UrlLauncher.email(controller.email);
 //                                   },
-//                                   child: Text(
+//                                   child:   TextWidget(text:
 //                                     controller.email,
 //                                     style: theme.textTheme.bodyLarge?.copyWith(
 //                                       fontSize: 14.sp,
@@ -1968,7 +2491,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                             ),
 //                             MainDivider(),
 //                             ListTile(
-//                               title: Text(
+//                               title:   TextWidget(text:
 //                                 "Resource",
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   color: LightThemeColors.hintTextColor,
@@ -1976,7 +2499,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   fontWeight: FontWeight.w500,
 //                                 ),
 //                               ),
-//                               trailing: Text(
+//                               trailing:   TextWidget(text:
 //                                 controller.resource,
 //                                 style: theme.textTheme.bodyLarge?.copyWith(
 //                                   fontSize: 14.sp,
@@ -1994,7 +2517,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                         crossAxisAlignment:
 //                                             CrossAxisAlignment.start,
 //                                         children: [
-//                                           Text(
+//                                             TextWidget(text:
 //                                             "Status",
 //                                             style: theme.textTheme.bodyLarge
 //                                                 ?.copyWith(
@@ -2061,7 +2584,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                                     : controller
 //                                                         .selectedStatusValue
 //                                                         .value,
-//                                                 hint: Text(
+//                                                 hint:   TextWidget(text:
 //                                                   'Select an option',
 //                                                   style: TextStyle(
 //                                                     color: LightThemeColors
@@ -2078,7 +2601,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                                     .map((e) {
 //                                                   return DropdownMenuItem<int>(
 //                                                     value: e.statusId,
-//                                                     child: Text(
+//                                                     child:   TextWidget(text:
 //                                                       e.statusName ?? "",
 //                                                       style: theme
 //                                                           .textTheme.bodyMedium
@@ -2096,21 +2619,21 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                                         context: context,
 //                                                         builder: (context) {
 //                                                           return AlertDialog(
-//                                                             title: const Text(
+//                                                             title: const   TextWidget(text:
 //                                                               'Warning!',
 //                                                               style: TextStyle(
 //                                                                 color:
 //                                                                     Colors.red,
 //                                                               ),
 //                                                             ),
-//                                                             content: const Text(
+//                                                             content: const   TextWidget(text:
 //                                                                 'Choosing close will remove the appointment from the list.Are you sure you want to close?'),
 //                                                             actions: [
 //                                                               TextButton(
 //                                                                 onPressed: () {
 //                                                                   Get.back();
 //                                                                 },
-//                                                                 child: const Text(
+//                                                                 child: const   TextWidget(text:
 //                                                                     'Cancel'),
 //                                                               ),
 //                                                               TextButton(
@@ -2121,7 +2644,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                                                           .value =
 //                                                                       newValue!;
 //                                                                 },
-//                                                                 child: Text(
+//                                                                 child:   TextWidget(text:
 //                                                                   'Close',
 //                                                                   style:
 //                                                                       TextStyle(
@@ -2154,7 +2677,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                         crossAxisAlignment:
 //                                             CrossAxisAlignment.start,
 //                                         children: [
-//                                           Text(
+//                                             TextWidget(text:
 //                                             "Ticket Status",
 //                                             style: theme.textTheme.bodyLarge
 //                                                 ?.copyWith(
@@ -2221,7 +2744,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                                     : controller
 //                                                         .selectedTicketStatusValue
 //                                                         .value,
-//                                                 hint: Text(
+//                                                 hint:   TextWidget(text:
 //                                                   'Select an option',
 //                                                   style: TextStyle(
 //                                                     color: LightThemeColors
@@ -2237,7 +2760,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                                     .map((e) {
 //                                                   return DropdownMenuItem<int>(
 //                                                     value: e.statusId,
-//                                                     child: Text(
+//                                                     child:   TextWidget(text:
 //                                                       e.statusName ?? "",
 //                                                       style: theme
 //                                                           .textTheme.bodyMedium
@@ -2269,7 +2792,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                               child: Column(
 //                                 crossAxisAlignment: CrossAxisAlignment.start,
 //                                 children: [
-//                                   Text(
+//                                     TextWidget(text:
 //                                     "Notes",
 //                                     style: theme.textTheme.bodyLarge?.copyWith(
 //                                       color: LightThemeColors.hintTextColor,
@@ -2316,7 +2839,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                         crossAxisAlignment: CrossAxisAlignment.center,
 //                         children: [
 //                           Center(
-//                             child: Text(
+//                             child:   TextWidget(text:
 //                               "Estimate/Invoice Details",
 //                               style: theme.textTheme.headlineSmall?.copyWith(
 //                                 fontWeight: FontWeight.w500,
@@ -2360,7 +2883,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                       .map((e) {
 //                                     return PopupMenuItem(
 //                                       value: e["name"],
-//                                       child: Text("${e["name"]}"),
+//                                       child:   TextWidget(text: "${e["name"]}"),
 //                                     );
 //                                   }).toList(),
 //                                 ).then((v) async {
@@ -2437,7 +2960,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                       size: 18.sp,
 //                                     ),
 //                                     SizedBox(width: 5.sp),
-//                                     Text(
+//                                       TextWidget(text:
 //                                       "Create New",
 //                                       style:
 //                                           theme.textTheme.bodyLarge?.copyWith(
@@ -2645,7 +3168,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                   crossAxisAlignment: CrossAxisAlignment.start,
 //                                   children: [
 //                                     ListTile(
-//                                       title: Text(
+//                                       title:   TextWidget(text:
 //                                         "${proposal.type ?? ""} Number",
 //                                         style:
 //                                             theme.textTheme.bodyLarge?.copyWith(
@@ -2668,7 +3191,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                                   ? Colors.green
 //                                                   : Colors.yellow,
 //                                         ),
-//                                         child: Text(
+//                                         child:   TextWidget(text:
 //                                           proposal.number ?? "",
 //                                           style: theme.textTheme.bodyLarge
 //                                               ?.copyWith(
@@ -2686,7 +3209,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                     ),
 //                                     MainDivider(),
 //                                     ListTile(
-//                                       title: Text(
+//                                       title:   TextWidget(text:
 //                                         "Date",
 //                                         style:
 //                                             theme.textTheme.bodyLarge?.copyWith(
@@ -2696,7 +3219,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                         ),
 //                                       ),
 //                                       trailing: proposal.invoiceDate != ""
-//                                           ? Text(
+//                                           ?   TextWidget(text:
 //                                               dateTimeConverter(
 //                                                   inputFormat:
 //                                                       "yyyy/MM/dd hh:mm a",
@@ -2710,11 +3233,11 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                                 fontWeight: FontWeight.w500,
 //                                               ),
 //                                             )
-//                                           : Text(""),
+//                                           :   TextWidget(text: ""),
 //                                     ),
 //                                     MainDivider(),
 //                                     ListTile(
-//                                       title: Text(
+//                                       title:   TextWidget(text:
 //                                         "Required Amount",
 //                                         style:
 //                                             theme.textTheme.bodyLarge?.copyWith(
@@ -2723,7 +3246,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                           fontWeight: FontWeight.w500,
 //                                         ),
 //                                       ),
-//                                       trailing: Text(
+//                                       trailing:   TextWidget(text:
 //                                         "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
 //                                         style:
 //                                             theme.textTheme.bodyLarge?.copyWith(
@@ -2734,7 +3257,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                     ),
 //                                     MainDivider(),
 //                                     ListTile(
-//                                       title: Text(
+//                                       title:   TextWidget(text:
 //                                         "Amount Received",
 //                                         style:
 //                                             theme.textTheme.bodyLarge?.copyWith(
@@ -2743,7 +3266,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
 //                                           fontWeight: FontWeight.w500,
 //                                         ),
 //                                       ),
-//                                       trailing: Text(
+//                                       trailing:   TextWidget(text:
 //                                         "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
 //                                         style:
 //                                             theme.textTheme.bodyLarge?.copyWith(
@@ -2784,4 +3307,44 @@ class ResourceItem {
 
   ResourceItem({required this.title, bool selected = false})
       : selected = selected.obs;
+}
+
+final List<String> productList = ["Computer", "Plumbing", "Tailoring", "AC"];
+
+void openGoogleMaps(String query) async {
+  final encodedQuery = Uri.encodeComponent("$query shop near me");
+  final url = "https://www.google.com/maps/search/?api=1&query=$encodedQuery";
+
+  if (await canLaunch(url)) {
+    await launch(url);
+  } else {
+    print("Could not launch $url");
+  }
+}
+
+void showProductDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text("Select a Service"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: productList.length,
+            itemBuilder: (context, index) {
+              return ListTile(
+                title: Text(productList[index]),
+                onTap: () {
+                  Navigator.pop(context); // Close the dialog
+                  openGoogleMaps(productList[index]);
+                },
+              );
+            },
+          ),
+        ),
+      );
+    },
+  );
 }

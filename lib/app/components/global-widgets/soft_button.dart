@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 class SoftButton extends StatelessWidget {
   const SoftButton({
@@ -27,9 +28,8 @@ class SoftButton extends StatelessWidget {
           ),
           elevation: 0,
         ),
-        child: Text(
-          title,
-          textScaler: TextScaler.linear(1.0),
+        child: TextWidget(
+          text: title,
           style: TextStyle(
             fontSize: 14.sp,
             fontWeight: FontWeight.w400,

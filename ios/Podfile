@@ -1,9 +1,14 @@
-# Uncomment this line to define a global platform for your project
+# === Add both sources at the top ===
+source 'https://github.com/CocoaPods/Specs.git'
+source 'https://github.com/ios-3ds-sdk/Specs.git'
+
+# Platform version
 platform :ios, '14.0'
 
-# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+# Disable CocoaPods stats
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
+# Flutter project setup
 project 'Runner', {
   'Debug' => :debug,
   'Profile' => :release,
@@ -27,16 +32,24 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_ios_podfile_setup
 
+# === Main Target: Only one Runner block ===
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
+  # Installs all Flutter plugins
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
+  # === Netcetera 3DS SDK (correct pod name) ===
+  pod 'ThreeDS_SDK'
+
+  # Tests
   target 'RunnerTests' do
     inherit! :search_paths
   end
 end
 
+# Post install hook
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)

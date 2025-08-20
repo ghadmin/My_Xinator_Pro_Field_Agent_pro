@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart'
+    show TextWidget;
 import '../../../components/drawer/custom_drawer.dart';
 import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/general_text_field.dart';
@@ -16,7 +20,9 @@ class CustomerView extends GetView<CustomerController> {
     return Scaffold(
       drawer: CustomDrawer(indexClicked: 2),
       appBar: AppBar(
-        // title: const Text('Customers'),
+        toolbarHeight:
+            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
+        // title: const  TextWidget(text:'Customers'),
         actions: [
           // InkWell(
           //   onTap: () {},
@@ -52,8 +58,8 @@ class CustomerView extends GetView<CustomerController> {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Customers List",
+                    TextWidget(
+                      text: "Customers List",
                       style: theme.textTheme.bodyLarge?.copyWith(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.w500,
@@ -108,8 +114,9 @@ class CustomerView extends GetView<CustomerController> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Flexible(
-                                              child: Text(
-                                                "${customer.firstName ?? ""} ${customer.lastName ?? ""}",
+                                              child: TextWidget(
+                                                text:
+                                                    "${customer.firstName ?? ""} ${customer.lastName ?? ""}",
                                                 style: theme
                                                     .textTheme.headlineSmall
                                                     ?.copyWith(
@@ -129,15 +136,17 @@ class CustomerView extends GetView<CustomerController> {
                                                 color: Colors.grey,
                                               ),
                                               customer.email == ""
-                                                  ? Text(" N/A",
+                                                  ? TextWidget(
+                                                      text: " N/A",
                                                       style: theme
                                                           .textTheme.bodyMedium!
                                                           .copyWith(
                                                               color:
                                                                   Colors.grey))
                                                   : Flexible(
-                                                      child: Text(
-                                                          " ${customer.email ?? " N/A"}",
+                                                      child: TextWidget(
+                                                          text:
+                                                              " ${customer.email ?? " N/A"}",
                                                           style: theme.textTheme
                                                               .bodyMedium!
                                                               .copyWith(
@@ -155,15 +164,17 @@ class CustomerView extends GetView<CustomerController> {
                                                 color: Colors.grey,
                                               ),
                                               customer.address1 == ""
-                                                  ? Text(" N/A",
+                                                  ? TextWidget(
+                                                      text: " N/A",
                                                       style: theme
                                                           .textTheme.bodyMedium!
                                                           .copyWith(
                                                               color:
                                                                   Colors.grey))
                                                   : Flexible(
-                                                      child: Text(
-                                                          " ${customer.address1 ?? " N/A"}",
+                                                      child: TextWidget(
+                                                          text:
+                                                              " ${customer.address1 ?? " N/A"}",
                                                           style: theme.textTheme
                                                               .bodyMedium!
                                                               .copyWith(
@@ -181,7 +192,8 @@ class CustomerView extends GetView<CustomerController> {
                                                 color: Colors.grey,
                                               ),
                                               customer.phone == ""
-                                                  ? Text(" N/A",
+                                                  ? TextWidget(
+                                                      text: " N/A",
                                                       style: theme
                                                           .textTheme.bodyMedium!
                                                           .copyWith(
@@ -190,8 +202,9 @@ class CustomerView extends GetView<CustomerController> {
                                                                       .ellipsis,
                                                               color:
                                                                   Colors.grey))
-                                                  : Text(
-                                                      " ${customer.phone ?? " N/A"}",
+                                                  : TextWidget(
+                                                      text:
+                                                          " ${customer.phone ?? " N/A"}",
                                                       style: theme
                                                           .textTheme.bodyMedium!
                                                           .copyWith(
@@ -231,7 +244,7 @@ class CustomerView extends GetView<CustomerController> {
                                             //                 ? Colors.red
                                             //                 : Color(0xff0CBC8B),
                                             //   ),
-                                            //   child: Text(
+                                            //   child:  TextWidget(text:
                                             //     customer.status?.statusName ==
                                             //             "Installation in Progress"
                                             //         ? "In Progress"
@@ -245,24 +258,24 @@ class CustomerView extends GetView<CustomerController> {
                                             // ),
                                             Container(
                                               alignment: Alignment.center,
-                                              height: 30.h,
-                                              width: 85.h,
+                                              // height: 30.h,
+                                              // width: 85.h,
                                               padding: EdgeInsets.all(5),
                                               decoration: BoxDecoration(
                                                   color: Colors.green,
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           20)),
-                                              child: Text(
-                                                'Scheduled',
+                                              child: TextWidget(
+                                                text: 'Scheduled',
                                                 style: theme
                                                     .textTheme.bodyLarge!
                                                     .copyWith(
                                                         color: Colors.white),
                                               ),
                                             ),
-                                            Text(
-                                              "Click to see details",
+                                            TextWidget(
+                                              text: "Click to see details",
                                               style: theme.textTheme.bodySmall
                                                   ?.copyWith(
                                                 color: theme.primaryColor,

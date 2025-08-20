@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../config/theme/my_fonts.dart';
@@ -51,8 +52,8 @@ class SignUpView extends GetView<AuthController> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Text(
-                        "Sign Up",
+                      TextWidget(
+                        text: "Sign Up",
                         style: theme.textTheme.headlineLarge?.copyWith(
                           color: LightThemeColors.bodyTextColor,
                           fontWeight: FontWeight.bold,
@@ -61,8 +62,9 @@ class SignUpView extends GetView<AuthController> {
                     ],
                   ),
                   SizedBox(height: 15.sp),
-                  Text(
-                    "You have chance to create new account if you really want to.",
+                  TextWidget(
+                    text:
+                        "You have chance to create new account if you really want to.",
                     style: theme.textTheme.bodyMedium,
                   ),
                   SizedBox(height: 30.sp),
@@ -203,9 +205,8 @@ class SignUpView extends GetView<AuthController> {
                       ? const SizedBox.shrink()
                       : Padding(
                           padding: EdgeInsets.only(top: 5.sp, left: 15.sp),
-                          child: Text(
-                            controller.emailValidator.value,
-                            textScaler: TextScaler.linear(1.0),
+                          child: TextWidget(
+                            text: controller.emailValidator.value,
                             style: TextStyle(
                               color: Colors.red,
                               fontSize: 12.sp,
@@ -307,7 +308,8 @@ class SignUpView extends GetView<AuthController> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("Already have account? ",
+                      TextWidget(
+                          text: "Already have account? ",
                           style: theme.textTheme.bodyMedium),
                       TextButton(
                         style: ButtonStyle(
@@ -320,9 +322,8 @@ class SignUpView extends GetView<AuthController> {
                         onPressed: () {
                           Get.back();
                         },
-                        child: Text(
-                          "Go here",
-                          textScaler: TextScaler.linear(1.0),
+                        child: TextWidget(
+                          text: "Go here",
                           style: TextStyle(
                             color: LightThemeColors.primaryColor,
                             fontSize: MyFonts.body1TextSize,
