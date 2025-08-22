@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
-
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../routes/app_pages.dart';
@@ -145,26 +144,42 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
               },
             ),
             SizedBox(height: 8.sp),
-            PaymentOption(
-                icon: Remix.bank_card_2_fill,
-                label: 'Credit/Debit Card',
-                onTap: () async {
-                  controller.finalCollectionAmount.value =
-                      (double.parse(controller.total.value) -
-                              double.parse(controller.depositAmount.value))
-                          .toStringAsFixed(2);
-                  await controller.initializeWebController(
-                      controller.requestedDepositAmountEditTextController.text);
-                  Get.toNamed(Routes.INVOICE_CREATE);
-                }),
+            controller.depositRequestPay.value
+                ? PaymentOption(
+                    icon: Remix.bank_card_2_fill,
+                    label: 'Credit/Debit Card',
+                    onTap: () async {
+                      controller.finalCollectionAmount.value =
+                          (double.parse(controller.total.value) -
+                                  double.parse(controller.depositAmount.value))
+                              .toStringAsFixed(2);
+                      await controller.initializeWebController(controller
+                          .requestedDepositAmountEditTextController.text);
+                      Get.toNamed(Routes.MANUAL_PAYMENT);
+                    })
+                : PaymentOption(
+                    icon: Remix.bank_card_2_fill,
+                    label: 'Credit/Debit Card',
+                    onTap: () async {
+                      // controller.finalCollectionAmount.value =
+                      //     (double.parse(controller.total.value) -
+                      //             double.parse(controller.depositAmount.value))
+                      //         .toStringAsFixed(2);
+                      // await controller.initializeWebController(
+                      //     controller.finalCollectionAmount.value);
+                      // Get.toNamed(Routes.MANUAL_PAYMENT);
+
+                      // Get.to(PaymentSelectionPage());
+                      controller.paymentViaXpayLink();
+                    }),
             SizedBox(height: 8.sp),
-            PaymentOption(
-                icon: Remix.bank_card_line,
-                loading: controller.xpayLinkLoading.value,
-                label: 'XPayLink',
-                onTap: () async {
-                  controller.paymentViaXpayLink();
-                }),
+            // PaymentOption(
+            //     icon: Remix.bank_card_line,
+            //     loading: controller.xpayLinkLoading.value,
+            //     label: 'XPayLink',
+            //     onTap: () async {
+            //       controller.paymentViaXpayLink();
+            //     }),
             // SizedBox(height: 8.sp),
             // PaymentOption(
             //   icon: Remix.bank_card_2_fill,

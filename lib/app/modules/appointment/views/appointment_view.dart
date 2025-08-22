@@ -134,156 +134,173 @@ class AppointmentView extends GetView<AppointmentController> {
                         SizedBox(height: 10.h),
                         Expanded(
                           child: RefreshIndicator(
-                            color: theme.primaryColor,
-                            onRefresh: () async =>
-                                await controller.getAppointments(),
-                            child: ListView.separated(
-                              padding: EdgeInsets.zero,
-                              itemCount: controller.sortedAppointments.length,
-                              itemBuilder: (context, index) {
-                                final appointment =
-                                    controller.sortedAppointments[index];
-                                return SplashContainer(
-                                  radius: 8,
-                                  color: Colors.white,
-                                  onPressed: () {
-                                    controller.selectSingleAppointments(
-                                        appointment, index);
-
-                                    Get.toNamed(Routes.APPOINTMENT_DETAILS);
-                                  },
-                                  child: Padding(
-                                    padding: EdgeInsets.all(15.sp),
-                                    child: IntrinsicHeight(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              SizedBox(
-                                                width: 180.sp,
-                                                child: TextWidget(
-                                                  text:
-                                                      "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
-                                                  style: theme
-                                                      .textTheme.headlineSmall
-                                                      ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              SizedBox(height: 2.sp),
-                                              TextWidget(
-                                                  text: appointment.serviceType
-                                                          ?.serviceName ??
-                                                      ""),
-                                              SizedBox(
-                                                width: 180.sp,
-                                                child: TextWidget(
+                              color: theme.primaryColor,
+                              onRefresh: () async =>
+                                  await controller.getAppointments(),
+                              child: ListView.separated(
+                                padding: EdgeInsets.zero,
+                                itemCount: controller.sortedAppointments.length,
+                                itemBuilder: (context, index) {
+                                  final appointment =
+                                      controller.sortedAppointments[index];
+                                  return SplashContainer(
+                                    radius: 8,
+                                    color: Colors.white,
+                                    onPressed: () {
+                                      controller.selectSingleAppointments(
+                                          appointment, index);
+                                      Get.toNamed(Routes.APPOINTMENT_DETAILS);
+                                    },
+                                    child: Padding(
+                                      padding: EdgeInsets.all(15.sp),
+                                      child: IntrinsicHeight(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            /// Left side
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  TextWidget(
                                                     text:
-                                                        "${appointment.customer?.address1}, "
-                                                        "${appointment.customer?.city}, "
-                                                        "${appointment.customer?.state}, "),
-                                              ),
-                                              SizedBox(height: 4.sp),
-                                              TextWidget(
-                                                  text: dateTimeConverter(
+                                                        "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
+                                                    style: theme
+                                                        .textTheme.headlineSmall
+                                                        ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  SizedBox(height: 2.sp),
+                                                  TextWidget(
+                                                    text: appointment
+                                                            .serviceType
+                                                            ?.serviceName ??
+                                                        "",
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  SizedBox(height: 2.sp),
+                                                  TextWidget(
+                                                    text:
+                                                        "${appointment.customer?.address1}, ${appointment.customer?.city}, ${appointment.customer?.state}",
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  SizedBox(height: 4.sp),
+                                                  TextWidget(
+                                                    text: dateTimeConverter(
                                                       inputFormat:
                                                           "yyyy/MM/dd hh:mm a",
                                                       inputTime: appointment
                                                           .startDateTime
                                                           .toString(),
                                                       outputFormat:
-                                                          "MM/dd/yyyy hh:mm a")),
-                                            ],
-                                          ),
-                                          Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: [
-                                              Container(
-                                                padding: EdgeInsets.symmetric(
+                                                          "MM/dd/yyyy hh:mm a",
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+
+                                            /// Right side
+                                            Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: [
+                                                Container(
+                                                  padding: EdgeInsets.symmetric(
                                                     horizontal: 10.sp,
-                                                    vertical: 5.sp),
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          15.r),
-                                                  color: appointment.status
-                                                              ?.statusName ==
-                                                          "Installation In Progress"
-                                                      ? Color(0xffE98862)
-                                                      : appointment.status
-                                                                  ?.statusName ==
-                                                              "Installation in Progress"
-                                                          ? Color(0xffE98862)
-                                                          : appointment.status
-                                                                      ?.statusName ==
-                                                                  "Scheduled"
-                                                              ? Color(
-                                                                  0xff2E888B)
-                                                              : appointment
-                                                                          .status
-                                                                          ?.statusName ==
-                                                                      "Cancelled"
-                                                                  ? Colors.red
-                                                                  : Color(
-                                                                      0xff0CBC8B),
+                                                    vertical: 5.sp,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15.r),
+                                                    color: _getStatusColor(
+                                                        appointment.status
+                                                            ?.statusName),
+                                                  ),
+                                                  child: TextWidget(
+                                                    maxLines: 2,
+                                                    text: _getStatusText(
+                                                        appointment.status
+                                                            ?.statusName),
+                                                    style: theme
+                                                        .textTheme.bodyMedium
+                                                        ?.copyWith(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
                                                 ),
-                                                child: TextWidget(
-                                                  text: appointment.status
-                                                              ?.statusName ==
-                                                          "Installation In Progress"
-                                                      ? "In Progress"
-                                                      : appointment.status
-                                                                  ?.statusName ==
-                                                              "Installation in Progress"
-                                                          ? "In Progress"
-                                                          : appointment.status
-                                                                  ?.statusName ??
-                                                              "",
+                                                TextWidget(
+                                                  text: "Click to see details",
                                                   style: theme
-                                                      .textTheme.bodyMedium
+                                                      .textTheme.bodySmall
                                                       ?.copyWith(
-                                                    color: Colors.white,
+                                                    color: theme.primaryColor,
+                                                    fontSize: 11.sp,
                                                     fontWeight: FontWeight.w500,
                                                   ),
                                                 ),
-                                              ),
-                                              TextWidget(
-                                                text: "Click to see details",
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
-                                                  color: theme.primaryColor,
-                                                  fontSize: 11.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ],
-                                          )
-                                        ],
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                              separatorBuilder: (context, index) =>
-                                  SizedBox(height: 15.sp),
-                            ),
-                          ),
+                                  );
+                                },
+                                separatorBuilder: (context, index) =>
+                                    SizedBox(height: 15.sp),
+                              )
+
+                              /// Helper methods
+
+                              ),
                         ),
                       ],
                     ),
             ),
           )),
     );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case "Installation In Progress":
+      case "Installation in Progress":
+        return const Color(0xffE98862);
+      case "Scheduled":
+        return const Color(0xff2E888B);
+      case "Cancelled":
+        return Colors.red;
+      default:
+        return const Color(0xff0CBC8B);
+    }
+  }
+
+  String _getStatusText(String? status) {
+    if (status == "Installation In Progress" ||
+        status == "Installation in Progress") {
+      return "In Progress";
+    }
+    return status ?? "";
   }
 }

@@ -122,103 +122,103 @@ class ItemView extends GetView<ItemController> {
                       SizedBox(height: 20.sp),
                       Expanded(
                         child: RefreshIndicator(
-                          color: theme.primaryColor,
-                          onRefresh: () async => await controller.getItems(),
-                          child: ListView.separated(
-                            padding: EdgeInsets.zero,
-                            physics: BouncingScrollPhysics(),
-                            itemCount: controller.items.length,
-                            itemBuilder: (context, index) {
-                              final item = controller.items[index];
-                              return SplashContainer(
-                                radius: 8,
-                                color: Colors.white,
-                                onPressed: () {
-                                  // controller.businessName =
-                                  // "${customer.firstName ?? ""} ${customer.lastName ?? ""}";
-                                  // controller.title = customer.jobTitle ?? "";
-                                  // controller.address = "${customer.address1}, "
-                                  //     "${customer.city}, "
-                                  //     "${customer.state}, ";
-                                  // controller.phoneNumber = customer.phone ?? "";
-                                  // controller.mobileNumber =
-                                  //     customer.mobile ?? "";
-                                  // controller.email = customer.email ?? "";
-                                  //
-                                  // Get.toNamed(Routes.CUSTOMER_DETAILS);
-                                },
-                                child: Padding(
-                                  padding: EdgeInsets.all(15.sp),
-                                  child: IntrinsicHeight(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            SizedBox(
-                                              width: 200.sp,
-                                              child: TextWidget(
-                                                text: item.name ?? "",
-                                                style: theme
-                                                    .textTheme.headlineSmall
-                                                    ?.copyWith(
-                                                  fontWeight: FontWeight.w500,
+                            color: theme.primaryColor,
+                            onRefresh: () async => await controller.getItems(),
+                            child: ListView.separated(
+                              padding: EdgeInsets.zero,
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: controller.items.length,
+                              itemBuilder: (context, index) {
+                                final item = controller.items[index];
+                                return SplashContainer(
+                                  radius: 8,
+                                  color: Colors.white,
+                                  onPressed: () {
+                                    // Handle navigation / details
+                                  },
+                                  child: Padding(
+                                    padding: EdgeInsets.all(15.sp),
+                                    child: IntrinsicHeight(
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          /// Left side → Expanded
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                TextWidget(
+                                                  text: item.name ?? "",
+                                                  style: theme
+                                                      .textTheme.headlineSmall
+                                                      ?.copyWith(
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            SizedBox(height: 2.sp),
-                                            item.description == ""
-                                                ? SizedBox.shrink()
-                                                : SizedBox(
-                                                    width: 200.sp,
-                                                    child: Padding(
-                                                      padding: EdgeInsets.only(
-                                                          bottom: 2.sp),
-                                                      child: TextWidget(
-                                                          text:
-                                                              item.description ??
-                                                                  ""),
+                                                SizedBox(height: 2.sp),
+
+                                                /// description
+                                                if ((item.description ?? "")
+                                                    .isNotEmpty)
+                                                  Padding(
+                                                    padding: EdgeInsets.only(
+                                                        bottom: 2.sp),
+                                                    child: TextWidget(
+                                                      text: item.description ??
+                                                          "",
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ),
-                                            item.barcode == ""
-                                                ? SizedBox.shrink()
-                                                : TextWidget(
-                                                    text: item.barcode ?? ""),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            TextWidget(
-                                              text: "\$${item.price ?? ""}",
-                                              style: theme
-                                                  .textTheme.headlineSmall
-                                                  ?.copyWith(
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+
+                                                /// barcode
+                                                if ((item.barcode ?? "")
+                                                    .isNotEmpty)
+                                                  TextWidget(
+                                                    text: item.barcode ?? "",
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                              ],
                                             ),
-                                          ],
-                                        )
-                                      ],
+                                          ),
+
+                                          /// Right side → shrink to fit
+                                          IntrinsicWidth(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: [
+                                                TextWidget(
+                                                  text: "\$${item.price ?? ""}",
+                                                  style: theme
+                                                      .textTheme.headlineSmall
+                                                      ?.copyWith(
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              );
-                            },
-                            separatorBuilder: (context, index) =>
-                                SizedBox(height: 15.sp),
-                          ),
-                        ),
+                                );
+                              },
+                              separatorBuilder: (context, index) =>
+                                  SizedBox(height: 15.sp),
+                            )),
                       ),
                     ],
                   ),

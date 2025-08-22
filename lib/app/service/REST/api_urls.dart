@@ -22,4 +22,5 @@ class ApiUrl {
   static const emailAutofill = "$baseUrl/GetAutoFillValuesForEmail";
   static const convertEST = "$baseUrl/ConvertEstimateToInvoice";
   static const getFormTypeUrl = "$baseUrl/GetAllFormTemplates";
+  static const saveImageUrl = "$baseUrl/SaveImageForCSL";
 }

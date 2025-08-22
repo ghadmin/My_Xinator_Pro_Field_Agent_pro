@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -45,6 +47,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
   ];
 
   String appointmentID = "";
+  String companyId = "";
   String appointmentUID = "";
   String customerID = "";
   String contactName = "";
@@ -85,9 +88,9 @@ class AppointmentController extends GetxController with ExceptionHandler {
   ];
 
   void selectSingleAppointments(Appointments appointment, int index) {
-    log("all appointment in json : ${appointment.toJson()}");
     customerController.selectedCustomer(
         CustomerModel.fromJson(appointment.customer!.toJson()));
+    companyId = appointment.companyID ?? "";
     settingController.selectedAppointmentsStatus(AppointmentStatusSetting(
         companyId: appointment.status?.companyId,
         statusId: appointment.status?.statusId,
@@ -110,6 +113,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
         outputFormat: "MM/dd/yyyy hh:mm a");
     createdBy = appointment.createdBy ?? "";
     appointmentID = "${appointment.apptID ?? ""}";
+
     appointmentUID = appointment.appoinmentUId ?? "";
     customerID = "${appointment.customerID ?? ""}";
     promoCode = appointment.promoCode ?? "";
@@ -214,6 +218,58 @@ class AppointmentController extends GetxController with ExceptionHandler {
     sortedAppointments
       ..clear()
       ..addAll(list.isEmpty ? [] : list);
+  }
+
+  Future<void> uploadImages({
+    required String tagName,
+    // List of image file paths
+  }) async {
+    showLoading();
+    await Future.delayed(Duration.zero); // <- give UI a chance to render
+
+    // Convert image files to Base64
+    final List<Map<String, dynamic>> imageList = [];
+    for (final path in mediaList.first.images) {
+      final file = File(path);
+      if (!file.existsSync()) continue; // Skip if file doesn't exist
+
+      final bytes = await file.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      imageList.add({
+        "ImageName": file.uri.pathSegments.last,
+        "ImageBase64": base64Image,
+      });
+    }
+
+    // Prepare request body
+    final requestBody = {
+      "requestPeram": {
+        "CustomerId": customerID,
+        "AppointmentId": appointmentID,
+        "CSLId": 0,
+        "CompanyId": companyId,
+        "TagName": tagName,
+        "ImageList": imageList,
+      }
+    };
+
+    // Send request
+    final response = await DioClient()
+        .post(
+          url: ApiUrl.saveImageUrl,
+          body: requestBody,
+        )
+        .catchError(handleError);
+
+    hideLoading();
+
+    if (response == null) {
+      MySnackBar.showErrorToast(message: "Upload failed: No response");
+    } else {
+      MySnackBar.showToast(message: "Images uploaded successfully!");
+      mediaList.clear();
+    }
   }
 
   getAppointments() async {
