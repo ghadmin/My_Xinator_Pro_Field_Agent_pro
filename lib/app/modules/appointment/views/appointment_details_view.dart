@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:developer';
 import 'package:dotted_border/dotted_border.dart';
@@ -39,6 +40,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return; // ignore swipe animation
+
+      if (_tabController.index == 3) {
+        // Pictures tab index
+        controller.getImageList();
+      }
+    });
   }
 
   @override
@@ -1251,221 +1260,321 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                   //********************************* Tab Four Evidence *********************************/
 
-                  SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          height: 20.h,
-                        ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: GestureDetector(
-                            onTap: controller.mediaList.length == 1
-                                ? () {}
-                                : () {
-                                    showMediaBottomSheet(context, -1);
-                                  },
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: DottedBorder(
-                                  options: RectDottedBorderOptions(
-                                      dashPattern: [3, 2]),
-                                  child: Icon(
-                                    Icons.add,
-                                    size: 25.sp,
-                                    color: controller.mediaList.length == 1
-                                        ? Colors.grey
-                                        : theme.primaryColor,
-                                  )),
-                            ),
+                  Column(
+                    children: [
+                      SizedBox(height: 15.sp),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: controller.mediaList.length == 1
+                              ? () {}
+                              : () {
+                                  showMediaBottomSheet(context, -1);
+                                },
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: DottedBorder(
+                                options: RectDottedBorderOptions(
+                                    dashPattern: [3, 2]),
+                                child: Icon(
+                                  Icons.add,
+                                  size: 25.sp,
+                                  color: controller.mediaList.length == 1
+                                      ? Colors.grey
+                                      : theme.primaryColor,
+                                )),
                           ),
                         ),
-                        SizedBox(height: 15.sp),
-                        controller.mediaList.isEmpty
-                            ? Center(
-                                child: TextWidget(text: "Add Pictures"),
-                              )
-                            : Obx(() => ListView.separated(
-                                  itemBuilder: (context, index) {
-                                    final item = controller.mediaList[index];
-                                    return Column(
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                height: 20.h,
+                              ),
+                              Obx(() => ListView.separated(
+                                    itemBuilder: (context, index) {
+                                      final item = controller
+                                          .imageList[index]; // 👈 from RxList
+                                      return Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          TextWidget(text: item.time),
-                                          SizedBox(
-                                            height: 10.h,
+                                          // Show TagName instead of time
+                                          TextWidget(
+                                            text: item.tagName ?? "",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
                                           ),
+                                          SizedBox(height: 10.h),
+
+                                          // Horizontal scroll for images
                                           SingleChildScrollView(
                                             scrollDirection: Axis.horizontal,
                                             child: Row(
                                               children: [
-                                                ...item.images.map((e) {
-                                                  if (_isVideo(e)) {
-                                                    return GestureDetector(
-                                                      onTap: () {
-                                                        showMediaDialog(
-                                                            context, e);
-                                                      },
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(
-                                                                right: 8.0),
-                                                        child: FutureBuilder<
-                                                            String?>(
-                                                          future:
-                                                              generateVideoThumbnail(
-                                                                  e),
-                                                          builder: (context,
-                                                              snapshot) {
-                                                            if (snapshot
-                                                                    .connectionState ==
-                                                                ConnectionState
-                                                                    .waiting) {
-                                                              return Container(
-                                                                height: 150,
-                                                                width: 150,
-                                                                alignment:
-                                                                    Alignment
-                                                                        .center,
-                                                                child:
-                                                                    const CircularProgressIndicator(),
-                                                              );
-                                                            }
-                                                            if (snapshot
-                                                                    .hasData &&
-                                                                snapshot.data !=
-                                                                    null) {
-                                                              return Stack(
-                                                                children: [
-                                                                  Container(
-                                                                    height: 150,
-                                                                    width: 150,
-                                                                    decoration:
-                                                                        BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              10.r),
-                                                                      image:
-                                                                          DecorationImage(
-                                                                        fit: BoxFit
-                                                                            .fill,
-                                                                        image: FileImage(
-                                                                            File(snapshot.data!)),
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                  const Positioned
-                                                                      .fill(
-                                                                    child:
-                                                                        Center(
-                                                                      child: Icon(
-                                                                          Icons
-                                                                              .play_circle_fill,
-                                                                          size:
-                                                                              40,
-                                                                          color:
-                                                                              Colors.white),
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              );
-                                                            }
-                                                            return Container(
-                                                              height: 150,
-                                                              width: 150,
-                                                              color: Colors
-                                                                  .grey[300],
-                                                              child: const Icon(
-                                                                  Icons
-                                                                      .play_circle_fill),
-                                                            );
-                                                          },
+                                                ...(item.imageList ?? [])
+                                                    .map((img) {
+                                                  // Convert Base64 to memory image
+
+                                                  return GestureDetector(
+                                                    onTap: () {
+                                                      // Show dialog with full image
+                                                      showDialog(
+                                                        context: context,
+                                                        builder: (_) => Dialog(
+                                                            child: Image.memory(
+                                                          img.bytes!,
+                                                          fit: BoxFit.cover,
+                                                          gaplessPlayback: true,
+                                                        )),
+                                                      );
+                                                    },
+                                                    child: Container(
+                                                      height: 150,
+                                                      width: 150,
+                                                      margin:
+                                                          const EdgeInsets.only(
+                                                              right: 20),
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10.r),
+                                                        image: DecorationImage(
+                                                          fit: BoxFit.fill,
+                                                          image: MemoryImage(
+                                                              img.bytes!),
                                                         ),
                                                       ),
-                                                    );
-                                                  } else {
-                                                    return GestureDetector(
-                                                      onTap: () {
-                                                        showMediaDialog(
-                                                            context, e);
-                                                      },
-                                                      child: Container(
-                                                        height: 150,
-                                                        width: 150,
-                                                        margin: EdgeInsets.only(
-                                                            right:
-                                                                20), // spacing between items
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.r),
-                                                          image:
-                                                              DecorationImage(
-                                                            fit: BoxFit.fill,
-                                                            image: FileImage(
-                                                                File(e)),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
-                                                }),
-                                                GestureDetector(
-                                                  onTap: () {
-                                                    showMediaBottomSheet(
-                                                        context, index);
-                                                  },
-                                                  child: Container(
-                                                    height: 150,
-                                                    width: 150,
-                                                    margin: EdgeInsets.only(
-                                                        right: 8),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.grey[200],
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10.r),
-                                                      border: Border.all(
-                                                          color: Colors.grey),
                                                     ),
-                                                    child: const Icon(Icons.add,
-                                                        size: 40,
-                                                        color: Colors.grey),
-                                                  ),
-                                                ),
+                                                  );
+                                                }).toList(),
                                               ],
                                             ),
                                           ),
-                                          SizedBox(
-                                            height: 10.h,
-                                          ),
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: ElevatedButton(
-                                              onPressed: () async {
-                                                await controller.uploadImages(
-                                                    tagName: item.time
-                                                        .split(" ")[0]);
-                                              },
-                                              child: const Text("Save"),
-                                            ),
+
+                                          SizedBox(height: 10.h),
+                                          Divider(
+                                            height: 10,
+                                            thickness: 1,
+                                            color: Colors.blueGrey,
                                           )
-                                        ]);
-                                  },
-                                  separatorBuilder:
-                                      (BuildContext context, int index) =>
-                                          SizedBox(height: 8.sp),
-                                  itemCount: controller.mediaList.length,
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                )),
-                        SizedBox(height: 15.sp),
-                      ],
-                    ),
+                                        ],
+                                      );
+                                    },
+                                    separatorBuilder: (_, __) =>
+                                        SizedBox(height: 8.sp),
+                                    itemCount: controller.imageList.length,
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                  )),
+                              SizedBox(height: 15.sp),
+                              controller.imageList.isEmpty &&
+                                      controller.mediaList.isEmpty
+                                  ? Center(
+                                      child: TextWidget(text: "Add Pictures"),
+                                    )
+                                  : Obx(() => ListView.separated(
+                                        itemBuilder: (context, index) {
+                                          final item =
+                                              controller.mediaList[index];
+                                          return Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                TextWidget(text: item.time),
+                                                SizedBox(
+                                                  height: 10.h,
+                                                ),
+                                                SingleChildScrollView(
+                                                  scrollDirection:
+                                                      Axis.horizontal,
+                                                  child: Row(
+                                                    children: [
+                                                      ...item.images.map((e) {
+                                                        if (_isVideo(e)) {
+                                                          return GestureDetector(
+                                                            onTap: () {
+                                                              showMediaDialog(
+                                                                  context, e);
+                                                            },
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                      right:
+                                                                          8.0),
+                                                              child:
+                                                                  FutureBuilder<
+                                                                      String?>(
+                                                                future:
+                                                                    generateVideoThumbnail(
+                                                                        e),
+                                                                builder: (context,
+                                                                    snapshot) {
+                                                                  if (snapshot
+                                                                          .connectionState ==
+                                                                      ConnectionState
+                                                                          .waiting) {
+                                                                    return Container(
+                                                                      height:
+                                                                          150,
+                                                                      width:
+                                                                          150,
+                                                                      alignment:
+                                                                          Alignment
+                                                                              .center,
+                                                                      child:
+                                                                          const CircularProgressIndicator(),
+                                                                    );
+                                                                  }
+                                                                  if (snapshot
+                                                                          .hasData &&
+                                                                      snapshot.data !=
+                                                                          null) {
+                                                                    return Stack(
+                                                                      children: [
+                                                                        Container(
+                                                                          height:
+                                                                              150,
+                                                                          width:
+                                                                              150,
+                                                                          decoration:
+                                                                              BoxDecoration(
+                                                                            borderRadius:
+                                                                                BorderRadius.circular(10.r),
+                                                                            image:
+                                                                                DecorationImage(
+                                                                              fit: BoxFit.fill,
+                                                                              image: FileImage(File(snapshot.data!)),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        const Positioned
+                                                                            .fill(
+                                                                          child:
+                                                                              Center(
+                                                                            child: Icon(Icons.play_circle_fill,
+                                                                                size: 40,
+                                                                                color: Colors.white),
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    );
+                                                                  }
+                                                                  return Container(
+                                                                    height: 150,
+                                                                    width: 150,
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        300],
+                                                                    child: const Icon(
+                                                                        Icons
+                                                                            .play_circle_fill),
+                                                                  );
+                                                                },
+                                                              ),
+                                                            ),
+                                                          );
+                                                        } else {
+                                                          return GestureDetector(
+                                                            onTap: () {
+                                                              showMediaDialog(
+                                                                  context, e);
+                                                            },
+                                                            child: Container(
+                                                              height: 150,
+                                                              width: 150,
+                                                              margin: EdgeInsets
+                                                                  .only(
+                                                                      right:
+                                                                          20), // spacing between items
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            10.r),
+                                                                image:
+                                                                    DecorationImage(
+                                                                  fit: BoxFit
+                                                                      .fill,
+                                                                  image:
+                                                                      FileImage(
+                                                                          File(
+                                                                              e)),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          );
+                                                        }
+                                                      }),
+                                                      GestureDetector(
+                                                        onTap: () {
+                                                          showMediaBottomSheet(
+                                                              context, index);
+                                                        },
+                                                        child: Container(
+                                                          height: 150,
+                                                          width: 150,
+                                                          margin:
+                                                              EdgeInsets.only(
+                                                                  right: 8),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors
+                                                                .grey[200],
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10.r),
+                                                            border: Border.all(
+                                                                color: Colors
+                                                                    .grey),
+                                                          ),
+                                                          child: const Icon(
+                                                              Icons.add,
+                                                              size: 40,
+                                                              color:
+                                                                  Colors.grey),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  height: 10.h,
+                                                ),
+                                                SizedBox(
+                                                  width: double.infinity,
+                                                  child: ElevatedButton(
+                                                    onPressed: () async {
+                                                      await controller
+                                                          .uploadImages(
+                                                              tagName: item.time
+                                                                  .split(
+                                                                      " ")[0]);
+                                                    },
+                                                    child: const Text("Save"),
+                                                  ),
+                                                )
+                                              ]);
+                                        },
+                                        separatorBuilder:
+                                            (BuildContext context, int index) =>
+                                                SizedBox(height: 8.sp),
+                                        itemCount: controller.mediaList.length,
+                                        shrinkWrap: true,
+                                        physics: NeverScrollableScrollPhysics(),
+                                      )),
+                              SizedBox(height: 15.sp),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   )
                 ],
               ),

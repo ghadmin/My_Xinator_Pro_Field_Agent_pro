@@ -23,4 +23,5 @@ class ApiUrl {
   static const convertEST = "$baseUrl/ConvertEstimateToInvoice";
   static const getFormTypeUrl = "$baseUrl/GetAllFormTemplates";
   static const saveImageUrl = "$baseUrl/SaveImageForCSL";
+  static const getImageListUrl = "$baseUrl/GetImageForCSL";
 }

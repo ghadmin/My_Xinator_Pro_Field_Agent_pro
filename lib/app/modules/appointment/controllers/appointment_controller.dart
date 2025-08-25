@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
+import 'package:xinator_fsm_pro/app/modules/appointment/models/image_list_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/views/appointment_details_view.dart'
     show ResourceItem;
 import 'package:xinator_fsm_pro/app/modules/customer/controllers/customer_controller.dart';
@@ -254,6 +255,8 @@ class AppointmentController extends GetxController with ExceptionHandler {
       }
     };
 
+    log("requestBody: ${jsonEncode(requestBody)}");
+
     // Send request
     final response = await DioClient()
         .post(
@@ -270,6 +273,41 @@ class AppointmentController extends GetxController with ExceptionHandler {
       MySnackBar.showToast(message: "Images uploaded successfully!");
       mediaList.clear();
     }
+    getImageList();
+  }
+
+  final imageList = RxList<ImageListModel>([]);
+  Future<void> getImageList() async {
+    showLoading();
+    await Future.delayed(Duration.zero); // <- give UI a chance to render
+
+    // Prepare request params
+    final queryParams = {
+      "CustomerId": customerID,
+      "AppointmentId": appointmentID,
+      "cSLId": 0,
+      "CompanyId": companyId,
+    };
+
+    log("queryParams: ${jsonEncode(queryParams)}");
+
+    // Send request
+    final response = await DioClient()
+        .get(
+          url: ApiUrl.getImageListUrl,
+          params: queryParams,
+        )
+        .catchError(handleError);
+
+    if (response == null) {
+      MySnackBar.showErrorToast(message: "Failed to load images");
+    } else {
+      final List<ImageListModel> fetchedImages =
+          (response as List).map((e) => ImageListModel.fromJson(e)).toList();
+      imageList.clear();
+      imageList.addAll(fetchedImages);
+    }
+    hideLoading();
   }
 
   getAppointments() async {
