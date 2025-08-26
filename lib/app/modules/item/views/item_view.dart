@@ -47,7 +47,7 @@ class ItemView extends GetView<ItemController> {
           ),
         ],
       ),
-      drawer: CustomDrawer(indexClicked: 1),
+      drawer: CustomDrawer(indexClicked: 2),
       body: Obx(() => Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
             child: controller.isItemsEmpty.value

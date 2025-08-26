@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/drawer/custom_drawer.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/empty_widget.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
@@ -15,6 +16,7 @@ class FormView extends GetView<FormController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        drawer: CustomDrawer(indexClicked: 1),
         backgroundColor:
             LightThemeColors.scaffoldBackgroundColor, // light background
         appBar: AppBar(

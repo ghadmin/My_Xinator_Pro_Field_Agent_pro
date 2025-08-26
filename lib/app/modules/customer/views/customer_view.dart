@@ -18,7 +18,7 @@ class CustomerView extends GetView<CustomerController> {
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
     return Scaffold(
-      drawer: CustomDrawer(indexClicked: 2),
+      drawer: CustomDrawer(indexClicked: 3),
       appBar: AppBar(
         toolbarHeight:
             Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
