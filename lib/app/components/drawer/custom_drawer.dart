@@ -1,3 +1,5 @@
+//ignore_for_file: must_be_immutable
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -205,6 +207,17 @@ class CustomDrawer extends StatelessWidget {
 
                 indexClicked = indexClicked;
               },
+            ),
+            Get.size.width <= 440
+                ? SizedBox(height: 360.sp)
+                : SizedBox(height: 250.sp),
+            Text(
+              'Version: ${authController.versionController.appVersion.value}',
+              style: TextStyle(
+                fontSize: Get.size.width <= 440 ? 12.sp : 8.sp,
+                color: LightThemeColors.bodyTextSecondaryColor,
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/utils/version_controller.dart';
 
 import 'app/data/local/hive/hive_adapters.dart';
 import 'app/data/local/my_shared_pref.dart';
@@ -8,6 +10,7 @@ import 'my_app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Get.put(VersionController());
   // Device orientation
   SystemChrome.setPreferredOrientations(
     [DeviceOrientation.portraitUp],

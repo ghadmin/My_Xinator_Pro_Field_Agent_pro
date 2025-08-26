@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../utils/version_controller.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../routes/app_pages.dart';
@@ -11,6 +12,8 @@ import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
 
 class AuthController extends GetxController with ExceptionHandler {
+  final versionController = Get.put(VersionController());
+
   final TextEditingController emailLoginTextController =
       TextEditingController(text: MySharedPref.getEmail() ?? "");
   final TextEditingController passwordLoginTextController =
@@ -75,7 +78,7 @@ class AuthController extends GetxController with ExceptionHandler {
     await MySharedPref.setEmail(emailLoginTextController.text.trim());
   }
 
-  login(String userId, String password) async {
+  Future<void> login(String userId, String password) async {
     showLoading();
     var response = await DioClient().get(
       url: ApiUrl.login,
@@ -99,7 +102,7 @@ class AuthController extends GetxController with ExceptionHandler {
     }
   }
 
-  doLogout() async {
+  Future<void> doLogout() async {
     showLoading();
     await 2.delay();
     await MySharedPref.clearExceptEmail();
