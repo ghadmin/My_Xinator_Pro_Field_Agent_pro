@@ -89,6 +89,8 @@ class AppointmentController extends GetxController with ExceptionHandler {
   ];
 
   void selectSingleAppointments(Appointments appointment, int index) {
+    imageList.clear();
+    mediaList.clear();
     customerController.selectedCustomer(
         CustomerModel.fromJson(appointment.customer!.toJson()));
     companyId = appointment.companyID ?? "";
@@ -273,41 +275,49 @@ class AppointmentController extends GetxController with ExceptionHandler {
       MySnackBar.showToast(message: "Images uploaded successfully!");
       mediaList.clear();
     }
-    getImageList();
+    getImageList(false);
   }
 
   final imageList = RxList<ImageListModel>([]);
-  Future<void> getImageList() async {
+  Future<void> getImageList(bool isFromTab) async {
     showLoading();
     await Future.delayed(Duration.zero); // <- give UI a chance to render
+    try {
+      // Prepare request params
+      final queryParams = {
+        "CustomerId": customerID,
+        "AppointmentId": appointmentID,
+        "cSLId": 0,
+        "CompanyId": companyId,
+      };
 
-    // Prepare request params
-    final queryParams = {
-      "CustomerId": customerID,
-      "AppointmentId": appointmentID,
-      "cSLId": 0,
-      "CompanyId": companyId,
-    };
+      log("queryParams: ${jsonEncode(queryParams)}");
 
-    log("queryParams: ${jsonEncode(queryParams)}");
-
-    // Send request
-    final response = await DioClient()
-        .get(
-          url: ApiUrl.getImageListUrl,
-          params: queryParams,
-        )
-        .catchError(handleError);
-
-    if (response == null) {
-      MySnackBar.showErrorToast(message: "Failed to load images");
-    } else {
-      final List<ImageListModel> fetchedImages =
-          (response as List).map((e) => ImageListModel.fromJson(e)).toList();
-      imageList.clear();
-      imageList.addAll(fetchedImages);
+      // Send request
+      final response = isFromTab
+          ? await DioClient().get(
+              url: ApiUrl.getImageListUrl,
+              params: queryParams,
+            )
+          : await DioClient()
+              .get(
+                url: ApiUrl.getImageListUrl,
+                params: queryParams,
+              )
+              .catchError(handleError);
+      if (response == null) {
+        MySnackBar.showErrorToast(message: "Failed to load images");
+      } else {
+        final List<ImageListModel> fetchedImages =
+            (response as List).map((e) => ImageListModel.fromJson(e)).toList();
+        imageList.clear();
+        imageList.addAll(fetchedImages);
+      }
+    } catch (e, st) {
+      // MySnackBar.showErrorToast(message: "Something went wrong!");
+    } finally {
+      hideLoading(); // ✅ always runs
     }
-    hideLoading();
   }
 
   getAppointments() async {
