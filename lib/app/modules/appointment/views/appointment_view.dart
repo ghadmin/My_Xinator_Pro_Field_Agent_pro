@@ -177,6 +177,8 @@ class AppointmentView extends GetView<AppointmentController> {
                                 radius: 8,
                                 color: Colors.white,
                                 onPressed: () {
+                                  controller.selectSingleAppointments(
+                                      appointment, index);
                                   var createdDateTime = dateTimeConverter(
                                       inputFormat: "yyyy/MM/dd hh:mm a",
                                       inputTime: appointment.createdDateTime
