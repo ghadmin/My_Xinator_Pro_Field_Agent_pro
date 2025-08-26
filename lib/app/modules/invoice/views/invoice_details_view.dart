@@ -257,11 +257,47 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     GeneralTextField(
                                       hint: "Email body",
                                       theme: theme,
-                                      maxLine: 6,
+                                      maxLine: 8,
+                                      minLine: 6,
+                                      textInputType: TextInputType.multiline,
+                                      textInputAction: TextInputAction.newline,
                                       textEditingController:
                                           controller.emailBodyTextController,
                                     ),
                                     SizedBox(height: 10.sp),
+                                    Row(
+                                      children: [
+                                        Obx(() => Checkbox(
+                                              activeColor: theme.primaryColor,
+                                              checkColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(4.r),
+                                              ),
+                                              side: BorderSide(
+                                                color: LightThemeColors
+                                                    .primaryColor,
+                                                width: 1.sp,
+                                              ),
+                                              value: controller
+                                                  .isSendXPayLink.value,
+                                              onChanged: (value) {
+                                                controller.isSendXPayLink
+                                                    .value = value!;
+                                              },
+                                            )),
+                                        Text(
+                                          "Send XPayLink",
+                                          style: theme.textTheme.bodyLarge
+                                              ?.copyWith(
+                                            color:
+                                                LightThemeColors.hintTextColor,
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                     // Obx(() => SizedBox(
                                     //       height: controller.selectedFiles.length < 5
                                     //           ? controller.selectedFiles.length *
@@ -322,15 +358,6 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                             child: SecondaryButton(
                                               title: "Cancel",
                                               onPressed: () {
-                                                controller.toTextController
-                                                    .clear();
-                                                controller.bccTextController
-                                                    .clear();
-                                                controller.subjectTextController
-                                                    .clear();
-                                                controller
-                                                    .emailBodyTextController
-                                                    .clear();
                                                 controller.selectedFiles
                                                     .clear();
                                                 Get.back();
@@ -453,11 +480,51 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                         GeneralTextField(
                                           hint: "Email body",
                                           theme: theme,
-                                          maxLine: 6,
+                                          maxLine: 8,
+                                          minLine: 6,
+                                          textInputType:
+                                              TextInputType.multiline,
+                                          textInputAction:
+                                              TextInputAction.newline,
                                           textEditingController: controller
                                               .emailBodyTextController,
                                         ),
                                         SizedBox(height: 10.sp),
+                                        Row(
+                                          children: [
+                                            Obx(() => Checkbox(
+                                                  activeColor:
+                                                      theme.primaryColor,
+                                                  checkColor: Colors.white,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4.r),
+                                                  ),
+                                                  side: BorderSide(
+                                                    color: LightThemeColors
+                                                        .primaryColor,
+                                                    width: 1.sp,
+                                                  ),
+                                                  value: controller
+                                                      .isSendXPayLink.value,
+                                                  onChanged: (value) {
+                                                    controller.isSendXPayLink
+                                                        .value = value!;
+                                                  },
+                                                )),
+                                            Text(
+                                              "Send XPayLink",
+                                              style: theme.textTheme.bodyLarge
+                                                  ?.copyWith(
+                                                color: LightThemeColors
+                                                    .hintTextColor,
+                                                fontSize: 14.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                         // Obx(() => SizedBox(
                                         //       height: controller.selectedFiles.length < 5
                                         //           ? controller.selectedFiles.length *
@@ -518,16 +585,6 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 child: SecondaryButton(
                                                   title: "Cancel",
                                                   onPressed: () {
-                                                    controller.toTextController
-                                                        .clear();
-                                                    controller.bccTextController
-                                                        .clear();
-                                                    controller
-                                                        .subjectTextController
-                                                        .clear();
-                                                    controller
-                                                        .emailBodyTextController
-                                                        .clear();
                                                     controller.selectedFiles
                                                         .clear();
                                                     Get.back();

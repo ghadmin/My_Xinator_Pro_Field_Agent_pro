@@ -14,7 +14,7 @@ class SettingsController extends GetxController with ExceptionHandler {
   /// API ///
   final tickets = RxList<TicketStatusSettings>();
   final selectedTicket = Rx<TicketStatusSettings?>(null);
-  getTicketStatus() async {
+  Future<void> getTicketStatus() async {
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
 
@@ -53,7 +53,7 @@ class SettingsController extends GetxController with ExceptionHandler {
 
   final appointmentsStatus = RxList<AppointmentStatusSetting>();
   final selectedAppointmentsStatus = Rx<AppointmentStatusSetting?>(null);
-  getAppointmentStatus() async {
+  Future<void> getAppointmentStatus() async {
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
 

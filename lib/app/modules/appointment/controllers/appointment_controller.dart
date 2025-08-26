@@ -177,7 +177,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
 
     if (choice == 'single') {
       final DateTime? picked = await showDatePicker(
-        context: context,
+        context: Get.context!,
         initialDate: DateTime.now(),
         firstDate: DateTime(2000),
         lastDate: DateTime(2100),
@@ -320,83 +320,86 @@ class AppointmentController extends GetxController with ExceptionHandler {
     }
   }
 
-  getAppointments() async {
-    try {
-      showLoading();
-      isAppointmentEmpty.value = false;
-      if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
-        var userID = await MySharedPref.getUserName();
-        var currentDateTime = DateTime.now();
+  Future<void> getAppointments() async {
+    // showLoading();
+    isAppointmentEmpty.value = false;
+    if (await NetworkConnectivity.isNetworkAvailable()) {
+      var companyID = await MySharedPref.getCompanyID();
+      var userID = await MySharedPref.getUserName();
+      var currentDateTime = DateTime.now();
 
-        var response = await DioClient().get(
-          url: ApiUrl.getAppointment,
-          params: {
-            "appointmentDate": dateTimeConverter(
-                inputTime: currentDateTime.toString(),
-                outputFormat: "yyyy/MM/dd"),
-            "CompanyId": companyID,
-            "userId": userID,
-          },
-        ).catchError(handleError);
+      var response = await DioClient().get(
+        url: ApiUrl.getAppointment,
+        params: {
+          "appointmentDate": dateTimeConverter(
+              inputTime: currentDateTime.toString(),
+              outputFormat: "yyyy/MM/dd"),
+          "CompanyId": companyID,
+          "userId": userID,
+        },
+      ).catchError(handleError);
 
-        if (response == null) {
-          showEmptyWidget();
-          return;
-        }
-
-        if (response.isEmpty) {
-          appointments.clear();
-
-          showEmptyWidget();
-          return;
-        }
-
-        appointments.assignAll(
-            (response as List).map((e) => Appointments.fromJson(e)).toList());
-        sortedAppointments.assignAll(
-            (response).map((e) => Appointments.fromJson(e)).toList());
-        await MyHive.saveAllAppointments(appointments);
-
-        if (appointments.isEmpty) {
-          showEmptyWidget();
-        }
-      } else {
-        var savedAppointments = MyHive.getAllAppointments();
-
-        if (savedAppointments.isNotEmpty) {
-          appointments.assignAll(savedAppointments);
-          savedAppointments.assignAll(savedAppointments);
-
-          MySnackBar.showErrorToast(message: "No network!");
-          NetworkConnectivity.connectionChangeCount = 1;
-        } else {
-          appointments.clear();
-          savedAppointments.clear();
-          isError.value = true;
-          NetworkConnectivity.connectionChangeCount = 1;
-
-          showEmptyWidget();
-        }
+      if (response == null) {
+        hideLoading();
+        showEmptyWidget();
+        return;
       }
-    } catch (e) {
-      log("Error in getAppointments: $e");
 
-      showEmptyWidget();
-      return;
-    } finally {
-      hideLoading();
+      if (response.isEmpty) {
+        appointments.clear();
+        hideLoading();
+        showEmptyWidget();
+        return;
+      }
+
+      appointments.assignAll(
+          (response as List).map((e) => Appointments.fromJson(e)).toList());
+
+      sortedAppointments.assignAll(
+        (response).map((e) => Appointments.fromJson(e)).toList()
+          ..sort((a, b) {
+            final aDate =
+                DateFormat("yyyy/MM/dd hh:mm a").parse(a.startDateTime!);
+            final bDate =
+                DateFormat("yyyy/MM/dd hh:mm a").parse(b.startDateTime!);
+            return aDate.compareTo(bDate);
+          }),
+      );
+
+      await MyHive.saveAllAppointments(appointments);
+      // hideLoading();
+
+      if (appointments.isEmpty) {
+        showEmptyWidget();
+      }
+    } else {
+      var savedAppointments = MyHive.getAllAppointments();
+
+      if (savedAppointments.isNotEmpty) {
+        appointments.assignAll(savedAppointments);
+        savedAppointments.assignAll(savedAppointments);
+        //hideLoading();
+        MySnackBar.showErrorToast(message: "No network!");
+        NetworkConnectivity.connectionChangeCount = 1;
+      } else {
+        appointments.clear();
+        savedAppointments.clear();
+        isError.value = true;
+        NetworkConnectivity.connectionChangeCount = 1;
+        // hideLoading();
+        showEmptyWidget();
+      }
     }
   }
 
-  clearSort() {
+  void clearSort() {
     selectedDate(null);
     selectedDateString('');
     sortedAppointments.clear();
     sortedAppointments.addAll(appointments);
   }
 
-  sortAppointmentsText() {
+  void sortAppointmentsText() {
     if (appointments.isEmpty) return;
 
     selectedDateString('');
@@ -419,7 +422,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
     }
   }
 
-  sortAppointmentsDate() {
+  void sortAppointmentsDate() {
     if (selectedDate.value != null) {
       sortTextController.clear();
       final list = appointments.where((p0) {
@@ -440,7 +443,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
   }
   // update appointment
 
-  updateAppointment() async {
+  Future<void> updateAppointment() async {
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
@@ -499,12 +502,13 @@ class AppointmentController extends GetxController with ExceptionHandler {
 
   @override
   void onReady() async {
-    await Future.wait(<Future<dynamic>>[
-      getAppointments(),
-      settingController.getAppointmentStatus(),
-      settingController.getTicketStatus(),
-      invoiceController.getTax(),
-    ]);
+    showLoading();
+    await getAppointments();
+    await settingController.getAppointmentStatus();
+    await settingController.getTicketStatus();
+    await invoiceController.getTax();
+
+    hideLoading();
     super.onReady();
   }
 }

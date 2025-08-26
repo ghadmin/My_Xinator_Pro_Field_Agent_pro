@@ -24,6 +24,7 @@ class GeneralTextField extends StatelessWidget {
     this.suffix,
     this.readOnly,
     this.maxLine,
+    this.minLine,
     this.textAlignment,
   });
 
@@ -41,6 +42,7 @@ class GeneralTextField extends StatelessWidget {
   final Widget? suffix;
   final bool? readOnly;
   final int? maxLine;
+  final int? minLine;
   final TextAlign? textAlignment;
   @override
   Widget build(BuildContext context) {
@@ -58,7 +60,8 @@ class GeneralTextField extends StatelessWidget {
       onTapOutside: (event) {
         FocusManager.instance.primaryFocus?.unfocus();
       },
-      maxLines: maxLine ?? 1,
+      maxLines: maxLine,
+      minLines: maxLine,
       textAlign: textAlignment ?? TextAlign.start,
       onChanged: onChanged,
       onEditingComplete: nextFocusNode == null
@@ -90,7 +93,9 @@ class GeneralTextField extends StatelessWidget {
       },
       decoration: InputDecoration(
         filled: true,
-        contentPadding: EdgeInsets.symmetric(horizontal: 15.sp),
+        contentPadding: Get.size.width <= 440
+            ? EdgeInsets.symmetric(horizontal: 15.sp)
+            : null,
         fillColor: readOnly == true
             ? LightThemeColors.bodyTextSecondaryColor.withValues(alpha: .1)
             : LightThemeColors.fillColor,

@@ -1,18 +1,21 @@
-import 'dart:convert';
-import 'dart:io';
 import 'dart:developer';
+import 'dart:io';
+
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:video_player/video_player.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
 import 'package:xinator_fsm_pro/app/modules/settings/controllers/settings_controller.dart';
+
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../../utils/url_launcher.dart';
@@ -22,8 +25,6 @@ import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
 import '../../item/models/item_list_model.dart';
 import '../controllers/appointment_controller.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
-import 'package:path_provider/path_provider.dart';
 
 class AppointmentDetailsView extends StatefulWidget {
   const AppointmentDetailsView({super.key});
@@ -63,14 +64,21 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     var theme = Theme.of(context);
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        toolbarHeight:
-            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
-        title: TextWidget(
-          text: "Appointment Details",
-        ),
-        centerTitle: false,
-      ),
+      appBar: Get.size.width <= 440
+          ? AppBar(
+              title: Text("Appointment Details"),
+              centerTitle: false,
+            )
+          : PreferredSize(
+              preferredSize: Size.fromHeight(40.sp),
+              child: Padding(
+                padding: EdgeInsets.only(top: 15.sp),
+                child: AppBar(
+                  title: Text("Appointment Details"),
+                  centerTitle: false,
+                ),
+              ),
+            ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
         child: Padding(
@@ -2021,7 +2029,7 @@ List<Widget> _buildTicketRows(
                     children: [
                       Material(
                         shape: const CircleBorder(),
-                        color: LightThemeColors.yellowColor.withOpacity(0.5),
+                        color: LightThemeColors.yellowColor.withValues(alpha: 0.5),
                         elevation: 6,
                         child: Padding(
                           padding: EdgeInsets.all(6.w),

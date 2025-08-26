@@ -27,6 +27,7 @@ import '../models/tax_model.dart';
 class InvoiceController extends GetxController with ExceptionHandler {
   late final WebViewController webController;
   bool isWebControllerInitialized = false;
+  RxBool isSendXPayLink = false.obs;
   final ScrollController scrollController = ScrollController();
   final xpayLinkLoading = RxBool(false);
   Future<void> paymentViaXpayLink() async {
@@ -224,14 +225,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
     isDirty.value = true;
   }
 
-  @override
-  void onReady() async {
-    await itemController.getItems();
-    isDirty.value = false;
-    // Logger().d(Get.size);
-    super.onReady();
-  }
-
   RxDouble get nonTaxableTotalInDetails {
     RxDouble total = 0.0.obs;
     if (!selectedItemList.any((item) => item.isTaxable == true)) {
@@ -423,7 +416,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final depositList = RxList<Payment>();
 
   final taxes = RxList<TaxModel>();
-  getTax() async {
+  Future<void> getTax() async {
     var companyID = await MySharedPref.getCompanyID();
     var response = await DioClient().get(
       url: ApiUrl.getTax,
@@ -442,7 +435,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   }
 
   RxString invoiceName = "".obs;
-  getInvoiceName() async {
+  Future<void> getInvoiceName() async {
     var companyID = await MySharedPref.getCompanyID();
     var response = await DioClient().get(
       url: ApiUrl.getInvoiceName,
@@ -469,7 +462,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   }
 
   RxBool isInvoiceSaved = false.obs;
-  createInvoice() async {
+  Future<void> createInvoice() async {
     showLoading();
     isInvoiceSaved.value = false;
     var companyID = await MySharedPref.getCompanyID();
@@ -612,7 +605,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     {"name": "Requested Deposit Amount:(\$)", "value": "2"},
   ];
 
-  editInvoice() async {
+  Future<void> editInvoice() async {
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
@@ -698,7 +691,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     await Get.find<AppointmentController>().getAppointments();
   }
 
-  convertEstimate() async {
+  Future<void> convertEstimate() async {
     var companyID = MySharedPref.getCompanyID();
     var userID = MySharedPref.getUserName();
     var response = await DioClient().post(
@@ -714,7 +707,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
   RxString customerFirstName = "".obs;
 
-  getEmailAutofill({required String emailType}) async {
+  Future<void> getEmailAutofill({required String emailType}) async {
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
     var companyName = await MySharedPref.getCompanyName();
@@ -738,7 +731,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
     hideLoading();
   }
 
-  sendEmail({required String pdfType, required String emailType}) async {
+  Future<void> sendEmail(
+      {required String pdfType, required String emailType}) async {
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
@@ -773,24 +767,22 @@ class InvoiceController extends GetxController with ExceptionHandler {
         "emailContents": selectedFiles.isEmpty ? [] : emailContents,
         "userId": userID,
         "currentPdfType": pdfType,
-        "invoiceNo": invoiceID.value
+        "invoiceNo": invoiceID.value,
+        "isSendPaymentLink": isSendXPayLink.value,
       },
     ).catchError(handleError);
 
     if (response == null) return;
 
     hideLoading();
-    toTextController.clear();
-    bccTextController.clear();
-    subjectTextController.clear();
-    emailBodyTextController.clear();
+
     selectedFiles.clear();
     Get.back();
     MySnackBar.showToast(message: response["Message"]);
   }
 
   RxString depositAmount = "0.00".obs;
-  makePayment(String type) async {
+  Future<void> makePayment(String type) async {
     var companyID = await MySharedPref.getCompanyID();
 
     var response = await DioClient().post(
@@ -812,17 +804,40 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     checkNumberTextController.clear();
     checkNameTextController.clear();
-    // await appointmentController.getAppointments();
     await Get.find<AppointmentController>().getAppointments();
 
     Get.back();
     Get.back();
     Get.back();
-
-    MySnackBar.showToast(message: response["Message"]);
   }
 
-  paymentStatus() async {
+  Future<void> makeDepositPay(String amount, String type) async {
+    var companyID = await MySharedPref.getCompanyID();
+
+    var response = await DioClient().post(
+      url: ApiUrl.makePayment,
+      body: {
+        "payment": {
+          "CompanyID": companyID,
+          "InvocieId": invoiceID.value,
+          "Amount": amount.isEmpty ? "0.00" : amount,
+          "Type": type,
+          "Source": "Xinator BMS",
+          "CheckName": checkNameTextController.text,
+          "CheckNumber": checkNumberTextController.text
+        }
+      },
+    ).catchError(handleError);
+
+    if (response == null) return;
+    await Get.find<AppointmentController>().getAppointments();
+    Get.back();
+    Get.back();
+    Get.back();
+    Logger().i("Deposit Response: $response");
+  }
+
+  Future<void> paymentStatus() async {
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
     var uri =
@@ -844,6 +859,14 @@ class InvoiceController extends GetxController with ExceptionHandler {
       Get.back();
       MySnackBar.showToast(message: "Payment successful");
     }
+  }
+
+  @override
+  void onReady() async {
+    await itemController.getItems();
+    isDirty.value = false;
+    Logger().d(Get.size);
+    super.onReady();
   }
 
   @override

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart'
-    show TextWidget;
 
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/my_buttons.dart';
@@ -15,10 +13,21 @@ class PaymentByCheckView extends GetView<InvoiceController> {
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        title: TextWidget(text: 'Payment by Check'),
-        centerTitle: false,
-      ),
+      appBar: Get.size.width <= 440
+          ? AppBar(
+              title: Text('Payment by Check'),
+              centerTitle: false,
+            )
+          : PreferredSize(
+              preferredSize: Size.fromHeight(40.sp),
+              child: Padding(
+                padding: EdgeInsets.only(top: 15.sp),
+                child: AppBar(
+                  title: Text('Payment by Check'),
+                  centerTitle: false,
+                ),
+              ),
+            ),
       body: Padding(
         padding: EdgeInsets.all(16.sp),
         child: SafeArea(
@@ -26,54 +35,26 @@ class PaymentByCheckView extends GetView<InvoiceController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                //  TextWidget(text:
-                //   'Thank you for selecting the payment method. Please add your billing info to continue.',
-                //   style: TextStyle(fontSize: 16),
-                // ),
-                // SizedBox(height: 16),
-                // Row(
-                //   mainAxisAlignment: MainAxisAlignment.end,
-                //   children: [
-                //     SizedBox(
-                //       width: 170.sp,
-                //       child: ElevatedButton(
-                //         onPressed: () {},
-                //         style: ButtonStyle(
-                //           backgroundColor:
-                //               WidgetStateProperty.all(Color(0xff0CBC8B)),
-                //         ),
-                //         child: Row(
-                //           mainAxisAlignment: MainAxisAlignment.center,
-                //           children: [
-                //             Icon(Icons.email),
-                //             SizedBox(width: 8.sp),
-                //              TextWidget(text:'Email Receipt'),
-                //           ],
-                //         ),
-                //       ),
-                //     ),
-                //   ],
-                // ),
-                // SizedBox(height: 32.sp),
-                TextWidget(
-                  text: 'Invoice Summary',
+                Text(
+                  'Invoice Summary',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8.sp),
                 _buildInvoiceSummary(),
                 SizedBox(height: 32.sp),
-                TextWidget(
-                  text: 'Billing Info',
+                Text(
+                  'Billing Info',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8.sp),
-                TextWidget(text: 'Payment by Check'),
+                Text('Payment by Check'),
                 SizedBox(height: 8.sp),
                 Divider(height: 1, color: Colors.grey),
                 SizedBox(height: 32.sp),
-                TextWidget(text: 'Check Name'), SizedBox(height: 8.sp),
+                Text('Check Name'),
+                SizedBox(height: 8.sp),
                 SizedBox(
-                  height: 42.sp,
+                  height: Get.size.width <= 440 ? 42.sp : null,
                   width: double.infinity,
                   child: GeneralTextField(
                     hint: "Enter Check Name",
@@ -84,9 +65,10 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                   ),
                 ),
                 SizedBox(height: 8.sp),
-                TextWidget(text: 'Check Number'), SizedBox(height: 8.sp),
+                Text('Check Number'),
+                SizedBox(height: 8.sp),
                 SizedBox(
-                  height: 42.sp,
+                  height: Get.size.width <= 440 ? 42.sp : null,
                   width: double.infinity,
                   child: GeneralTextField(
                     hint: "Enter Check Number",
@@ -99,49 +81,92 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                 SizedBox(height: 25.sp),
                 Row(
                   children: [
-                    TextWidget(text: "Total Amount"),
+                    Text("Total Amount"),
                     Spacer(),
-                    TextWidget(text: "\$ ${controller.total.value}"),
+                    Text("\$ ${controller.total.value}"),
                   ],
                 ),
                 SizedBox(height: 8.sp),
                 Row(
                   children: [
-                    TextWidget(text: "Deposit Amount"),
+                    Text("Paid Amount"),
                     Spacer(),
-                    TextWidget(text: "- \$ ${controller.depositAmount.value}"),
+                    Text("- \$ ${controller.depositAmount.value}"),
                   ],
                 ),
-
                 SizedBox(height: 8.sp),
-                Row(
-                  children: [
-                    TextWidget(text: 'Payable Amount'),
-                    Spacer(),
-                    Row(
-                      children: [
-                        TextWidget(text: "\$"),
-                        SizedBox(width: 8.sp),
-                        SizedBox(
-                          height: 35.sp,
-                          width: 100.sp,
-                          child: GeneralTextField(
-                            hint: '',
-                            textInputType:
-                                TextInputType.numberWithOptions(decimal: true),
-                            theme: theme,
-                            textAlignment: TextAlign.end,
-                            textEditingController:
-                                controller.checkAmtTextController,
-                            onChanged: (value) {
-                              controller.finalCollectionAmount.value = value;
-                            },
+                controller.depositRequestPay.value
+                    ? Row(
+                        children: [
+                          Text('Due Amount'),
+                          Spacer(),
+                          Text(
+                            "\$ ${controller.finalCollectionAmount.value}",
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Text('Payable Amount'),
+                          Spacer(),
+                          Row(
+                            children: [
+                              Text("\$"),
+                              SizedBox(width: 8.sp),
+                              SizedBox(
+                                // height: 35.sp,
+                                width: 100.sp,
+                                child: GeneralTextField(
+                                  hint: '',
+                                  textInputType:
+                                      TextInputType.numberWithOptions(
+                                          decimal: true),
+                                  theme: theme,
+                                  textAlignment: TextAlign.end,
+                                  textEditingController:
+                                      controller.checkAmtTextController,
+                                  onChanged: (value) {
+                                    controller.finalCollectionAmount.value =
+                                        value;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                controller.depositRequestPay.value
+                    ? Container(
+                        margin: EdgeInsets.only(top: 8.sp),
+                        width: double.infinity,
+                        height: 40.sp,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              color: theme.primaryColor, width: 1.sp),
+                          borderRadius: BorderRadius.circular(8.sp),
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Payment Requested   ",
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                "\$${controller.requestedDepositAmountEditTextController.text.isEmpty ? "0.00" : controller.requestedDepositAmountEditTextController.text}",
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.primaryColor,
+                                  fontSize: 18.sp,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      )
+                    : SizedBox.shrink(),
                 SizedBox(height: 32),
                 Row(
                   children: [
@@ -158,52 +183,142 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                       ),
                     ),
                     SizedBox(width: 30.sp),
-                    Expanded(
-                      flex: 2,
-                      child: SizedBox(
-                        height: 42.sp,
-                        child: PrimaryButton(
-                          onPressed: () async {
-                            if (controller
-                                .checkNameTextController.text.isEmpty) {
-                              Get.snackbar(
-                                  snackPosition: SnackPosition.BOTTOM,
-                                  "Error",
-                                  "Please enter check name");
-                              return;
-                            } else if (controller
-                                .checkNumberTextController.text.isEmpty) {
-                              Get.snackbar(
-                                  snackPosition: SnackPosition.BOTTOM,
-                                  "Error",
-                                  "Please enter check number");
-                              return;
-                            } else if (controller
-                                .checkAmtTextController.text.isEmpty) {
-                              Get.snackbar(
-                                'Error',
-                                'Please enter the amount to pay.',
-                                snackPosition: SnackPosition.BOTTOM,
-                              );
-                              return;
-                            } else if (double.parse(
-                                    controller.checkAmtTextController.text) <=
-                                0) {
-                              Get.snackbar(
-                                'Error',
-                                'Amount must be greater than zero.',
-                                snackPosition: SnackPosition.BOTTOM,
-                              );
-                              return;
-                            }
+                    controller.depositRequestPay.value
+                        ? Expanded(
+                            flex: 2,
+                            child: SizedBox(
+                              height: 42.sp,
+                              child: PrimaryButton(
+                                backgroundColor: Colors.black87,
+                                foregroundColor: Colors.white,
+                                onPressed: () async {
+                                  if (controller
+                                      .checkNameTextController.text.isEmpty) {
+                                    Get.snackbar(
+                                        snackPosition: SnackPosition.BOTTOM,
+                                        "Error",
+                                        "Please enter check name");
+                                    return;
+                                  } else if (controller
+                                      .checkNumberTextController.text.isEmpty) {
+                                    Get.snackbar(
+                                        snackPosition: SnackPosition.BOTTOM,
+                                        "Error",
+                                        "Please enter check number");
+                                    return;
+                                  }
+                                  bool confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: Text('Confirm Payment'),
+                                          content: Text(
+                                              'Are you sure you want to proceed with the payment?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context)
+                                                      .pop(false),
+                                              child: Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context)
+                                                      .pop(true),
+                                              child: Text('Confirm'),
+                                            ),
+                                          ],
+                                        ),
+                                      ) ??
+                                      false;
 
-                            await controller.makePayment("CHECK");
-                          },
-                          title: 'Pay',
-                          inactive: false,
-                        ),
-                      ),
-                    ),
+                                  if (confirmed) {
+                                    await controller.makeDepositPay(
+                                        controller
+                                            .requestedDepositAmountEditTextController
+                                            .text,
+                                        "CHECK");
+
+                                    controller.depositRequestPay.value = false;
+                                  }
+                                },
+                                title: controller.type.value == "Invoice"
+                                    ? "Pay Invoice"
+                                    : "Pay Deposit",
+                                inactive: false,
+                              ),
+                            ),
+                          )
+                        : Expanded(
+                            flex: 2,
+                            child: SizedBox(
+                              height: 42.sp,
+                              child: PrimaryButton(
+                                onPressed: () async {
+                                  if (controller
+                                      .checkNameTextController.text.isEmpty) {
+                                    Get.snackbar(
+                                        snackPosition: SnackPosition.BOTTOM,
+                                        "Error",
+                                        "Please enter check name");
+                                    return;
+                                  } else if (controller
+                                      .checkNumberTextController.text.isEmpty) {
+                                    Get.snackbar(
+                                        snackPosition: SnackPosition.BOTTOM,
+                                        "Error",
+                                        "Please enter check number");
+                                    return;
+                                  } else if (controller
+                                      .checkAmtTextController.text.isEmpty) {
+                                    Get.snackbar(
+                                      'Error',
+                                      'Please enter the amount to pay.',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                    );
+                                    return;
+                                  } else if (double.parse(controller
+                                          .checkAmtTextController.text) <=
+                                      0) {
+                                    Get.snackbar(
+                                      'Error',
+                                      'Amount must be greater than zero.',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                    );
+                                    return;
+                                  }
+                                  bool confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: Text('Confirm Payment'),
+                                          content: Text(
+                                              'Are you sure you want to proceed with the payment?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context)
+                                                      .pop(false),
+                                              child: Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context)
+                                                      .pop(true),
+                                              child: Text('Confirm'),
+                                            ),
+                                          ],
+                                        ),
+                                      ) ??
+                                      false;
+
+                                  if (confirmed) {
+                                    await controller.makePayment("CHECK");
+                                  }
+                                },
+                                title: 'Pay',
+                                inactive: false,
+                              ),
+                            ),
+                          ),
                   ],
                 ),
               ],
@@ -221,48 +336,46 @@ class PaymentByCheckView extends GetView<InvoiceController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextWidget(
-                text: "${controller.type.value}: ${controller.invoiceNumber}"),
+            Text("${controller.type.value}: ${controller.invoiceNumber}"),
             SizedBox(height: 10.sp),
             Row(
               children: [
-                TextWidget(text: 'Customer Name'),
+                Text('Customer Name'),
                 Spacer(),
-                TextWidget(text: controller.customerName),
+                Text(controller.customerName),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                TextWidget(text: 'Address'),
+                Text('Address'),
                 Spacer(),
-                TextWidget(text: controller.address),
+                Text(controller.address),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                TextWidget(text: 'Type'),
+                Text('Type'),
                 Spacer(),
-                TextWidget(text: controller.type.value),
+                Text(controller.type.value),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                TextWidget(text: 'Total Amount'),
+                Text('Total Amount'),
                 Spacer(),
-                TextWidget(
-                    text:
-                        '\$${double.parse(controller.total.value).toStringAsFixed(2)}'),
+                Text(
+                    '\$${double.parse(controller.total.value).toStringAsFixed(2)}'),
               ],
             ),
             SizedBox(height: 8),
             Row(
               children: [
-                TextWidget(text: 'Date'),
+                Text('Date'),
                 Spacer(),
-                TextWidget(text: controller.showingDate.value),
+                Text(controller.showingDate.value),
               ],
             ),
           ],

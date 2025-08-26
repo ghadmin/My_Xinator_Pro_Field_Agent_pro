@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
+
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../routes/app_pages.dart';
@@ -58,13 +59,16 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        TextWidget(
-                          text: 'Total Amount',
+                        Text(
+                          controller.type.value == "Invoice"
+                              ? 'Total Due'
+                              : 'Total Amount',
                           style: TextStyle(color: Colors.white70),
                         ),
-                        TextWidget(
-                          text:
-                              '\$${double.parse(controller.total.value).toStringAsFixed(2)}',
+                        Text(
+                          controller.type.value == "Invoice"
+                              ? '\$${(double.parse(controller.total.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}'
+                              : '\$${double.parse(controller.total.value).toStringAsFixed(2)}',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 26.sp,
@@ -72,19 +76,43 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                           ),
                         ),
                         SizedBox(height: 6.sp),
-                        TextWidget(
-                          text: 'Deposit Amount',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                        TextWidget(
-                          text:
-                              '\$${double.parse(controller.depositAmount.value).toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 26.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        controller.depositRequestPay.value
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    controller.type.value == "Invoice"
+                                        ? 'Requested Payment Amount'
+                                        : 'Requested Deposit Amount',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                  Text(
+                                    '\$${controller.requestedDepositAmountEditTextController.text.isEmpty ? '0.00' : controller.requestedDepositAmountEditTextController.text}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 26.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Paid Amount',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                  Text(
+                                    '\$${double.parse(controller.depositAmount.value).toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 26.sp,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                         SizedBox(height: 3.sp),
                         TextWidget(
                           text:
