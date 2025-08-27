@@ -1,17 +1,20 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/components/global-widgets/my_snackbar.dart';
 import 'package:xinator_fsm_pro/app/data/local/my_shared_pref.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/models/form_model.dart';
 import 'package:xinator_fsm_pro/app/service/REST/api_urls.dart';
 import 'package:xinator_fsm_pro/app/service/REST/dio_client.dart';
 
 import '../../../service/handler/exception_handler.dart';
+import '../models/create_new_form_template_model.dart';
 
 class FormController extends GetxController with ExceptionHandler {
   var isLoading = true.obs;
   final searchQuery = RxString(''); // 👈 reactive search query
-
+  final createNewFormData = Rx<CreateNewFormModel?>(CreateNewFormModel());
   void updateSearchQuery(String query) {
     searchQuery.value = query;
   }
@@ -23,6 +26,111 @@ class FormController extends GetxController with ExceptionHandler {
   }
 
   final formModels = RxList<FormModel>([]);
+  Future<void> saveFormTemplate() async {
+    showLoading();
+
+    try {
+      final companyID = await MySharedPref.getCompanyID();
+
+      final response = await DioClient().post(
+        url: ApiUrl.saveFormUrl,
+        body: {
+          "requestPeram": {
+            "CompanyID": companyID,
+            "TemplateName": createNewFormData.value!.templateName,
+            "Category": createNewFormData.value!.category,
+            "Description": createNewFormData.value!.description,
+            "RequireSignature": createNewFormData.value!.signature,
+            "RequireTip": createNewFormData.value!.tpCapture,
+            "IsAutoAssignEnabled":
+                createNewFormData.value!.autoAssignAppointment,
+            "IsActive": createNewFormData.value!.isActive,
+            "FormStructure": "test"
+          }
+        },
+      ).catchError(handleError);
+      log("save data ${jsonEncode(response)}");
+      if (response == null) return;
+
+      hideLoading();
+      Get.back();
+      MySnackBar.showToast(message: "Form saved successfully");
+    } catch (e) {
+      hideLoading();
+      MySnackBar.showToast(message: "Failed to save form: $e");
+    }
+  }
+
+  Future<void> updateFormTemplate() async {
+    showLoading();
+
+    try {
+      final companyID = await MySharedPref.getCompanyID();
+
+      final response = await DioClient().post(
+        url: ApiUrl.updateFormUrl,
+        body: {
+          "requestPeram": {
+            "CompanyID": companyID,
+            "TemplateName": createNewFormData.value!.templateName,
+            "Category": createNewFormData.value!.category,
+            "Description": createNewFormData.value!.description,
+            "RequireSignature": createNewFormData.value!.signature,
+            "RequireTip": createNewFormData.value!.tpCapture,
+            "IsAutoAssignEnabled":
+                createNewFormData.value!.autoAssignAppointment,
+            "IsActive": createNewFormData.value!.isActive,
+          }
+        },
+      ).catchError(handleError);
+      log("save data ${jsonEncode(response)}");
+      if (response == null) return;
+
+      hideLoading();
+      Get.back();
+      MySnackBar.showToast(message: "Form saved successfully");
+    } catch (e) {
+      hideLoading();
+      MySnackBar.showToast(message: "Failed to save form: $e");
+    }
+  }
+
+  Future<void> isActiveUpdate(FormModel template) async {
+    showLoading();
+
+    try {
+      final companyID = await MySharedPref.getCompanyID();
+
+      final response = await DioClient().post(
+        url: ApiUrl.updateFormUrl,
+        body: {
+          "requestPeram": {
+            "CompanyID": companyID,
+            "TemplateName": template.templateName,
+            "Category": template.category,
+            "Description": template.description,
+            "RequireSignature": template.requireSignature ?? false,
+            "RequireTip": template.requireTip ?? false,
+            "IsAutoAssignEnabled": template.autoAssignServiceTypes ?? false,
+            "IsActive": template.isActive != null
+                ? template.isActive!
+                    ? false
+                    : true
+                : true,
+          }
+        },
+      ).catchError(handleError);
+      log("save data ${jsonEncode(response)}");
+      if (response == null) return;
+      fetchTemplates();
+      hideLoading();
+      MySnackBar.showToast(message: "Form saved successfully");
+    } catch (e) {
+      hideLoading();
+      MySnackBar.showToast(message: "Failed to save form: $e");
+    }
+  }
+
   Future<void> fetchTemplates() async {
     try {
       var companyID = await MySharedPref.getCompanyID();

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,8 +9,12 @@ import 'package:xinator_fsm_pro/app/components/drawer/custom_drawer.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/empty_widget.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
+import 'package:xinator_fsm_pro/app/modules/forms/models/create_new_form_template_model.dart'
+    show CreateNewFormModel;
 import 'package:xinator_fsm_pro/app/routes/app_pages.dart';
 import 'package:xinator_fsm_pro/config/theme/light_theme_colors.dart';
+
+import '../models/form_model.dart';
 
 class FormView extends GetView<FormController> {
   const FormView({super.key});
@@ -70,7 +76,9 @@ class FormView extends GetView<FormController> {
                                       const EdgeInsets.symmetric(vertical: 14),
                                 ),
                                 onPressed: () {
-                                  // Create new template action
+                                  controller
+                                      .createNewFormData(CreateNewFormModel());
+                                  showCreateNewTemplateDialog(context: context);
                                 },
                                 child: const Text(
                                   "+ Create New Template",
@@ -93,7 +101,7 @@ class FormView extends GetView<FormController> {
                                   padding: const EdgeInsets.all(14),
                                 ),
                                 onPressed: () {
-                                  // Create new template action
+                                  showCreateNewTemplateDialog(context: context);
                                 },
                                 child: const Text(
                                   "+ New Template",
@@ -286,7 +294,11 @@ class FormView extends GetView<FormController> {
                                                       MainAxisAlignment.end,
                                                   children: [
                                                     IconButton(
-                                                      onPressed: () {},
+                                                      onPressed: () {
+                                                        showCreateNewTemplateDialog(
+                                                            context: context,
+                                                            template: template);
+                                                      },
                                                       icon: Icon(Icons.edit,
                                                           color: Colors.blue),
                                                     ),
@@ -304,7 +316,11 @@ class FormView extends GetView<FormController> {
                                                           color: Colors.grey),
                                                     ),
                                                     IconButton(
-                                                      onPressed: () {},
+                                                      onPressed: () {
+                                                        controller
+                                                            .isActiveUpdate(
+                                                                template);
+                                                      },
                                                       icon: Icon(
                                                           template.isAutoAssignEnabled!
                                                               ? Icons.pause
@@ -325,5 +341,314 @@ class FormView extends GetView<FormController> {
                           ],
                         ));
         }));
+  }
+
+  void showCreateNewTemplateDialog({
+    required BuildContext context,
+    FormModel? template,
+  }) {
+    TextEditingController templateNameController = TextEditingController();
+    TextEditingController descriptionController = TextEditingController();
+    if (template != null) {
+      templateNameController.text = template.templateName ?? "";
+      descriptionController.text = template.description ?? "";
+      controller.createNewFormData(CreateNewFormModel(
+        templateName: template.templateName,
+        category: template.category,
+        description: template.description,
+        signature: template.requireSignature ?? false,
+        tpCapture: template.requireTip ?? false,
+        autoAssignAppointment: template.isAutoAssignEnabled ?? false,
+        isActive: template.isActive ?? false,
+      ));
+    }
+    showDialog(
+        context: context,
+        barrierDismissible: true, // true = tap outside to dismiss
+        builder: (BuildContext context) {
+          return Dialog(
+            insetPadding:
+                EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r)),
+            child: Obx(() {
+              final data = controller.createNewFormData.value ??
+                  CreateNewFormModel(); // initialize if null
+
+              return Padding(
+                padding: EdgeInsets.all(16.w),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        template != null
+                            ? "Edit Form Template"
+                            : "New Form Template",
+                        style: TextStyle(
+                            fontSize: 18.sp, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 16.h),
+
+                      // Template Name
+                      TextField(
+                        controller: templateNameController,
+                        onChanged: (value) {
+                          controller.createNewFormData(
+                            CreateNewFormModel(
+                              templateName: value,
+                              category: data.category,
+                              description: data.description,
+                              signature: data.signature,
+                              tpCapture: data.tpCapture,
+                              autoAssignAppointment: data.autoAssignAppointment,
+                              isActive: data.isActive,
+                            ),
+                          );
+                        },
+                        decoration: InputDecoration(
+                          labelText: "Template Name *",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 12.h,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+
+                      // Category
+                      DropdownButtonFormField<String>(
+                        value: data.category,
+                        decoration: InputDecoration(
+                          labelText: "Category",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 12.h,
+                          ),
+                        ),
+                        items: [
+                          "Maintenance",
+                          "Installation",
+                          "Repair",
+                          "Inspection",
+                          "Other"
+                        ]
+                            .map((item) => DropdownMenuItem(
+                                  value: item,
+                                  child: Text(item),
+                                ))
+                            .toList(),
+                        onChanged: (val) {
+                          controller.createNewFormData(
+                            CreateNewFormModel(
+                              templateName: data.templateName,
+                              category: val,
+                              description: data.description,
+                              signature: data.signature,
+                              tpCapture: data.tpCapture,
+                              autoAssignAppointment: data.autoAssignAppointment,
+                              isActive: data.isActive,
+                            ),
+                          );
+                        },
+                      ),
+                      SizedBox(height: 12.h),
+
+                      // Description
+                      TextField(
+                        controller: descriptionController,
+                        maxLines: 3,
+                        onChanged: (value) {
+                          controller.createNewFormData(
+                            CreateNewFormModel(
+                              templateName: data.templateName,
+                              category: data.category,
+                              description: value,
+                              signature: data.signature,
+                              tpCapture: data.tpCapture,
+                              autoAssignAppointment: data.autoAssignAppointment,
+                              isActive: data.isActive,
+                            ),
+                          );
+                        },
+                        decoration: InputDecoration(
+                          labelText: "Description",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 12.h,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+
+                      // Checkboxes
+                      Wrap(
+                        runSpacing: 8.h,
+                        spacing: 12.w,
+                        children: [
+                          CheckboxListTile(
+                            value: data.signature,
+                            onChanged: (v) {
+                              controller.createNewFormData(
+                                CreateNewFormModel(
+                                  templateName: data.templateName,
+                                  category: data.category,
+                                  description: data.description,
+                                  signature: v ?? false,
+                                  tpCapture: data.tpCapture,
+                                  autoAssignAppointment:
+                                      data.autoAssignAppointment,
+                                  isActive: data.isActive,
+                                ),
+                              );
+                            },
+                            title: Text("Require Signature",
+                                style: TextStyle(fontSize: 14.sp)),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: Colors
+                                .blue, // Background color of checkbox when selected
+                            checkColor: Colors.white,
+                          ),
+                          CheckboxListTile(
+                            value: data.tpCapture,
+                            onChanged: (v) {
+                              controller.createNewFormData(
+                                CreateNewFormModel(
+                                  templateName: data.templateName,
+                                  category: data.category,
+                                  description: data.description,
+                                  signature: data.signature,
+                                  tpCapture: v ?? false,
+                                  autoAssignAppointment:
+                                      data.autoAssignAppointment,
+                                  isActive: data.isActive,
+                                ),
+                              );
+                            },
+                            title: Text("Enable Tip Capture",
+                                style: TextStyle(fontSize: 14.sp)),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: Colors
+                                .blue, // Background color of checkbox when selected
+                            checkColor: Colors.white,
+                          ),
+                          CheckboxListTile(
+                            value: data.autoAssignAppointment,
+                            onChanged: (v) {
+                              controller.createNewFormData(
+                                CreateNewFormModel(
+                                  templateName: data.templateName,
+                                  category: data.category,
+                                  description: data.description,
+                                  signature: data.signature,
+                                  tpCapture: data.tpCapture,
+                                  autoAssignAppointment: v ?? false,
+                                  isActive: data.isActive,
+                                ),
+                              );
+                            },
+                            title: Text("Auto-assign to appointment types",
+                                style: TextStyle(fontSize: 14.sp)),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: Colors
+                                .blue, // Background color of checkbox when selected
+                            checkColor: Colors.white,
+                          ),
+                          CheckboxListTile(
+                            value: data.isActive,
+                            onChanged: (v) {
+                              controller.createNewFormData(
+                                CreateNewFormModel(
+                                  templateName: data.templateName,
+                                  category: data.category,
+                                  description: data.description,
+                                  signature: data.signature,
+                                  tpCapture: data.tpCapture,
+                                  autoAssignAppointment:
+                                      data.autoAssignAppointment,
+                                  isActive: v ?? false,
+                                ),
+                              );
+                            },
+                            title: Text("Active",
+                                style: TextStyle(fontSize: 14.sp)),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: Colors
+                                .blue, // Background color of checkbox when selected
+                            checkColor: Colors.white,
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      // Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text("Cancel",
+                                style: TextStyle(fontSize: 14.sp)),
+                          ),
+                          SizedBox(width: 12.w),
+                          ElevatedButton(
+                            onPressed: data.templateName != null &&
+                                    data.templateName != "" &&
+                                    data.category != null &&
+                                    data.description != null &&
+                                    data.description != ""
+                                ? () async {
+                                    template != null
+                                        ? await controller.updateFormTemplate()
+                                        : await controller.saveFormTemplate();
+                                    Get.back();
+                                  }
+                                : () {
+                                    print("calling 1 ");
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: data.templateName != null &&
+                                      data.templateName != "" &&
+                                      data.category != null &&
+                                      data.description != null &&
+                                      data.description != ""
+                                  ? Colors.blue
+                                  : Colors.grey,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20.w, vertical: 12.h),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r)),
+                            ),
+                            child: Text("Save Template",
+                                style: TextStyle(fontSize: 14.sp)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          );
+        });
   }
 }

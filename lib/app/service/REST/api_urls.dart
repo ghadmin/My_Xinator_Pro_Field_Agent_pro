@@ -24,4 +24,6 @@ class ApiUrl {
   static const getFormTypeUrl = "$baseUrl/GetAllFormTemplates";
   static const saveImageUrl = "$baseUrl/SaveImageForCSL";
   static const getImageListUrl = "$baseUrl/GetImageForCSL";
+  static const saveFormUrl = "$baseUrl/SaveFormTemplate";
+  static const updateFormUrl = "$baseUrl/UpdateFormTemplate";
 }
