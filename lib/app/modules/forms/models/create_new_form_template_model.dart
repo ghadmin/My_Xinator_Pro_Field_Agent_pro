@@ -1,4 +1,5 @@
 class CreateNewFormModel {
+  int? id;
   String? templateName;
   String? category;
   String? description;
@@ -10,6 +11,7 @@ class CreateNewFormModel {
   CreateNewFormModel({
     this.templateName,
     this.category,
+    this.id,
     this.description,
     this.signature = false,
     this.tpCapture = false,
@@ -19,6 +21,7 @@ class CreateNewFormModel {
 
   CreateNewFormModel copyWith({
     String? templateName,
+    int? id,
     String? category,
     String? description,
     bool? signature,
@@ -29,6 +32,7 @@ class CreateNewFormModel {
     return CreateNewFormModel(
       templateName: templateName ?? this.templateName,
       category: category ?? this.category,
+      id: id ?? this.id,
       description: description ?? this.description,
       signature: signature ?? this.signature,
       tpCapture: tpCapture ?? this.tpCapture,

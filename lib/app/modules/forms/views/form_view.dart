@@ -353,6 +353,7 @@ class FormView extends GetView<FormController> {
       templateNameController.text = template.templateName ?? "";
       descriptionController.text = template.description ?? "";
       controller.createNewFormData(CreateNewFormModel(
+        id: template.id ?? 0,
         templateName: template.templateName,
         category: template.category,
         description: template.description,
@@ -362,6 +363,7 @@ class FormView extends GetView<FormController> {
         isActive: template.isActive ?? false,
       ));
     }
+    log("template id ${controller.createNewFormData.value?.id}");
     showDialog(
         context: context,
         barrierDismissible: true, // true = tap outside to dismiss
@@ -397,6 +399,7 @@ class FormView extends GetView<FormController> {
                         onChanged: (value) {
                           controller.createNewFormData(
                             CreateNewFormModel(
+                              id: data.id,
                               templateName: value,
                               category: data.category,
                               description: data.description,
@@ -450,6 +453,7 @@ class FormView extends GetView<FormController> {
                             CreateNewFormModel(
                               templateName: data.templateName,
                               category: val,
+                              id: data.id,
                               description: data.description,
                               signature: data.signature,
                               tpCapture: data.tpCapture,
@@ -471,6 +475,7 @@ class FormView extends GetView<FormController> {
                               templateName: data.templateName,
                               category: data.category,
                               description: value,
+                              id: data.id,
                               signature: data.signature,
                               tpCapture: data.tpCapture,
                               autoAssignAppointment: data.autoAssignAppointment,
@@ -505,6 +510,7 @@ class FormView extends GetView<FormController> {
                                   category: data.category,
                                   description: data.description,
                                   signature: v ?? false,
+                                  id: data.id,
                                   tpCapture: data.tpCapture,
                                   autoAssignAppointment:
                                       data.autoAssignAppointment,
@@ -528,6 +534,7 @@ class FormView extends GetView<FormController> {
                                 CreateNewFormModel(
                                   templateName: data.templateName,
                                   category: data.category,
+                                  id: data.id,
                                   description: data.description,
                                   signature: data.signature,
                                   tpCapture: v ?? false,
@@ -551,6 +558,7 @@ class FormView extends GetView<FormController> {
                             onChanged: (v) {
                               controller.createNewFormData(
                                 CreateNewFormModel(
+                                  id: data.id,
                                   templateName: data.templateName,
                                   category: data.category,
                                   description: data.description,
@@ -578,6 +586,7 @@ class FormView extends GetView<FormController> {
                                   templateName: data.templateName,
                                   category: data.category,
                                   description: data.description,
+                                  id: data.id,
                                   signature: data.signature,
                                   tpCapture: data.tpCapture,
                                   autoAssignAppointment:

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/bindings/customer_binding.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/bindings/form_binding.dart';
-import 'package:xinator_fsm_pro/app/modules/forms/views/create_form_template.dart'
+import 'package:xinator_fsm_pro/app/modules/forms/views/form_builder_screen.dart'
     show FormBuilderScreen;
 import 'package:xinator_fsm_pro/app/modules/invoice/views/payment_web_view.dart';
 import 'package:xinator_fsm_pro/app/modules/signature/bindings/signature_binding.dart';

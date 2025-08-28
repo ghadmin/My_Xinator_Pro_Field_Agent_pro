@@ -71,6 +71,7 @@ class FormController extends GetxController with ExceptionHandler {
         url: ApiUrl.updateFormUrl,
         body: {
           "requestPeram": {
+            "Id": createNewFormData.value!.id,
             "CompanyID": companyID,
             "TemplateName": createNewFormData.value!.templateName,
             "Category": createNewFormData.value!.category,
@@ -79,6 +80,7 @@ class FormController extends GetxController with ExceptionHandler {
             "RequireTip": createNewFormData.value!.tpCapture,
             "IsAutoAssignEnabled":
                 createNewFormData.value!.autoAssignAppointment,
+            "FormStructure": "test",
             "IsActive": createNewFormData.value!.isActive,
           }
         },
@@ -88,7 +90,9 @@ class FormController extends GetxController with ExceptionHandler {
 
       hideLoading();
       Get.back();
+
       MySnackBar.showToast(message: "Form saved successfully");
+      fetchTemplates();
     } catch (e) {
       hideLoading();
       MySnackBar.showToast(message: "Failed to save form: $e");
