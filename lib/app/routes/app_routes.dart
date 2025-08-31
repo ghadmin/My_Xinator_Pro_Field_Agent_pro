@@ -30,6 +30,8 @@ abstract class Routes {
   static const SIGNATURE = _Paths.SIGNATURE;
   static const X_PAY_LINK_WEB = _Paths.X_PAY_LINK_WEB;
   static const FORMS = _Paths.FORMS;
+
+  static const CSLVIEW = _Paths.CSLVIEW;
   static const FORMS_CREATE_DRAGG_DROP = _Paths.FORMS_CREATE_DRAGG_DROP;
 }
 
@@ -61,4 +63,5 @@ abstract class _Paths {
   static const MANUAL_PAYMENT = '/manual-payment';
   static const FORMS = '/forms';
   static const FORMS_CREATE_DRAGG_DROP = '/forms-create-drag-drop';
+  static const CSLVIEW = '/cslview';
 }

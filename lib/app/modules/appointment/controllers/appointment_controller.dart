@@ -81,14 +81,18 @@ class AppointmentController extends GetxController with ExceptionHandler {
   final sortedAppointments = RxList<Appointments>();
   final selectedDateString = RxString('');
 
+  final isBasicExpanded = RxBool(false);
+  final isEquipmentExpanded = RxBool(false);
+
   List<String> historyNotes = <String>[
     "History note one ",
     "History note two ",
     "History note three ",
     "History note four "
   ];
-
+  final selectedAppointment = Rx<Appointments?>(null);
   void selectSingleAppointments(Appointments appointment, int index) {
+    selectedAppointment(appointment);
     imageList.clear();
     mediaList.clear();
     customerController.selectedCustomer(

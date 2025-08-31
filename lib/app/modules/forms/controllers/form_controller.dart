@@ -12,20 +12,33 @@ import '../../../service/handler/exception_handler.dart';
 import '../models/create_new_form_template_model.dart';
 
 class FormController extends GetxController with ExceptionHandler {
-  var isLoading = true.obs;
   final searchQuery = RxString(''); // 👈 reactive search query
   final createNewFormData = Rx<CreateNewFormModel?>(CreateNewFormModel());
   void updateSearchQuery(String query) {
     searchQuery.value = query;
   }
 
+  // @override
+  // void onInit() {
+  //   super.onInit();
+  //   fetchTemplates();
+  // }
   @override
-  void onInit() {
-    super.onInit();
+  void onReady() {
+    super.onReady();
     fetchTemplates();
   }
 
   final formModels = RxList<FormModel>([]);
+  final selectedFormsIdList = RxList<int>([]);
+  void updateSelectedForms(int formId) {
+    if (selectedFormsIdList.contains(formId)) {
+      selectedFormsIdList.remove(formId);
+    } else {
+      selectedFormsIdList.add(formId);
+    }
+  }
+
   Future<void> saveFormTemplate() async {
     showLoading();
 
@@ -109,13 +122,16 @@ class FormController extends GetxController with ExceptionHandler {
         url: ApiUrl.updateFormUrl,
         body: {
           "requestPeram": {
+            "Id": createNewFormData.value!.id,
             "CompanyID": companyID,
-            "TemplateName": template.templateName,
-            "Category": template.category,
-            "Description": template.description,
-            "RequireSignature": template.requireSignature ?? false,
-            "RequireTip": template.requireTip ?? false,
-            "IsAutoAssignEnabled": template.autoAssignServiceTypes ?? false,
+            "TemplateName": createNewFormData.value!.templateName,
+            "Category": createNewFormData.value!.category,
+            "Description": createNewFormData.value!.description,
+            "RequireSignature": createNewFormData.value!.signature,
+            "RequireTip": createNewFormData.value!.tpCapture,
+            "IsAutoAssignEnabled":
+                createNewFormData.value!.autoAssignAppointment,
+            "FormStructure": "test",
             "IsActive": template.isActive != null
                 ? template.isActive!
                     ? false
@@ -137,12 +153,13 @@ class FormController extends GetxController with ExceptionHandler {
 
   Future<void> fetchTemplates() async {
     try {
+      showLoading();
       var companyID = await MySharedPref.getCompanyID();
       var response = await DioClient().get(
         url: ApiUrl.getFormTypeUrl,
         params: {"companyId": companyID},
       ).catchError(handleError);
-
+      log("response of all templates $response");
       if (response != null) {
         // Assuming the response is a list of template names
         // Adjust this based on your actual API response structure
@@ -165,12 +182,11 @@ class FormController extends GetxController with ExceptionHandler {
       // templates.value = items
       //     .map((node) => node.getElement("FormName")?.innerText ?? "Unnamed")
       //     .toList();
-
-      isLoading.value = false;
+      hideLoading();
     } catch (e, s) {
+      hideLoading();
       print("Error fetching templates: $e");
       print("Error fetching templates: $s");
-      isLoading.value = false;
     }
   }
 }

@@ -120,9 +120,21 @@ class CustomDrawer extends StatelessWidget {
               height: 10.h,
             ),
             _drawerItem(
+              icon: SideBar.formIcon,
+              text: 'CSL',
+              indexNumber: 2,
+              onTap: () async {
+                Get.toNamed(Routes.CSLVIEW);
+                indexClicked = indexClicked;
+              },
+            ),
+            SizedBox(
+              height: 10.h,
+            ),
+            _drawerItem(
               icon: SideBar.itemsIcon,
               text: 'Items',
-              indexNumber: 2,
+              indexNumber: 3,
               onTap: () async {
                 Get.toNamed(Routes.ITEM);
                 indexClicked = indexClicked;
@@ -134,7 +146,7 @@ class CustomDrawer extends StatelessWidget {
             _drawerItem(
               icon: SideBar.customerServiceIcon,
               text: 'Customers',
-              indexNumber: 3,
+              indexNumber: 4,
               onTap: () async {
                 Get.toNamed(Routes.CUSTOMER);
                 indexClicked = indexClicked;
@@ -167,7 +179,7 @@ class CustomDrawer extends StatelessWidget {
             _drawerItem(
               icon: SideBar.logoutIcon,
               text: 'Log out',
-              indexNumber: 4,
+              indexNumber: 5,
               onTap: () async {
                 Get.back();
                 showAdaptiveDialog(

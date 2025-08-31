@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/modules/csl/views/csl_view.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/bindings/customer_binding.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/bindings/form_binding.dart';
+import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/views/form_builder_screen.dart'
     show FormBuilderScreen;
 import 'package:xinator_fsm_pro/app/modules/invoice/views/payment_web_view.dart';
@@ -76,6 +78,10 @@ class AppPages {
       binding: AppointmentBinding(),
     ),
     GetPage(
+      name: _Paths.CSLVIEW,
+      page: () => const CslScreen(),
+    ),
+    GetPage(
       name: _Paths.APPOINTMENT_DETAILS,
       page: () => AppointmentDetailsView(),
       binding: AppointmentBinding(),
@@ -109,12 +115,12 @@ class AppPages {
     GetPage(
       name: _Paths.INVOICE_CREATE,
       page: () => const CreateInvoiceView(),
-      binding: InvoiceBinding(),
+      bindings: [InvoiceBinding(), FormBinding()],
     ),
     GetPage(
       name: _Paths.INVOICE_DETAILS,
       page: () => const InvoiceDetailsView(),
-      binding: InvoiceBinding(),
+      bindings: [InvoiceBinding(), FormBinding()],
     ),
     GetPage(
       name: _Paths.FORMS,
