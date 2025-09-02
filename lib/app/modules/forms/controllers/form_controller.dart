@@ -39,6 +39,40 @@ class FormController extends GetxController with ExceptionHandler {
     }
   }
 
+  Future<void> assignFormsToAppointment(
+      String customerId, String appointmentId) async {
+    showLoading();
+
+    try {
+      final companyID = await MySharedPref.getCompanyID();
+
+      final userId = await MySharedPref.getUserName();
+
+      final response = await DioClient().post(
+        url: ApiUrl.assignFormUrl, // <-- create endpoint in ApiUrl
+        body: {
+          "requestPerams": {
+            "AppointmentId": appointmentId,
+            "CustomerId": customerId,
+            "CompanyId": companyID,
+            "FormIds": selectedFormsIdList.toString(),
+            "UserId": userId,
+          }
+        },
+      ).catchError(handleError);
+
+      log("assignForms response ${jsonEncode(response)}");
+
+      if (response == null) return;
+
+      hideLoading();
+      MySnackBar.showToast(message: "Forms assigned successfully");
+    } catch (e) {
+      hideLoading();
+      MySnackBar.showToast(message: "Failed to assign forms: $e");
+    }
+  }
+
   Future<void> saveFormTemplate() async {
     showLoading();
 

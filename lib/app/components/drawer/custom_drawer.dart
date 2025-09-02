@@ -119,15 +119,15 @@ class CustomDrawer extends StatelessWidget {
             SizedBox(
               height: 10.h,
             ),
-            _drawerItem(
-              icon: SideBar.formIcon,
-              text: 'CSL',
-              indexNumber: 2,
-              onTap: () async {
-                Get.toNamed(Routes.CSLVIEW);
-                indexClicked = indexClicked;
-              },
-            ),
+            // _drawerItem(
+            //   icon: SideBar.formIcon,
+            //   text: 'CSL',
+            //   indexNumber: 2,
+            //   onTap: () async {
+            //     Get.toNamed(Routes.CSLVIEW);
+            //     indexClicked = indexClicked;
+            //   },
+            // ),
             SizedBox(
               height: 10.h,
             ),

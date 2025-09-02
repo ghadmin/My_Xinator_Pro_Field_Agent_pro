@@ -302,19 +302,19 @@ class FormView extends GetView<FormController> {
                                                       icon: Icon(Icons.edit,
                                                           color: Colors.blue),
                                                     ),
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        Get.toNamed(Routes
-                                                            .FORMS_CREATE_DRAGG_DROP);
-                                                      },
-                                                      icon: Icon(Icons.settings,
-                                                          color: Colors.cyan),
-                                                    ),
-                                                    IconButton(
-                                                      onPressed: () {},
-                                                      icon: Icon(Icons.copy,
-                                                          color: Colors.grey),
-                                                    ),
+                                                    // IconButton(
+                                                    //   onPressed: () {
+                                                    //     Get.toNamed(Routes
+                                                    //         .FORMS_CREATE_DRAGG_DROP);
+                                                    //   },
+                                                    //   icon: Icon(Icons.settings,
+                                                    //       color: Colors.cyan),
+                                                    // ),
+                                                    // IconButton(
+                                                    //   onPressed: () {},
+                                                    //   icon: Icon(Icons.copy,
+                                                    //       color: Colors.grey),
+                                                    // ),
                                                     IconButton(
                                                       onPressed: () {
                                                         controller

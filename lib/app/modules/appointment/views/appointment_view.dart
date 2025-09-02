@@ -1,6 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/modules/auth/controllers/auth_controller.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
@@ -177,6 +180,7 @@ class AppointmentView extends GetView<AppointmentController> {
                                 radius: 8,
                                 color: Colors.white,
                                 onPressed: () {
+                                  log("appointment ${appointment.toJson()}");
                                   controller.selectSingleAppointments(
                                       appointment, index);
                                   var createdDateTime = dateTimeConverter(

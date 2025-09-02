@@ -46,7 +46,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     _tabController = TabController(length: 6, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return; // ignore swipe animation
-
+      formC.selectedFormsIdList.clear();
       if (_tabController.index == 3) {
         // forms  tab index
         formC.formModels.clear();
@@ -81,7 +81,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         floatingActionButton: formC.selectedFormsIdList.isNotEmpty
             ? FloatingActionButton(
                 backgroundColor: Colors.blue,
-                onPressed: () {},
+                onPressed: () async {
+                  log("clicking");
+                  await formC.assignFormsToAppointment(
+                      controller
+                          .selectedAppointment.value!.customer!.customerID!,
+                      controller.selectedAppointment.value!.apptID.toString());
+                },
                 child: Icon(
                   Icons.add,
                   color: Colors.white,
@@ -524,8 +530,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                       height: 10.h,
                     ),
                     DefaultTabController(
-                      length: 3,
+                      length: 6,
                       child: TabBar(
+                        isScrollable: true,
+
                         dividerColor: LightThemeColors
                             .primaryColor, // for line under tabs
                         indicatorColor: LightThemeColors
@@ -540,7 +548,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             text: "Info",
                             maxLines: 2,
                             textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: TextOverflow.visible,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
@@ -550,7 +558,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             text: "Notes",
                             maxLines: 2,
                             textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: TextOverflow.visible,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
@@ -560,7 +568,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             text: "Estimate/Invoice",
                             maxLines: 2,
                             textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: TextOverflow.visible,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
@@ -580,7 +588,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             text: "CSL",
                             maxLines: 2,
                             textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: TextOverflow.visible,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
@@ -590,7 +598,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             text: "Pictures",
                             maxLines: 2,
                             textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
+                            overflow: TextOverflow.visible,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
@@ -1600,133 +1608,133 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             SizedBox(
                               height: 10.h,
                             ),
-                            Padding(
-                              padding: EdgeInsets.only(
-                                  left: 10.w, right: 10.w, top: 10.h),
-                              child: Card(
-                                color: LightThemeColors.primaryColor
-                                    .withValues(alpha: 0.8),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12.r),
-                                ),
-                                elevation: 2,
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 16.w, vertical: 8.h),
-                                  title: Text(
-                                    "Equipment",
-                                    style: TextStyle(
-                                      fontSize: 16.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  trailing: Icon(
-                                    controller.isEquipmentExpanded.value
-                                        ? Icons.arrow_downward
-                                        : Icons.arrow_upward,
-                                    size: 18.sp,
-                                    color: Colors.white,
-                                  ),
-                                  onTap: () {
-                                    controller.isEquipmentExpanded(
-                                        !controller.isEquipmentExpanded.value);
-                                  }, // you can navigate or expand on tap
-                                ),
-                              ),
-                            ),
-                            if (controller.isEquipmentExpanded.value)
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Search Box
-                                      SizedBox(
-                                        height: 15.h,
-                                      ),
-                                      TextField(
-                                        decoration: InputDecoration(
-                                          hintText: "Search equipment...",
-                                          hintStyle: TextStyle(
-                                              fontSize: 14.sp,
-                                              color: Colors.grey),
-                                          contentPadding: EdgeInsets.symmetric(
-                                              horizontal: 12.w, vertical: 12.h),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8.r),
-                                            borderSide: BorderSide(
-                                                color: Colors.grey.shade300),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8.r),
-                                            borderSide: BorderSide(
-                                                color: Colors.blue, width: 1.5),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 12.h),
+                            // Padding(
+                            //   padding: EdgeInsets.only(
+                            //       left: 10.w, right: 10.w, top: 10.h),
+                            //   child: Card(
+                            //     color: LightThemeColors.primaryColor
+                            //         .withValues(alpha: 0.8),
+                            //     shape: RoundedRectangleBorder(
+                            //       borderRadius: BorderRadius.circular(12.r),
+                            //     ),
+                            //     elevation: 2,
+                            //     child: ListTile(
+                            //       contentPadding: EdgeInsets.symmetric(
+                            //           horizontal: 16.w, vertical: 8.h),
+                            //       title: Text(
+                            //         "Equipment",
+                            //         style: TextStyle(
+                            //           fontSize: 16.sp,
+                            //           fontWeight: FontWeight.bold,
+                            //           color: Colors.white,
+                            //         ),
+                            //       ),
+                            //       trailing: Icon(
+                            //         controller.isEquipmentExpanded.value
+                            //             ? Icons.arrow_downward
+                            //             : Icons.arrow_upward,
+                            //         size: 18.sp,
+                            //         color: Colors.white,
+                            //       ),
+                            //       onTap: () {
+                            //         controller.isEquipmentExpanded(
+                            //             !controller.isEquipmentExpanded.value);
+                            //       }, // you can navigate or expand on tap
+                            //     ),
+                            //   ),
+                            // ),
+                            // if (controller.isEquipmentExpanded.value)
+                            //   Padding(
+                            //     padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            //     child: Container(
+                            //       padding: EdgeInsets.all(8),
+                            //       decoration: BoxDecoration(
+                            //         color: Colors.white,
+                            //       ),
+                            //       child: Column(
+                            //         crossAxisAlignment:
+                            //             CrossAxisAlignment.start,
+                            //         children: [
+                            //           // Search Box
+                            //           SizedBox(
+                            //             height: 15.h,
+                            //           ),
+                            //           TextField(
+                            //             decoration: InputDecoration(
+                            //               hintText: "Search equipment...",
+                            //               hintStyle: TextStyle(
+                            //                   fontSize: 14.sp,
+                            //                   color: Colors.grey),
+                            //               contentPadding: EdgeInsets.symmetric(
+                            //                   horizontal: 12.w, vertical: 12.h),
+                            //               border: OutlineInputBorder(
+                            //                 borderRadius:
+                            //                     BorderRadius.circular(8.r),
+                            //                 borderSide: BorderSide(
+                            //                     color: Colors.grey.shade300),
+                            //               ),
+                            //               focusedBorder: OutlineInputBorder(
+                            //                 borderRadius:
+                            //                     BorderRadius.circular(8.r),
+                            //                 borderSide: BorderSide(
+                            //                     color: Colors.blue, width: 1.5),
+                            //               ),
+                            //             ),
+                            //           ),
+                            //           SizedBox(height: 12.h),
 
-                                      // Add Equipment Button
-                                      SizedBox(
-                                        width: 60.w,
-                                        child: ElevatedButton(
-                                          onPressed: () {},
-                                          style: ElevatedButton.styleFrom(
-                                            padding: EdgeInsets.symmetric(
-                                                vertical: 12.h),
-                                            backgroundColor: Colors.blueAccent,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8.r),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            "Add",
-                                            style: TextStyle(
-                                                fontSize: 14.sp,
-                                                color: Colors.white),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 16.h),
+                            //           // Add Equipment Button
+                            //           SizedBox(
+                            //             width: 60.w,
+                            //             child: ElevatedButton(
+                            //               onPressed: () {},
+                            //               style: ElevatedButton.styleFrom(
+                            //                 padding: EdgeInsets.symmetric(
+                            //                     vertical: 12.h),
+                            //                 backgroundColor: Colors.blueAccent,
+                            //                 shape: RoundedRectangleBorder(
+                            //                   borderRadius:
+                            //                       BorderRadius.circular(8.r),
+                            //                 ),
+                            //               ),
+                            //               child: Text(
+                            //                 "Add",
+                            //                 style: TextStyle(
+                            //                     fontSize: 14.sp,
+                            //                     color: Colors.white),
+                            //               ),
+                            //             ),
+                            //           ),
+                            //           SizedBox(height: 16.h),
 
-                                      SizedBox(
-                                        height: 120
-                                            .h, // give a fixed height instead of Expanded
-                                        child: Container(
-                                          width: double.infinity,
-                                          padding: EdgeInsets.all(16.w),
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                                color: Colors.grey.shade300),
-                                            borderRadius: BorderRadius.vertical(
-                                              bottom: Radius.circular(8.r),
-                                            ),
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              "No equipment found.",
-                                              style: TextStyle(
-                                                fontSize: 14.sp,
-                                                color: Colors.grey[600],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                            //           SizedBox(
+                            //             height: 120
+                            //                 .h, // give a fixed height instead of Expanded
+                            //             child: Container(
+                            //               width: double.infinity,
+                            //               padding: EdgeInsets.all(16.w),
+                            //               decoration: BoxDecoration(
+                            //                 border: Border.all(
+                            //                     color: Colors.grey.shade300),
+                            //                 borderRadius: BorderRadius.vertical(
+                            //                   bottom: Radius.circular(8.r),
+                            //                 ),
+                            //               ),
+                            //               child: Center(
+                            //                 child: Text(
+                            //                   "No equipment found.",
+                            //                   style: TextStyle(
+                            //                     fontSize: 14.sp,
+                            //                     color: Colors.grey[600],
+                            //                   ),
+                            //                 ),
+                            //               ),
+                            //             ),
+                            //           ),
+                            //         ],
+                            //       ),
+                            //     ),
+                            //   ),
                           ],
                         ),
                       ),

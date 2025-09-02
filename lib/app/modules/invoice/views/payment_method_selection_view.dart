@@ -201,7 +201,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
             PaymentOption(
                 icon: Remix.bank_card_line,
                 loading: controller.xpayLinkLoading.value,
-                label: 'Pay Via GPI',
+                label: 'Pay Via Xpay Link',
                 onTap: () async {
                   controller.paymentViaXpayLink();
                 }),

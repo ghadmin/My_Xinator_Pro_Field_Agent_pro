@@ -865,7 +865,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
   void onReady() async {
     await itemController.getItems();
     isDirty.value = false;
-    Logger().d(Get.size);
     super.onReady();
   }
 
