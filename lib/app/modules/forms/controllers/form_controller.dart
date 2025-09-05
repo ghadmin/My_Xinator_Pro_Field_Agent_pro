@@ -51,11 +51,11 @@ class FormController extends GetxController with ExceptionHandler {
       final response = await DioClient().post(
         url: ApiUrl.assignFormUrl, // <-- create endpoint in ApiUrl
         body: {
-          "requestPerams": {
+          "requestPeram": {
             "AppointmentId": appointmentId,
             "CustomerId": customerId,
             "CompanyId": companyID,
-            "FormIds": selectedFormsIdList.toString(),
+            "FormIds": selectedFormsIdList,
             "UserId": userId,
           }
         },
