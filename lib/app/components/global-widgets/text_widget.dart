@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:xinator_fsm_pro/config/theme/light_theme_colors.dart';
 
 class TextWidget extends StatelessWidget {
   const TextWidget(

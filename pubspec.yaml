@@ -2,7 +2,7 @@ name: xinator_fsm_pro
 description: "A new Flutter project."
 
 publish_to: "none"
-version: 1.0.4+4
+version: 1.0.5+5
 
 environment:
   sdk: ^3.6.0
@@ -52,7 +52,6 @@ dependencies:
   path_provider: ^2.1.5
   flutter_image_compress: ^2.4.0
   package_info_plus: ^8.3.0
-
 
 dev_dependencies:
   flutter_test:
