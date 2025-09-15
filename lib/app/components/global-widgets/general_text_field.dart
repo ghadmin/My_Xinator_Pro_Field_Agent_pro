@@ -8,25 +8,25 @@ import '../../../utils/validators.dart';
 final formValidator = Get.put(FormValidator());
 
 class GeneralTextField extends StatelessWidget {
-  const GeneralTextField({
-    super.key,
-    required this.hint,
-    this.focusNode,
-    this.nextFocusNode,
-    required this.theme,
-    this.fieldName,
-    this.suffixIcon,
-    required this.textEditingController,
-    this.textInputAction,
-    this.textInputType,
-    this.submit,
-    this.onChanged,
-    this.suffix,
-    this.readOnly,
-    this.maxLine,
-    this.minLine,
-    this.textAlignment,
-  });
+  const GeneralTextField(
+      {super.key,
+      required this.hint,
+      this.focusNode,
+      this.nextFocusNode,
+      required this.theme,
+      this.fieldName,
+      this.suffixIcon,
+      required this.textEditingController,
+      this.textInputAction,
+      this.textInputType,
+      this.submit,
+      this.onChanged,
+      this.suffix,
+      this.readOnly,
+      this.maxLine,
+      this.minLine,
+      this.textAlignment,
+      this.onEditingComplete});
 
   final FocusNode? focusNode;
   final FocusNode? nextFocusNode;
@@ -39,6 +39,7 @@ class GeneralTextField extends StatelessWidget {
   final TextInputType? textInputType;
   final dynamic submit;
   final dynamic onChanged;
+  final VoidCallback? onEditingComplete;
   final Widget? suffix;
   final bool? readOnly;
   final int? maxLine;
@@ -65,7 +66,7 @@ class GeneralTextField extends StatelessWidget {
       textAlign: textAlignment ?? TextAlign.start,
       onChanged: onChanged,
       onEditingComplete: nextFocusNode == null
-          ? null
+          ? onEditingComplete
           : () {
               FocusScope.of(context).requestFocus(nextFocusNode);
             },

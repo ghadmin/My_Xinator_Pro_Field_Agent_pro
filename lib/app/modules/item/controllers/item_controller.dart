@@ -77,7 +77,9 @@ class ItemController extends GetxController with ExceptionHandler {
 
     if (sortTextController.text.isEmpty) {
       sortedItems.clear();
-      sortedItems.addAll(items);
+      final alphabetSorted = items.toList()
+        ..sort((a, b) => a.name!.compareTo(b.name!));
+      sortedItems.addAll(alphabetSorted);
     } else {
       final list = items.where(
         (p0) {
@@ -85,9 +87,14 @@ class ItemController extends GetxController with ExceptionHandler {
               .toLowerCase()
               .contains(sortTextController.text.toLowerCase());
         },
-      ).toList();
+      ).toList()
+        ..sort((a, b) => a.name!.compareTo(b.name!));
       sortedItems.clear();
       sortedItems.addAll(list);
+    }
+
+    for (var element in sortedItems) {
+      print("qbo sorted item ${element.qboId}");
     }
   }
 

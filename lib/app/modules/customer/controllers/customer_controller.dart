@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -25,7 +28,7 @@ class CustomerController extends GetxController with ExceptionHandler {
   /// API ///
   final customers = RxList<CustomerModel>();
   final sortedCustomers = RxList<CustomerModel>();
-  sortAppointmentsText() {
+  void sortAppointmentsText() {
     if (customers.isEmpty) return;
 
     // selectedDateString('');
@@ -51,7 +54,7 @@ class CustomerController extends GetxController with ExceptionHandler {
     }
   }
 
-  getCustomers() async {
+  Future<void> getCustomers() async {
     isCustomerEmpty.value = false;
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
@@ -65,7 +68,7 @@ class CustomerController extends GetxController with ExceptionHandler {
           "CompanyId": companyID,
         },
       ).catchError(handleError);
-
+      log("customer res ${jsonEncode(response)}");
       if (response == null) {
         showEmptyWidget();
         return;

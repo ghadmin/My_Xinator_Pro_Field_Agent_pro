@@ -102,6 +102,7 @@ class FormController extends GetxController with ExceptionHandler {
       hideLoading();
       Get.back();
       MySnackBar.showToast(message: "Form saved successfully");
+      fetchTemplates();
     } catch (e) {
       hideLoading();
       MySnackBar.showToast(message: "Failed to save form: $e");

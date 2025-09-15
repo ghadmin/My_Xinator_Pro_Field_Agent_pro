@@ -137,24 +137,24 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 ),
                                 dividerThickness: 2,
                                 columns: const [
+                                  DataColumn(label: Text("Date")),
+                                  DataColumn(label: Text("Amount")),
                                   DataColumn(label: Text("Type")),
-                                  DataColumn(label: Text("Source")),
                                   DataColumn(label: Text("Check Name")),
                                   DataColumn(label: Text("Check Number")),
-                                  DataColumn(label: Text("Amount")),
-                                  DataColumn(label: Text("Date")),
+                                  DataColumn(label: Text("Source")),
                                 ],
                                 rows: controller.depositList
                                     .map<DataRow>((deposit) {
                                   return DataRow(
                                     cells: [
-                                      DataCell(Text(deposit.type ?? "")),
-                                      DataCell(Text(deposit.source ?? "")),
-                                      DataCell(Text(deposit.checkName ?? "")),
-                                      DataCell(Text(deposit.checkNumber ?? "")),
+                                      DataCell(Text(deposit.createdDate ?? "")),
                                       DataCell(Text(
                                           "\$${deposit.amount?.toStringAsFixed(2) ?? "0.00"}")),
-                                      DataCell(Text(deposit.createdDate ?? "")),
+                                      DataCell(Text(deposit.type ?? "")),
+                                      DataCell(Text(deposit.checkName ?? "")),
+                                      DataCell(Text(deposit.checkNumber ?? "")),
+                                      DataCell(Text(deposit.source ?? "")),
                                     ],
                                   );
                                 }).toList(),

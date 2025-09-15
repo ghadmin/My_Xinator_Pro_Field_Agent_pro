@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:xinator_fsm_pro/utils/version_controller.dart';
-
 import 'app/data/local/hive/hive_adapters.dart';
 import 'app/data/local/my_shared_pref.dart';
 import 'app/service/helper/network_connectivity.dart';
@@ -24,6 +23,9 @@ Future<void> main() async {
 
   // Shared pref
   await MySharedPref.init();
+  // Initialize GetX
+
+  // Initialize background worker
 
   // inti fcm services
   // await Firebase.initializeApp(

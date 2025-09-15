@@ -22,10 +22,10 @@ class VersionController extends GetxController {
       appVersion.value = packageInfo.version;
       buildNumber.value = packageInfo.buildNumber;
 
-      // Print the version
-      print('App Name: ${appName.value}');
-      print('App Version: ${appVersion.value}');
-      print('Build Number: ${buildNumber.value}');
+      // // Print the version
+      // print('App Name: ${appName.value}');
+      // print('App Version: ${appVersion.value}');
+      // print('Build Number: ${buildNumber.value}');
     } catch (e) {
       print('Error getting app info: $e');
     }

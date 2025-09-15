@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -23,6 +24,7 @@ import '../../../service/REST/api_urls.dart';
 import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
 import '../../../service/helper/network_connectivity.dart';
+import '../../item/models/item_list_model.dart';
 import '../../settings/models/ticket_status_model.dart';
 import '../models/appointment_model.dart';
 
@@ -32,12 +34,34 @@ class MediaModel {
   MediaModel({required this.time, required this.images});
 }
 
-class AppointmentController extends GetxController with ExceptionHandler {
+class AppointmentController extends GetxController
+    with ExceptionHandler, WidgetsBindingObserver {
+  @override
+  void onInit() {
+    super.onInit();
+
+    WidgetsBinding.instance.addObserver(this);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      startPeriodic();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      startPeriodic();
+    } else if (state == AppLifecycleState.paused) {
+      stop();
+    }
+  }
+
+  final noteText = RxString("");
   final settingController = Get.put(SettingsController());
   final invoiceController = Get.put(InvoiceController());
   final customerController = Get.put(CustomerController());
-  final TextEditingController noteTextController = TextEditingController();
   final TextEditingController sortTextController = TextEditingController();
+  final noteController = TextEditingController();
   final isExpanded = RxBool(false);
   final mediaList = RxList<MediaModel>([]);
   List<ResourceItem> resources = [
@@ -68,7 +92,6 @@ class AppointmentController extends GetxController with ExceptionHandler {
   int resourceID = 0;
   String createdBy = "";
   String customerTitle = "";
-  String notes = "";
   final selectedDate = Rx<DateTime?>(null);
   RxInt selectedAptIndex = 0.obs;
   RxBool isAppointmentEmpty = false.obs;
@@ -91,42 +114,56 @@ class AppointmentController extends GetxController with ExceptionHandler {
     "History note four "
   ];
   final selectedAppointment = Rx<Appointments?>(null);
-  void selectSingleAppointments(Appointments appointment, int index) {
-    selectedAppointment(appointment);
+  final isTyping = RxBool(false);
+  final selectedEstimateOrInvoiceIndex = RxInt(0);
+  void selectSingleAppointments(Appointments? appointment, int index) {
     imageList.clear();
     mediaList.clear();
+    if (appointment == null) return;
+    selectedAppointment(appointment);
+
+    // set full customer object
     customerController.selectedCustomer(
         CustomerModel.fromJson(appointment.customer!.toJson()));
+
     companyId = appointment.companyID ?? "";
+
     settingController.selectedAppointmentsStatus(AppointmentStatusSetting(
         companyId: appointment.status?.companyId,
         statusId: appointment.status?.statusId,
         statusName: appointment.status?.statusName));
+
     settingController.selectedTicket(TicketStatusSettings(
         companyId: appointment.ticketStatus?.companyId,
         statusId: appointment.ticketStatus?.statusId,
         statusName: appointment.ticketStatus?.statusName));
+
     var createdDateTime = dateTimeConverter(
         inputFormat: "yyyy/MM/dd hh:mm a",
         inputTime: appointment.createdDateTime.toString(),
         outputFormat: "MM/dd/yyyy hh:mm a");
+
     var startTime = dateTimeConverter(
         inputFormat: "yyyy/MM/dd hh:mm a",
         inputTime: appointment.startDateTime.toString(),
         outputFormat: "MM/dd/yyyy hh:mm a");
+
     var endTime = dateTimeConverter(
         inputFormat: "yyyy/MM/dd hh:mm a",
         inputTime: appointment.endDateTime.toString(),
         outputFormat: "MM/dd/yyyy hh:mm a");
+
+    // ✅ Added missing assignments
     createdBy = appointment.createdBy ?? "";
     appointmentID = "${appointment.apptID ?? ""}";
-
     appointmentUID = appointment.appoinmentUId ?? "";
     customerID = "${appointment.customerID ?? ""}";
     promoCode = appointment.promoCode ?? "";
     serviceTypeID = appointment.serviceTypeId ?? "";
+
     resourceID = appointment.resourceID!;
     timeSlotID = appointment.timeSlotId!;
+
     contactName =
         "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
     address = "${appointment.customer?.address1}, "
@@ -136,24 +173,57 @@ class AppointmentController extends GetxController with ExceptionHandler {
     phoneNumber = appointment.customer?.phone ?? "";
     customerTitle =
         "${appointment.customer?.title ?? ""} ${appointment.customer?.title2 ?? ""}";
+
+    // ✅ Added missing assignment
     email = appointment.customer?.email ?? "";
+
     invoiceController.toTextController.text = appointment.customer?.email ?? "";
     invoiceController.customerFirstName.value =
         appointment.customer?.firstName ?? "";
+
     requestDate = createdDateTime;
     startDate = startTime;
     endDate = endTime;
+
     timeSlot = appointment.timeSlot ?? "";
     serviceType = appointment.serviceType?.serviceName ?? "";
 
     selectedStatusValue.value = appointment.status?.statusId ?? 0;
     selectedTicketStatusValue.value = appointment.ticketStatus?.statusId ?? 0;
     resource = appointment.resource?.name ?? "";
-
-    notes = appointment.note ?? "";
-    noteTextController.text = appointment.note ?? "";
+    if (!isTyping.value) {
+      noteText(appointment.note ?? "");
+      noteController.text = noteText.value;
+    }
     selectedAptIndex.value = index;
-    mobileNumber = appointment.customer?.mobile ?? "";
+    if (selectedAppointment.value!.invoices != null &&
+        selectedAppointment.value!.invoices!.isNotEmpty) {
+      for (var item in selectedAppointment
+          .value!.invoices![selectedEstimateOrInvoiceIndex.value].items!) {
+        if (invoiceController.selectedItemList
+            .where((e) => e.id == item.itemId)
+            .isEmpty) {
+          invoiceController.selectedItemList.add(ItemListModel(
+            id: item.itemId,
+            name: item.name,
+            description: item.description,
+            price: double.tryParse(item.unitPrice ?? "0.00"),
+            isTaxable: item.isTaxable == "TAX" ? true : false,
+            // itemTypeId: int.parse(item.itemTyId!),
+          ));
+
+          invoiceController.editAmountControllers
+              .add(TextEditingController(text: item.unitPrice ?? "0.00"));
+
+          invoiceController.editDescriptionControllers
+              .add(TextEditingController(text: item.description ?? ""));
+
+          invoiceController.editQuantityControllers
+              .add(TextEditingController(text: item.quantity ?? "1"));
+        }
+      }
+      invoiceController.createTotalForEdit();
+    }
   }
 
   Future<void> pickDate() async {
@@ -324,9 +394,32 @@ class AppointmentController extends GetxController with ExceptionHandler {
     }
   }
 
-  Future<void> getAppointments() async {
+  Timer? _pollingTimer;
+
+  Future<void> startPeriodic() async {
+    var companyID = await MySharedPref.getCompanyID();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      log("pull off $companyID");
+      if (companyID != null && companyID != "") {
+        await getAppointments(showLoader: false);
+        if (selectedAppointment.value != null) {
+          selectSingleAppointments(sortedAppointments[selectedAptIndex.value],
+              selectedAptIndex.value);
+        }
+      }
+    });
+  }
+
+  void stop() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+  }
+
+  Future<void> getAppointments({bool showLoader = true}) async {
+    if (showLoader) showLoading();
+
     // showLoading();
-    isAppointmentEmpty.value = false;
+    if (showLoader) isAppointmentEmpty.value = false;
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
       var userID = await MySharedPref.getUserName();
@@ -335,6 +428,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
       var response = await DioClient().get(
         url: ApiUrl.getAppointment,
         params: {
+          "appointmentTypeStatus": 2,
           "appointmentDate": dateTimeConverter(
               inputTime: currentDateTime.toString(),
               outputFormat: "yyyy/MM/dd"),
@@ -342,7 +436,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
           "userId": userID,
         },
       ).catchError(handleError);
-
+      // log("refreshing appointments ${jsonEncode(response)}");
       if (response == null) {
         hideLoading();
         showEmptyWidget();
@@ -351,7 +445,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
 
       if (response.isEmpty) {
         appointments.clear();
-        hideLoading();
+        if (showLoader) hideLoading();
         showEmptyWidget();
         return;
       }
@@ -371,7 +465,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
       );
 
       await MyHive.saveAllAppointments(appointments);
-      // hideLoading();
+      hideLoading();
 
       if (appointments.isEmpty) {
         showEmptyWidget();
@@ -480,7 +574,7 @@ class AppointmentController extends GetxController with ExceptionHandler {
               outputFormat: "yyyy/MM/dd hh:mm a",
               inputFormat: "MM/dd/yyyy hh:mm a"),
           "TimeSlot": timeSlot,
-          "Note": noteTextController.text,
+          "Note": noteText.value,
           "PromoCode": promoCode,
           "StatusId":
               settingController.selectedAppointmentsStatus.value!.statusId,

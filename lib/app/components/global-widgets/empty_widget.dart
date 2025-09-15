@@ -8,8 +8,14 @@ import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 import '../../../config/translations/strings_enum.dart';
 
 class EmptyWidget extends StatelessWidget {
-  const EmptyWidget({super.key, required this.onPressed});
+  const EmptyWidget(
+      {super.key,
+      required this.onPressed,
+      this.title,
+      this.isRefreshShown = true});
   final VoidCallback onPressed;
+  final String? title;
+  final bool isRefreshShown;
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
@@ -27,7 +33,7 @@ class EmptyWidget extends StatelessWidget {
         ),
         Center(
           child: TextWidget(
-            text: Strings.empty.tr,
+            text: title ?? Strings.empty.tr,
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w500,
@@ -36,29 +42,31 @@ class EmptyWidget extends StatelessWidget {
           ),
         ),
         SizedBox(height: 50.h),
-        SizedBox(
-          height: 44.h,
-          child: ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.shade50,
-                elevation: .5,
-                shadowColor: theme.hintColor,
-                padding: EdgeInsets.zero,
-              ),
-              child: Icon(
-                Ionicons.refresh,
-                size: 24,
-                color: theme.primaryColor.withOpacity(.7),
-              )),
-        ),
-        const SizedBox(height: 5),
-        TextWidget(
-          text: Strings.refresh.tr,
-          style: TextStyle(
-            color: theme.hintColor.withOpacity(.5),
+        if (isRefreshShown)
+          SizedBox(
+            height: 44.h,
+            child: ElevatedButton(
+                onPressed: onPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.shade50,
+                  elevation: .5,
+                  shadowColor: theme.hintColor,
+                  padding: EdgeInsets.zero,
+                ),
+                child: Icon(
+                  Ionicons.refresh,
+                  size: 24,
+                  color: theme.primaryColor.withOpacity(.7),
+                )),
           ),
-        ),
+        const SizedBox(height: 5),
+        if (isRefreshShown)
+          TextWidget(
+            text: Strings.refresh.tr,
+            style: TextStyle(
+              color: theme.hintColor.withOpacity(.5),
+            ),
+          ),
       ],
     );
   }

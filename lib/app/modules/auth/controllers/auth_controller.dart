@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:xinator_fsm_pro/app/service/helper/network_connectivity.dart';
 
 import '../../../../utils/version_controller.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
@@ -85,9 +87,10 @@ class AuthController extends GetxController with ExceptionHandler {
       params: {
         "UserName": userId.trim(),
         "Password": password.trim(),
+        "AppType": 2
       },
     ).catchError(handleError);
-
+    log("auth response ${jsonEncode(response)}");
     if (response == null) return;
 
     hideLoading();
@@ -106,6 +109,7 @@ class AuthController extends GetxController with ExceptionHandler {
     showLoading();
     await 2.delay();
     await MySharedPref.clearExceptEmail();
+    appointmentController.stop();
     hideLoading();
     Get.offAllNamed(Routes.LOGIN);
   }

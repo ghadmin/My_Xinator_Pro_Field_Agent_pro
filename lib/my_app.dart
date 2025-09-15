@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -9,8 +7,19 @@ import 'app/routes/app_pages.dart';
 import 'config/theme/my_theme.dart';
 import 'config/translations/localization_service.dart';
 
-class MyApp extends GetView {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +34,6 @@ class MyApp extends GetView {
           title: "XinatorBMS Field Agent Pro",
           useInheritedMediaQuery: true,
           debugShowCheckedModeBanner: false,
-
           builder: (context, widget) {
             bool themeIsLight = MySharedPref.getThemeIsLight();
             return Theme(
@@ -37,18 +45,11 @@ class MyApp extends GetView {
               ),
             );
           },
-
           initialRoute: Routes.SPLASH,
-          // first screen to show when app is running
-
           defaultTransition: Transition.native,
-
           getPages: AppPages.routes,
-          // app screens
           locale: MySharedPref.getCurrentLocal(),
-          // app language
-          translations: LocalizationService
-              .getInstance(), // localization services in app (controller app language)
+          translations: LocalizationService.getInstance(),
         );
       },
     );
