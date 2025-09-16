@@ -37,17 +37,25 @@ class AppointmentDetailsView extends StatefulWidget {
 }
 
 class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
+  late TabController _tabController1;
 
   @override
   void initState() {
     super.initState();
     if (controller.selectedAppointment.value != null) {}
     _tabController = TabController(length: 6, vsync: this);
+    _tabController1 = TabController(length: 2, vsync: this);
+    _tabController1.addListener(() {
+      if (_tabController1.index == 0) {
+        // forms  tab index
+        formC.selectAttachedForms();
+      }
+    });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return; // ignore swipe animation
-      formC.selectedFormsIdList.clear();
+      // formC.selectedFormsIdList.clear();
       if (_tabController.index == 2) {
         // forms  tab index
         formC.formModels.clear();
@@ -73,13 +81,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
   AppointmentController controller = Get.find<AppointmentController>();
 
-  FormController formC = Get.put<FormController>(FormController());
+  FormController formC = Get.find<FormController>();
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
     return Obx(
       () => Scaffold(
-        floatingActionButton: formC.selectedFormsIdList.isNotEmpty
+        floatingActionButton: _tabController1.index == 1 &&
+                formC.selectedFormsIdList.isNotEmpty
             ? FloatingActionButton(
                 backgroundColor: Colors.blue,
                 onPressed: () async {
@@ -419,26 +428,24 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               width: 5,
                                             ),
                                             Expanded(
-                                              child: ArrowAnimation(
-                                                theme: theme,
-                                                address: controller.address,
+                                              child: GestureDetector(
                                                 onTap: () async {
                                                   await openMapWithRoute(
                                                       controller.address);
                                                 },
-                                                // child: TextWidget(
-                                                //   text: controller.address,
-                                                //   style: theme
-                                                //       .textTheme.bodyLarge
-                                                //       ?.copyWith(
-                                                //     fontSize: 12.sp,
-                                                //     fontWeight: FontWeight.w500,
-                                                //   ),
-                                                //   textAlign: TextAlign.start,
-                                                //   overflow:
-                                                //       TextOverflow.visible,
-                                                //   maxLines: 5,
-                                                // ),
+                                                child: TextWidget(
+                                                  text: controller.address,
+                                                  style: theme
+                                                      .textTheme.bodyLarge
+                                                      ?.copyWith(
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                  textAlign: TextAlign.start,
+                                                  overflow:
+                                                      TextOverflow.visible,
+                                                  maxLines: 5,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -1023,231 +1030,545 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                               ),
                             ),
                             //********************************* Tab Three Forms *********************************/
-                            Obx(() {
-                              final filteredTemplates = formC
-                                      .searchQuery.value.isEmpty
-                                  ? formC.formModels
-                                  : formC.formModels
-                                      .where((template) =>
-                                          template.templateName
-                                              ?.toLowerCase()
-                                              .contains(formC.searchQuery.value
-                                                  .toLowerCase()) ??
-                                          false)
-                                      .toList();
-                              return Column(
-                                children: [
-                                  SizedBox(
-                                    height: 20.h,
-                                  ),
-                                  Padding(
-                                    padding:
-                                        EdgeInsets.symmetric(horizontal: 15.w),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(8.r),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.grey.withOpacity(0.1),
-                                            blurRadius: 6,
-                                            offset: const Offset(0, 2),
+                            Column(
+                              children: [
+                                SizedBox(
+                                  height: 10.h,
+                                ),
+                                TabBar(
+                                  isScrollable: false,
+                                  dividerColor: LightThemeColors.primaryColor,
+                                  indicatorColor: LightThemeColors.primaryColor,
+                                  labelColor: LightThemeColors.primaryColor,
+                                  unselectedLabelColor: Colors.grey,
+                                  indicatorWeight: 3.0,
+                                  controller: _tabController1,
+                                  tabs: [
+                                    // First tab
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Container(
+                                        padding: EdgeInsets.all(8),
+                                        color: Colors.greenAccent,
+                                        width: double.infinity,
+                                        child: TextWidget(
+                                          text: "Attached Forms",
+                                          maxLines: 2,
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.visible,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                            fontSize: 10.sp,
                                           ),
-                                        ],
-                                      ),
-                                      child: TextField(
-                                        autofocus: false,
-                                        decoration: InputDecoration(
-                                          hintText: "Search templates...",
-                                          hintStyle: TextStyle(
-                                            color: Colors.grey[500],
-                                            fontSize: 14.sp,
-                                          ),
-                                          prefixIcon: Padding(
-                                            padding: EdgeInsets.only(
-                                                left: 12.w, right: 8.w),
-                                            child: Icon(
-                                              Icons.search,
-                                              size: 20.sp,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                          border: InputBorder.none,
-                                          enabledBorder: InputBorder.none,
-                                          focusedBorder: InputBorder.none,
-                                          contentPadding: EdgeInsets.symmetric(
-                                              horizontal: 16.w, vertical: 14.h),
-                                          fillColor: Colors.white,
-                                          filled: true,
                                         ),
-                                        style: TextStyle(
-                                            fontSize: 14.sp,
-                                            color: Colors.black),
-                                        onChanged: (value) {
-                                          formC.updateSearchQuery(value);
-                                        },
                                       ),
                                     ),
-                                  ),
-                                  SizedBox(
-                                    height: 20.h,
-                                  ),
-                                  Expanded(
-                                    child: ListView.builder(
-                                      itemCount: filteredTemplates.length,
-                                      itemBuilder: (context, index) {
-                                        final template =
-                                            filteredTemplates[index];
+                                    // Second tab
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Container(
+                                        padding: EdgeInsets.all(8),
+                                        color: Colors.blueAccent,
+                                        width: double.infinity,
+                                        child: TextWidget(
+                                          text: "Add Forms",
+                                          maxLines: 2,
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.visible,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                            fontSize: 10.sp,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    if (_tabController1.index == 0) {
+                                      formC.seeAllForms
+                                          .assignAll(formC.filteredTemplates);
+                                    } else {
+                                      formC.seeAllForms
+                                          .assignAll(formC.formModels);
+                                    }
 
-                                        return GestureDetector(
-                                          onTap: () {
-                                            showDetailsForms(
-                                                context: context,
-                                                formC: formC,
-                                                data: template);
-                                          },
-                                          child: Card(
-                                            margin:
-                                                EdgeInsets.only(bottom: 12.h),
-                                            elevation: 2,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8.r),
-                                            ),
-                                            child: Padding(
-                                              padding: EdgeInsets.all(12.w),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      /// ✅ Checkbox for selection
-                                                      Obx(
-                                                        () => Checkbox(
-                                                          activeColor:
-                                                              Colors.blue,
-                                                          value: formC
-                                                              .selectedFormsIdList
-                                                              .contains(
-                                                                  template.id),
-                                                          onChanged: (value) {
-                                                            formC
-                                                                .updateSelectedForms(
-                                                                    template
-                                                                        .id!);
-                                                          },
+                                    Get.toNamed(Routes.SEEALLFORMS, arguments: {
+                                      "tabIndex": _tabController1.index
+                                    });
+                                  },
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextWidget(text: "See All"),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: TabBarView(
+                                      controller: _tabController1,
+                                      children: [
+                                        Obx(() {
+                                          formC.filteredTemplates.value = formC
+                                              .formModels
+                                              .where((template) => formC
+                                                  .selectedFormsIdList
+                                                  .contains(template.id))
+                                              .toList();
+
+                                          // Handle empty or null case
+                                          if (formC.filteredTemplates.isEmpty) {
+                                            return EmptyWidget(
+                                              onPressed: () {
+                                                formC.getAttachedForms(
+                                                    isRefreshed: true);
+                                              },
+                                              isRefreshShown: true,
+                                              title: "No forms attached yet",
+                                            );
+                                          }
+
+                                          return Column(
+                                            children: [
+                                              SizedBox(
+                                                height: 5.h,
+                                              ),
+                                              Expanded(
+                                                child: ListView.builder(
+                                                  itemCount: formC
+                                                      .filteredTemplates.length,
+                                                  itemBuilder:
+                                                      (context, index) {
+                                                    final template =
+                                                        formC.filteredTemplates[
+                                                            index];
+
+                                                    return Card(
+                                                      margin: EdgeInsets.only(
+                                                          bottom: 12.h),
+                                                      elevation: 2,
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8.r),
+                                                      ),
+                                                      child: Padding(
+                                                        padding: EdgeInsets.all(
+                                                            12.w),
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Row(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                /// ✅ Checkbox for selection
+
+                                                                Expanded(
+                                                                  child:
+                                                                      TextWidget(
+                                                                    text: template
+                                                                            .templateName ??
+                                                                        "",
+                                                                    maxLines: 1,
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                    style:
+                                                                        TextStyle(
+                                                                      fontSize:
+                                                                          18.sp,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                SizedBox(
+                                                                    width: 5.w),
+                                                                Container(
+                                                                  padding: EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          8.w,
+                                                                      vertical:
+                                                                          4.h),
+                                                                  decoration:
+                                                                      BoxDecoration(
+                                                                    color: template.isActive!
+                                                                        ? Colors
+                                                                            .green
+                                                                        : Colors
+                                                                            .orange,
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            12.r),
+                                                                  ),
+                                                                  child: Text(
+                                                                    template.isActive!
+                                                                        ? "Active"
+                                                                        : "Inactive",
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .white,
+                                                                        fontSize:
+                                                                            12.sp),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            SizedBox(
+                                                                height: 4.h),
+                                                            TextWidget(
+                                                              text: template
+                                                                      .description ??
+                                                                  "",
+                                                              maxLines: 3,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: TextStyle(
+                                                                  fontSize:
+                                                                      14.sp,
+                                                                  color: Colors
+                                                                      .grey),
+                                                            ),
+                                                            SizedBox(
+                                                                height: 8.h),
+                                                            Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Text(
+                                                                    "Category: ${template.category}",
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                            13.sp)),
+                                                                SizedBox(
+                                                                    height:
+                                                                        4.h),
+                                                                Row(
+                                                                  children: [
+                                                                    Text(
+                                                                        "Signature: ",
+                                                                        style: TextStyle(
+                                                                            fontSize:
+                                                                                13.sp)),
+                                                                    Icon(
+                                                                      template.requireSignature!
+                                                                          ? Icons
+                                                                              .check_circle
+                                                                          : Icons
+                                                                              .cancel,
+                                                                      color: template.requireSignature!
+                                                                          ? Colors
+                                                                              .green
+                                                                          : Colors
+                                                                              .red,
+                                                                      size:
+                                                                          18.sp,
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                SizedBox(
+                                                                    height:
+                                                                        4.h),
+                                                                Text(
+                                                                  "Auto-Assign: ${template.isAutoAssignEnabled! ? "Yes" : "No"}",
+                                                                  style: TextStyle(
+                                                                      fontSize:
+                                                                          13.sp),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ],
                                                         ),
                                                       ),
-                                                      Expanded(
-                                                        child: TextWidget(
-                                                          text: template
-                                                                  .templateName ??
-                                                              "",
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style: TextStyle(
-                                                            fontSize: 18.sp,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }),
+                                        Obx(() {
+                                          final filteredTemplates = formC
+                                                  .searchQuery.value.isEmpty
+                                              ? formC.formModels
+                                              : formC.formModels
+                                                  .where((template) =>
+                                                      template.templateName
+                                                          ?.toLowerCase()
+                                                          .contains(formC
+                                                              .searchQuery.value
+                                                              .toLowerCase()) ??
+                                                      false)
+                                                  .toList();
+                                          log("message ${formC.formModels.toString()}");
+                                          return Column(
+                                            children: [
+                                              SizedBox(
+                                                height: 20.h,
+                                              ),
+                                              Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                    horizontal: 15.w),
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8.r),
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.grey
+                                                            .withOpacity(0.1),
+                                                        blurRadius: 6,
+                                                        offset:
+                                                            const Offset(0, 2),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  child: TextField(
+                                                    autofocus: false,
+                                                    decoration: InputDecoration(
+                                                      hintText:
+                                                          "Search templates...",
+                                                      hintStyle: TextStyle(
+                                                        color: Colors.grey[500],
+                                                        fontSize: 14.sp,
+                                                      ),
+                                                      prefixIcon: Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                                left: 12.w,
+                                                                right: 8.w),
+                                                        child: Icon(
+                                                          Icons.search,
+                                                          size: 20.sp,
+                                                          color:
+                                                              Colors.grey[600],
                                                         ),
                                                       ),
-                                                      SizedBox(width: 5.w),
-                                                      Container(
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                                horizontal: 8.w,
-                                                                vertical: 4.h),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: template
-                                                                  .isActive!
-                                                              ? Colors.green
-                                                              : Colors.orange,
+                                                      border: InputBorder.none,
+                                                      enabledBorder:
+                                                          InputBorder.none,
+                                                      focusedBorder:
+                                                          InputBorder.none,
+                                                      contentPadding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 16.w,
+                                                              vertical: 14.h),
+                                                      fillColor: Colors.white,
+                                                      filled: true,
+                                                    ),
+                                                    style: TextStyle(
+                                                        fontSize: 14.sp,
+                                                        color: Colors.black),
+                                                    onChanged: (value) {
+                                                      formC.updateSearchQuery(
+                                                          value);
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                height: 20.h,
+                                              ),
+                                              Expanded(
+                                                child: ListView.builder(
+                                                  itemCount:
+                                                      filteredTemplates.length,
+                                                  itemBuilder:
+                                                      (context, index) {
+                                                    final template =
+                                                        filteredTemplates[
+                                                            index];
+
+                                                    return GestureDetector(
+                                                      onTap: () {
+                                                        showDetailsForms(
+                                                            context: context,
+                                                            formC: formC,
+                                                            data: template);
+                                                      },
+                                                      child: Card(
+                                                        margin: EdgeInsets.only(
+                                                            bottom: 12.h),
+                                                        elevation: 2,
+                                                        shape:
+                                                            RoundedRectangleBorder(
                                                           borderRadius:
                                                               BorderRadius
                                                                   .circular(
-                                                                      12.r),
+                                                                      8.r),
                                                         ),
-                                                        child: Text(
-                                                          template.isActive!
-                                                              ? "Active"
-                                                              : "Inactive",
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 12.sp),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  SizedBox(height: 4.h),
-                                                  TextWidget(
-                                                    text:
-                                                        template.description ??
-                                                            "",
-                                                    maxLines: 3,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: TextStyle(
-                                                        fontSize: 14.sp,
-                                                        color: Colors.grey),
-                                                  ),
-                                                  SizedBox(height: 8.h),
-                                                  Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                          "Category: ${template.category}",
-                                                          style: TextStyle(
-                                                              fontSize: 13.sp)),
-                                                      SizedBox(height: 4.h),
-                                                      Row(
-                                                        children: [
-                                                          Text("Signature: ",
-                                                              style: TextStyle(
-                                                                  fontSize:
-                                                                      13.sp)),
-                                                          Icon(
-                                                            template.requireSignature!
-                                                                ? Icons
-                                                                    .check_circle
-                                                                : Icons.cancel,
-                                                            color: template
-                                                                    .requireSignature!
-                                                                ? Colors.green
-                                                                : Colors.red,
-                                                            size: 18.sp,
+                                                        child: Padding(
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                  12.w),
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              Row(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  /// ✅ Checkbox for selection
+                                                                  Obx(
+                                                                    () =>
+                                                                        Checkbox(
+                                                                      activeColor:
+                                                                          Colors
+                                                                              .blue,
+                                                                      value: formC
+                                                                          .selectedFormsIdList
+                                                                          .contains(
+                                                                              template.id),
+                                                                      onChanged:
+                                                                          (value) {
+                                                                        formC.updateSelectedForms(
+                                                                            template.id!);
+                                                                      },
+                                                                    ),
+                                                                  ),
+                                                                  Expanded(
+                                                                    child:
+                                                                        TextWidget(
+                                                                      text: template
+                                                                              .templateName ??
+                                                                          "",
+                                                                      maxLines:
+                                                                          1,
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
+                                                                      style:
+                                                                          TextStyle(
+                                                                        fontSize:
+                                                                            18.sp,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  SizedBox(
+                                                                      width:
+                                                                          5.w),
+                                                                  Container(
+                                                                    padding: EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            8.w,
+                                                                        vertical:
+                                                                            4.h),
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      color: template.isActive!
+                                                                          ? Colors
+                                                                              .green
+                                                                          : Colors
+                                                                              .orange,
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              12.r),
+                                                                    ),
+                                                                    child: Text(
+                                                                      template.isActive!
+                                                                          ? "Active"
+                                                                          : "Inactive",
+                                                                      style: TextStyle(
+                                                                          color: Colors
+                                                                              .white,
+                                                                          fontSize:
+                                                                              12.sp),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              SizedBox(
+                                                                  height: 4.h),
+                                                              TextWidget(
+                                                                text: template
+                                                                        .description ??
+                                                                    "",
+                                                                maxLines: 3,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        14.sp,
+                                                                    color: Colors
+                                                                        .grey),
+                                                              ),
+                                                              SizedBox(
+                                                                  height: 8.h),
+                                                              Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                children: [
+                                                                  Text(
+                                                                      "Category: ${template.category}",
+                                                                      style: TextStyle(
+                                                                          fontSize:
+                                                                              13.sp)),
+                                                                  SizedBox(
+                                                                      height:
+                                                                          4.h),
+                                                                  Row(
+                                                                    children: [
+                                                                      Text(
+                                                                          "Signature: ",
+                                                                          style:
+                                                                              TextStyle(fontSize: 13.sp)),
+                                                                      Icon(
+                                                                        template.requireSignature!
+                                                                            ? Icons.check_circle
+                                                                            : Icons.cancel,
+                                                                        color: template.requireSignature!
+                                                                            ? Colors.green
+                                                                            : Colors.red,
+                                                                        size: 18
+                                                                            .sp,
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  SizedBox(
+                                                                      height:
+                                                                          4.h),
+                                                                  Text(
+                                                                    "Auto-Assign: ${template.isAutoAssignEnabled! ? "Yes" : "No"}",
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                            13.sp),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ],
                                                           ),
-                                                        ],
+                                                        ),
                                                       ),
-                                                      SizedBox(height: 4.h),
-                                                      Text(
-                                                        "Auto-Assign: ${template.isAutoAssignEnabled! ? "Yes" : "No"}",
-                                                        style: TextStyle(
-                                                            fontSize: 13.sp),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
+                                                    );
+                                                  },
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              );
-                            }),
+                                            ],
+                                          );
+                                        }),
+                                      ]),
+                                )
+                              ],
+                            ),
+
                             //********************************* Tab Four Estimate/Invoice *********************************/
                             SingleChildScrollView(
                               child: Column(
@@ -3108,84 +3429,6 @@ Widget _buildRow(String field, String value,
       ],
     ),
   );
-}
-
-class ArrowAnimation extends StatefulWidget {
-  final String address;
-  final VoidCallback onTap;
-  ThemeData theme;
-
-  ArrowAnimation(
-      {required this.address,
-      required this.theme,
-      required this.onTap,
-      super.key});
-
-  @override
-  State<ArrowAnimation> createState() => _ArrowAnimationState();
-}
-
-class _ArrowAnimationState extends State<ArrowAnimation>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 600),
-    )..repeat(reverse: true);
-
-    _scale = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Row(
-        children: [
-          Expanded(
-              child: TextWidget(
-            text: widget.address,
-            style: widget.theme.textTheme.bodyLarge?.copyWith(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.start,
-            overflow: TextOverflow.visible,
-            maxLines: 5,
-          )),
-          AnimatedBuilder(
-            animation: _scale,
-            builder: (context, child) {
-              return Transform.scale(
-                scale: _scale.value,
-                child: Icon(
-                  Icons.my_location,
-                  color: Colors.blue,
-                  size: 25.r,
-                ),
-              );
-            },
-          ),
-          SizedBox(
-            width: 20.w,
-          )
-        ],
-      ),
-    );
-  }
 }
 
 Future<String> compressImage(String filePath) async {

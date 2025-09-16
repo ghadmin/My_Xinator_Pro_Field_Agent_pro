@@ -13,6 +13,7 @@ import 'package:xinator_fsm_pro/app/modules/signature/views/signature_view.dart'
 import '../modules/appointment/bindings/appointment_binding.dart';
 import '../modules/appointment/views/appointment_details_view.dart';
 import '../modules/appointment/views/appointment_view.dart';
+import '../modules/appointment/views/see_all_form_screen.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/sign_up_view.dart';
@@ -142,6 +143,11 @@ class AppPages {
       binding: SettingsBinding(),
     ),
     GetPage(
+      name: _Paths.APPOINTMENT_STATUS,
+      page: () => const AppointmentStatusView(),
+      binding: SettingsBinding(),
+    ),
+    GetPage(
       name: _Paths.ITEM,
       page: () => const ItemView(),
       binding: ItemBinding(),
@@ -175,6 +181,12 @@ class AppPages {
       name: _Paths.MANUAL_PAYMENT,
       page: () => const ManualPaymentView(),
       binding: InvoiceBinding(),
+    ),
+    GetPage(
+      name: Routes.SEEALLFORMS,
+      page: () => SeeAllFormsScreen(
+        initialTabIndex: Get.arguments['tabIndex'] ?? 0,
+      ),
     ),
   ];
 }

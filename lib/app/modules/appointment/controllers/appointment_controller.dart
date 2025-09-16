@@ -7,11 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
+import 'package:xinator_fsm_pro/app/modules/appointment/models/appointments_form_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/image_list_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/views/appointment_details_view.dart'
     show ResourceItem;
 import 'package:xinator_fsm_pro/app/modules/customer/controllers/customer_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/models/customer_model.dart';
+import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/settings/controllers/settings_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/settings/models/appointment_status_setting.dart';
@@ -58,6 +60,7 @@ class AppointmentController extends GetxController
 
   final noteText = RxString("");
   final settingController = Get.put(SettingsController());
+  final formC = Get.put(FormController());
   final invoiceController = Get.put(InvoiceController());
   final customerController = Get.put(CustomerController());
   final TextEditingController sortTextController = TextEditingController();
@@ -399,7 +402,6 @@ class AppointmentController extends GetxController
   Future<void> startPeriodic() async {
     var companyID = await MySharedPref.getCompanyID();
     _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
-      log("pull off $companyID");
       if (companyID != null && companyID != "") {
         await getAppointments(showLoader: false);
         if (selectedAppointment.value != null) {
@@ -463,6 +465,7 @@ class AppointmentController extends GetxController
             return aDate.compareTo(bDate);
           }),
       );
+      formC.getAttachedForms();
 
       await MyHive.saveAllAppointments(appointments);
       hideLoading();

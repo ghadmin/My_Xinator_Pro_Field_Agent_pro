@@ -27,15 +27,15 @@ class CustomDrawer extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 15.0),
         child: Column(
           children: [
+            /// Scrollable part (all menu items including Logout)
             Expanded(
               child: ListView(
                 children: [
+                  /// profile section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           ClipOval(
                             child: AssetImageBox(
@@ -49,136 +49,62 @@ class CustomDrawer extends StatelessWidget {
                             width: 116.sp,
                             child: TextWidget(
                               text: "${MySharedPref.getUserName()}",
-                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 16.sp,
                                 color: Colors.black,
                               ),
-                              overflow: TextOverflow.visible,
                               maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                       IconButton(
-                          onPressed: () {
-                            Get.back();
-                          },
-                          icon: Image.asset(
-                            SideBar.profileGoIcon,
-                            color: LightThemeColors.primaryColor,
-                          )),
+                        onPressed: () => Get.back(),
+                        icon: Image.asset(
+                          SideBar.profileGoIcon,
+                          color: LightThemeColors.primaryColor,
+                        ),
+                      ),
                     ],
                   ),
-                  SizedBox(
-                    height: 35.h,
-                  ),
+                  SizedBox(height: 35.h),
+
+                  /// drawer items
                   _drawerItem(
                     icon: SideBar.homeIcon,
                     text: 'Home',
                     indexNumber: 0,
-                    onTap: () async {
-                      Get.toNamed(Routes.APPOINTMENT);
-                      indexClicked = indexClicked;
-                    },
+                    onTap: () => Get.toNamed(Routes.APPOINTMENT),
                   ),
-                  // SizedBox(
-                  //   height: 10.h,
-                  // ),
-                  // _drawerItem(
-                  //   icon: SideBar.customerServiceIcon,
-                  //   text: 'Customer Service List',
-                  //   indexNumber: 1,
-                  //   onTap: () async {
-                  //     Get.toNamed(Routes.APPOINTMENT);
-                  //     indexClicked = indexClicked;
-                  //   },
-                  // ),
-                  // SizedBox(
-                  //   height: 10.h,
-                  // ),
-                  // _drawerItem(
-                  //   icon: SideBar.dispatchingIcon,
-                  //   text: 'Dispatching',
-                  //   indexNumber: 2,
-                  //   onTap: () async {
-                  //     Get.toNamed(Routes.ITEM);
-                  //     indexClicked = indexClicked;
-                  //   },
-                  // ),
-                  SizedBox(
-                    height: 10.h,
-                  ),
+                  SizedBox(height: 10.h),
+
                   _drawerItem(
                     icon: SideBar.formIcon,
                     text: 'Forms',
                     indexNumber: 1,
-                    onTap: () async {
-                      Get.toNamed(Routes.FORMS);
-                      indexClicked = indexClicked;
-                    },
+                    onTap: () => Get.toNamed(Routes.FORMS),
                   ),
-                  SizedBox(
-                    height: 10.h,
-                  ),
-                  // _drawerItem(
-                  //   icon: SideBar.formIcon,
-                  //   text: 'CSL',
-                  //   indexNumber: 2,
-                  //   onTap: () async {
-                  //     Get.toNamed(Routes.CSLVIEW);
-                  //     indexClicked = indexClicked;
-                  //   },
-                  // ),
-                  SizedBox(
-                    height: 10.h,
-                  ),
+                  SizedBox(height: 10.h),
+
                   _drawerItem(
                     icon: SideBar.itemsIcon,
                     text: 'Items',
                     indexNumber: 3,
-                    onTap: () async {
-                      Get.toNamed(Routes.ITEM);
-                      indexClicked = indexClicked;
-                    },
+                    onTap: () => Get.toNamed(Routes.ITEM),
                   ),
-                  SizedBox(
-                    height: 10.h,
-                  ),
+                  SizedBox(height: 10.h),
+
                   _drawerItem(
                     icon: SideBar.customerServiceIcon,
                     text: 'Customers',
                     indexNumber: 4,
-                    onTap: () async {
-                      Get.toNamed(Routes.CUSTOMER);
-                      indexClicked = indexClicked;
-                    },
+                    onTap: () => Get.toNamed(Routes.CUSTOMER),
                   ),
-                  // _drawerItem(
-                  //   icon: SideBar.itemsIcon,
-                  //   text: 'Billable Items',
-                  //   indexNumber: 6,
-                  //   onTap: () async {
-                  //     Get.toNamed(Routes.BILLABLE_ITEMS);
-                  //     indexClicked = indexClicked;
-                  //   },
-                  // ),
-                  SizedBox(
-                    height: 10.h,
-                  ),
-                  // _drawerItem(
-                  //   icon: SideBar.settingsIcon,
-                  //   text: 'Settings',
-                  //   indexNumber: 7,
-                  //   onTap: () async {
-                  //     Get.toNamed(Routes.ITEM);
-                  //     indexClicked = indexClicked;
-                  //   },
-                  // ),
-                  SizedBox(
-                    height: 10.h,
-                  ),
+                  SizedBox(height: 10.h),
+
+                  /// 👇 logout is still part of ListView, right under Customers
                   _drawerItem(
                     icon: SideBar.logoutIcon,
                     text: 'Log out',
@@ -186,48 +112,43 @@ class CustomDrawer extends StatelessWidget {
                     onTap: () async {
                       Get.back();
                       showAdaptiveDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const TextWidget(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const TextWidget(
+                            text: 'Log out',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          content: const TextWidget(
+                            text: 'Are you sure you want to log out?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Get.back(),
+                              child: const TextWidget(text: 'Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                Get.back();
+                                await authController.doLogout();
+                              },
+                              child: TextWidget(
                                 text: 'Log out',
                                 style: TextStyle(
-                                  color: Colors.red,
+                                  color:
+                                      LightThemeColors.bodyTextSecondaryColor,
                                 ),
                               ),
-                              content: const TextWidget(
-                                  text: 'Are you sure you want to log out?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Get.back();
-                                  },
-                                  child: const TextWidget(text: 'Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () async {
-                                    Get.back();
-                                    await authController.doLogout();
-                                  },
-                                  child: TextWidget(
-                                    text: 'Log out',
-                                    style: TextStyle(
-                                      color: LightThemeColors
-                                          .bodyTextSecondaryColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          });
-
-                      indexClicked = indexClicked;
+                            ),
+                          ],
+                        ),
+                      );
                     },
                   ),
                 ],
               ),
             ),
-            Spacer(),
+
+            /// fixed version text at very bottom
             Text(
               'Version: ${authController.versionController.appVersion.value}',
               style: TextStyle(
@@ -236,9 +157,7 @@ class CustomDrawer extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(
-              height: 20.h,
-            )
+            SizedBox(height: 20.h),
           ],
         ),
       ),

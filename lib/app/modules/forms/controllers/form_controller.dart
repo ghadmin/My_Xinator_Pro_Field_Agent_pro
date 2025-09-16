@@ -4,10 +4,15 @@ import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/my_snackbar.dart';
 import 'package:xinator_fsm_pro/app/data/local/my_shared_pref.dart';
+import 'package:xinator_fsm_pro/app/modules/appointment/models/appointments_form_model.dart'
+    show AppointmentsFormModel;
 import 'package:xinator_fsm_pro/app/modules/forms/models/form_model.dart';
 import 'package:xinator_fsm_pro/app/service/REST/api_urls.dart';
 import 'package:xinator_fsm_pro/app/service/REST/dio_client.dart';
+import 'package:xinator_fsm_pro/app/service/helper/network_connectivity.dart'
+    show NetworkConnectivity, appointmentController;
 
+import '../../../../utils/date_converter.dart';
 import '../../../service/handler/exception_handler.dart';
 import '../models/create_new_form_template_model.dart';
 
@@ -31,11 +36,89 @@ class FormController extends GetxController with ExceptionHandler {
 
   final formModels = RxList<FormModel>([]);
   final selectedFormsIdList = RxList<int>([]);
+  final seeAllForms = RxList<FormModel>([]);
+  final filteredTemplates = RxList<FormModel>([]);
+
   void updateSelectedForms(int formId) {
     if (selectedFormsIdList.contains(formId)) {
       selectedFormsIdList.remove(formId);
     } else {
       selectedFormsIdList.add(formId);
+    }
+  }
+
+  void selectAttachedForms() {
+    final ifOrNot = appointmentController.selectedAppointment.value == null
+        ? false
+        : formList
+            .where((p0) =>
+                p0.apptId ==
+                appointmentController.selectedAppointment.value!.apptID)
+            .first
+            .formIds
+            .isNotEmpty;
+
+    if (ifOrNot) {
+      final tempAttachedFormIds = formList
+          .where((p0) =>
+              p0.apptId ==
+              appointmentController.selectedAppointment.value!.apptID)
+          .first
+          .formIds;
+
+      // Create a Set to remove duplicates, then convert back to List
+      selectedFormsIdList.assignAll(<int>{
+        ...selectedFormsIdList.toSet(),
+        ...tempAttachedFormIds.toSet()
+      }.toList());
+      update();
+    } else {
+      selectedFormsIdList.clear();
+    }
+  }
+
+  List<AppointmentsFormModel> parseAppointmentForms(List<dynamic> jsonList) {
+    return jsonList
+        .map((jsonItem) => AppointmentsFormModel.fromJson(jsonItem))
+        .toList();
+  }
+
+  final formList = RxList<AppointmentsFormModel>([]);
+  Future<void> getAttachedForms({bool isRefreshed = false}) async {
+    if (isRefreshed) showLoading();
+    if (await NetworkConnectivity.isNetworkAvailable()) {
+      var companyID = await MySharedPref.getCompanyID();
+      var userID = await MySharedPref.getUserName();
+      var currentDateTime = DateTime.now();
+
+      var response = await DioClient().get(
+        url: ApiUrl.getAttachedForms,
+        params: {
+          "appointmentTypeStatus": 2,
+          "appointmentDate": dateTimeConverter(
+              inputTime: currentDateTime.toString(),
+              outputFormat: "yyyy/MM/dd"),
+          "CompanyId": companyID,
+          "userId": userID,
+        },
+      ).catchError(handleError);
+      // log("attached Forms ${jsonEncode(response)}");
+      if (response == null) {
+        hideLoading();
+
+        return;
+      }
+
+      if (response.isEmpty) {
+        hideLoading();
+        return;
+      }
+      if ((response as List).isNotEmpty) {
+        List<AppointmentsFormModel> tempFormList =
+            parseAppointmentForms(response);
+        selectAttachedForms();
+        formList(tempFormList);
+      }
     }
   }
 

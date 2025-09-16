@@ -33,6 +33,7 @@ class EmptyWidget extends StatelessWidget {
         ),
         Center(
           child: TextWidget(
+            textAlign: TextAlign.center,
             text: title ?? Strings.empty.tr,
             style: TextStyle(
               fontSize: 18.sp,
@@ -41,7 +42,7 @@ class EmptyWidget extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(height: 50.h),
+        if (!isRefreshShown) SizedBox(height: 50.h),
         if (isRefreshShown)
           SizedBox(
             height: 44.h,

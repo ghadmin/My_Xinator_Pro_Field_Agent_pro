@@ -6,6 +6,7 @@ class ApiUrl {
   //     "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
   static const login = "$baseUrl/VerifyUser";
   static const getAppointment = "$baseUrl/GetAppointmentList";
+  static const getAttachedForms = "$baseUrl/GetAppointmentListWithForms";
   static const updateAppointment = "$baseUrl/UpdateAppointment";
   static const getCustomer = "$baseUrl/GetCustomerList";
   static const getInvoices = "$baseUrl/GetInvoiceList";

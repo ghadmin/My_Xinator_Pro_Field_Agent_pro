@@ -32,6 +32,7 @@ abstract class Routes {
   static const FORMS = _Paths.FORMS;
 
   static const CSLVIEW = _Paths.CSLVIEW;
+  static const SEEALLFORMS = _Paths.SEEALLFORMS;
   static const FORMS_CREATE_DRAGG_DROP = _Paths.FORMS_CREATE_DRAGG_DROP;
 }
 
@@ -64,4 +65,5 @@ abstract class _Paths {
   static const FORMS = '/forms';
   static const FORMS_CREATE_DRAGG_DROP = '/forms-create-drag-drop';
   static const CSLVIEW = '/cslview';
+  static const SEEALLFORMS = '/seeallforms';
 }
