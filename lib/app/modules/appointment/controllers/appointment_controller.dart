@@ -465,6 +465,9 @@ class AppointmentController extends GetxController
             return aDate.compareTo(bDate);
           }),
       );
+      if (sortTextController.text.isNotEmpty) {
+        sortAppointmentsText(); // re-apply filter after refresh
+      }
       formC.getAttachedForms();
 
       await MyHive.saveAllAppointments(appointments);

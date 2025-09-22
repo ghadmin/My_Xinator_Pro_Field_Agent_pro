@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -9,6 +11,7 @@ import 'package:xinator_fsm_pro/app/components/global-widgets/my_snackbar.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/splash_container.dart';
 import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
 import 'package:xinator_fsm_pro/app/routes/app_pages.dart';
+import 'package:xinator_fsm_pro/config/theme/dark_theme_colors.dart';
 import 'package:xinator_fsm_pro/config/theme/light_theme_colors.dart';
 
 class InvoiceDetailsView extends GetView<InvoiceController> {
@@ -737,6 +740,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   }
 
   itemsList(ThemeData theme) {
+    log("selectedItem list length ${controller.selectedItemList.length}");
     return controller.selectedItemList.isEmpty
         ? SizedBox.shrink()
         : Card(
@@ -1541,6 +1545,46 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                             style: theme.textTheme.bodyLarge,
                           ),
                   ),
+                ],
+              ),
+              SizedBox(height: 10.sp),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    "Paid Amount",
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: 14.sp,
+                        color: LightThemeColors.bodyTextSecondaryColor),
+                  ),
+                  SizedBox(width: 20.sp),
+                  Padding(
+                      padding: EdgeInsets.only(right: 12.sp),
+                      child: Text(
+                        "\$ ${controller.depositAmount.value}",
+                        style: theme.textTheme.bodyLarge!
+                            .copyWith(color: Colors.green),
+                      ))
+                ],
+              ),
+              SizedBox(height: 10.sp),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    "Balance Due",
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                        fontSize: 14.sp,
+                        color: LightThemeColors.bodyTextSecondaryColor),
+                  ),
+                  SizedBox(width: 20.sp),
+                  Padding(
+                      padding: EdgeInsets.only(right: 12.sp),
+                      child: Text(
+                        "\$ ${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}",
+                        style: theme.textTheme.bodyLarge!
+                            .copyWith(color: Colors.red),
+                      ))
                 ],
               ),
               SizedBox(height: 10.sp),

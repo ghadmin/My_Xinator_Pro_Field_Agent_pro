@@ -44,7 +44,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   @override
   void initState() {
     super.initState();
-    if (controller.selectedAppointment.value != null) {}
+
     _tabController = TabController(length: 6, vsync: this);
     _tabController1 = TabController(length: 2, vsync: this);
     _tabController1.addListener(() {
@@ -1938,7 +1938,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       ?.rate
                                                       ?.toStringAsFixed(2) ??
                                                   "0.00";
-
+                                              log("alway proposal ${proposal.items}");
                                               // Populate selectedItemList and initialize controllers
                                               if (proposal.items != null &&
                                                   proposal.items!.isNotEmpty) {

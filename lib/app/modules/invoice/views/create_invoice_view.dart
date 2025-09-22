@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -19,6 +21,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
+    log("dsdssdsd ${controller.descriptionControllers.length}");
+    log("dsdssdsd  1 ${controller.selectedItemList.length}");
     return Scaffold(
       appBar: buildAppBar(context, theme),
       body: Obx(() => SafeArea(
@@ -158,7 +162,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                       ),
                     ),
                     SizedBox(height: 15.sp),
-                    controller.selectedItemList.isEmpty
+                    controller.descriptionControllers.isEmpty
                         ? SizedBox.shrink()
                         : Card(
                             elevation: 0,
