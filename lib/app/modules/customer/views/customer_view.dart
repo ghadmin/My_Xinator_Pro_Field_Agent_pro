@@ -114,7 +114,8 @@ class CustomerView extends GetView<CustomerController> {
                                 appointmentC.selectSingleAppointments(
                                     appointment,
                                     appointmentC.appointments
-                                        .indexOf(appointment));
+                                        .indexOf(appointment),
+                                    false);
                                 Get.toNamed(Routes.APPOINTMENT_DETAILS);
                               },
                               child: Padding(

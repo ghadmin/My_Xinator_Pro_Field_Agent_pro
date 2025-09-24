@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/appointments_form_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/image_list_model.dart';
+import 'package:xinator_fsm_pro/app/modules/appointment/models/tag_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/views/appointment_details_view.dart'
     show ResourceItem;
 import 'package:xinator_fsm_pro/app/modules/customer/controllers/customer_controller.dart';
@@ -33,6 +34,8 @@ import '../models/appointment_model.dart';
 class MediaModel {
   String time;
   List<String> images;
+  TextEditingController descriptionController = TextEditingController();
+
   MediaModel({required this.time, required this.images});
 }
 
@@ -119,9 +122,12 @@ class AppointmentController extends GetxController
   final selectedAppointment = Rx<Appointments?>(null);
   final isTyping = RxBool(false);
   final selectedEstimateOrInvoiceIndex = RxInt(0);
-  void selectSingleAppointments(Appointments? appointment, int index) {
-    imageList.clear();
-    mediaList.clear();
+  void selectSingleAppointments(
+      Appointments? appointment, int index, bool fromPeriodic) {
+    if (!fromPeriodic) {
+      imageList.clear();
+      mediaList.clear();
+    }
     if (appointment == null) return;
     selectedAppointment(appointment);
 
@@ -300,9 +306,93 @@ class AppointmentController extends GetxController
       ..addAll(list.isEmpty ? [] : list);
   }
 
+  final isTaglistLoading = RxBool(false);
+
+  final allTagList = RxList<TagModel?>([]);
+
+  Future<void> getTagList() async {
+    isTaglistLoading(true);
+    isAppointmentEmpty.value = false;
+
+    if (await NetworkConnectivity.isNetworkAvailable()) {
+      var companyID = await MySharedPref.getCompanyID();
+
+      var response = await DioClient().get(
+        url: ApiUrl.getAllTagUrl,
+        params: {"CompanyId": companyID},
+      ).catchError(handleError);
+
+      log("refreshing appointments ${jsonEncode(response)}");
+
+      if (response == null || response.isEmpty) {
+        isTaglistLoading(false);
+        return;
+      }
+      if (response.isEmpty) {
+        allTagList.clear(); // clear old data
+        isTaglistLoading(false);
+        return;
+      }
+
+      // ✅ Parse JSON response into TagModel list
+      final List<TagModel> parsedList = (response as List)
+          .map((e) => TagModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+      // ✅ Bind to RxList
+      allTagList.assignAll(parsedList);
+
+      isTaglistLoading(false);
+    } else {
+      isTaglistLoading(false);
+    }
+  }
+
+  final addNewTagLoading = RxBool(false);
+
+  Future<bool> addNewTag(String tagName) async {
+    try {
+      addNewTagLoading(true);
+      final companyId = await MySharedPref.getCompanyID();
+      final params = {
+        "id": 0,
+        "Name": tagName,
+        "CompanyId": companyId,
+        "Description": "",
+        "CreatedAt": DateTime.now()
+      };
+      log("SAVE url ${ApiUrl.saveTagUrl} \n params $params ");
+
+      final response = await DioClient().post(
+        url: ApiUrl.saveTagUrl, // your POST URL
+        params: params,
+      );
+      if (response != null && response['success'] == true) {
+        // Optionally add to allTagList locally
+        allTagList.add(TagModel(
+          id: response['data']['Id'] ?? 0,
+          name: response['data']['Name'] ?? tagName,
+          description: response['data']['Description'] ?? "",
+          companyId: response['data']['CompanyId'] ?? companyId,
+          createdAt: response['data']['CreatedAt'] ?? DateTime.now().toString(),
+        ));
+        allTagList.refresh();
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      log("Error adding tag: $e");
+      return false;
+    } finally {
+      addNewTagLoading(false);
+    }
+  }
+
   Future<void> uploadImages({
     required String tagName,
     // List of image file paths
+    required String description,
   }) async {
     showLoading();
     await Future.delayed(Duration.zero); // <- give UI a chance to render
@@ -331,6 +421,7 @@ class AppointmentController extends GetxController
         "CompanyId": companyId,
         "TagName": tagName,
         "ImageList": imageList,
+        "Description": description
       }
     };
 
@@ -343,7 +434,7 @@ class AppointmentController extends GetxController
           body: requestBody,
         )
         .catchError(handleError);
-
+    log("chill $response");
     hideLoading();
 
     if (response == null) {
@@ -406,7 +497,7 @@ class AppointmentController extends GetxController
         await getAppointments(showLoader: false);
         if (selectedAppointment.value != null) {
           selectSingleAppointments(sortedAppointments[selectedAptIndex.value],
-              selectedAptIndex.value);
+              selectedAptIndex.value, true);
         }
       }
     });
@@ -468,7 +559,7 @@ class AppointmentController extends GetxController
       if (sortTextController.text.isNotEmpty) {
         sortAppointmentsText(); // re-apply filter after refresh
       }
-      formC.getAttachedForms();
+      formC.getAttachedForms(isFromPeriodic: showLoader);
 
       await MyHive.saveAllAppointments(appointments);
       hideLoading();

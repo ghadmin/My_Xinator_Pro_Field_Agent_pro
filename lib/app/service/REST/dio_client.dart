@@ -12,7 +12,7 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'api_header.dart';
 
 class DioClient {
-  static const int TIME_OUT_DURATION = 20;
+  static const int TIME_OUT_DURATION = 60;
 
   final Dio _dio = Dio(BaseOptions(
     connectTimeout: Duration(seconds: TIME_OUT_DURATION),

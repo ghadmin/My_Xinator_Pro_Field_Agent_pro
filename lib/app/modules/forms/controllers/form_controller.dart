@@ -84,40 +84,50 @@ class FormController extends GetxController with ExceptionHandler {
   }
 
   final formList = RxList<AppointmentsFormModel>([]);
-  Future<void> getAttachedForms({bool isRefreshed = false}) async {
+  Future<void> getAttachedForms({
+    bool isRefreshed = false,
+    bool isFromPeriodic = false,
+  }) async {
     if (isRefreshed) showLoading();
+
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
       var userID = await MySharedPref.getUserName();
       var currentDateTime = DateTime.now();
 
-      var response = await DioClient().get(
-        url: ApiUrl.getAttachedForms,
-        params: {
-          "appointmentTypeStatus": 2,
-          "appointmentDate": dateTimeConverter(
-              inputTime: currentDateTime.toString(),
-              outputFormat: "yyyy/MM/dd"),
-          "CompanyId": companyID,
-          "userId": userID,
-        },
-      ).catchError(handleError);
-      // log("attached Forms ${jsonEncode(response)}");
-      if (response == null) {
-        hideLoading();
+      try {
+        var response = await DioClient().get(
+          url: ApiUrl.getAttachedForms,
+          params: {
+            "appointmentTypeStatus": 2,
+            "appointmentDate": dateTimeConverter(
+                inputTime: currentDateTime.toString(),
+                outputFormat: "yyyy/MM/dd"),
+            "CompanyId": companyID,
+            "userId": userID,
+          },
+        );
 
-        return;
-      }
+        log("attached Forms ${jsonEncode(response)}");
 
-      if (response.isEmpty) {
-        hideLoading();
-        return;
-      }
-      if ((response as List).isNotEmpty) {
-        List<AppointmentsFormModel> tempFormList =
-            parseAppointmentForms(response);
-        selectAttachedForms();
-        formList(tempFormList);
+        if (response == null || (response is List && response.isEmpty)) {
+          hideLoading();
+          return;
+        }
+
+        if ((response as List).isNotEmpty) {
+          List<AppointmentsFormModel> tempFormList =
+              parseAppointmentForms(response);
+          selectAttachedForms();
+          formList(tempFormList);
+        }
+      } catch (e) {
+        // ✅ Only show handleError if not from periodic
+        if (!isFromPeriodic) {
+          handleError(e);
+        }
+      } finally {
+        if (isRefreshed) hideLoading();
       }
     }
   }

@@ -183,7 +183,7 @@ class AppointmentView extends GetView<AppointmentController> {
                                 onPressed: () {
                                   controller.isTyping(false);
                                   controller.selectSingleAppointments(
-                                      appointment, index);
+                                      appointment, index, false);
                                   // var createdDateTime = dateTimeConverter(
                                   //     inputFormat: "yyyy/MM/dd hh:mm a",
                                   //     inputTime: appointment.createdDateTime

@@ -28,4 +28,7 @@ class ApiUrl {
   static const saveFormUrl = "$baseUrl/SaveFormTemplate";
   static const updateFormUrl = "$baseUrl/UpdateFormTemplate";
   static const assignFormUrl = "$baseUrl/AssignForm";
+  static const getAllTagUrl = "$baseUrl/GetAllTags";
+  static const saveTagUrl = "$baseUrl/SaveTag";
+  static const updateTagUrl = "$baseUrl/UpdateTag";
 }

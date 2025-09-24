@@ -7,6 +7,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -28,6 +29,7 @@ import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
 import '../../item/models/item_list_model.dart';
 import '../controllers/appointment_controller.dart';
+import '../models/tag_model.dart';
 
 class AppointmentDetailsView extends StatefulWidget {
   const AppointmentDetailsView({super.key});
@@ -810,6 +812,113 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         fontSize: 14.sp,
                                         fontWeight: FontWeight.w500,
                                       ),
+                                    ),
+                                  ),
+                                  MainDivider(),
+                                  ListTile(
+                                    title: Row(
+                                      children: [
+                                        TextWidget(
+                                          text: "Notes: ",
+                                          style: theme.textTheme.bodyLarge
+                                              ?.copyWith(
+                                            color:
+                                                LightThemeColors.hintTextColor,
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 40.w,
+                                        ),
+                                        Expanded(
+                                          child: TextWidget(
+                                            text: controller.noteController.text
+                                                    .isNotEmpty
+                                                ? controller.noteController.text
+                                                : "No notes added",
+                                            style: theme.textTheme.bodyMedium,
+                                            overflow: TextOverflow.visible,
+                                            maxLines: 10,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.edit,
+                                              size: 18.sp,
+                                              color: theme.primaryColor),
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (ctx) => Dialog(
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: Padding(
+                                                  padding:
+                                                      EdgeInsets.all(12.sp),
+                                                  child: Column(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      TextWidget(
+                                                        text: "Notes",
+                                                        style: theme
+                                                            .textTheme.bodyLarge
+                                                            ?.copyWith(
+                                                          color: LightThemeColors
+                                                              .hintTextColor,
+                                                          fontSize: 10.sp,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 10.h),
+                                                      GeneralTextField(
+                                                        maxLine: 4,
+                                                        hint:
+                                                            "Add a note here..",
+                                                        theme: theme,
+                                                        textEditingController:
+                                                            controller
+                                                                .noteController,
+                                                        onChanged: (v) {
+                                                          controller
+                                                              .isTyping(true);
+                                                          controller
+                                                              .noteText(v);
+                                                        },
+                                                        onEditingComplete: () {
+                                                          controller
+                                                              .isTyping(false);
+                                                        },
+                                                      ),
+                                                      SizedBox(height: 20.h),
+                                                      SizedBox(
+                                                        width: double.infinity,
+                                                        height: 48.sp,
+                                                        child: PrimaryButton(
+                                                          title: "Update",
+                                                          onPressed: () async {
+                                                            await controller
+                                                                .updateAppointment();
+                                                            // Navigator.pop(
+                                                            //     ctx); // close dialog after update
+                                                          },
+                                                          inactive: false,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   SizedBox(height: 35.sp),
@@ -2306,172 +2415,206 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       final item = controller
                                                           .mediaList[index];
                                                       return Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            TextWidget(
-                                                                text:
-                                                                    item.time),
-                                                            SizedBox(
-                                                              height: 10.h,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          TextWidget(
+                                                              text: item.time),
+                                                          SizedBox(
+                                                              height: 10.h),
+
+                                                          // ✅ Description TextField
+                                                          TextField(
+                                                            controller: item
+                                                                .descriptionController, // make sure each item has a controller
+                                                            decoration:
+                                                                InputDecoration(
+                                                              hintText:
+                                                                  "Add description...",
+                                                              border:
+                                                                  OutlineInputBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            8.r),
+                                                              ),
+                                                              contentPadding:
+                                                                  EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          12,
+                                                                      vertical:
+                                                                          8),
                                                             ),
-                                                            SingleChildScrollView(
-                                                              scrollDirection:
-                                                                  Axis.horizontal,
-                                                              child: Row(
-                                                                children: [
-                                                                  ...item.images
-                                                                      .map((e) {
-                                                                    if (_isVideo(
-                                                                        e)) {
-                                                                      return GestureDetector(
-                                                                        onTap:
-                                                                            () {
+                                                          ),
+                                                          SizedBox(
+                                                              height: 10.h),
+
+                                                          SingleChildScrollView(
+                                                            scrollDirection:
+                                                                Axis.horizontal,
+                                                            child: Row(
+                                                              children: [
+                                                                ...item.images
+                                                                    .map((e) {
+                                                                  if (_isVideo(
+                                                                      e)) {
+                                                                    return GestureDetector(
+                                                                      onTap: () =>
                                                                           showMediaDialog(
                                                                               context,
-                                                                              e);
-                                                                        },
-                                                                        child:
-                                                                            Padding(
-                                                                          padding: const EdgeInsets
-                                                                              .only(
-                                                                              right: 8.0),
-                                                                          child:
-                                                                              FutureBuilder<String?>(
-                                                                            future:
-                                                                                generateVideoThumbnail(e),
-                                                                            builder:
-                                                                                (context, snapshot) {
-                                                                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                                                                return Container(
-                                                                                  height: 150,
-                                                                                  width: 150,
-                                                                                  alignment: Alignment.center,
-                                                                                  child: const CircularProgressIndicator(),
-                                                                                );
-                                                                              }
-                                                                              if (snapshot.hasData && snapshot.data != null) {
-                                                                                return Stack(
-                                                                                  children: [
-                                                                                    Container(
-                                                                                      height: 150,
-                                                                                      width: 150,
-                                                                                      decoration: BoxDecoration(
-                                                                                        borderRadius: BorderRadius.circular(10.r),
-                                                                                        image: DecorationImage(
-                                                                                          fit: BoxFit.fill,
-                                                                                          image: FileImage(File(snapshot.data!)),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                    const Positioned.fill(
-                                                                                      child: Center(
-                                                                                        child: Icon(Icons.play_circle_fill, size: 40, color: Colors.white),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ],
-                                                                                );
-                                                                              }
+                                                                              e),
+                                                                      child:
+                                                                          Padding(
+                                                                        padding: const EdgeInsets
+                                                                            .only(
+                                                                            right:
+                                                                                8.0),
+                                                                        child: FutureBuilder<
+                                                                            String?>(
+                                                                          future:
+                                                                              generateVideoThumbnail(e),
+                                                                          builder:
+                                                                              (context, snapshot) {
+                                                                            if (snapshot.connectionState ==
+                                                                                ConnectionState.waiting) {
                                                                               return Container(
                                                                                 height: 150,
                                                                                 width: 150,
-                                                                                color: Colors.grey[300],
-                                                                                child: const Icon(Icons.play_circle_fill),
+                                                                                alignment: Alignment.center,
+                                                                                child: const CircularProgressIndicator(),
                                                                               );
-                                                                            },
-                                                                          ),
+                                                                            }
+                                                                            if (snapshot.hasData &&
+                                                                                snapshot.data != null) {
+                                                                              return Stack(
+                                                                                children: [
+                                                                                  Container(
+                                                                                    height: 150,
+                                                                                    width: 150,
+                                                                                    decoration: BoxDecoration(
+                                                                                      borderRadius: BorderRadius.circular(10.r),
+                                                                                      image: DecorationImage(
+                                                                                        fit: BoxFit.fill,
+                                                                                        image: FileImage(File(snapshot.data!)),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                  const Positioned.fill(
+                                                                                    child: Center(
+                                                                                      child: Icon(
+                                                                                        Icons.play_circle_fill,
+                                                                                        size: 40,
+                                                                                        color: Colors.white,
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              );
+                                                                            }
+                                                                            return Container(
+                                                                              height: 150,
+                                                                              width: 150,
+                                                                              color: Colors.grey[300],
+                                                                              child: const Icon(Icons.play_circle_fill),
+                                                                            );
+                                                                          },
                                                                         ),
-                                                                      );
-                                                                    } else {
-                                                                      return GestureDetector(
-                                                                        onTap:
-                                                                            () {
+                                                                      ),
+                                                                    );
+                                                                  } else {
+                                                                    return GestureDetector(
+                                                                      onTap: () =>
                                                                           showMediaDialog(
                                                                               context,
-                                                                              e);
-                                                                        },
-                                                                        child:
-                                                                            Container(
-                                                                          height:
-                                                                              150,
-                                                                          width:
-                                                                              150,
-                                                                          margin:
-                                                                              EdgeInsets.only(right: 20), // spacing between items
-                                                                          decoration:
-                                                                              BoxDecoration(
-                                                                            borderRadius:
-                                                                                BorderRadius.circular(10.r),
+                                                                              e),
+                                                                      child:
+                                                                          Container(
+                                                                        height:
+                                                                            150,
+                                                                        width:
+                                                                            150,
+                                                                        margin: EdgeInsets.only(
+                                                                            right:
+                                                                                20),
+                                                                        decoration:
+                                                                            BoxDecoration(
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(10.r),
+                                                                          image:
+                                                                              DecorationImage(
+                                                                            fit:
+                                                                                BoxFit.fill,
                                                                             image:
-                                                                                DecorationImage(
-                                                                              fit: BoxFit.fill,
-                                                                              image: FileImage(File(e)),
-                                                                            ),
+                                                                                FileImage(File(e)),
                                                                           ),
                                                                         ),
-                                                                      );
-                                                                    }
-                                                                  }),
-                                                                  GestureDetector(
-                                                                    onTap: () {
+                                                                      ),
+                                                                    );
+                                                                  }
+                                                                }),
+                                                                GestureDetector(
+                                                                  onTap: () =>
                                                                       showMediaBottomSheet(
                                                                           context,
-                                                                          index);
-                                                                    },
-                                                                    child:
-                                                                        Container(
-                                                                      height:
-                                                                          150,
-                                                                      width:
-                                                                          150,
-                                                                      margin: EdgeInsets.only(
-                                                                          right:
-                                                                              8),
-                                                                      decoration:
-                                                                          BoxDecoration(
-                                                                        color: Colors
-                                                                            .grey[200],
-                                                                        borderRadius:
-                                                                            BorderRadius.circular(10.r),
-                                                                        border: Border.all(
-                                                                            color:
-                                                                                Colors.grey),
-                                                                      ),
-                                                                      child: const Icon(
-                                                                          Icons
-                                                                              .add,
-                                                                          size:
-                                                                              40,
+                                                                          index),
+                                                                  child:
+                                                                      Container(
+                                                                    height: 150,
+                                                                    width: 150,
+                                                                    margin: const EdgeInsets
+                                                                        .only(
+                                                                        right:
+                                                                            8),
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      color: Colors
+                                                                              .grey[
+                                                                          200],
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                              10.r),
+                                                                      border: Border.all(
                                                                           color:
                                                                               Colors.grey),
                                                                     ),
+                                                                    child:
+                                                                        const Icon(
+                                                                      Icons.add,
+                                                                      size: 40,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
                                                                   ),
-                                                                ],
-                                                              ),
+                                                                ),
+                                                              ],
                                                             ),
-                                                            SizedBox(
-                                                              height: 10.h,
+                                                          ),
+                                                          SizedBox(
+                                                              height: 10.h),
+
+                                                          SizedBox(
+                                                            width:
+                                                                double.infinity,
+                                                            child:
+                                                                ElevatedButton(
+                                                              onPressed:
+                                                                  () async {
+                                                                await controller.uploadImages(
+                                                                    tagName: item
+                                                                            .time
+                                                                            .split(" ")[
+                                                                        0],
+                                                                    description: item
+                                                                        .descriptionController
+                                                                        .text); // pass description
+                                                              },
+                                                              child: const Text(
+                                                                  "Save"),
                                                             ),
-                                                            SizedBox(
-                                                              width: double
-                                                                  .infinity,
-                                                              child:
-                                                                  ElevatedButton(
-                                                                onPressed:
-                                                                    () async {
-                                                                  await controller.uploadImages(
-                                                                      tagName: item
-                                                                          .time
-                                                                          .split(
-                                                                              " ")[0]);
-                                                                },
-                                                                child:
-                                                                    const Text(
-                                                                        "Save"),
-                                                              ),
-                                                            )
-                                                          ]);
+                                                          ),
+                                                        ],
+                                                      );
                                                     },
                                                     separatorBuilder:
                                                         (BuildContext context,
@@ -2760,12 +2903,28 @@ void showMediaBottomSheet(BuildContext context, int index) {
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextFormField(
-                  controller: tagController,
-                  decoration: InputDecoration(
-                    labelText: 'Tag Name',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                child: GestureDetector(
+                  onTap: () async {
+                    appointmentC.getTagList();
+                    final result = await showDialog<String>(
+                      context: context,
+                      builder: (ctx) => const TagSelectionDialog(),
+                    );
+
+                    if (result != null && result.isNotEmpty) {
+                      tagController.text = result;
+                    }
+                  },
+                  child: AbsorbPointer(
+                    child: TextFormField(
+                      controller: tagController,
+                      decoration: InputDecoration(
+                        labelText: 'Select Tag',
+                        suffixIcon: const Icon(Icons.arrow_drop_down),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -2821,8 +2980,8 @@ void showMediaBottomSheet(BuildContext context, int index) {
                         } else {
                           appointmentC.mediaList.add(MediaModel(
                             time:
-                                // "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
-                                tagController.text,
+                                "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
+                            // tagController.text,
                             images: newImages,
                           ));
                         }
@@ -2941,6 +3100,156 @@ void showMediaBottomSheet(BuildContext context, int index) {
       );
     },
   );
+}
+
+class TagSelectionDialog extends StatelessWidget {
+  const TagSelectionDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final AppointmentController controller = Get.find<AppointmentController>();
+
+    return AlertDialog(
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text("Select or Add Tag"),
+          IconButton(
+              onPressed: () {
+                Get.back();
+              },
+              icon: Icon(Icons.close))
+        ],
+      ),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400, // give space for list + search
+        child: Obx(() {
+          if (controller.isTaglistLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final allTags = controller.allTagList
+              .whereType<TagModel>()
+              .map((tag) => tag.name)
+              .toList()
+            ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+          return _TagListContent(
+            tags: allTags,
+            controller: controller,
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _TagListContent extends StatefulWidget {
+  final List<String> tags;
+  AppointmentController controller;
+  _TagListContent({required this.tags, required this.controller});
+
+  @override
+  State<_TagListContent> createState() => _TagListContentState();
+}
+
+class _TagListContentState extends State<_TagListContent> {
+  final TextEditingController searchController = TextEditingController();
+  final TextEditingController newTagController = TextEditingController();
+
+  late List<String> filteredTags;
+
+  @override
+  void initState() {
+    super.initState();
+    filteredTags = List.from(widget.tags);
+
+    searchController.addListener(() {
+      setState(() {
+        filteredTags = widget.tags
+            .where((tag) =>
+                tag.toLowerCase().contains(searchController.text.toLowerCase()))
+            .toList();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Search field
+        TextField(
+          controller: searchController,
+          decoration: const InputDecoration(
+            hintText: "Search tag...",
+            prefixIcon: Icon(Icons.search),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Tags list
+        Expanded(
+          child: filteredTags.isNotEmpty
+              ? ListView.builder(
+                  itemCount: filteredTags.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(filteredTags[index]),
+                      onTap: () {
+                        Navigator.pop(context, filteredTags[index]);
+                      },
+                    );
+                  },
+                )
+              : const Center(child: Text("No tags found")),
+        ),
+
+        // Add New button
+        TextButton(
+          style:
+              ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.blue)),
+          onPressed: () => _showAddTagDialog(context),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: widget.controller.addNewTagLoading.value
+                ? CircularProgressIndicator()
+                : const TextWidget(
+                    text: "Add New", style: TextStyle(color: Colors.white)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddTagDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Add New Tag"),
+        content: TextField(
+          controller: newTagController,
+          decoration: const InputDecoration(hintText: "Enter tag name"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (newTagController.text.trim().isNotEmpty) {
+                widget.controller.addNewTag(newTagController.text);
+                Get.back();
+              }
+            },
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _MediaButton extends StatelessWidget {
