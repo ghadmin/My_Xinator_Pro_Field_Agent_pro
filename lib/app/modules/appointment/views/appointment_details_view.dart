@@ -2636,86 +2636,229 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 )),
 
                             //********************************* Tab Six  Notes *********************************/
+
                             Padding(
                               padding: EdgeInsets.symmetric(
                                   vertical: 8.sp, horizontal: 12.sp),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  //   TextWidget(text:
-                                  //   "Office Notes:",
-                                  //   style: theme.textTheme.bodyMedium?.copyWith(
-                                  //     fontWeight: FontWeight.bold,
-                                  //   ),
-                                  // ),
-                                  //   TextWidget(text: "Do not forget to bring the required tools."),
-                                  // SizedBox(height: 10.h),
-
-                                  // // --- 2. History Notes ---
-
-                                  // Column(
-                                  //   crossAxisAlignment: CrossAxisAlignment.start,
-                                  //   children: [
-                                  //       TextWidget(text:
-                                  //       "Previous Notes:",
-                                  //       style: theme.textTheme.bodyMedium?.copyWith(
-                                  //         fontWeight: FontWeight.bold,
-                                  //       ),
-                                  //     ),
-                                  //     ...controller.historyNotes.map(
-                                  //       (note) => Padding(
-                                  //         padding: EdgeInsets.symmetric(vertical: 4.h),
-                                  //         child:   TextWidget(text:
-                                  //           "${"07/09/2025"} • $note",
-                                  //           style: theme.textTheme.bodySmall,
-                                  //         ),
-                                  //       ),
-                                  //     ),
-                                  //     SizedBox(height: 10.h),
-                                  //   ],
-                                  // ),
-                                  TextWidget(
-                                    text: "Notes",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors.hintTextColor,
-                                      fontSize: 10.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    textAlign: TextAlign.start,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: GeneralTextField(
-                                      maxLine: 4,
-                                      hint: "Add a note here..",
-                                      theme: theme,
-                                      textEditingController:
-                                          controller.noteController,
-                                      onChanged: (v) {
-                                        controller.isTyping(true);
-                                        controller.noteText(v);
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Dropdown for selection
+                                    InkWell(
+                                      onTap: () {
+                                        showNotesDialog(
+                                            context, controller, theme);
                                       },
-                                      onEditingComplete: () {
-                                        controller.isTyping(false);
-                                      },
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: DottedBorder(
+                                            options: RectDottedBorderOptions(
+                                                dashPattern: [3, 2]),
+                                            child: Icon(
+                                              Icons.add,
+                                              size: 25.sp,
+                                              color:
+                                                  controller.mediaList.length ==
+                                                          1
+                                                      ? Colors.grey
+                                                      : theme.primaryColor,
+                                            )),
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(
-                                    height: 20.h,
-                                  ),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 48.sp,
-                                    child: PrimaryButton(
-                                        title: "Update",
-                                        onPressed: () async {
-                                          await controller.updateAppointment();
-                                        },
-                                        inactive: false),
-                                  ),
-                                ],
+                                    SizedBox(height: 20.h),
+
+                                    // Notes list
+
+                                    Obx(() => ListView.builder(
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          itemCount: controller.noteList.length,
+                                          itemBuilder: (context, index) {
+                                            final note =
+                                                controller.noteList[index];
+                                            return Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 4.h),
+                                              child: Container(
+                                                padding: EdgeInsets.all(12.sp),
+                                                decoration: BoxDecoration(
+                                                  color: index == 0
+                                                      ? Colors.green[50]
+                                                      : Colors.grey[100],
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          8.sp),
+                                                ),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // Row with User Name on Left, Date-Time on Right
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Row(
+                                                          children: [
+                                                            Icon(Icons.person,
+                                                                size: 14.sp,
+                                                                color: Colors
+                                                                    .grey[600]),
+                                                            SizedBox(
+                                                                width: 6.w),
+                                                            Text(
+                                                              note.userName,
+                                                              style: theme
+                                                                  .textTheme
+                                                                  .bodySmall
+                                                                  ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        Text(
+                                                          "${note.date} • ${note.time}",
+                                                          style: theme.textTheme
+                                                              .bodySmall
+                                                              ?.copyWith(
+                                                            color: Colors
+                                                                .grey[600],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    SizedBox(height: 8.h),
+
+                                                    // Tag as a chip
+                                                    Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 8.w,
+                                                              vertical: 4.h),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.blue
+                                                            .withOpacity(0.1),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                                    12.sp),
+                                                      ),
+                                                      child: Text(
+                                                        note.selectedTag,
+                                                        style: theme
+                                                            .textTheme.bodySmall
+                                                            ?.copyWith(
+                                                          color: Colors.blue,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    SizedBox(height: 8.h),
+
+                                                    // Note Content
+                                                    Text(
+                                                      note.content,
+                                                      style: theme
+                                                          .textTheme.bodyMedium,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        )),
+                                  ],
+                                ),
                               ),
                             ),
+
+                            // Padding(
+                            //   padding: EdgeInsets.symmetric(
+                            //       vertical: 8.sp, horizontal: 12.sp),
+                            //   child: Column(
+                            //     crossAxisAlignment: CrossAxisAlignment.start,
+                            //     children: [
+                            //       //   TextWidget(text:
+                            //       //   "Office Notes:",
+                            //       //   style: theme.textTheme.bodyMedium?.copyWith(
+                            //       //     fontWeight: FontWeight.bold,
+                            //       //   ),
+                            //       // ),
+                            //       //   TextWidget(text: "Do not forget to bring the required tools."),
+                            //       // SizedBox(height: 10.h),
+
+                            //       // // --- 2. History Notes ---
+
+                            //       // Column(
+                            //       //   crossAxisAlignment: CrossAxisAlignment.start,
+                            //       //   children: [
+                            //       //       TextWidget(text:
+                            //       //       "Previous Notes:",
+                            //       //       style: theme.textTheme.bodyMedium?.copyWith(
+                            //       //         fontWeight: FontWeight.bold,
+                            //       //       ),
+                            //       //     ),
+                            //       //     ...controller.historyNotes.map(
+                            //       //       (note) => Padding(
+                            //       //         padding: EdgeInsets.symmetric(vertical: 4.h),
+                            //       //         child:   TextWidget(text:
+                            //       //           "${"07/09/2025"} • $note",
+                            //       //           style: theme.textTheme.bodySmall,
+                            //       //         ),
+                            //       //       ),
+                            //       //     ),
+                            //       //     SizedBox(height: 10.h),
+                            //       //   ],
+                            //       // ),
+                            //       TextWidget(
+                            //         text: "Notes",
+                            //         style: theme.textTheme.bodyLarge?.copyWith(
+                            //           color: LightThemeColors.hintTextColor,
+                            //           fontSize: 10.sp,
+                            //           fontWeight: FontWeight.w500,
+                            //         ),
+                            //         textAlign: TextAlign.start,
+                            //       ),
+                            //       Padding(
+                            //         padding: const EdgeInsets.all(8.0),
+                            //         child: GeneralTextField(
+                            //           maxLine: 4,
+                            //           hint: "Add a note here..",
+                            //           theme: theme,
+                            //           textEditingController:
+                            //               controller.noteController,
+                            //           onChanged: (v) {
+                            //             controller.isTyping(true);
+                            //             controller.noteText(v);
+                            //           },
+                            //           onEditingComplete: () {
+                            //             controller.isTyping(false);
+                            //           },
+                            //         ),
+                            //       ),
+                            //       SizedBox(
+                            //         height: 20.h,
+                            //       ),
+                            //       SizedBox(
+                            //         width: double.infinity,
+                            //         height: 48.sp,
+                            //         child: PrimaryButton(
+                            //             title: "Update",
+                            //             onPressed: () async {
+                            //               await controller.updateAppointment();
+                            //             },
+                            //             inactive: false),
+                            //       ),
+                            //     ],
+                            //   ),
+                            // ),
                           ],
                         ),
                       ),
@@ -2805,6 +2948,139 @@ Future<String?> generateVideoThumbnail(String videoPath) async {
   );
 }
 
+void showNotesDialog(
+    BuildContext context, AppointmentController controller, ThemeData theme) {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevent closing by tapping outside
+    builder: (context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.sp),
+        ),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.sp, vertical: 24.sp),
+        child: Padding(
+          padding: EdgeInsets.all(16.sp),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                TextWidget(
+                  text: "Add / Update Notes",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.sp,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+
+                // Dropdown
+                TextWidget(
+                  text: "Select Tag",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: LightThemeColors.hintTextColor,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Obx(
+                  () => DropdownButton<String>(
+                    value: controller.selectedTabOption.value,
+                    items: [
+                      "Appointment",
+                      "Equipment",
+                      "Customer Details",
+                    ]
+                        .map(
+                          (option) => DropdownMenuItem(
+                            value: option,
+                            child: Text(option),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) controller.selectedTabOption.value = val;
+                    },
+                    isExpanded: true,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+
+                // Notes input
+                TextWidget(
+                  text: "Notes",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: LightThemeColors.hintTextColor,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GeneralTextField(
+                    maxLine: 4,
+                    hint: "Add a note here..",
+                    theme: theme,
+                    textEditingController: controller.note1Controller,
+                    onChanged: (v) {
+                      controller.isTyping(true);
+                      controller.noteText(v);
+                    },
+                    onEditingComplete: () {
+                      controller.isTyping(false);
+                    },
+                  ),
+                ),
+
+                SizedBox(height: 20.h),
+
+                // Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Cancel
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.sp,
+                        child: PrimaryButton(
+                          title: "Cancel",
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          inactive: false,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    // Update
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.sp,
+                        child: PrimaryButton(
+                          title: "Update",
+                          onPressed: () async {
+                            await controller.updateAppointment();
+                            Navigator.pop(context);
+                          },
+                          inactive: false,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
 Future<void> openMapWithRoute(String destinationAddress) async {
   final encodedDestination = Uri.encodeComponent(destinationAddress);
 
@@ -2884,7 +3160,6 @@ void showDialogTicketStatus(
 
 void showMediaBottomSheet(BuildContext context, int index) {
   final appointmentC = Get.find<AppointmentController>();
-  final TextEditingController tagController = TextEditingController();
 
   showModalBottomSheet(
     context: context,
@@ -2906,18 +3181,11 @@ void showMediaBottomSheet(BuildContext context, int index) {
                 child: GestureDetector(
                   onTap: () async {
                     appointmentC.getTagList();
-                    final result = await showDialog<String>(
-                      context: context,
-                      builder: (ctx) => const TagSelectionDialog(),
-                    );
-
-                    if (result != null && result.isNotEmpty) {
-                      tagController.text = result;
-                    }
+                    Get.toNamed(Routes.TAG_DETAILS);
                   },
                   child: AbsorbPointer(
                     child: TextFormField(
-                      controller: tagController,
+                      controller: appointmentC.selectedTagController.value,
                       decoration: InputDecoration(
                         labelText: 'Select Tag',
                         suffixIcon: const Icon(Icons.arrow_drop_down),
@@ -2937,7 +3205,10 @@ void showMediaBottomSheet(BuildContext context, int index) {
                     icon: Icons.photo_library,
                     title: 'Gallery',
                     onTap: () async {
-                      if (tagController.text.trim().isEmpty && index == -1) {
+                      if (appointmentC.selectedTagController.value.text
+                              .trim()
+                              .isEmpty &&
+                          index == -1) {
                         ScaffoldMessenger.of(context).showMaterialBanner(
                           MaterialBanner(
                             content: const Text('Please add a tag first!'),
@@ -2980,7 +3251,7 @@ void showMediaBottomSheet(BuildContext context, int index) {
                         } else {
                           appointmentC.mediaList.add(MediaModel(
                             time:
-                                "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
+                                "${appointmentC.selectedTagController.value.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
                             // tagController.text,
                             images: newImages,
                           ));
@@ -2996,7 +3267,10 @@ void showMediaBottomSheet(BuildContext context, int index) {
                     icon: Icons.camera_alt,
                     title: 'Photo',
                     onTap: () async {
-                      if (tagController.text.trim().isEmpty && index == -1) {
+                      if (appointmentC.selectedTagController.value.text
+                              .trim()
+                              .isEmpty &&
+                          index == -1) {
                         ScaffoldMessenger.of(context).showMaterialBanner(
                           MaterialBanner(
                             content: const Text('Please add a tag first!'),
@@ -3036,7 +3310,7 @@ void showMediaBottomSheet(BuildContext context, int index) {
                           appointmentC.mediaList.add(MediaModel(
                             time:
                                 // "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
-                                tagController.text,
+                                appointmentC.selectedTagController.value.text,
                             images: [compressedPath],
                           ));
                         }
@@ -3100,156 +3374,6 @@ void showMediaBottomSheet(BuildContext context, int index) {
       );
     },
   );
-}
-
-class TagSelectionDialog extends StatelessWidget {
-  const TagSelectionDialog({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final AppointmentController controller = Get.find<AppointmentController>();
-
-    return AlertDialog(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text("Select or Add Tag"),
-          IconButton(
-              onPressed: () {
-                Get.back();
-              },
-              icon: Icon(Icons.close))
-        ],
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
-        height: 400, // give space for list + search
-        child: Obx(() {
-          if (controller.isTaglistLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final allTags = controller.allTagList
-              .whereType<TagModel>()
-              .map((tag) => tag.name)
-              .toList()
-            ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-
-          return _TagListContent(
-            tags: allTags,
-            controller: controller,
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _TagListContent extends StatefulWidget {
-  final List<String> tags;
-  AppointmentController controller;
-  _TagListContent({required this.tags, required this.controller});
-
-  @override
-  State<_TagListContent> createState() => _TagListContentState();
-}
-
-class _TagListContentState extends State<_TagListContent> {
-  final TextEditingController searchController = TextEditingController();
-  final TextEditingController newTagController = TextEditingController();
-
-  late List<String> filteredTags;
-
-  @override
-  void initState() {
-    super.initState();
-    filteredTags = List.from(widget.tags);
-
-    searchController.addListener(() {
-      setState(() {
-        filteredTags = widget.tags
-            .where((tag) =>
-                tag.toLowerCase().contains(searchController.text.toLowerCase()))
-            .toList();
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Search field
-        TextField(
-          controller: searchController,
-          decoration: const InputDecoration(
-            hintText: "Search tag...",
-            prefixIcon: Icon(Icons.search),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Tags list
-        Expanded(
-          child: filteredTags.isNotEmpty
-              ? ListView.builder(
-                  itemCount: filteredTags.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(filteredTags[index]),
-                      onTap: () {
-                        Navigator.pop(context, filteredTags[index]);
-                      },
-                    );
-                  },
-                )
-              : const Center(child: Text("No tags found")),
-        ),
-
-        // Add New button
-        TextButton(
-          style:
-              ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.blue)),
-          onPressed: () => _showAddTagDialog(context),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: widget.controller.addNewTagLoading.value
-                ? CircularProgressIndicator()
-                : const TextWidget(
-                    text: "Add New", style: TextStyle(color: Colors.white)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showAddTagDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Add New Tag"),
-        content: TextField(
-          controller: newTagController,
-          decoration: const InputDecoration(hintText: "Enter tag name"),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (newTagController.text.trim().isNotEmpty) {
-                widget.controller.addNewTag(newTagController.text);
-                Get.back();
-              }
-            },
-            child: const Text("Add"),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _MediaButton extends StatelessWidget {
@@ -5081,4 +5205,19 @@ void showProductDialog(BuildContext context) {
       );
     },
   );
+}
+
+class Note {
+  final String date;
+  final String time;
+  final String userName;
+  final String selectedTag;
+  final String content;
+
+  Note(
+      {required this.date,
+      required this.time,
+      required this.userName,
+      required this.selectedTag,
+      required this.content});
 }

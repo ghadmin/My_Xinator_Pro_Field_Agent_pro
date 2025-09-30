@@ -108,8 +108,6 @@ class FormController extends GetxController with ExceptionHandler {
           },
         );
 
-        log("attached Forms ${jsonEncode(response)}");
-
         if (response == null || (response is List && response.isEmpty)) {
           hideLoading();
           return;
@@ -124,7 +122,7 @@ class FormController extends GetxController with ExceptionHandler {
       } catch (e) {
         // ✅ Only show handleError if not from periodic
         if (!isFromPeriodic) {
-          handleError(e);
+          // handleError(e);
         }
       } finally {
         if (isRefreshed) hideLoading();

@@ -14,6 +14,7 @@ import '../modules/appointment/bindings/appointment_binding.dart';
 import '../modules/appointment/views/appointment_details_view.dart';
 import '../modules/appointment/views/appointment_view.dart';
 import '../modules/appointment/views/see_all_form_screen.dart';
+import '../modules/appointment/views/tag_details_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/sign_up_view.dart';
@@ -117,6 +118,11 @@ class AppPages {
       name: _Paths.INVOICE_CREATE,
       page: () => const CreateInvoiceView(),
       bindings: [InvoiceBinding(), FormBinding()],
+    ),
+    GetPage(
+      name: _Paths.TAG_DETAILS,
+      page: () => TagSelectionScreen(),
+      bindings: [AppointmentBinding()],
     ),
     GetPage(
       name: _Paths.INVOICE_DETAILS,

@@ -11,7 +11,7 @@ import 'package:xinator_fsm_pro/app/modules/appointment/models/appointments_form
 import 'package:xinator_fsm_pro/app/modules/appointment/models/image_list_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/tag_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/views/appointment_details_view.dart'
-    show ResourceItem;
+    show Note, ResourceItem;
 import 'package:xinator_fsm_pro/app/modules/customer/controllers/customer_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/customer/models/customer_model.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
@@ -68,6 +68,7 @@ class AppointmentController extends GetxController
   final customerController = Get.put(CustomerController());
   final TextEditingController sortTextController = TextEditingController();
   final noteController = TextEditingController();
+  final note1Controller = TextEditingController();
   final isExpanded = RxBool(false);
   final mediaList = RxList<MediaModel>([]);
   List<ResourceItem> resources = [
@@ -104,6 +105,75 @@ class AppointmentController extends GetxController
 
   RxInt selectedStatusValue = 0.obs;
   RxInt selectedTicketStatusValue = 0.obs;
+  RxString selectedTabOption = "Appointment".obs;
+  final noteList = RxList<Note>([
+    Note(
+        date: "25-10-2025",
+        time: "12:00 am",
+        userName: "Hridoy",
+        selectedTag: "Appointment",
+        content: "appointment confirm"),
+    Note(
+        date: "26-10-2025",
+        time: "01:00 pm",
+        userName: "John",
+        selectedTag: "Follow Up",
+        content: "follow up call"),
+    Note(
+        date: "27-10-2025",
+        time: "02:30 pm",
+        userName: "Alice",
+        selectedTag: "Completed",
+        content: "service completed"),
+    Note(
+        date: "28-10-2025",
+        time: "03:45 pm",
+        userName: "Bob",
+        selectedTag: "Pending",
+        content: "awaiting customer response"),
+    Note(
+        date: "29-10-2025",
+        time: "04:15 pm",
+        userName: "Eve",
+        selectedTag: "Cancelled",
+        content: "appointment cancelled"),
+    Note(
+        date: "28-10-2025",
+        time: "03:45 pm",
+        userName: "Bob",
+        selectedTag: "Pending",
+        content: "awaiting customer response"),
+    Note(
+        date: "29-10-2025",
+        time: "04:15 pm",
+        userName: "Eve",
+        selectedTag: "Cancelled",
+        content: "appointment cancelled"),
+    Note(
+        date: "28-10-2025",
+        time: "03:45 pm",
+        userName: "Bob",
+        selectedTag: "Pending",
+        content: "awaiting customer response"),
+    Note(
+        date: "29-10-2025",
+        time: "04:15 pm",
+        userName: "Eve",
+        selectedTag: "Cancelled",
+        content: "appointment cancelled"),
+    Note(
+        date: "28-10-2025",
+        time: "03:45 pm",
+        userName: "Bob",
+        selectedTag: "Pending",
+        content: "awaiting customer response"),
+    Note(
+        date: "29-10-2025",
+        time: "04:15 pm",
+        userName: "Eve",
+        selectedTag: "Cancelled",
+        content: "appointment cancelled"),
+  ]);
 
   /// API ///
   final appointments = RxList<Appointments>();
@@ -127,6 +197,7 @@ class AppointmentController extends GetxController
     if (!fromPeriodic) {
       imageList.clear();
       mediaList.clear();
+      selectedTagController.value.clear();
     }
     if (appointment == null) return;
     selectedAppointment(appointment);
@@ -307,9 +378,8 @@ class AppointmentController extends GetxController
   }
 
   final isTaglistLoading = RxBool(false);
-
-  final allTagList = RxList<TagModel?>([]);
-
+  final selectedTagController =
+      Rx<TextEditingController>(TextEditingController());
   Future<void> getTagList() async {
     isTaglistLoading(true);
     isAppointmentEmpty.value = false;
@@ -341,6 +411,7 @@ class AppointmentController extends GetxController
 
       // ✅ Bind to RxList
       allTagList.assignAll(parsedList);
+      filterTags("");
 
       isTaglistLoading(false);
     } else {
@@ -349,42 +420,55 @@ class AppointmentController extends GetxController
   }
 
   final addNewTagLoading = RxBool(false);
+  final allTagList = <TagModel>[].obs;
+  final filteredTags = <TagModel>[].obs;
+
+  void filterTags(String query) {
+    if (query.isEmpty) {
+      filteredTags.assignAll(allTagList);
+    } else {
+      filteredTags.assignAll(
+        allTagList.where(
+            (tag) => tag.name.toLowerCase().contains(query.toLowerCase())),
+      );
+    }
+  }
 
   Future<bool> addNewTag(String tagName) async {
     try {
       addNewTagLoading(true);
       final companyId = await MySharedPref.getCompanyID();
       final params = {
-        "id": 0,
-        "Name": tagName,
-        "CompanyId": companyId,
-        "Description": "",
-        "CreatedAt": DateTime.now()
+        "tag": {
+          "id": 0,
+          "Name": tagName,
+          "CompanyId": companyId,
+          "Description": "",
+          "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now())
+        }
       };
-      log("SAVE url ${ApiUrl.saveTagUrl} \n params $params ");
 
-      final response = await DioClient().post(
-        url: ApiUrl.saveTagUrl, // your POST URL
-        params: params,
-      );
+      final response =
+          await DioClient().post(url: ApiUrl.saveTagUrl, body: params);
+
       if (response != null && response['success'] == true) {
-        // Optionally add to allTagList locally
-        allTagList.add(TagModel(
-          id: response['data']['Id'] ?? 0,
-          name: response['data']['Name'] ?? tagName,
-          description: response['data']['Description'] ?? "",
-          companyId: response['data']['CompanyId'] ?? companyId,
-          createdAt: response['data']['CreatedAt'] ?? DateTime.now().toString(),
-        ));
-        allTagList.refresh();
+        Get.snackbar(
+          "Success",
+          "Tag $tagName added successfully",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(12),
+          duration: const Duration(seconds: 2),
+        ); // refresh UI immediately
         return true;
       }
-
       return false;
     } catch (e) {
       log("Error adding tag: $e");
       return false;
     } finally {
+      getTagList();
       addNewTagLoading(false);
     }
   }
@@ -424,8 +508,6 @@ class AppointmentController extends GetxController
         "Description": description
       }
     };
-
-    log("requestBody: ${jsonEncode(requestBody)}");
 
     // Send request
     final response = await DioClient()
