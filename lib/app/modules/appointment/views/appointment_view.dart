@@ -173,17 +173,27 @@ class AppointmentView extends GetView<AppointmentController> {
                               await controller.getAppointments(),
                           child: ListView.separated(
                             padding: EdgeInsets.zero,
-                            itemCount: controller.sortedAppointments.length,
+                            itemCount: controller.sortedAppointments
+                                .where(
+                                    (e) => e.status!.statusName != "Completed")
+                                .length,
                             itemBuilder: (context, index) {
-                              final appointment =
-                                  controller.sortedAppointments[index];
+                              final appointment = controller.sortedAppointments
+                                  .where((e) =>
+                                      e.status!.statusName != "Completed")
+                                  .toList()[index];
                               return SplashContainer(
                                 radius: 8,
                                 color: Colors.white,
                                 onPressed: () {
                                   controller.isTyping(false);
                                   controller.selectSingleAppointments(
-                                      appointment, index, false);
+                                      appointment,
+                                      controller.sortedAppointments.indexWhere(
+                                          (element) =>
+                                              element.apptID ==
+                                              appointment.apptID),
+                                      false);
                                   // var createdDateTime = dateTimeConverter(
                                   //     inputFormat: "yyyy/MM/dd hh:mm a",
                                   //     inputTime: appointment.createdDateTime

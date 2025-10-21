@@ -26,6 +26,7 @@ class GeneralTextField extends StatelessWidget {
       this.maxLine,
       this.minLine,
       this.textAlignment,
+      this.isEnabled = false,
       this.onEditingComplete});
 
   final FocusNode? focusNode;
@@ -45,9 +46,11 @@ class GeneralTextField extends StatelessWidget {
   final int? maxLine;
   final int? minLine;
   final TextAlign? textAlignment;
+  final bool isEnabled;
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      enabled: isEnabled,
       controller: textEditingController,
       style: readOnly == true
           ? theme.textTheme.bodyMedium

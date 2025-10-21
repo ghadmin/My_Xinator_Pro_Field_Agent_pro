@@ -210,68 +210,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 padding: const EdgeInsets.all(
                                                     6), // Reduced padding
                                                 child: CircleAvatar(
-                                                  backgroundColor: controller
-                                                              .settingController
-                                                              .selectedAppointmentsStatus
-                                                              .value
-                                                              ?.statusName ==
-                                                          "Installation In Progress"
-                                                      ? Color(0xffE98862)
-                                                      : controller
-                                                                  .settingController
-                                                                  .selectedAppointmentsStatus
-                                                                  .value
-                                                                  ?.statusName ==
-                                                              "Installation in Progress"
-                                                          ? Color(0xffE98862)
-                                                          : controller
-                                                                      .settingController
-                                                                      .selectedAppointmentsStatus
-                                                                      .value
-                                                                      ?.statusName ==
-                                                                  "Scheduled"
-                                                              ? Color(
-                                                                  0xff2E888B)
-                                                              : controller
-                                                                          .settingController
-                                                                          .selectedAppointmentsStatus
-                                                                          .value
-                                                                          ?.statusName ==
-                                                                      "Cancelled"
-                                                                  ? Colors.red
-                                                                  : Color(
-                                                                      0xff0CBC8B),
-                                                  foregroundColor: controller
-                                                              .settingController
-                                                              .selectedAppointmentsStatus
-                                                              .value
-                                                              ?.statusName ==
-                                                          "Installation In Progress"
-                                                      ? Color(0xffE98862)
-                                                      : controller
-                                                                  .settingController
-                                                                  .selectedAppointmentsStatus
-                                                                  .value
-                                                                  ?.statusName ==
-                                                              "Installation in Progress"
-                                                          ? Color(0xffE98862)
-                                                          : controller
-                                                                      .settingController
-                                                                      .selectedAppointmentsStatus
-                                                                      .value
-                                                                      ?.statusName ==
-                                                                  "Scheduled"
-                                                              ? Color(
-                                                                  0xff2E888B)
-                                                              : controller
-                                                                          .settingController
-                                                                          .selectedAppointmentsStatus
-                                                                          .value
-                                                                          ?.statusName ==
-                                                                      "Cancelled"
-                                                                  ? Colors.red
-                                                                  : Color(
-                                                                      0xff0CBC8B),
+                                                  backgroundColor:
+                                                      getStatusColor(controller
+                                                          .settingController
+                                                          .selectedAppointmentsStatus
+                                                          .value!
+                                                          .statusName!),
                                                 ),
                                               ),
                                             ),
@@ -2318,16 +2262,83 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
                                                   children: [
-                                                    // Show TagName instead of time
-                                                    TextWidget(
-                                                      text: item.tagName ?? "",
-                                                      style: TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.bold),
+                                                    // Tag section
+                                                    Row(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Icon(Icons.label,
+                                                            color:
+                                                                Colors.blueGrey,
+                                                            size: 15.sp),
+                                                        SizedBox(width: 6),
+                                                        Expanded(
+                                                          child: TextWidget(
+                                                            text:
+                                                                "${item.tagName ?? 'No Tag'} (${item.imageList!.first.createdAt!.split(" ")[0]})",
+                                                            style:
+                                                                const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              fontSize: 15,
+                                                            ),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
+
+                                                    SizedBox(height: 6),
+
+                                                    // Description section
+                                                    Row(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Icon(Icons.description,
+                                                            color: Colors.teal,
+                                                            size: 15.sp),
+                                                        SizedBox(width: 6),
+                                                        Expanded(
+                                                          child: TextWidget(
+                                                            maxLines: 5,
+                                                            text: item
+                                                                        .imageList!
+                                                                        .first
+                                                                        .description
+                                                                        ?.trim()
+                                                                        .isNotEmpty ==
+                                                                    true
+                                                                ? item
+                                                                    .imageList!
+                                                                    .first
+                                                                    .description!
+                                                                : "N/A",
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 16,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w400,
+                                                              color: Colors
+                                                                  .black87,
+                                                            ),
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .visible,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+
                                                     SizedBox(height: 10.h),
 
-                                                    // Horizontal scroll for images
+                                                    // Keep your existing horizontal image scroll
                                                     SingleChildScrollView(
                                                       scrollDirection:
                                                           Axis.horizontal,
@@ -2336,24 +2347,22 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           ...(item.imageList ??
                                                                   [])
                                                               .map((img) {
-                                                            // Convert Base64 to memory image
-
                                                             return GestureDetector(
                                                               onTap: () {
-                                                                // Show dialog with full image
                                                                 showDialog(
                                                                   context:
                                                                       context,
                                                                   builder: (_) =>
                                                                       Dialog(
-                                                                          child:
-                                                                              Image.memory(
-                                                                    img.bytes!,
-                                                                    fit: BoxFit
-                                                                        .cover,
-                                                                    gaplessPlayback:
-                                                                        true,
-                                                                  )),
+                                                                    child: Image
+                                                                        .memory(
+                                                                      img.bytes!,
+                                                                      fit: BoxFit
+                                                                          .cover,
+                                                                      gaplessPlayback:
+                                                                          true,
+                                                                    ),
+                                                                  ),
                                                                 );
                                                               },
                                                               child: Container(
@@ -2389,8 +2398,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     Divider(
                                                       height: 10,
                                                       thickness: 1,
-                                                      color: Colors.blueGrey,
-                                                    )
+                                                      color: Colors
+                                                          .blueGrey.shade200,
+                                                    ),
                                                   ],
                                                 );
                                               },
@@ -3567,16 +3577,7 @@ Widget buildStatusGrid(BuildContext context, SettingsController controller,
                         padding: EdgeInsets.all(6.sp),
                         child: CircleAvatar(
                           radius: 20.r,
-                          backgroundColor: status.statusName ==
-                                  "Installation In Progress"
-                              ? Color(0xffE98862)
-                              : status.statusName == "Installation in Progress"
-                                  ? Color(0xffE98862)
-                                  : status.statusName == "Scheduled"
-                                      ? Color(0xff2E888B)
-                                      : status.statusName == "Cancelled"
-                                          ? Colors.red
-                                          : Color(0xff0CBC8B),
+                          backgroundColor: getStatusColor(status.statusName!),
                         ),
                       ),
                     ),
@@ -3862,6 +3863,41 @@ Widget _buildRow(String field, String value,
       ],
     ),
   );
+}
+
+Color getStatusColor(String statusName) {
+  switch (statusName) {
+    // 🔸 Existing ones (unchanged)
+    case "Installation In Progress":
+    case "Installation in Progress":
+      return const Color(0xffE98862);
+    case "Scheduled":
+      return const Color(0xff2E888B);
+    case "Cancelled":
+      return Colors.red;
+    case "Completed":
+      return const Color(0xff0CBC8B);
+
+    // 🔹 New ones (added)
+    case "Pending":
+      return const Color(0xFFFFC107); // Amber
+    case "Closed":
+      return const Color(0xFF607D8B); // Blue Grey
+    case "Dispatched":
+      return const Color(0xFF42A5F5); // Light Blue
+    case "FA-ID Sent":
+      return const Color(0xFF9575CD); // Purple
+    case "In-Route":
+      return const Color(0xFFFF9800); // Orange
+    case "Arrived":
+      return const Color(0xFF8BC34A); // Light Green
+    case "On-Hold":
+      return const Color(0xFFFF7043); // Deep Orange
+
+    // 🔸 Default (fallback)
+    default:
+      return const Color(0xFF9E9E9E); // Grey
+  }
 }
 
 Future<String> compressImage(String filePath) async {

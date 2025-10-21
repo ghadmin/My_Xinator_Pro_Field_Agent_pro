@@ -53,6 +53,7 @@ class DioClient {
     Map<String, dynamic>? params,
   }) async {
     try {
+      log(" params: $params");
       var response = await _dio.get(url,
           options: Options(headers: {}), queryParameters: params);
 
@@ -74,7 +75,7 @@ class DioClient {
           options: Options(headers: {}),
           queryParameters: params,
           data: payload);
-      log("inside response : $response");
+      log("inside body $body \n response : $response");
       return response.data;
     } catch (e) {
       rethrow;

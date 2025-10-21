@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:get/get.dart';
 import 'package:xinator_fsm_pro/utils/version_controller.dart';
 import 'app/data/local/hive/hive_adapters.dart';
@@ -44,5 +45,17 @@ Future<void> main() async {
 
   runApp(
     const MyApp(),
+  );
+  FlutterForegroundTask.init(
+    androidNotificationOptions: AndroidNotificationOptions(
+      channelId: 'com.pravera.flutter_foreground_task',
+      channelName: 'Foreground Task',
+      channelDescription: 'This is a foreground task',
+      channelImportance: NotificationChannelImportance.LOW,
+      priority: NotificationPriority.LOW,
+    ),
+    iosNotificationOptions: IOSNotificationOptions(),
+    foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.repeat(5000)),
   );
 }

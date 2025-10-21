@@ -179,7 +179,6 @@ class AppointmentController extends GetxController
   final appointments = RxList<Appointments>();
   final sortedAppointments = RxList<Appointments>();
   final selectedDateString = RxString('');
-
   final isBasicExpanded = RxBool(false);
   final isEquipmentExpanded = RxBool(false);
 
@@ -392,7 +391,7 @@ class AppointmentController extends GetxController
         params: {"CompanyId": companyID},
       ).catchError(handleError);
 
-      log("refreshing appointments ${jsonEncode(response)}");
+      // log("refreshing appointments ${jsonEncode(response)}");
 
       if (response == null || response.isEmpty) {
         isTaglistLoading(false);
@@ -493,6 +492,7 @@ class AppointmentController extends GetxController
       imageList.add({
         "ImageName": file.uri.pathSegments.last,
         "ImageBase64": base64Image,
+        "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now())
       });
     }
 
@@ -505,10 +505,10 @@ class AppointmentController extends GetxController
         "CompanyId": companyId,
         "TagName": tagName,
         "ImageList": imageList,
-        "Description": description
+        "Description": description,
       }
     };
-
+    log(" body: $requestBody");
     // Send request
     final response = await DioClient()
         .post(
@@ -555,6 +555,7 @@ class AppointmentController extends GetxController
                 params: queryParams,
               )
               .catchError(handleError);
+      log("image res : ${jsonEncode(response)}");
       if (response == null) {
         MySnackBar.showErrorToast(message: "Failed to load images");
       } else {
@@ -610,7 +611,7 @@ class AppointmentController extends GetxController
           "CompanyId": companyID,
           "userId": userID,
         },
-      ).catchError(handleError);
+      ).catchError(!showLoader ? handleError : () {});
       // log("refreshing appointments ${jsonEncode(response)}");
       if (response == null) {
         hideLoading();

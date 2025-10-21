@@ -49,7 +49,12 @@ class ImageListModel {
 class ImageList {
   String? imageName;
   String? imageBase64;
-  Uint8List? bytes; // 👈 cached decoded bytes
+  Uint8List? bytes;
+
+  String? createdAt;
+  String? description;
+
+  // 👈 cached decoded bytes
 
   ImageList({this.imageName, this.imageBase64}) {
     if (imageBase64 != null) {
@@ -60,6 +65,8 @@ class ImageList {
   ImageList.fromJson(Map<String, dynamic> json) {
     imageName = json['ImageName'];
     imageBase64 = json['ImageBase64'];
+    createdAt = json['CreatedAt'];
+    description = json['Description'];
     if (imageBase64 != null) {
       bytes = base64Decode(imageBase64!); // decode once when parsing
     }
@@ -69,6 +76,8 @@ class ImageList {
     final Map<String, dynamic> data = {};
     data['ImageName'] = imageName;
     data['ImageBase64'] = imageBase64;
+    data['CreatedAt'] = createdAt;
+    data['Description'] = description;
     return data;
   }
 }
