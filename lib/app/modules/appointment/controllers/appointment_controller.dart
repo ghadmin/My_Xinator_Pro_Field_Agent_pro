@@ -492,6 +492,7 @@ class AppointmentController extends GetxController
       imageList.add({
         "ImageName": file.uri.pathSegments.last,
         "ImageBase64": base64Image,
+        "Description": description,
         "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now())
       });
     }
@@ -504,8 +505,7 @@ class AppointmentController extends GetxController
         "CSLId": 0,
         "CompanyId": companyId,
         "TagName": tagName,
-        "ImageList": imageList,
-        "Description": description,
+        "ImageList": imageList
       }
     };
     log(" body: $requestBody");
