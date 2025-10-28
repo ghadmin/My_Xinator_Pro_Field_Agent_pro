@@ -15,6 +15,7 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/empty_widget.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
+import 'package:xinator_fsm_pro/app/modules/appointment/models/note_model.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/models/form_model.dart'
     show FormModel;
@@ -27,6 +28,7 @@ import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
+import '../../../service/helper/dialog_helper.dart';
 import '../../item/models/item_list_model.dart';
 import '../controllers/appointment_controller.dart';
 import '../models/tag_model.dart';
@@ -71,6 +73,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         // Pictures tab index
 
         controller.getImageList(true);
+      }
+      if (_tabController.index == 5) {
+        // Pictures tab index
+
+        controller.getAllNotes(showLoader: true);
       }
     });
   }
@@ -2656,9 +2663,19 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   children: [
                                     // Dropdown for selection
                                     InkWell(
-                                      onTap: () {
+                                      onTap: () async {
+                                        DialogHelper.showLoading();
+
+                                        await controller.getTagList();
+
+                                        DialogHelper.hideLoading();
+                                        controller.selectedTagId(-1);
+                                        controller.note1Controller.clear();
+                                        controller.selectedTagController.value
+                                            .clear();
+                                        controller.noteId(-1);
                                         showNotesDialog(
-                                            context, controller, theme);
+                                            context, controller, theme, false);
                                       },
                                       child: Align(
                                         alignment: Alignment.centerRight,
@@ -2680,110 +2697,194 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                                     // Notes list
 
-                                    Obx(() => ListView.builder(
-                                          shrinkWrap: true,
-                                          physics:
-                                              const NeverScrollableScrollPhysics(),
-                                          itemCount: controller.noteList.length,
-                                          itemBuilder: (context, index) {
-                                            final note =
-                                                controller.noteList[index];
-                                            return Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                  vertical: 4.h),
-                                              child: Container(
-                                                padding: EdgeInsets.all(12.sp),
-                                                decoration: BoxDecoration(
-                                                  color: index == 0
-                                                      ? Colors.green[50]
-                                                      : Colors.grey[100],
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          8.sp),
-                                                ),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    // Row with User Name on Left, Date-Time on Right
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                    Obx(() => controller.noteList.isEmpty &&
+                                            controller.noteList.isEmpty
+                                        ? Center(
+                                            child: TextWidget(
+                                                text: "No Notes Found"),
+                                          )
+                                        : ListView.builder(
+                                            shrinkWrap: true,
+                                            physics:
+                                                const NeverScrollableScrollPhysics(),
+                                            itemCount:
+                                                controller.noteList.length,
+                                            itemBuilder: (context, index) {
+                                              final note =
+                                                  controller.noteList[index];
+
+                                              return GestureDetector(
+                                                onTap: note.userId!.trim() ==
+                                                        controller.userId
+                                                            .toString()
+                                                            .trim()
+                                                    ? () {
+                                                        controller
+                                                            .selectedTagId(
+                                                                note.tagId);
+                                                        controller
+                                                                .note1Controller
+                                                                .text =
+                                                            note.description!;
+                                                        controller
+                                                                .selectedTagController
+                                                                .value
+                                                                .text =
+                                                            controller
+                                                                .allTagList
+                                                                .where((e) =>
+                                                                    e.id ==
+                                                                    note.tagId)
+                                                                .first
+                                                                .name;
+                                                        controller
+                                                            .noteId(note.id);
+                                                        showNotesDialog(
+                                                            context,
+                                                            controller,
+                                                            theme,
+                                                            true);
+                                                      }
+                                                    : () {
+                                                        showNoteDetailsDialog(
+                                                            context,
+                                                            note,
+                                                            theme,
+                                                            controller
+                                                                .allTagList
+                                                                .where((e) =>
+                                                                    e.id ==
+                                                                    note.tagId)
+                                                                .first
+                                                                .name);
+                                                      },
+                                                child: Padding(
+                                                  padding: EdgeInsets.symmetric(
+                                                      vertical: 4.h),
+                                                  child: Container(
+                                                    padding:
+                                                        EdgeInsets.all(12.sp),
+                                                    decoration: BoxDecoration(
+                                                      color: note.userId!
+                                                                  .trim() ==
+                                                              controller.userId
+                                                                  .toString()
+                                                                  .trim()
+                                                          ? Colors.green[50]
+                                                          : Colors.grey[100],
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8.sp),
+                                                    ),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
                                                       children: [
+                                                        // Row with User Name on Left, Date-Time on Right
                                                         Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
                                                           children: [
-                                                            Icon(Icons.person,
-                                                                size: 14.sp,
-                                                                color: Colors
-                                                                    .grey[600]),
-                                                            SizedBox(
-                                                                width: 6.w),
+                                                            Row(
+                                                              children: [
+                                                                Icon(
+                                                                    Icons
+                                                                        .person,
+                                                                    size: 14.sp,
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        600]),
+                                                                SizedBox(
+                                                                    width: 6.w),
+                                                                Text(
+                                                                  note.userName ??
+                                                                      "N/A",
+                                                                  style: theme
+                                                                      .textTheme
+                                                                      .bodySmall
+                                                                      ?.copyWith(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
                                                             Text(
-                                                              note.userName,
+                                                              DateFormat(
+                                                                      "dd MMM yyyy")
+                                                                  .format(DateTime
+                                                                      .parse(note
+                                                                          .createdAt!)),
                                                               style: theme
                                                                   .textTheme
                                                                   .bodySmall
                                                                   ?.copyWith(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
+                                                                color: Colors
+                                                                    .grey[600],
                                                               ),
                                                             ),
                                                           ],
                                                         ),
-                                                        Text(
-                                                          "${note.date} • ${note.time}",
-                                                          style: theme.textTheme
-                                                              .bodySmall
-                                                              ?.copyWith(
-                                                            color: Colors
-                                                                .grey[600],
+                                                        SizedBox(height: 8.h),
+
+                                                        // Tag as a chip
+                                                        Container(
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal:
+                                                                      8.w,
+                                                                  vertical:
+                                                                      4.h),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.blue
+                                                                .withValues(
+                                                                    alpha: 0.1),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12.sp),
                                                           ),
+                                                          child: Text(
+                                                            controller
+                                                                .allTagList
+                                                                .where((e) =>
+                                                                    e.id ==
+                                                                    note.tagId)
+                                                                .first
+                                                                .name,
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodySmall
+                                                                ?.copyWith(
+                                                              color:
+                                                                  Colors.blue,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        SizedBox(height: 8.h),
+
+                                                        // Note Content
+                                                        TextWidget(
+                                                          text:
+                                                              note.description! ??
+                                                                  "N/A",
+                                                          style: theme.textTheme
+                                                              .bodyMedium,
                                                         ),
                                                       ],
                                                     ),
-                                                    SizedBox(height: 8.h),
-
-                                                    // Tag as a chip
-                                                    Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              horizontal: 8.w,
-                                                              vertical: 4.h),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.blue
-                                                            .withOpacity(0.1),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                                    12.sp),
-                                                      ),
-                                                      child: Text(
-                                                        note.selectedTag,
-                                                        style: theme
-                                                            .textTheme.bodySmall
-                                                            ?.copyWith(
-                                                          color: Colors.blue,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    SizedBox(height: 8.h),
-
-                                                    // Note Content
-                                                    Text(
-                                                      note.content,
-                                                      style: theme
-                                                          .textTheme.bodyMedium,
-                                                    ),
-                                                  ],
+                                                  ),
                                                 ),
-                                              ),
-                                            );
-                                          },
-                                        )),
+                                              );
+                                            },
+                                          )),
                                   ],
                                 ),
                               ),
@@ -2958,8 +3059,8 @@ Future<String?> generateVideoThumbnail(String videoPath) async {
   );
 }
 
-void showNotesDialog(
-    BuildContext context, AppointmentController controller, ThemeData theme) {
+void showNotesDialog(BuildContext context, AppointmentController controller,
+    ThemeData theme, bool isOld) {
   showDialog(
     context: context,
     barrierDismissible: false, // Prevent closing by tapping outside
@@ -2972,117 +3073,117 @@ void showNotesDialog(
         child: Padding(
           padding: EdgeInsets.all(16.sp),
           child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                TextWidget(
-                  text: "Add / Update Notes",
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12.sp,
+            child: Obx(
+              () => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  TextWidget(
+                    text: "Add / Update Notes",
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.sp,
+                    ),
                   ),
-                ),
-                SizedBox(height: 16.h),
-
-                // Dropdown
-                TextWidget(
-                  text: "Select Tag",
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: LightThemeColors.hintTextColor,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                Obx(
-                  () => DropdownButton<String>(
-                    value: controller.selectedTabOption.value,
-                    items: [
-                      "Appointment",
-                      "Equipment",
-                      "Customer Details",
-                    ]
-                        .map(
-                          (option) => DropdownMenuItem(
-                            value: option,
-                            child: Text(option),
+                  SizedBox(height: 16.h),
+                  // notes tag..
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: GestureDetector(
+                      onTap: () async {
+                        controller.getTagList();
+                        controller.selectedTagController.value.clear();
+                        controller.selectedTagId(-1);
+                        Get.toNamed(Routes.TAG_DETAILS);
+                      },
+                      child: AbsorbPointer(
+                        child: TextFormField(
+                          controller: controller.selectedTagController.value,
+                          decoration: InputDecoration(
+                            labelText: 'Select Tag',
+                            suffixIcon: const Icon(Icons.arrow_drop_down),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        )
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) controller.selectedTabOption.value = val;
-                    },
-                    isExpanded: true,
-                  ),
-                ),
-                SizedBox(height: 16.h),
-
-                // Notes input
-                TextWidget(
-                  text: "Notes",
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: LightThemeColors.hintTextColor,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.start,
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: GeneralTextField(
-                    maxLine: 4,
-                    hint: "Add a note here..",
-                    theme: theme,
-                    textEditingController: controller.note1Controller,
-                    onChanged: (v) {
-                      controller.isTyping(true);
-                      controller.noteText(v);
-                    },
-                    onEditingComplete: () {
-                      controller.isTyping(false);
-                    },
-                  ),
-                ),
-
-                SizedBox(height: 20.h),
-
-                // Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Cancel
-                    Expanded(
-                      child: SizedBox(
-                        height: 48.sp,
-                        child: PrimaryButton(
-                          title: "Cancel",
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          inactive: false,
                         ),
                       ),
                     ),
-                    SizedBox(width: 12.w),
-                    // Update
-                    Expanded(
-                      child: SizedBox(
-                        height: 48.sp,
-                        child: PrimaryButton(
-                          title: "Update",
-                          onPressed: () async {
-                            await controller.updateAppointment();
-                            Navigator.pop(context);
-                          },
-                          inactive: false,
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Notes input
+                  TextWidget(
+                    text: "Notes",
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: LightThemeColors.hintTextColor,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.start,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GeneralTextField(
+                      maxLine: 4,
+                      hint: "Add a note here..",
+                      theme: theme,
+                      isEnabled: true,
+                      textEditingController: controller.note1Controller,
+                      onChanged: (v) {
+                        controller.isTyping(true);
+                        controller.noteText(v);
+                      },
+                      onEditingComplete: () {
+                        controller.isTyping(false);
+                      },
+                    ),
+                  ),
+
+                  SizedBox(height: 20.h),
+
+                  // Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Cancel
+                      Expanded(
+                        child: SizedBox(
+                          height: 48.sp,
+                          child: PrimaryButton(
+                            backgroundColor: Colors.redAccent,
+                            title: "Cancel",
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            inactive: false,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      SizedBox(width: 12.w),
+                      // Update
+                      Expanded(
+                        child: SizedBox(
+                          height: 48.sp,
+                          child: PrimaryButton(
+                            backgroundColor:
+                                controller.selectedTagId.value != -1
+                                    ? LightThemeColors.primaryColor
+                                    : LightThemeColors.buttonDisabledColor,
+                            title: isOld ? "Update" : "Save",
+                            onPressed: () async {
+                              await controller.saveNote(isOld);
+                              // Navigator.pop(context);
+                            },
+                            inactive: false,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -5216,6 +5317,125 @@ void openGoogleMaps(String query) async {
   }
 }
 
+void showNoteDetailsDialog(
+    BuildContext context, NoteModel note, ThemeData theme, String tagName) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      final screenHeight = MediaQuery.of(context).size.height;
+
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.sp),
+        ),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.sp, vertical: 24.sp),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            // Allow the dialog to expand up to 80% of the screen height
+            maxHeight: screenHeight * 0.8,
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(16.sp),
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Center(
+                    child: Text(
+                      "Note Details",
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12.sp,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+
+                  // User Name & Date Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.person,
+                              size: 14.sp, color: Colors.grey[600]),
+                          SizedBox(width: 6.w),
+                          Text(
+                            note.userName ?? "N/A",
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        DateFormat("dd MMM yyyy").format(
+                          DateTime.parse(note.createdAt!),
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8.h),
+
+                  // Tag chip
+                  Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12.sp),
+                    ),
+                    child: TextWidget(
+                      text: tagName,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+
+                  // Description
+                  TextWidget(
+                    textAlign: TextAlign.justify,
+                    maxLines: 500,
+                    overflow: TextOverflow.visible,
+                    text: note.description ?? "No description available.",
+                    style: theme.textTheme.bodyMedium,
+                  ),
+
+                  SizedBox(height: 20.h),
+
+                  // Close Button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        "Close",
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
 void showProductDialog(BuildContext context) {
   showDialog(
     context: context,
@@ -5241,19 +5461,4 @@ void showProductDialog(BuildContext context) {
       );
     },
   );
-}
-
-class Note {
-  final String date;
-  final String time;
-  final String userName;
-  final String selectedTag;
-  final String content;
-
-  Note(
-      {required this.date,
-      required this.time,
-      required this.userName,
-      required this.selectedTag,
-      required this.content});
 }

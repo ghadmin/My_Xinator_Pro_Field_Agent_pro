@@ -31,4 +31,7 @@ class ApiUrl {
   static const getAllTagUrl = "$baseUrl/GetAllTags";
   static const saveTagUrl = "$baseUrl/SaveTag";
   static const updateTagUrl = "$baseUrl/UpdateTag";
+  static const saveNoteUrl = "$baseUrl/SaveNote";
+  static const updateNoteUrl = "$baseUrl/UpdateNote";
+  static const getAllNotesUrl = "$baseUrl/GetAllNote";
 }

@@ -194,6 +194,8 @@ class AppointmentView extends GetView<AppointmentController> {
                                               element.apptID ==
                                               appointment.apptID),
                                       false);
+                                  controller.getTagList();
+                                  controller.getCurrentUserId();
                                   // var createdDateTime = dateTimeConverter(
                                   //     inputFormat: "yyyy/MM/dd hh:mm a",
                                   //     inputTime: appointment.createdDateTime

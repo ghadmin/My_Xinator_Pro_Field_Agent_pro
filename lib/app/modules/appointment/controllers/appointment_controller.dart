@@ -30,6 +30,7 @@ import '../../../service/helper/network_connectivity.dart';
 import '../../item/models/item_list_model.dart';
 import '../../settings/models/ticket_status_model.dart';
 import '../models/appointment_model.dart';
+import '../models/note_model.dart';
 
 class MediaModel {
   String time;
@@ -106,74 +107,7 @@ class AppointmentController extends GetxController
   RxInt selectedStatusValue = 0.obs;
   RxInt selectedTicketStatusValue = 0.obs;
   RxString selectedTabOption = "Appointment".obs;
-  final noteList = RxList<Note>([
-    Note(
-        date: "25-10-2025",
-        time: "12:00 am",
-        userName: "Hridoy",
-        selectedTag: "Appointment",
-        content: "appointment confirm"),
-    Note(
-        date: "26-10-2025",
-        time: "01:00 pm",
-        userName: "John",
-        selectedTag: "Follow Up",
-        content: "follow up call"),
-    Note(
-        date: "27-10-2025",
-        time: "02:30 pm",
-        userName: "Alice",
-        selectedTag: "Completed",
-        content: "service completed"),
-    Note(
-        date: "28-10-2025",
-        time: "03:45 pm",
-        userName: "Bob",
-        selectedTag: "Pending",
-        content: "awaiting customer response"),
-    Note(
-        date: "29-10-2025",
-        time: "04:15 pm",
-        userName: "Eve",
-        selectedTag: "Cancelled",
-        content: "appointment cancelled"),
-    Note(
-        date: "28-10-2025",
-        time: "03:45 pm",
-        userName: "Bob",
-        selectedTag: "Pending",
-        content: "awaiting customer response"),
-    Note(
-        date: "29-10-2025",
-        time: "04:15 pm",
-        userName: "Eve",
-        selectedTag: "Cancelled",
-        content: "appointment cancelled"),
-    Note(
-        date: "28-10-2025",
-        time: "03:45 pm",
-        userName: "Bob",
-        selectedTag: "Pending",
-        content: "awaiting customer response"),
-    Note(
-        date: "29-10-2025",
-        time: "04:15 pm",
-        userName: "Eve",
-        selectedTag: "Cancelled",
-        content: "appointment cancelled"),
-    Note(
-        date: "28-10-2025",
-        time: "03:45 pm",
-        userName: "Bob",
-        selectedTag: "Pending",
-        content: "awaiting customer response"),
-    Note(
-        date: "29-10-2025",
-        time: "04:15 pm",
-        userName: "Eve",
-        selectedTag: "Cancelled",
-        content: "appointment cancelled"),
-  ]);
+  final noteList = RxList<NoteModel>([]);
 
   /// API ///
   final appointments = RxList<Appointments>();
@@ -191,6 +125,45 @@ class AppointmentController extends GetxController
   final selectedAppointment = Rx<Appointments?>(null);
   final isTyping = RxBool(false);
   final selectedEstimateOrInvoiceIndex = RxInt(0);
+
+  Future<void> getAllNotes({bool showLoader = true}) async {
+    if (showLoader) showLoading();
+
+    if (await NetworkConnectivity.isNetworkAvailable()) {
+      var companyID = await MySharedPref.getCompanyID();
+
+      var response = await DioClient().get(
+        url: ApiUrl.getAllNotesUrl,
+        params: {
+          "companyId": companyID,
+        },
+      ).catchError(!showLoader ? handleError : () {});
+
+      if (response == null) {
+        hideLoading();
+        showEmptyWidget();
+        return;
+      }
+
+      if (response.isEmpty) {
+        noteList.clear();
+        if (showLoader) hideLoading();
+        showEmptyWidget();
+        return;
+      }
+
+      noteList.assignAll(
+        (response as List).map((e) => NoteModel.fromJson(e)).toList(),
+      );
+
+      hideLoading();
+
+      if (noteList.isEmpty) {
+        showEmptyWidget();
+      }
+    }
+  }
+
   void selectSingleAppointments(
       Appointments? appointment, int index, bool fromPeriodic) {
     if (!fromPeriodic) {
@@ -303,6 +276,7 @@ class AppointmentController extends GetxController
       }
       invoiceController.createTotalForEdit();
     }
+    getAllNotes(showLoader: false);
   }
 
   Future<void> pickDate() async {
@@ -379,6 +353,14 @@ class AppointmentController extends GetxController
   final isTaglistLoading = RxBool(false);
   final selectedTagController =
       Rx<TextEditingController>(TextEditingController());
+  final selectedTagId = RxInt(-1);
+
+  final userId = Rx<dynamic>(null);
+  Future<void> getCurrentUserId() async {
+    var userID = await MySharedPref.getUserName();
+    userId(userID);
+  }
+
   Future<void> getTagList() async {
     isTaglistLoading(true);
     isAppointmentEmpty.value = false;
@@ -431,6 +413,7 @@ class AppointmentController extends GetxController
             (tag) => tag.name.toLowerCase().contains(query.toLowerCase())),
       );
     }
+    selectedTabOption(filteredTags.first.name);
   }
 
   Future<bool> addNewTag(String tagName) async {
@@ -771,6 +754,43 @@ class AppointmentController extends GetxController
 
     hideLoading();
     Get.back();
+    MySnackBar.showToast(message: response);
+  }
+
+  final noteId = RxInt(-1);
+  Future<void> saveNote(bool isForUpdate) async {
+    showLoading();
+
+    var companyID = await MySharedPref.getCompanyID();
+    var userID = await MySharedPref.getUserName();
+
+    var response = await DioClient().post(
+      url: isForUpdate
+          ? ApiUrl.updateNoteUrl
+          : ApiUrl.saveNoteUrl, // 👈 Replace with your actual endpoint
+      body: {
+        "note": {
+          "Id": noteId.value == -1 ? 0 : noteId.value,
+          "Description": noteText
+              .value, // 👈 assuming you have a TextEditingController or Rx variable
+          "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now()),
+          "CSLId": 0,
+          "CustomerId": customerID,
+          "AppointmentId": appointmentID,
+          "CompanyId": companyID,
+          "UserId": userID,
+          "TagId": selectedTagId.value
+        }
+      },
+    ).catchError(handleError);
+
+    if (response == null) return;
+
+    // await getAppointments(); // optional, if you want to refresh after saving
+
+    hideLoading();
+    Get.back();
+    getAllNotes(showLoader: false);
     MySnackBar.showToast(message: response);
   }
 

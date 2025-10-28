@@ -66,6 +66,8 @@ class TagSelectionScreen extends GetView<AppointmentController> {
                                 Get.back();
                                 controller.selectedTagController.value.text =
                                     controller.filteredTags[index].name;
+                                controller.selectedTagId(
+                                    controller.filteredTags[index].id);
                               },
                             ),
                           );
