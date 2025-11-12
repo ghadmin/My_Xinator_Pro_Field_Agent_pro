@@ -5,6 +5,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/empty_widget.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
@@ -32,6 +34,7 @@ import '../../../service/helper/dialog_helper.dart';
 import '../../item/models/item_list_model.dart';
 import '../controllers/appointment_controller.dart';
 import '../models/tag_model.dart';
+import 'map_view.dart';
 
 class AppointmentDetailsView extends StatefulWidget {
   const AppointmentDetailsView({super.key});
@@ -383,8 +386,87 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             Expanded(
                                               child: GestureDetector(
                                                 onTap: () async {
-                                                  await openMapWithRoute(
-                                                      controller.address);
+                                                  await controller
+                                                      .initializeWebController();
+                                                  showDialog(
+                                                    barrierDismissible: true,
+                                                    context: context,
+                                                    builder:
+                                                        (BuildContext context) {
+                                                      return Dialog(
+                                                        // Make dialog full width
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Expanded(
+                                                              child: Container(
+                                                                width: double
+                                                                    .infinity, // ← This makes it full width
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        20),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              15.r),
+                                                                ),
+                                                                child: Padding(
+                                                                  padding: EdgeInsets
+                                                                      .symmetric(
+                                                                          horizontal:
+                                                                              12.sp),
+                                                                  child: Obx(
+                                                                    () => Stack(
+                                                                      children: [
+                                                                        ClipRRect(
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(12.sp),
+                                                                          child:
+                                                                              WebViewWidget(
+                                                                            controller:
+                                                                                controller.webController!,
+                                                                          ),
+                                                                        ),
+                                                                        if (controller
+                                                                            .isLoading
+                                                                            .value)
+                                                                          const Center(
+                                                                            child:
+                                                                                CircularProgressIndicator(color: Colors.blue),
+                                                                          ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                                height: 10.sp),
+                                                            SizedBox(
+                                                                height: 45.sp,
+                                                                width: 120.sp,
+                                                                child: PrimaryButton(
+                                                                    title:
+                                                                        "Done",
+                                                                    onPressed:
+                                                                        () => Get
+                                                                            .back(),
+                                                                    inactive:
+                                                                        false)),
+                                                            SizedBox(
+                                                                height: 25.sp),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  );
+
+                                                  // await openMapWithRoute(
+                                                  //     "mohakhali dhaka bangladesh");
                                                 },
                                                 child: TextWidget(
                                                   text: controller.address,
@@ -829,6 +911,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       ),
                                                       SizedBox(height: 10.h),
                                                       GeneralTextField(
+                                                        isEnabled: true,
                                                         maxLine: 4,
                                                         hint:
                                                             "Add a note here..",
@@ -1781,6 +1864,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     await controller
                                                         .invoiceController
                                                         .getInvoiceName();
+                                                    // controller.invoiceController
+                                                    //     .isNoneSelected(false);
                                                     Get.toNamed(
                                                         Routes.INVOICE_CREATE);
                                                   }
@@ -1910,7 +1995,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           "MM/dd/yyyy");
                                               controller.invoiceController
                                                   .subtotal = proposal.subtotal
-                                                      ?.toStringAsFixed(1) ??
+                                                      ?.toStringAsFixed(2) ??
                                                   "";
                                               controller.invoiceController
                                                       .customerID.value =
@@ -1922,7 +2007,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   .value = proposal.type ?? "";
                                               controller.invoiceController.total
                                                   .value = proposal.total
-                                                      ?.toStringAsFixed(1) ??
+                                                      ?.toStringAsFixed(2) ??
                                                   "";
                                               controller.invoiceController
                                                       .newTotal.value =
@@ -1959,29 +2044,45 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   proposal.discount ?? 0.00;
                                               if (proposal.discountOption ==
                                                   "1") {
-                                                controller
-                                                    .invoiceController
-                                                    .editDiscountTextController
-                                                    .text = (((double.parse(proposal
-                                                                    .discount
-                                                                    ?.toString() ??
-                                                                "0.00")) *
-                                                            100) /
-                                                        double.parse(proposal
-                                                                .subtotal
-                                                                ?.toStringAsFixed(
-                                                                    2) ??
-                                                            "0.00"))
-                                                    .toStringAsFixed(2);
-                                              } else {
-                                                controller
-                                                    .invoiceController
-                                                    .editDiscountTextController
-                                                    .text = double.parse(
-                                                        proposal.discount
+                                                final discount =
+                                                    double.tryParse(proposal
+                                                                .discount
                                                                 ?.toString() ??
-                                                            "0.00")
-                                                    .toStringAsFixed(2);
+                                                            '0') ??
+                                                        0.0;
+                                                final subtotal =
+                                                    double.tryParse(proposal
+                                                                .subtotal
+                                                                ?.toString() ??
+                                                            '0') ??
+                                                        0.0;
+
+                                                double percentage = 0.0;
+                                                if (subtotal > 0) {
+                                                  percentage =
+                                                      (discount * 100) /
+                                                          subtotal;
+                                                }
+
+                                                controller
+                                                        .invoiceController
+                                                        .editDiscountTextController
+                                                        .text =
+                                                    percentage
+                                                        .toStringAsFixed(2);
+                                              } else {
+                                                final discount =
+                                                    double.tryParse(proposal
+                                                                .discount
+                                                                ?.toString() ??
+                                                            '') ??
+                                                        0.0;
+
+                                                controller
+                                                        .invoiceController
+                                                        .editDiscountTextController
+                                                        .text =
+                                                    discount.toStringAsFixed(2);
                                               }
 
                                               // Set tax values
@@ -1998,7 +2099,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       ?.rate
                                                       ?.toStringAsFixed(2) ??
                                                   "0.00";
-                                              log("alway proposal ${proposal.items}");
+                                              log("alway proposal ${proposal.items}"); //
                                               // Populate selectedItemList and initialize controllers
                                               if (proposal.items != null &&
                                                   proposal.items!.isNotEmpty) {
@@ -2048,6 +2149,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               await 0.5
                                                   .delay(); // Optional small delay before navigation
                                               controller.hideLoading();
+
+                                              controller
+                                                  .invoiceController.removedList
+                                                  .clear();
+
+                                              // controller.invoiceController
+                                              //     .isDetailsView(true);
+
                                               Get.toNamed(
                                                   Routes.INVOICE_DETAILS);
                                             },
@@ -3193,32 +3302,44 @@ void showNotesDialog(BuildContext context, AppointmentController controller,
 }
 
 Future<void> openMapWithRoute(String destinationAddress) async {
-  final encodedDestination = Uri.encodeComponent(destinationAddress);
+  try {
+    // ✅ Get current location
+    Position position = await Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(
+      accuracy: LocationAccuracy.high,
+    ));
+    final origin =
+        '${position.latitude},${position.longitude}'; // current location coordinates
+    final encodedDestination = Uri.encodeComponent(destinationAddress);
+    log("message origin $origin");
+    if (Platform.isIOS) {
+      // Google Maps (if installed)
+      final googleMapsUrl = Uri.parse(
+          'comgooglemaps://?saddr=$origin&daddr=$encodedDestination&directionsmode=driving');
+      // Apple Maps fallback
+      final appleMapsUrl = Uri.parse(
+          'https://maps.apple.com/?saddr=$origin&daddr=$encodedDestination');
 
-  if (Platform.isIOS) {
-    // First, try Google Maps (if installed)
-    final googleMapsUrl = Uri.parse(
-        'comgooglemaps://?daddr=$encodedDestination&directionsmode=driving');
-    final appleMapsUrl =
-        Uri.parse('https://maps.apple.com/?daddr=$encodedDestination');
-
-    if (await canLaunchUrl(googleMapsUrl)) {
-      await launchUrl(googleMapsUrl);
-    } else if (await canLaunchUrl(appleMapsUrl)) {
-      await launchUrl(appleMapsUrl);
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl);
+      } else if (await canLaunchUrl(appleMapsUrl)) {
+        await launchUrl(appleMapsUrl);
+      } else {
+        throw 'Could not launch maps on iOS';
+      }
     } else {
-      throw 'Could not launch maps on iOS';
-    }
-  } else {
-    // Android or others – open Google Maps web with directions
-    final googleMapsWebUrl = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&destination=$encodedDestination&travelmode=driving');
+      // ✅ Android or others – open Google Maps web with current location
+      final googleMapsWebUrl = Uri.parse(
+          'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$encodedDestination&travelmode=driving');
 
-    if (await canLaunchUrl(googleMapsWebUrl)) {
-      await launchUrl(googleMapsWebUrl, mode: LaunchMode.externalApplication);
-    } else {
-      throw 'Could not launch Google Maps';
+      if (await canLaunchUrl(googleMapsWebUrl)) {
+        await launchUrl(googleMapsWebUrl, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch Google Maps';
+      }
     }
+  } catch (e) {
+    print('Error launching map: $e');
   }
 }
 

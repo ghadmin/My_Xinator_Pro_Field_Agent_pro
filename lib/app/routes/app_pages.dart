@@ -116,7 +116,7 @@ class AppPages {
     // ),
     GetPage(
       name: _Paths.INVOICE_CREATE,
-      page: () => const CreateInvoiceView(),
+      page: () => CreateInvoiceView(),
       bindings: [InvoiceBinding(), FormBinding()],
     ),
     GetPage(

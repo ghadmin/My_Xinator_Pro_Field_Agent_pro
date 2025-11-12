@@ -11,6 +11,7 @@ import 'package:xinator_fsm_pro/app/components/global-widgets/my_snackbar.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/splash_container.dart';
 import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
 import 'package:xinator_fsm_pro/app/routes/app_pages.dart';
+import 'package:xinator_fsm_pro/app/service/helper/network_connectivity.dart';
 import 'package:xinator_fsm_pro/config/theme/dark_theme_colors.dart';
 import 'package:xinator_fsm_pro/config/theme/light_theme_colors.dart';
 
@@ -25,9 +26,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
         if (controller.isDirty.value) {
           final shouldSave = await _showUnsavedChangesDialogAsync(context);
           if (shouldSave == true) {
-            await controller.editInvoice(); // Save automatically
+            await controller.editInvoice();
+            // controller.isDetailsView(false); // Save automatically
             return true;
           } else {
+            // controller.isDetailsView(false);
             Get.back();
             return false; // Prevent pop
           }
@@ -134,7 +137,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 headingRowHeight: 40.sp,
                                 headingRowColor:
                                     WidgetStatePropertyAll(theme.primaryColor),
-                                headingTextStyle: TextStyle(
+                                headingTextStyle: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -147,20 +150,46 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   DataColumn(label: Text("Check Number")),
                                   DataColumn(label: Text("Source")),
                                 ],
-                                rows: controller.depositList
-                                    .map<DataRow>((deposit) {
-                                  return DataRow(
-                                    cells: [
-                                      DataCell(Text(deposit.createdDate ?? "")),
-                                      DataCell(Text(
-                                          "\$${deposit.amount?.toStringAsFixed(2) ?? "0.00"}")),
-                                      DataCell(Text(deposit.type ?? "")),
-                                      DataCell(Text(deposit.checkName ?? "")),
-                                      DataCell(Text(deposit.checkNumber ?? "")),
-                                      DataCell(Text(deposit.source ?? "")),
-                                    ],
-                                  );
-                                }).toList(),
+                                rows: controller.depositList.isEmpty
+                                    ? [
+                                        const DataRow(
+                                          cells: [
+                                            DataCell.empty,
+                                            DataCell.empty,
+                                            DataCell(
+                                              Center(
+                                                child: Text(
+                                                  "No deposit found",
+                                                  style: TextStyle(
+                                                      fontStyle:
+                                                          FontStyle.italic),
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell.empty,
+                                            DataCell.empty,
+                                            DataCell.empty,
+                                          ],
+                                        ),
+                                      ]
+                                    : controller.depositList
+                                        .map<DataRow>((deposit) {
+                                        return DataRow(
+                                          cells: [
+                                            DataCell(Text(
+                                                deposit.createdDate ?? "")),
+                                            DataCell(Text(
+                                                "\$${deposit.amount?.toStringAsFixed(2) ?? "0.00"}")),
+                                            DataCell(Text(deposit.type ?? "")),
+                                            DataCell(
+                                                Text(deposit.checkName ?? "")),
+                                            DataCell(Text(
+                                                deposit.checkNumber ?? "")),
+                                            DataCell(
+                                                Text(deposit.source ?? "")),
+                                          ],
+                                        );
+                                      }).toList(),
                               ),
                             ),
                           ),
@@ -739,8 +768,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
     );
   }
 
-  itemsList(ThemeData theme) {
-    log("selectedItem list length ${controller.selectedItemList.length}");
+  Widget itemsList(ThemeData theme) {
     return controller.selectedItemList.isEmpty
         ? SizedBox.shrink()
         : Card(
@@ -806,6 +834,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               IconButton(
                                 icon: Icon(Remix.edit_2_line),
                                 onPressed: () {
+                                  appointmentController
+                                      .isSelectSingleNeedToCall(true);
                                   showAdaptiveDialog(
                                     context: context,
                                     barrierDismissible: false,
@@ -920,15 +950,22 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                         Expanded(
                                                           child:
                                                               GeneralTextField(
+                                                            isEnabled: true,
                                                             hint: '1',
                                                             textInputType:
                                                                 TextInputType
                                                                     .number,
                                                             theme: theme,
-                                                            textEditingController:
-                                                                controller
-                                                                        .editQuantityControllers[
-                                                                    index],
+                                                            textEditingController: controller
+                                                                    .editQuantityControllers[
+                                                                index]
+                                                              ..text = (double.tryParse(controller
+                                                                          .editQuantityControllers[
+                                                                              index]
+                                                                          .text) ??
+                                                                      0)
+                                                                  .toInt()
+                                                                  .toString(),
                                                             onChanged: (value) {
                                                               controller
                                                                   .markAsDirty();
@@ -1006,6 +1043,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                   child: PrimaryButton(
                                                       title: "Close",
                                                       onPressed: () {
+                                                        appointmentController
+                                                            .isSelectSingleNeedToCall(
+                                                                false);
+                                                        controller
+                                                            .createTotalForEdit();
+                                                        controller
+                                                            .updateRequestedDepositAmount();
                                                         Get.back();
                                                       },
                                                       inactive: false),
@@ -1201,14 +1245,20 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 controller.editDiscountTextController,
                             onChanged: (value) {
                               controller.markAsDirty();
+
+                              // Allow only digits and one decimal point
                               final sanitized =
                                   value.replaceAll(RegExp(r'[^0-9.]'), '');
-                              if (sanitized.isEmpty) {
-                                controller.discount = "0.00";
-                              } else {
-                                controller.discount = sanitized;
-                              }
 
+                              // Safely convert to double
+                              final discountValue =
+                                  double.tryParse(sanitized) ?? 0.0;
+
+                              // Store a formatted value (avoid NaN)
+                              controller.discount =
+                                  discountValue.toStringAsFixed(2);
+
+                              // Update totals
                               controller.createTotalForEdit();
                               controller.updateRequestedDepositAmount();
                             },
@@ -1247,7 +1297,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   Padding(
                     padding: EdgeInsets.only(right: 12.sp),
                     child: Text(
-                      "-\$${(controller.invoiceDiscount.value).toStringAsFixed(2)}",
+                      "-\$${(controller.invoiceDiscount.value.isNaN || controller.invoiceDiscount.value.isInfinite) ? '0.00' : controller.invoiceDiscount.value.toStringAsFixed(2)}",
                       style: theme.textTheme.bodyLarge,
                     ),
                   ),
@@ -1783,26 +1833,20 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   decimal: true),
                               onChanged: (v) {
                                 controller.markAsDirty();
+
                                 final rate = double.tryParse(v) ?? 0.0;
-                                final total =
-                                    ((controller.invoiceSubtotal.value -
-                                                    controller.invoiceDiscount
-                                                        .value) -
-                                                controller
-                                                    .nonTaxableTotalInDetails
-                                                    .value) *
-                                            (double.tryParse(
-                                                    controller.tax.value) ??
-                                                0) /
-                                            100 +
-                                        ((controller.invoiceSubtotal.value) -
-                                            (controller.invoiceDiscount.value));
-                                final depositAmount = ((total -
-                                            double.parse(controller
-                                                .depositAmount.value)) *
-                                        rate /
-                                        100)
+
+                                // Get the current balance due
+                                final balanceDue = double.parse(
+                                        controller.invoiceTotal.value) -
+                                    double.parse(
+                                        controller.depositAmount.value);
+
+                                // Calculate requested deposit based on balance due
+                                final depositAmount = (balanceDue * rate / 100)
                                     .toStringAsFixed(2);
+
+                                // Update the text field
                                 controller
                                     .requestedDepositAmountEditTextController
                                     .text = depositAmount;
@@ -1870,6 +1914,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         title: "Pay Now",
                         onPressed: () {
                           if (controller.isDirty.value) {
+                            controller.total.value =
+                                (double.parse(controller.invoiceTotal.value) -
+                                        double.parse(
+                                            controller.depositAmount.value))
+                                    .toStringAsFixed(2);
                             _showUnsavedChangesDialog(context, () {
                               // User confirms to proceed
                               controller.depositRequestPay.value = false;

@@ -89,6 +89,7 @@ class PaymentByCashView extends GetView<InvoiceController> {
                               // height: 35.sp,
                               width: 100.sp,
                               child: GeneralTextField(
+                                isEnabled: true,
                                 hint: '',
                                 textInputType: TextInputType.numberWithOptions(
                                     decimal: true),

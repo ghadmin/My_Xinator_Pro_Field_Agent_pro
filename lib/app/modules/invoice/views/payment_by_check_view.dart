@@ -57,6 +57,7 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                   height: Get.size.width <= 440 ? 42.sp : null,
                   width: double.infinity,
                   child: GeneralTextField(
+                    isEnabled: true,
                     hint: "Enter Check Name",
                     textInputType: TextInputType.text,
                     theme: theme,

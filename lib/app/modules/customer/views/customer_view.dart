@@ -71,6 +71,7 @@ class CustomerView extends GetView<CustomerController> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: GeneralTextField(
+                          isEnabled: true,
                           hint: "Search here...",
                           theme: theme,
                           onChanged: (_) => controller.sortAppointmentsText(),

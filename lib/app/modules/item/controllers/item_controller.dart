@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:xinator_fsm_pro/app/modules/item/models/item_list_model.dart';
@@ -73,6 +75,7 @@ class ItemController extends GetxController with ExceptionHandler {
   }
 
   sortItems() {
+    log("ontap  ${items.length}");
     if (items.isEmpty) return;
 
     if (sortTextController.text.isEmpty) {

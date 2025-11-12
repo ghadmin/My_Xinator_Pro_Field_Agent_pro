@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/appointments_form_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/image_list_model.dart';
@@ -49,14 +51,14 @@ class AppointmentController extends GetxController
     WidgetsBinding.instance.addObserver(this);
 
     Future.delayed(const Duration(seconds: 3), () {
-      startPeriodic();
+      // startPeriodic();
     });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      startPeriodic();
+      // startPeriodic();
     } else if (state == AppLifecycleState.paused) {
       stop();
     }
@@ -250,11 +252,13 @@ class AppointmentController extends GetxController
     selectedAptIndex.value = index;
     if (selectedAppointment.value!.invoices != null &&
         selectedAppointment.value!.invoices!.isNotEmpty) {
+      debugPrint("coala ${selectedEstimateOrInvoiceIndex.value} ");
       for (var item in selectedAppointment
           .value!.invoices![selectedEstimateOrInvoiceIndex.value].items!) {
         if (invoiceController.selectedItemList
-            .where((e) => e.id == item.itemId)
-            .isEmpty) {
+                .where((e) => e.id == item.itemId)
+                .isEmpty &&
+            !invoiceController.removedList.contains(item.itemId)) {
           invoiceController.selectedItemList.add(ItemListModel(
             id: item.itemId,
             name: item.name,
@@ -274,7 +278,7 @@ class AppointmentController extends GetxController
               .add(TextEditingController(text: item.quantity ?? "1"));
         }
       }
-      invoiceController.createTotalForEdit();
+      if (!fromPeriodic) invoiceController.createTotalForEdit();
     }
     getAllNotes(showLoader: false);
   }
@@ -555,13 +559,15 @@ class AppointmentController extends GetxController
   }
 
   Timer? _pollingTimer;
-
+  final isSelectSingleNeedToCall = RxBool(false);
   Future<void> startPeriodic() async {
     var companyID = await MySharedPref.getCompanyID();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 120), (timer) async {
       if (companyID != null && companyID != "") {
         await getAppointments(showLoader: false);
-        if (selectedAppointment.value != null) {
+
+        if (selectedAppointment.value != null &&
+            !isSelectSingleNeedToCall.value) {
           selectSingleAppointments(sortedAppointments[selectedAptIndex.value],
               selectedAptIndex.value, true);
         }
@@ -681,6 +687,101 @@ class AppointmentController extends GetxController
       sortedAppointments.clear();
       sortedAppointments.addAll(list);
     }
+  }
+
+  Future<Position?> getCurrentLocation() async {
+    // Check if location services are enabled
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      print("Location services are disabled.");
+      return null;
+    }
+
+    // Check current permission status
+    PermissionStatus status = await Permission.location.status;
+
+    if (status.isDenied || status.isRestricted) {
+      // Request permission directly
+      status = await Permission.location.request();
+      if (!status.isGranted) {
+        print("Location permission denied.");
+        return null;
+      }
+    }
+
+    if (status.isPermanentlyDenied) {
+      // On iOS/Android, can't request again, user must enable manually
+      print("Location permission permanently denied.");
+      return null;
+    }
+
+    // Get current position
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      return position;
+    } catch (e) {
+      print("Error getting location: $e");
+      return null;
+    }
+  }
+
+  final RxBool isLoading = true.obs;
+  WebViewController? webController;
+  bool isWebControllerInitialized = false;
+  Future<void> initializeWebController() async {
+    double? currentLat;
+    double? currentLng;
+    Position? position = await getCurrentLocation();
+    if (position != null) {
+      currentLat = position.latitude;
+      currentLng = position.longitude;
+    }
+
+    final url = currentLng == null
+        ? "https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(address)}&travelmode=driving"
+        : "https://www.google.com/maps/dir/?api=1&origin=$currentLat,$currentLng&destination=${Uri.encodeComponent('daffodil international university, dhaka ')}&travelmode=driving";
+
+    webController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..enableZoom(true)
+      ..setBackgroundColor(Colors.white)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (url) {
+            isLoading.value = true;
+          },
+          onPageFinished: (url) {
+            isLoading.value = false;
+            webController?.runJavaScript("""
+    // Inject viewport settings
+    var meta = document.createElement('meta');
+    meta.name = 'viewport';
+    meta.content = 'width=device-width, initial-scale=.8, maximum-scale=1.0 user-scalable=no';
+    document.getElementsByTagName('head')[0].appendChild(meta);
+    document.body.style.zoom = "1";
+
+    // Hide sidebar panel
+    var sidePanel = document.querySelector('div[role="region"]');
+    if (sidePanel) {
+      sidePanel.style.display = 'none';
+    }
+
+    // Make map full width
+    var map = document.querySelector('#scene');
+    if (map) {
+      map.style.width = "100%";
+    }
+  """);
+          },
+          onNavigationRequest: (request) {
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(url));
+
+    isWebControllerInitialized = true;
   }
 
   void sortAppointmentsDate() {

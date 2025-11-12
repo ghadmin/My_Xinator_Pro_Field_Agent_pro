@@ -120,6 +120,7 @@ class AppointmentView extends GetView<AppointmentController> {
                           children: [
                             Expanded(
                               child: GeneralTextField(
+                                  isEnabled: true,
                                   hint: "Search here...",
                                   theme: theme,
                                   onChanged: (_) =>

@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -8,6 +9,7 @@ import 'package:xinator_fsm_pro/app/components/global-widgets/asset_image_box.da
 import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
 import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
+import 'package:xinator_fsm_pro/app/service/helper/network_connectivity.dart';
 import 'package:xinator_fsm_pro/utils/constants.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
@@ -15,14 +17,14 @@ import '../../../../utils/date_converter.dart';
 import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/splash_container.dart';
+import '../models/qbo_class_dropdown_model.dart' show QboClassModel;
 
 class CreateInvoiceView extends GetView<InvoiceController> {
   const CreateInvoiceView({super.key});
+
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
-    log("dsdssdsd ${controller.descriptionControllers.length}");
-    log("dsdssdsd  1 ${controller.selectedItemList.length}");
     return Scaffold(
       appBar: buildAppBar(context, theme),
       body: Obx(() => SafeArea(
@@ -162,6 +164,117 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                       ),
                     ),
                     SizedBox(height: 15.sp),
+                    Align(
+                      alignment: AlignmentGeometry.centerLeft,
+                      child: Text(
+                        "Location",
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: LightThemeColors.bodyTextSecondaryColor,
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 5.sp),
+                    DropdownButtonFormField<String>(
+                      initialValue: controller.isNoneSelected.value
+                          ? null
+                          : controller.selectedLocation.value.isEmpty
+                              ? null
+                              : controller.selectedLocation.value,
+                      hint: Text("Select Location"),
+                      isExpanded: true,
+                      dropdownColor: Colors.white,
+                      borderRadius: BorderRadius.circular(8.r),
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12.sp, vertical: 8.sp),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.r)),
+                      ),
+                      items: controller.locations.map((loc) {
+                        return DropdownMenuItem(value: loc, child: Text(loc));
+                      }).toList(),
+                      onChanged: controller.isNoneSelected.value
+                          ? null
+                          : (val) {
+                              controller.selectedLocation.value = val ?? "";
+                            },
+                    ),
+                    SizedBox(height: 5.sp),
+
+                    // Class Dropdown
+                    Align(
+                        alignment: AlignmentGeometry.centerLeft,
+                        child: Text(
+                          "Class",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: LightThemeColors.bodyTextSecondaryColor,
+                            fontSize: 16.sp,
+                          ),
+                        )),
+                    SizedBox(height: 5.sp),
+                    Obx(() {
+                      // This forces Obx to listen to the loading state
+                      final isLoading = controller.isLoadingQboClass.value;
+                      final classList = controller.qboClassList;
+
+                      return DropdownButtonFormField<QboClassModel>(
+                        initialValue: controller.selectedQboClass.value,
+                        hint: const Text("Select Class"),
+                        isExpanded: true,
+                        dropdownColor: Colors.white,
+                        borderRadius: BorderRadius.circular(8.r),
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12.sp, vertical: 8.sp),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                        ),
+
+                        items: isLoading
+                            ? [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  enabled: false,
+                                  child: Text("Loading..."),
+                                )
+                              ]
+                            : classList.isEmpty
+                                ? [
+                                    const DropdownMenuItem(
+                                      value: null,
+                                      enabled: false,
+                                      child: Text("No data available"),
+                                    )
+                                  ]
+                                : classList.map((cls) {
+                                    return DropdownMenuItem(
+                                      value: cls,
+                                      child: Text(cls.name),
+                                    );
+                                  }).toList(),
+
+                        onChanged: controller.isNoneSelected.value
+                            ? null
+                            : (val) {
+                                controller.selectedQboClass.value = val;
+                              },
+
+                        // onTap: () async {
+                        //   if (controller.qboClassList.isEmpty &&
+                        //       !controller.isLoadingQboClass.value) {
+                        //     controller.isLoadingQboClass.value = true;
+                        //     // Small delay to ensure UI updates
+                        //     await Future.delayed(Duration.zero);
+                        //     await controller.getQBOClasses();
+                        //     controller.isLoadingQboClass.value = false;
+                        //   }
+                        // },
+                      );
+                    }),
+                    SizedBox(height: 5.sp),
+
                     controller.descriptionControllers.isEmpty
                         ? SizedBox.shrink()
                         : Card(
@@ -383,7 +496,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                                 theme: theme,
                                                                                 textEditingController: controller.amountControllers[index],
                                                                                 onChanged: (value) {
-                                                                                  controller.createTotal(); // Recalculate total when amount changes
+                                                                                  // Recalculate total when amount changes
                                                                                 },
                                                                               ),
                                                                             ),
@@ -490,15 +603,19 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 separatorBuilder: (context, index) {
                                   return SizedBox(height: 8.sp);
                                 },
-                                itemCount: controller.selectedItemList.length),
+                                itemCount:
+                                    controller.descriptionControllers.length),
                           ),
-                    SizedBox(height: 8.sp),
+                    SizedBox(height: 20.sp),
+
                     Builder(builder: (context) {
                       return SizedBox(
                         height: 48.sp,
                         child: SecondaryButtonWithIcon(
                           title: "Add item",
                           onPressed: () {
+                            appointmentController
+                                .isSelectSingleNeedToCall(true);
                             controller.itemController.sortTextController
                                 .clear();
                             controller.itemController.sortItems();
@@ -518,6 +635,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                         SizedBox(
                                           height: 40.sp,
                                           child: GeneralTextField(
+                                              isEnabled: true,
                                               hint: "Search item",
                                               suffixIcon: Icon(
                                                 Icons.search,
@@ -591,7 +709,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                             .quantityControllers
                                                             .removeAt(idx);
                                                       }
-                                                      controller.createTotal();
+                                                      Future.delayed(
+                                                          Duration(seconds: 1));
                                                     },
                                                     title: Container(
                                                       padding:
@@ -681,6 +800,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                           child: PrimaryButton(
                                               title: "Close",
                                               onPressed: () {
+                                                appointmentController
+                                                    .isSelectSingleNeedToCall(
+                                                        false);
+                                                controller.createTotal();
                                                 Get.back();
                                               },
                                               inactive: false),
@@ -697,6 +820,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                         ),
                       );
                     }),
+
+                    // Checkbox
+
                     SizedBox(height: 15.sp),
                     Obx(() => Column(
                           children: [
@@ -1244,7 +1370,77 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                       child: PrimaryButton(
                         title: "Create",
                         onPressed: () async {
-                          await controller.createInvoice();
+                          final bool isNoneChecked =
+                              controller.isNoneSelected.value;
+                          final bool hasLocation =
+                              controller.selectedLocation.value.isNotEmpty;
+                          final bool hasClass =
+                              controller.selectedClass.value.isNotEmpty;
+
+                          if (!isNoneChecked && !hasLocation && !hasClass) {
+                            // Show dialog
+                            final bool? result = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text("Missing Information"),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      "Please select a Location and Class, or check 'Do Not Show Again'.",
+                                    ),
+                                    SizedBox(height: 10.h),
+                                    Row(
+                                      children: [
+                                        Obx(() => Checkbox(
+                                              activeColor: Colors.blue,
+                                              value: controller
+                                                  .isNoneSelected.value,
+                                              onChanged: (val) {
+                                                controller.isNoneSelected
+                                                    .value = val ?? false;
+                                                if (val == true) {
+                                                  controller.selectedLocation
+                                                      .value = "";
+                                                  controller
+                                                      .selectedClass.value = "";
+                                                }
+                                              },
+                                            )),
+                                        const Text("Do Not Show Again"),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(ctx)
+                                          .pop(controller.isNoneSelected.value);
+                                    },
+                                    child: const Text("OK"),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            // If user selected "Not applicable", continue to create invoice
+                            if (result == true) {
+                              final isPop = await controller.createInvoice();
+                              log("message: $isPop");
+                              if (isPop) {
+                                Get.close(1);
+                              }
+                            }
+
+                            return; // stop further execution if dialog was shown
+                          }
+
+                          // Proceed normally if all conditions are already satisfied
+                          final isPop = await controller.createInvoice();
+                          if (isPop) {
+                            Get.close(1);
+                          }
                         },
                         inactive: controller.selectedItemList.isEmpty,
                       ),

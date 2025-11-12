@@ -34,4 +34,6 @@ class ApiUrl {
   static const saveNoteUrl = "$baseUrl/SaveNote";
   static const updateNoteUrl = "$baseUrl/UpdateNote";
   static const getAllNotesUrl = "$baseUrl/GetAllNote";
+  static const getQBOLocationsUrl = "$baseUrl/GetQBOLocations";
+  static const getQBOClassesUrl = "$baseUrl/GetQBOClasses";
 }

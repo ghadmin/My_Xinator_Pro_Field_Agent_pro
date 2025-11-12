@@ -26,7 +26,7 @@ class GeneralTextField extends StatelessWidget {
       this.maxLine,
       this.minLine,
       this.textAlignment,
-      this.isEnabled = false,
+      this.isEnabled = true,
       this.onEditingComplete});
 
   final FocusNode? focusNode;

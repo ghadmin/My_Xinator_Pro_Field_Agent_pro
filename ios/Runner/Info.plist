@@ -43,6 +43,19 @@
 	<array>
     <string>fetch</string>
 	</array>
+	<!-- For getting user location -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>This app uses your location to show your live position on the map.</string>
+
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>We use your location to update your position while the app is open.</string>
+
+<key>NSLocationAlwaysUsageDescription</key>
+<string>Your location helps us provide accurate map routes.</string>
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>We need your location to provide better service</string>
+<key>NSLocationAlwaysUsageDescription</key>
+<string>We need your location to provide better service</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>

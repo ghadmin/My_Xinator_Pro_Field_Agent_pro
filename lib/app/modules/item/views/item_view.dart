@@ -10,6 +10,8 @@ import '../../../../utils/constants.dart';
 import '../../../components/drawer/custom_drawer.dart';
 import '../../../components/global-widgets/asset_image_box.dart';
 import '../../../components/global-widgets/empty_widget.dart';
+import '../../../components/global-widgets/general_text_field.dart'
+    show GeneralTextField;
 import '../../../components/global-widgets/splash_container.dart';
 import '../controllers/item_controller.dart';
 
@@ -73,14 +75,14 @@ class ItemView extends GetView<ItemController> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              TextWidget(
-                                text: "Create  items now",
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: LightThemeColors.hintTextColor,
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
+                              // TextWidget(
+                              //   text: "Create  items now",
+                              //   style: theme.textTheme.bodyLarge?.copyWith(
+                              //     color: LightThemeColors.hintTextColor,
+                              //     fontSize: 16.sp,
+                              //     fontWeight: FontWeight.w400,
+                              //   ),
+                              // ),
                             ],
                           ),
                           // SplashContainer(
@@ -120,6 +122,25 @@ class ItemView extends GetView<ItemController> {
                         ],
                       ),
                       SizedBox(height: 20.sp),
+
+                      // Search Field
+                      SizedBox(
+                        height: 40.sp,
+                        child: GeneralTextField(
+                          isEnabled: true,
+                          hint: "Search item",
+                          suffixIcon: Icon(
+                            Icons.search,
+                            color: LightThemeColors.bodyTextSecondaryColor,
+                          ),
+                          theme: theme,
+                          textInputAction: TextInputAction.search,
+                          onChanged: (_) => controller.sortItems(),
+                          textEditingController: controller.sortTextController,
+                        ),
+                      ),
+                      SizedBox(height: 15.sp),
+
                       Expanded(
                         child: RefreshIndicator(
                             color: theme.primaryColor,
@@ -127,9 +148,9 @@ class ItemView extends GetView<ItemController> {
                             child: ListView.separated(
                               padding: EdgeInsets.zero,
                               physics: const BouncingScrollPhysics(),
-                              itemCount: controller.items.length,
+                              itemCount: controller.sortedItems.length,
                               itemBuilder: (context, index) {
-                                final item = controller.items[index];
+                                final item = controller.sortedItems[index];
                                 return SplashContainer(
                                   radius: 8,
                                   color: Colors.white,
@@ -197,7 +218,8 @@ class ItemView extends GetView<ItemController> {
                                                   CrossAxisAlignment.end,
                                               children: [
                                                 TextWidget(
-                                                  text: "\$${item.price ?? ""}",
+                                                  text:
+                                                      "\$${item.price!.toStringAsFixed(2) ?? ""}",
                                                   style: theme
                                                       .textTheme.headlineSmall
                                                       ?.copyWith(

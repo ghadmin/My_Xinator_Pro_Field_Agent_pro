@@ -9,6 +9,8 @@ import 'package:mime/mime.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/controllers/appointment_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/appointment_model.dart';
+import 'package:xinator_fsm_pro/app/modules/invoice/models/qbo_class_dropdown_model.dart';
+import 'package:xinator_fsm_pro/app/modules/invoice/models/qbo_location_dropdown_model.dart';
 import 'package:xinator_fsm_pro/app/modules/signature/controllers/signature_controller.dart';
 
 import '../../../../utils/date_converter.dart';
@@ -25,6 +27,24 @@ import '../../item/models/item_list_model.dart';
 import '../models/tax_model.dart';
 
 class InvoiceController extends GetxController with ExceptionHandler {
+// Dropdown values  @override
+  void onInit() {
+    super.onInit();
+    getQBOClasses();
+    getQBOLocations();
+    // Load immediately when controller is created
+  }
+
+  var selectedLocation = "".obs;
+  var selectedClass = "".obs;
+
+// Checkbox
+  var isNoneSelected = false.obs;
+
+// Dropdown options (example)
+  final List<String> locations = ["location 1", "location 2", "location 3"];
+  final List<String> classes = ["class 1", "class 2", "class 3"];
+
   late final WebViewController webController;
   bool isWebControllerInitialized = false;
   RxBool isSendXPayLink = false.obs;
@@ -267,10 +287,10 @@ class InvoiceController extends GetxController with ExceptionHandler {
     double subTotal = 0.00;
     // Calculate subtotal based on selected items
     for (int i = 0; i < selectedItemList.length; i++) {
-      double price = double.tryParse(amountControllers[i].text) ??
-          selectedItemList[i].price ??
-          0.00;
-      int quantity = int.tryParse(quantityControllers[i].text) ?? 1;
+      double price = selectedItemList[i].price ?? 0.00;
+      int quantity = amountControllers.isNotEmpty
+          ? int.tryParse(quantityControllers[i].text) ?? 1
+          : 1;
       subTotal += quantity * price;
     }
 
@@ -312,9 +332,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     // Calculate subtotal based on selected items
     for (int i = 0; i < selectedItemList.length; i++) {
-      double price = double.tryParse(editAmountControllers[i].text) ??
-          selectedItemList[i].price ??
-          0.00;
+      double price = selectedItemList[i].price ?? 0.00;
       int quantity =
           double.tryParse(editQuantityControllers[i].text)?.toInt() ?? 1;
       subTotal += quantity * price;
@@ -366,7 +384,9 @@ class InvoiceController extends GetxController with ExceptionHandler {
     createTotal();
   }
 
+  final removedList = RxList<String>([]);
   void removeItemFromEdit(int index) {
+    removedList.add(selectedItemList[index].id!);
     selectedItemList.removeAt(index);
 
     editAmountControllers[index].dispose();
@@ -378,6 +398,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     editQuantityControllers.removeAt(index);
 
     createTotalForEdit();
+    updateRequestedDepositAmount();
   }
 
   void clearAllItems() {
@@ -434,6 +455,64 @@ class InvoiceController extends GetxController with ExceptionHandler {
     taxes.assignAll(savedTax);
   }
 
+  final qboClassList = RxList<QboClassModel>([]);
+  final selectedQboClass = Rx<QboClassModel?>(null);
+  final isLoadingQboClass = RxBool(false);
+  final qboLocationList = RxList<QboLocationModel>([]);
+  final selectedQboLocation = Rx<QboLocationModel?>(null);
+  final isLoadingQboLocation = RxBool(false);
+  Future<void> getQBOLocations() async {
+    try {
+      var companyID = await MySharedPref.getCompanyID();
+
+      var response = await DioClient().get(
+        url: ApiUrl.getQBOLocationsUrl,
+        params: {"companyId": companyID},
+      ).catchError(handleError);
+      log("all in data $response");
+      if (response == null) return;
+
+      // Ensure the response is a list
+      if (response is List && response.isNotEmpty) {
+        qboLocationList.value =
+            response.map((e) => QboLocationModel.fromJson(e)).toList();
+      } else {
+        qboLocationList.value = [];
+        Get.showSnackbar(GetSnackBar(title: "No QBO Classes found"));
+      }
+    } catch (e) {
+      log("err $e");
+
+      Get.showSnackbar(GetSnackBar(title: "No QBO Classes found"));
+    }
+  }
+
+  Future<void> getQBOClasses() async {
+    try {
+      var companyID = await MySharedPref.getCompanyID();
+
+      var response = await DioClient().get(
+        url: ApiUrl.getQBOClassesUrl,
+        params: {"companyId": companyID},
+      ).catchError(handleError);
+      log("all in data $response");
+      if (response == null) return;
+
+      // Ensure the response is a list
+      if (response is List && response.isNotEmpty) {
+        qboClassList.value =
+            response.map((e) => QboClassModel.fromJson(e)).toList();
+      } else {
+        qboClassList.value = [];
+        Get.showSnackbar(GetSnackBar(title: "No QBO Classes found"));
+      }
+    } catch (e) {
+      log("err $e");
+
+      Get.showSnackbar(GetSnackBar(title: "No QBO Classes found"));
+    }
+  }
+
   RxString invoiceName = "".obs;
   Future<void> getInvoiceName() async {
     var companyID = await MySharedPref.getCompanyID();
@@ -457,12 +536,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final RxBool isLoading = true.obs;
   final RxList<ItemListModel> selectedItemList = <ItemListModel>[].obs;
 
-  void selectItem(ItemListModel item) {
-    selectedItemList.add(item);
-  }
-
   RxBool isInvoiceSaved = false.obs;
-  Future<void> createInvoice() async {
+  Future<bool> createInvoice() async {
     showLoading();
     isInvoiceSaved.value = false;
     var companyID = await MySharedPref.getCompanyID();
@@ -546,17 +621,20 @@ class InvoiceController extends GetxController with ExceptionHandler {
       },
     ).catchError(handleError);
 
-    if (response == null) return;
+    if (response == null) return false;
 
     invoiceID.value = response["Id"].toString();
 
     isInvoiceSaved.value = true;
     await getInvoiceName();
-    clearAllItems();
-    hideLoading();
-    await Get.find<AppointmentController>().getAppointments();
+    clearAllItems(); //
+    isNoneSelected(false);
+    await Get.find<AppointmentController>().getAppointments(showLoader: false);
+    // hideLoading();
     MySnackBar.showToast(
         message: "${selectedCreateType.value} created successfully!");
+
+    return true;
   }
 
   RxList<File> selectedFiles = <File>[].obs;
@@ -834,7 +912,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
     Get.back();
     Get.back();
     Get.back();
-    Logger().i("Deposit Response: $response");
   }
 
   Future<void> paymentStatus() async {
