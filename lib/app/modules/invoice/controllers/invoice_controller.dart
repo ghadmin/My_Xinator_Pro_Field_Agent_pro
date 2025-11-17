@@ -35,15 +35,16 @@ class InvoiceController extends GetxController with ExceptionHandler {
     // Load immediately when controller is created
   }
 
-  var selectedLocation = "".obs;
-  var selectedClass = "".obs;
+  final selectedLocation = Rx<QboLocationModel?>(null);
+  final selectedClass = Rx<QboClassModel?>(null);
 
+  final isLocAndClassShow = RxBool(true);
 // Checkbox
   var isNoneSelected = false.obs;
 
 // Dropdown options (example)
-  final List<String> locations = ["location 1", "location 2", "location 3"];
-  final List<String> classes = ["class 1", "class 2", "class 3"];
+  // final List<String> locations = ["location 1", "location 2", "location 3"];
+  // final List<String> classes = ["class 1", "class 2", "class 3"];
 
   late final WebViewController webController;
   bool isWebControllerInitialized = false;
@@ -554,6 +555,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
           "UserId": userID,
           "Subtotal": invoiceSubtotal.value,
           "Discount": invoiceDiscount.value,
+          "QboClassId": selectedQboClass.value?.qboClassId,
+          "QboLocationId": selectedQboLocation.value?.qboLocationId,
 
           "Tax": double.parse(
               (((invoiceSubtotal.value - invoiceDiscount.value) -
@@ -706,6 +709,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
           "Status": 1,
           "InvoiceType": null,
           "ModifiedBy": null,
+          "QboClassId": selectedQboClass.value?.qboClassId,
+          "QboLocationId": selectedQboLocation.value?.qboLocationId,
           "Note": editNoteTextController.text,
           "CreatedBy": userID,
           "InvoiceDate": dateTimeConverter(

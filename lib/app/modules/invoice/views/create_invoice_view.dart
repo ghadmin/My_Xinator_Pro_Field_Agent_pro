@@ -18,6 +18,7 @@ import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../models/qbo_class_dropdown_model.dart' show QboClassModel;
+import '../models/qbo_location_dropdown_model.dart';
 
 class CreateInvoiceView extends GetView<InvoiceController> {
   const CreateInvoiceView({super.key});
@@ -25,6 +26,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
+    log("isloc ${controller.isLocAndClassShow.value}");
     return Scaffold(
       appBar: buildAppBar(context, theme),
       body: Obx(() => SafeArea(
@@ -164,63 +166,25 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                       ),
                     ),
                     SizedBox(height: 15.sp),
-                    Align(
-                      alignment: AlignmentGeometry.centerLeft,
-                      child: Text(
-                        "Location",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: LightThemeColors.bodyTextSecondaryColor,
-                          fontSize: 16.sp,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 5.sp),
-                    DropdownButtonFormField<String>(
-                      initialValue: controller.isNoneSelected.value
-                          ? null
-                          : controller.selectedLocation.value.isEmpty
-                              ? null
-                              : controller.selectedLocation.value,
-                      hint: Text("Select Location"),
-                      isExpanded: true,
-                      dropdownColor: Colors.white,
-                      borderRadius: BorderRadius.circular(8.r),
-                      decoration: InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12.sp, vertical: 8.sp),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r)),
-                      ),
-                      items: controller.locations.map((loc) {
-                        return DropdownMenuItem(value: loc, child: Text(loc));
-                      }).toList(),
-                      onChanged: controller.isNoneSelected.value
-                          ? null
-                          : (val) {
-                              controller.selectedLocation.value = val ?? "";
-                            },
-                    ),
-                    SizedBox(height: 5.sp),
-
-                    // Class Dropdown
-                    Align(
+                    if (controller.isLocAndClassShow.value)
+                      Align(
                         alignment: AlignmentGeometry.centerLeft,
                         child: Text(
-                          "Class",
+                          "Location",
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: LightThemeColors.bodyTextSecondaryColor,
                             fontSize: 16.sp,
                           ),
-                        )),
-                    SizedBox(height: 5.sp),
-                    Obx(() {
-                      // This forces Obx to listen to the loading state
-                      final isLoading = controller.isLoadingQboClass.value;
-                      final classList = controller.qboClassList;
-
-                      return DropdownButtonFormField<QboClassModel>(
-                        initialValue: controller.selectedQboClass.value,
-                        hint: const Text("Select Class"),
+                        ),
+                      ),
+                    if (controller.isLocAndClassShow.value)
+                      SizedBox(height: 5.sp),
+                    if (controller.isLocAndClassShow.value)
+                      DropdownButtonFormField<QboLocationModel>(
+                        initialValue: controller.isNoneSelected.value
+                            ? null
+                            : controller.selectedLocation.value,
+                        hint: Text("Select Location"),
                         isExpanded: true,
                         dropdownColor: Colors.white,
                         borderRadius: BorderRadius.circular(8.r),
@@ -228,51 +192,95 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 12.sp, vertical: 8.sp),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
+                              borderRadius: BorderRadius.circular(8.r)),
                         ),
-
-                        items: isLoading
-                            ? [
-                                const DropdownMenuItem(
-                                  value: null,
-                                  enabled: false,
-                                  child: Text("Loading..."),
-                                )
-                              ]
-                            : classList.isEmpty
-                                ? [
-                                    const DropdownMenuItem(
-                                      value: null,
-                                      enabled: false,
-                                      child: Text("No data available"),
-                                    )
-                                  ]
-                                : classList.map((cls) {
-                                    return DropdownMenuItem(
-                                      value: cls,
-                                      child: Text(cls.name),
-                                    );
-                                  }).toList(),
-
+                        items: controller.qboLocationList.map((loc) {
+                          return DropdownMenuItem(
+                              value: loc, child: Text(loc.name));
+                        }).toList(),
                         onChanged: controller.isNoneSelected.value
                             ? null
                             : (val) {
-                                controller.selectedQboClass.value = val;
+                                controller.selectedLocation(val);
                               },
+                      ),
+                    if (controller.isLocAndClassShow.value)
+                      if (controller.isLocAndClassShow.value)
+                        SizedBox(height: 5.sp),
 
-                        // onTap: () async {
-                        //   if (controller.qboClassList.isEmpty &&
-                        //       !controller.isLoadingQboClass.value) {
-                        //     controller.isLoadingQboClass.value = true;
-                        //     // Small delay to ensure UI updates
-                        //     await Future.delayed(Duration.zero);
-                        //     await controller.getQBOClasses();
-                        //     controller.isLoadingQboClass.value = false;
-                        //   }
-                        // },
-                      );
-                    }),
+                    // Class Dropdown
+                    if (controller.isLocAndClassShow.value)
+                      Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            "Class",
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: LightThemeColors.bodyTextSecondaryColor,
+                              fontSize: 16.sp,
+                            ),
+                          )),
+                    SizedBox(height: 5.sp),
+                    if (controller.isLocAndClassShow.value)
+                      Obx(() {
+                        // This forces Obx to listen to the loading state
+                        final isLoading = controller.isLoadingQboClass.value;
+                        final classList = controller.qboClassList;
+
+                        return DropdownButtonFormField<QboClassModel>(
+                          initialValue: controller.selectedQboClass.value,
+                          hint: const Text("Select Class"),
+                          isExpanded: true,
+                          dropdownColor: Colors.white,
+                          borderRadius: BorderRadius.circular(8.r),
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12.sp, vertical: 8.sp),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+
+                          items: isLoading
+                              ? [
+                                  const DropdownMenuItem(
+                                    value: null,
+                                    enabled: false,
+                                    child: Text("Loading..."),
+                                  )
+                                ]
+                              : classList.isEmpty
+                                  ? [
+                                      const DropdownMenuItem(
+                                        value: null,
+                                        enabled: false,
+                                        child: Text("No data available"),
+                                      )
+                                    ]
+                                  : classList.map((cls) {
+                                      return DropdownMenuItem(
+                                        value: cls,
+                                        child: Text(cls.name),
+                                      );
+                                    }).toList(),
+
+                          onChanged: controller.isNoneSelected.value
+                              ? null
+                              : (val) {
+                                  controller.selectedQboClass.value = val;
+                                },
+
+                          // onTap: () async {
+                          //   if (controller.qboClassList.isEmpty &&
+                          //       !controller.isLoadingQboClass.value) {
+                          //     controller.isLoadingQboClass.value = true;
+                          //     // Small delay to ensure UI updates
+                          //     await Future.delayed(Duration.zero);
+                          //     await controller.getQBOClasses();
+                          //     controller.isLoadingQboClass.value = false;
+                          //   }
+                          // },
+                        );
+                      }),
                     SizedBox(height: 5.sp),
 
                     controller.descriptionControllers.isEmpty
@@ -1369,79 +1377,91 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                       width: double.infinity,
                       child: PrimaryButton(
                         title: "Create",
-                        onPressed: () async {
-                          final bool isNoneChecked =
-                              controller.isNoneSelected.value;
-                          final bool hasLocation =
-                              controller.selectedLocation.value.isNotEmpty;
-                          final bool hasClass =
-                              controller.selectedClass.value.isNotEmpty;
+                        onPressed: controller.isLocAndClassShow.value
+                            ? () async {
+                                final bool isNoneChecked =
+                                    controller.isNoneSelected.value;
+                                final bool hasLocation =
+                                    controller.selectedLocation.value != null;
+                                final bool hasClass =
+                                    controller.selectedClass.value != null;
 
-                          if (!isNoneChecked && !hasLocation && !hasClass) {
-                            // Show dialog
-                            final bool? result = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text("Missing Information"),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text(
-                                      "Please select a Location and Class, or check 'Do Not Show Again'.",
-                                    ),
-                                    SizedBox(height: 10.h),
-                                    Row(
-                                      children: [
-                                        Obx(() => Checkbox(
-                                              activeColor: Colors.blue,
-                                              value: controller
-                                                  .isNoneSelected.value,
-                                              onChanged: (val) {
-                                                controller.isNoneSelected
-                                                    .value = val ?? false;
-                                                if (val == true) {
-                                                  controller.selectedLocation
-                                                      .value = "";
-                                                  controller
-                                                      .selectedClass.value = "";
-                                                }
-                                              },
-                                            )),
-                                        const Text("Do Not Show Again"),
+                                if (!isNoneChecked &&
+                                    !hasLocation &&
+                                    !hasClass) {
+                                  // Show dialog
+                                  final bool? result = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text("Missing Information"),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text(
+                                            "Please select a Location and Class, or check 'Do Not Show Again'.",
+                                          ),
+                                          SizedBox(height: 10.h),
+                                          Row(
+                                            children: [
+                                              Obx(() => Checkbox(
+                                                    activeColor: Colors.blue,
+                                                    value: controller
+                                                        .isNoneSelected.value,
+                                                    onChanged: (val) {
+                                                      controller.isNoneSelected
+                                                          .value = val ?? false;
+                                                      if (val == true) {
+                                                        controller
+                                                            .selectedLocation(
+                                                                null);
+                                                        controller
+                                                            .selectedClass(
+                                                                null);
+                                                      }
+                                                    },
+                                                  )),
+                                              const Text("Do Not Show Again"),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(ctx).pop(controller
+                                                .isNoneSelected.value);
+                                          },
+                                          child: const Text("OK"),
+                                        ),
                                       ],
                                     ),
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(ctx)
-                                          .pop(controller.isNoneSelected.value);
-                                    },
-                                    child: const Text("OK"),
-                                  ),
-                                ],
-                              ),
-                            );
+                                  );
 
-                            // If user selected "Not applicable", continue to create invoice
-                            if (result == true) {
-                              final isPop = await controller.createInvoice();
-                              log("message: $isPop");
-                              if (isPop) {
-                                Get.close(1);
+                                  // If user selected "Not applicable", continue to create invoice
+                                  if (result == true) {
+                                    final isPop =
+                                        await controller.createInvoice();
+                                    log("message: $isPop");
+                                    if (isPop) {
+                                      Get.close(1);
+                                    }
+                                  }
+
+                                  return; // stop further execution if dialog was shown
+                                }
+
+                                // Proceed normally if all conditions are already satisfied
+                                final isPop = await controller.createInvoice();
+                                if (isPop) {
+                                  Get.close(1);
+                                }
                               }
-                            }
-
-                            return; // stop further execution if dialog was shown
-                          }
-
-                          // Proceed normally if all conditions are already satisfied
-                          final isPop = await controller.createInvoice();
-                          if (isPop) {
-                            Get.close(1);
-                          }
-                        },
+                            : () async {
+                                final isPop = await controller.createInvoice();
+                                if (isPop) {
+                                  Get.close(1);
+                                }
+                              },
                         inactive: controller.selectedItemList.isEmpty,
                       ),
                     ),

@@ -29,6 +29,7 @@ import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../../../components/global-widgets/text_widget.dart';
+import '../../../data/local/my_shared_pref.dart';
 import '../../../routes/app_pages.dart';
 import '../../../service/helper/dialog_helper.dart';
 import '../../item/models/item_list_model.dart';
@@ -1801,6 +1802,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       .selectedCreateType
                                                       .value = v;
 
+                                                  final x = MySharedPref
+                                                          .getCompanyType() ??
+                                                      '';
+                                                  controller
+                                                      .invoiceController
+                                                      .isLocAndClassShow
+                                                      .value = x == 'IsPcs';
                                                   if (v == "Invoice") {
                                                     controller.invoiceController
                                                             .createCustomerName =
@@ -2806,8 +2814,15 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                                     // Notes list
 
-                                    Obx(() => controller.noteList.isEmpty &&
-                                            controller.noteList.isEmpty
+                                    Obx(() => controller.noteList
+                                            .where((e) {
+                                              //     log("selected apptId ${controller.selectedAppointment.value!.apptID} and note appt id ${e.appointmentId}");
+                                              return e.appointmentId ==
+                                                  controller.selectedAppointment
+                                                      .value!.apptID;
+                                            })
+                                            .toList()
+                                            .isEmpty
                                         ? Center(
                                             child: TextWidget(
                                                 text: "No Notes Found"),
@@ -2816,11 +2831,24 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             shrinkWrap: true,
                                             physics:
                                                 const NeverScrollableScrollPhysics(),
-                                            itemCount:
-                                                controller.noteList.length,
+                                            itemCount: controller.noteList
+                                                .where((e) =>
+                                                    e.appointmentId ==
+                                                    controller
+                                                        .selectedAppointment
+                                                        .value!
+                                                        .apptID)
+                                                .toList()
+                                                .length,
                                             itemBuilder: (context, index) {
-                                              final note =
-                                                  controller.noteList[index];
+                                              final note = controller.noteList
+                                                  .where((e) =>
+                                                      e.appointmentId ==
+                                                      controller
+                                                          .selectedAppointment
+                                                          .value!
+                                                          .apptID)
+                                                  .toList()[index];
 
                                               return GestureDetector(
                                                 onTap: note.userId!.trim() ==
@@ -2959,12 +2987,20 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           ),
                                                           child: Text(
                                                             controller
-                                                                .allTagList
-                                                                .where((e) =>
-                                                                    e.id ==
-                                                                    note.tagId)
-                                                                .first
-                                                                .name,
+                                                                    .allTagList
+                                                                    .where((e) =>
+                                                                        e.id ==
+                                                                        note
+                                                                            .tagId)
+                                                                    .isNotEmpty
+                                                                ? controller
+                                                                    .allTagList
+                                                                    .where((e) =>
+                                                                        e.id ==
+                                                                        note.tagId)
+                                                                    .first
+                                                                    .name
+                                                                : "N/A",
                                                             style: theme
                                                                 .textTheme
                                                                 .bodySmall

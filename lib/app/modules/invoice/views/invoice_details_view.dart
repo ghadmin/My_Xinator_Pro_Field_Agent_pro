@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -12,7 +10,6 @@ import 'package:xinator_fsm_pro/app/components/global-widgets/splash_container.d
 import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
 import 'package:xinator_fsm_pro/app/routes/app_pages.dart';
 import 'package:xinator_fsm_pro/app/service/helper/network_connectivity.dart';
-import 'package:xinator_fsm_pro/config/theme/dark_theme_colors.dart';
 import 'package:xinator_fsm_pro/config/theme/light_theme_colors.dart';
 
 class InvoiceDetailsView extends GetView<InvoiceController> {

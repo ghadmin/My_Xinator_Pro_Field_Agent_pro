@@ -146,7 +146,7 @@ class AppointmentController extends GetxController
         showEmptyWidget();
         return;
       }
-
+      log("result  $response");
       if (response.isEmpty) {
         noteList.clear();
         if (showLoader) hideLoading();
@@ -601,7 +601,7 @@ class AppointmentController extends GetxController
           "userId": userID,
         },
       ).catchError(!showLoader ? handleError : () {});
-      // log("refreshing appointments ${jsonEncode(response)}");
+      log("refreshing appointments ${jsonEncode(response)}");
       if (response == null) {
         hideLoading();
         showEmptyWidget();

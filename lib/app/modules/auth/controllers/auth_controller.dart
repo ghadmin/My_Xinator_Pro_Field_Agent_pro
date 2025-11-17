@@ -76,7 +76,7 @@ class AuthController extends GetxController with ExceptionHandler {
     await MySharedPref.setCompanyID(response["CompanyID"]);
     await MySharedPref.setUserName(response["UserName"]);
     await MySharedPref.setCompanyName(response["CompanyName"]);
-
+    await MySharedPref.setCompanyType(response["CompanyType"] ?? "");
     await MySharedPref.setEmail(emailLoginTextController.text.trim());
   }
 

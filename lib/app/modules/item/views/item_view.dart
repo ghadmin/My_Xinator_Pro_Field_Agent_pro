@@ -184,19 +184,23 @@ class ItemView extends GetView<ItemController> {
                                                 SizedBox(height: 2.sp),
 
                                                 /// description
-                                                if ((item.description ?? "")
-                                                    .isNotEmpty)
-                                                  Padding(
-                                                    padding: EdgeInsets.only(
-                                                        bottom: 2.sp),
-                                                    child: TextWidget(
-                                                      text: item.description ??
-                                                          "",
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
+                                                // if ((item.description ?? "")
+                                                //     .isNotEmpty)
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                      bottom: 2.sp),
+                                                  child: TextWidget(
+                                                    text: item.description !=
+                                                                null &&
+                                                            item.description !=
+                                                                ''
+                                                        ? item.description!
+                                                        : "N/A",
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                   ),
+                                                ),
 
                                                 /// barcode
                                                 if ((item.barcode ?? "")
