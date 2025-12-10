@@ -75,7 +75,7 @@ class DioClient {
           options: Options(headers: {}),
           queryParameters: params,
           data: payload);
-      log("inside body $body \n response : $response");
+      log("inside body $body \n response : $response params  $params");
       return response.data;
     } catch (e) {
       rethrow;

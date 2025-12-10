@@ -63,7 +63,8 @@ class PaymentByCashView extends GetView<InvoiceController> {
                 children: [
                   Text("Paid Amount"),
                   Spacer(),
-                  Text("- \$ ${controller.depositAmount.value}"),
+                  Text(
+                      "- \$ ${double.parse(controller.depositAmount.value).toStringAsFixed(2)}"),
                 ],
               ),
               SizedBox(height: 8.sp),

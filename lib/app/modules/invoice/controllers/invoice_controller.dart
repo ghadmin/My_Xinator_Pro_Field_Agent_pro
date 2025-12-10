@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
@@ -12,6 +13,7 @@ import 'package:xinator_fsm_pro/app/modules/appointment/models/appointment_model
 import 'package:xinator_fsm_pro/app/modules/invoice/models/qbo_class_dropdown_model.dart';
 import 'package:xinator_fsm_pro/app/modules/invoice/models/qbo_location_dropdown_model.dart';
 import 'package:xinator_fsm_pro/app/modules/signature/controllers/signature_controller.dart';
+import 'package:xinator_fsm_pro/utils/klog.dart';
 
 import '../../../../utils/date_converter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
@@ -178,12 +180,12 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final TextEditingController checkNameTextController = TextEditingController();
   final TextEditingController checkNumberTextController =
       TextEditingController();
-  List<TextEditingController> quantityControllers = [];
-  List<TextEditingController> amountControllers = [];
-  List<TextEditingController> descriptionControllers = [];
-  List<TextEditingController> editQuantityControllers = [];
-  List<TextEditingController> editAmountControllers = [];
-  List<TextEditingController> editDescriptionControllers = [];
+  // List<TextEditingController> quantityControllers = [];
+  // List<TextEditingController> amountControllers = [];
+  // List<TextEditingController> descriptionControllers = [];
+  // List<TextEditingController> editQuantityControllers = [];
+  // List<TextEditingController> editAmountControllers = [];
+  // List<TextEditingController> editDescriptionControllers = [];
   final TextEditingController createDiscountTextController =
       TextEditingController();
   final TextEditingController editDiscountTextController =
@@ -213,7 +215,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
   String due = "";
   RxBool isApplyingSurcharge = false.obs;
   String notes = "";
-  String surcharges = "0.00"; // Fixed surcharge amount
   RxInt selectedInvoiceIndex = 0.obs;
   RxBool isInvoiceEmpty = false.obs;
   RxString selectedTaxName = "".obs;
@@ -246,19 +247,66 @@ class InvoiceController extends GetxController with ExceptionHandler {
     isDirty.value = true;
   }
 
+  RxDouble get subTotal {
+    RxDouble amount = 0.0.obs;
+    for (var element in selectedItemList) {
+      amount.value += element.totalPrice;
+    }
+    return amount;
+  }
+
+  RxDouble get discountAmounts {
+    RxDouble amount = 0.0.obs;
+    if (createDiscountTextController.text.isEmpty) {
+      return 0.0.obs;
+    }
+    if (selectedDiscountOption.value == "1") {
+      amount(
+          (subTotal * double.parse(createDiscountTextController.text) / 100));
+    } else {
+      amount(double.parse(createDiscountTextController.text));
+    }
+    return amount;
+  }
+
+  RxDouble get amountAfterDiscounts {
+    RxDouble amount = 0.0.obs;
+    amount(subTotal.value - discountAmounts.value);
+
+    return amount;
+  }
+
+  RxDouble get totalAmountWithSurcharge {
+    RxDouble amount = 0.0.obs;
+    if (!isApplyingSurcharge.value) {
+      return amountAfterDiscounts;
+    } else {
+      amount(amountAfterDiscounts.value + (amountAfterDiscounts * 3 / 100));
+      return amount;
+    }
+  }
+
+//final amount
+  RxDouble get amountAfterAddingTax {
+    RxDouble amount = 0.0.obs;
+    amount(totalAmountWithSurcharge.value + taxAmount.value);
+
+    return amount;
+  }
+
   RxDouble get nonTaxableTotalInDetails {
     RxDouble total = 0.0.obs;
-    if (!selectedItemList.any((item) => item.isTaxable == true)) {
+    if (!selectedItemList.any((item) => item.selectedItem!.isTaxable == true)) {
       // If no taxable items, return the subtotal minus discount
       total.value = invoiceSubtotal.value - invoiceDiscount.value;
       return total;
     } else {
       for (int i = 0; i < selectedItemList.length; i++) {
         final item = selectedItemList[i];
-        if (item.isTaxable == false) {
-          final qty = double.tryParse(editQuantityControllers[i].text) ?? 1.00;
-          final price = double.tryParse(editAmountControllers[i].text) ?? 0.00;
-          total.value += price * qty;
+        if (item.selectedItem!.isTaxable == false) {
+          final qty = item.quantity;
+          final price = item.totalPrice;
+          total.value += price * (qty ?? 1);
         }
       }
       return total;
@@ -267,16 +315,16 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
   RxDouble get nonTaxableItemTotalInCreate {
     RxDouble total = 0.0.obs;
-    if (!selectedItemList.any((item) => item.isTaxable == true)) {
+    if (!selectedItemList.any((item) => item.selectedItem!.isTaxable == true)) {
       // If no taxable items, return the subtotal minus discount
       total.value = invoiceSubtotal.value - invoiceDiscount.value;
       return total;
     } else {
       for (int i = 0; i < selectedItemList.length; i++) {
         final item = selectedItemList[i];
-        if (item.isTaxable == false) {
-          final price = double.tryParse(amountControllers[i].text) ?? 0.0;
-          final qty = int.tryParse(quantityControllers[i].text) ?? 1;
+        if (item.selectedItem!.isTaxable == false) {
+          final price = item.totalPrice;
+          final qty = item.quantity ?? 1;
           total.value += price * qty;
         }
       }
@@ -284,139 +332,196 @@ class InvoiceController extends GetxController with ExceptionHandler {
     }
   }
 
-  void createTotal() {
-    double subTotal = 0.00;
-    // Calculate subtotal based on selected items
-    for (int i = 0; i < selectedItemList.length; i++) {
-      double price = selectedItemList[i].price ?? 0.00;
-      int quantity = amountControllers.isNotEmpty
-          ? int.tryParse(quantityControllers[i].text) ?? 1
-          : 1;
-      subTotal += quantity * price;
+  RxDouble get taxableTotal {
+    RxDouble amount = 0.0.obs;
+    if (selectedItemList.isEmpty) {
+      return 0.0.obs;
+    }
+    for (var element in selectedItemList) {
+      if (element.selectedItem!.isTaxable ?? false) {
+        amount.value += element.totalPrice;
+      }
     }
 
-    invoiceSubtotal.value = subTotal;
-
-    // Calculate discount
-    double discount = double.parse(createDiscountTextController.text.isEmpty
-        ? "0.00"
-        : createDiscountTextController.text);
-
-    double discountAmount = selectedDiscountOption.value == "1"
-        ? (subTotal * discount / 100)
-        : discount;
-
-    invoiceDiscount.value = discountAmount;
-
-    amountAfterDiscount.value = subTotal - discountAmount;
-    double discountRatio = discount / subTotal;
-    double discountedTaxableTotal = selectedDiscountOption.value ==
-            "1" // Percentage discount
-        ? ((subTotal - nonTaxableItemTotalInCreate.value) * (discount / 100))
-        : (subTotal - nonTaxableItemTotalInCreate.value) * discountRatio;
-    discountedTaxableTotalInCreate.value =
-        (subTotal - nonTaxableItemTotalInCreate.value) - discountedTaxableTotal;
-    double taxPercentage = double.parse(tax.value);
-
-    double taxOnTaxableTotal =
-        (discountedTaxableTotalInCreate.value) * (taxPercentage / 100);
-
-    double total = (amountAfterDiscount.value + taxOnTaxableTotal);
-
-    // Update observable values
-    invoiceTax.value = double.parse((taxOnTaxableTotal).toStringAsFixed(2));
-    invoiceTotal.value = total.toStringAsFixed(2);
+    return amount;
   }
+
+  RxDouble get discountedTaxableTotal {
+    RxDouble amount = 0.0.obs;
+    if (selectedItemList.isEmpty) {
+      return 0.0.obs;
+    }
+    for (var element in selectedItemList) {
+      if (element.selectedItem!.isTaxable ?? false) {
+        amount.value += element.totalPrice;
+      }
+    }
+
+    if (amount > 0.0) {
+      if (selectedDiscountOption.value == '2') {
+        double discount = double.parse(createDiscountTextController.text.isEmpty
+            ? "0.00"
+            : createDiscountTextController.text);
+        amount.value -= discount;
+      } else {
+        double discount = double.parse(createDiscountTextController.text.isEmpty
+            ? "0.00"
+            : createDiscountTextController.text);
+        amount.value -= (amount.value * discount / 100);
+      }
+    }
+    return amount;
+  }
+
+  RxDouble get taxAmount {
+    RxDouble amount = 0.0.obs;
+    amount(discountedTaxableTotal.value * (double.parse(tax.value) / 100));
+    return amount;
+  }
+
+  // RxDouble totalChargedToCC = 0.0.obs;
+  // void createTotal() {
+  //   double subTotal = 0.00;
+  //   for (int i = 0; i < selectedItemList.length; i++) {
+  //     subTotal += selectedItemList[i].totalPrice;
+  //   }
+  //   invoiceSubtotal.value = subTotal;
+
+  //   // Discount
+  //   double discount = double.parse(createDiscountTextController.text.isEmpty
+  //       ? "0.00"
+  //       : createDiscountTextController.text);
+  //   double discountAmount = selectedDiscountOption.value == "1"
+  //       ? (subTotal * discount / 100)
+  //       : discount;
+  //   invoiceDiscount.value = discountAmount;
+  //   amountAfterDiscount.value = subTotal - discountAmount;
+
+  //   // Non-taxable handling
+  //   double nonTaxable = nonTaxableItemTotalInCreate.value;
+  //   double taxableSubTotal = subTotal - nonTaxable;
+
+  //   // Discount on taxable portion
+  //   double discountRatio = (subTotal != 0) ? discountAmount / subTotal : 0;
+  //   double taxableDiscountAmount = taxableSubTotal * discountRatio;
+  //   double discountedTaxableTotal = taxableSubTotal - taxableDiscountAmount;
+
+  //   discountedTaxableTotalInCreate.value = discountedTaxableTotal;
+
+  //   // Tax calculation
+  //   double taxPercentage = double.parse(tax.value);
+  //   double taxOnTaxableTotal = discountedTaxableTotal * (taxPercentage / 100);
+  //   invoiceTax.value = double.parse((taxOnTaxableTotal).toStringAsFixed(2));
+
+  //   // Final invoice total (before surcharge)
+  //   double invoiceTotalBeforeSurcharge =
+  //       amountAfterDiscount.value + taxOnTaxableTotal;
+  //   invoiceTotal.value = invoiceTotalBeforeSurcharge.toStringAsFixed(2);
+
+  //   // >>> SURCHARGE CALCULATION (After final invoice total) <<<
+  //   double surchargeAmount = 0.0;
+  //   if (isApplyingSurcharge.value) {
+  //     surchargeAmount =
+  //         invoiceTotalBeforeSurcharge * 0.03; // 3% of final invoice total
+  //   }
+  //   surcharges.value = surchargeAmount;
+
+  //   // Total charged to credit card (invoice total + surcharge)
+  //   totalChargedToCC.value = invoiceTotalBeforeSurcharge + surchargeAmount;
+  // }
 
   void createTotalForEdit() {
     double subTotal = 0.00;
-
-    // Calculate subtotal based on selected items
     for (int i = 0; i < selectedItemList.length; i++) {
-      double price = selectedItemList[i].price ?? 0.00;
-      int quantity =
-          double.tryParse(editQuantityControllers[i].text)?.toInt() ?? 1;
+      double price = selectedItemList[i].totalPrice;
+      int quantity = selectedItemList[i].quantity ?? 1;
       subTotal += quantity * price;
     }
-
     invoiceSubtotal.value = subTotal;
 
-    // Calculate discount
     double discount = double.parse(editDiscountTextController.text.isEmpty
         ? "0.00"
         : editDiscountTextController.text);
-
     double discountAmount = selectedDiscountOption.value == "1"
         ? (subTotal * discount / 100)
         : discount;
-
     invoiceDiscount.value = discountAmount;
     amountAfterDiscount.value = subTotal - discountAmount;
-    double discountRatio = discount / subTotal;
+
+    double nonTaxable = nonTaxableTotalInDetails.value;
+    double taxableSubTotal = subTotal - nonTaxable;
+
+    double discountRatio = (subTotal != 0) ? discount / subTotal : 0;
     double discountedTaxableTotal = selectedDiscountOption.value == "1"
-        ? ((subTotal - nonTaxableTotalInDetails.value) * (discount / 100))
-        : (subTotal - nonTaxableTotalInDetails.value) * discountRatio;
+        ? taxableSubTotal * (discount / 100)
+        : taxableSubTotal * discountRatio;
+
     discountedTaxableTotalInEdit.value =
-        (subTotal - nonTaxableTotalInDetails.value) - discountedTaxableTotal;
+        taxableSubTotal - discountedTaxableTotal;
 
     double taxPercentage = double.parse(tax.value);
-
     double taxOnTaxableTotal =
-        (discountedTaxableTotalInEdit.value) * (taxPercentage / 100);
-
-    double total = (amountAfterDiscount.value + taxOnTaxableTotal);
-
-    // Update observable values
+        discountedTaxableTotalInEdit.value * (taxPercentage / 100);
     invoiceTax.value = double.parse((taxOnTaxableTotal).toStringAsFixed(2));
+
+    // >>> SURCHARGE <<<
+    double surchargeAmount = 0.0;
+    if (isApplyingSurcharge.value) {
+      surchargeAmount = amountAfterDiscount.value * 0.03;
+    }
+    // surcharges.value = surchargeAmount;
+
+    double total =
+        amountAfterDiscount.value + taxOnTaxableTotal + surchargeAmount;
     invoiceTotal.value = total.toStringAsFixed(2);
   }
 
   void removeItem(int index) {
     selectedItemList.removeAt(index);
 
-    amountControllers[index].dispose();
-    descriptionControllers[index].dispose();
-    quantityControllers[index].dispose();
+    // amountControllers[index].dispose();
+    // descriptionControllers[index].dispose();
+    // quantityControllers[index].dispose();
 
-    amountControllers.removeAt(index);
-    descriptionControllers.removeAt(index);
-    quantityControllers.removeAt(index);
+    // amountControllers.removeAt(index);
+    // descriptionControllers.removeAt(index);
+    // quantityControllers.removeAt(index);
 
-    createTotal();
+    // createTotal();
   }
 
   final removedList = RxList<String>([]);
   void removeItemFromEdit(int index) {
-    removedList.add(selectedItemList[index].id!);
+    removedList.add(selectedItemList[index].selectedItem!.id!);
     selectedItemList.removeAt(index);
 
-    editAmountControllers[index].dispose();
-    editDescriptionControllers[index].dispose();
-    editQuantityControllers[index].dispose();
+    // editAmountControllers[index].dispose();
+    // editDescriptionControllers[index].dispose();
+    // editQuantityControllers[index].dispose();
 
-    editAmountControllers.removeAt(index);
-    editDescriptionControllers.removeAt(index);
-    editQuantityControllers.removeAt(index);
+    // editAmountControllers.removeAt(index);
+    // editDescriptionControllers.removeAt(index);
+    // editQuantityControllers.removeAt(index);
 
     createTotalForEdit();
     updateRequestedDepositAmount();
   }
 
   void clearAllItems() {
-    for (var controller in descriptionControllers) {
-      controller.dispose();
-    }
-    for (var controller in amountControllers) {
-      controller.dispose();
-    }
-    for (var controller in quantityControllers) {
-      controller.dispose();
-    }
+    // for (var controller in descriptionControllers) {
+    //   controller.dispose();
+    // }
+    // for (var controller in amountControllers) {
+    //   controller.dispose();
+    // }
+    // for (var controller in quantityControllers) {
+    //   controller.dispose();
+    // }
 
     selectedItemList.clear();
-    descriptionControllers.clear();
-    amountControllers.clear();
-    quantityControllers.clear();
+    // descriptionControllers.clear();
+    // amountControllers.clear();
+    // quantityControllers.clear();
 
     invoiceSubtotal.value = 0.00;
     invoiceTax.value = 0.00;
@@ -430,7 +535,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     tax.value = "0.00";
     isApplyingSurcharge.value = false;
 
-    createTotal();
+    // createTotal();
   }
 
   /// API ///
@@ -451,6 +556,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     taxes.assignAll(
         (response as List).map((e) => TaxModel.fromJson(e)).toList());
+
     await MyHive.saveTax(taxes);
     var savedTax = MyHive.getAllTax();
     taxes.assignAll(savedTax);
@@ -461,7 +567,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final isLoadingQboClass = RxBool(false);
   final qboLocationList = RxList<QboLocationModel>([]);
   final selectedQboLocation = Rx<QboLocationModel?>(null);
-  final isLoadingQboLocation = RxBool(false);
   Future<void> getQBOLocations() async {
     try {
       var companyID = await MySharedPref.getCompanyID();
@@ -479,12 +584,18 @@ class InvoiceController extends GetxController with ExceptionHandler {
             response.map((e) => QboLocationModel.fromJson(e)).toList();
       } else {
         qboLocationList.value = [];
-        Get.showSnackbar(GetSnackBar(title: "No QBO Classes found"));
+        // Get.showSnackbar(GetSnackBar(
+        //   title: "No QBO Classes found",
+        //   message: '',
+        // ));
       }
     } catch (e) {
       log("err $e");
 
-      Get.showSnackbar(GetSnackBar(title: "No QBO Classes found"));
+      // Get.showSnackbar(GetSnackBar(
+      //   title: "No QBO Classes found",
+      //   message: '',
+      // ));
     }
   }
 
@@ -505,12 +616,18 @@ class InvoiceController extends GetxController with ExceptionHandler {
             response.map((e) => QboClassModel.fromJson(e)).toList();
       } else {
         qboClassList.value = [];
-        Get.showSnackbar(GetSnackBar(title: "No QBO Classes found"));
+        // Get.showSnackbar(GetSnackBar(
+        //   title: "No QBO Classes found",
+        //   message: '',
+        // ));
       }
     } catch (e) {
       log("err $e");
 
-      Get.showSnackbar(GetSnackBar(title: "No QBO Classes found"));
+      // Get.showSnackbar(GetSnackBar(
+      //   title: "No QBO Classes found",
+      //   message: '',
+      // ));
     }
   }
 
@@ -524,7 +641,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
         "IsInvoice": selectedCreateType.value == "Invoice" ? true : false,
       },
     ).catchError(handleError);
-
+    kLog("invoice name response $response");
     if (response == null) return;
 
     invoiceName.value = response["InvoiceNo"];
@@ -535,14 +652,72 @@ class InvoiceController extends GetxController with ExceptionHandler {
   }
 
   final RxBool isLoading = true.obs;
-  final RxList<ItemListModel> selectedItemList = <ItemListModel>[].obs;
+  final selectedItemList = RxList<SelectedItemListModel>([]);
 
   RxBool isInvoiceSaved = false.obs;
   Future<bool> createInvoice() async {
     showLoading();
-    isInvoiceSaved.value = false;
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
+    isInvoiceSaved.value = false;
+    log("hukka mara ${{
+      "invoice": {
+        "Number": invoiceName.value,
+        "CompanyID": "",
+        "CompnyID": companyID,
+        "DisplayNumber": null,
+        "CustomerId": customerID.value,
+        "UserId": userID,
+        "Subtotal": invoiceSubtotal.value,
+        "Discount": invoiceDiscount.value,
+        "QboClassId": selectedQboClass.value?.qboClassId ?? 0,
+        "QboLocationId": selectedQboLocation.value?.qboLocationId ?? 0,
+
+        "Tax": taxAmount.toStringAsFixed(2),
+
+        "Total": amountAfterAddingTax.toStringAsFixed(2),
+        "Status": 1,
+        "InvoiceType": null,
+        "ModifiedDate": null,
+        "ModifiedBy": null,
+        "Note": noteTextController.text,
+        "CreatedDate": dateTimeConverter(
+            inputTime: DateTime.now().toString(), outputFormat: "yyyy/MM/dd"),
+        "CreatedBy": userID,
+        "InvoiceDate": dateTimeConverter(
+            inputTime: DateTime.now().toString(), outputFormat: "yyyy/MM/dd"),
+        "AmountCollect": 0.00,
+        "TaxType": selectedTaxID.value,
+        "AppointmentId": appointmentID,
+        "Type": selectedCreateType.value,
+        "QboId": 0,
+
+        "DiscountRate": createDiscountTextController.text,
+        "DiscountOption": selectedDiscountOption.value,
+        "QboEstimateId": 0,
+        "ExpirationDate": null,
+        "SyncToken": "0",
+        "QboPaymentID": "0",
+        "DepositAmount": 0.00,
+        "LoanStatus": null,
+        "IsConverted": false,
+        "ConvertedInvocieID": "",
+        "ConvertedInvocieNumber": null,
+        "items": selectedItemList.map((item) {
+          return {
+            ...item.selectedItem!.toJson(),
+            "IsTaxable": item.selectedItem!.isTaxable == true ? "TAX" : "NON",
+            "Quantity": item.quantity,
+            "UnitPrice": item.selectedItem!.price?.toStringAsFixed(2) ?? "0.00",
+            "TotalPrice": item.totalPrice,
+            // "ItemTyId": item.itemTypeId ?? "",
+            "ItemId": item.selectedItem!.id ?? "",
+          };
+        }).toList()
+
+        /// There will be item
+      }
+    }}");
     var response = await DioClient().post(
       url: ApiUrl.createInvoice,
       body: {
@@ -553,25 +728,14 @@ class InvoiceController extends GetxController with ExceptionHandler {
           "DisplayNumber": null,
           "CustomerId": customerID.value,
           "UserId": userID,
-          "Subtotal": invoiceSubtotal.value,
+          "Subtotal": subTotal.value,
           "Discount": invoiceDiscount.value,
-          "QboClassId": selectedQboClass.value?.qboClassId,
-          "QboLocationId": selectedQboLocation.value?.qboLocationId,
+          "QboClassId": selectedQboClass.value?.qboClassId ?? 0,
+          "QboLocationId": selectedQboLocation.value?.qboLocationId ?? 0,
 
-          "Tax": double.parse(
-              (((invoiceSubtotal.value - invoiceDiscount.value) -
-                          nonTaxableItemTotalInCreate.value) *
-                      (double.tryParse(tax.value) ?? 0) /
-                      100)
-                  .toStringAsFixed(2)),
+          "Tax": taxAmount.toStringAsFixed(2),
 
-          "Total": double.parse(
-              ((((invoiceSubtotal.value - invoiceDiscount.value) -
-                              nonTaxableItemTotalInCreate.value) *
-                          (double.tryParse(tax.value) ?? 0) /
-                          100) +
-                      (invoiceSubtotal.value - invoiceDiscount.value))
-                  .toStringAsFixed(2)),
+          "Total": amountAfterAddingTax.toStringAsFixed(2),
           "Status": 1,
           "InvoiceType": null,
           "ModifiedDate": null,
@@ -601,21 +765,14 @@ class InvoiceController extends GetxController with ExceptionHandler {
           "ConvertedInvocieNumber": null,
           "items": selectedItemList.map((item) {
             return {
-              ...item.toJson(),
-              "IsTaxable": item.isTaxable == true ? "TAX" : "NON",
-              "Quantity":
-                  quantityControllers[selectedItemList.indexOf(item)].text,
-              "UnitPrice": item.price?.toStringAsFixed(2) ?? "0.00",
-              "TotalPrice": (item.price != null
-                  ? (item.price! *
-                          (int.tryParse(quantityControllers[
-                                      selectedItemList.indexOf(item)]
-                                  .text) ??
-                              1))
-                      .toStringAsFixed(2)
-                  : "0.00"),
+              ...item.selectedItem!.toJson(),
+              "IsTaxable": item.selectedItem!.isTaxable == true ? "TAX" : "NON",
+              "Quantity": item.quantity,
+              "UnitPrice":
+                  item.selectedItem!.price?.toStringAsFixed(2) ?? "0.00",
+              "TotalPrice": item.totalPrice,
               // "ItemTyId": item.itemTypeId ?? "",
-              "ItemId": item.id ?? "",
+              "ItemId": item.selectedItem!.id ?? "",
             };
           }).toList()
 
@@ -742,21 +899,14 @@ class InvoiceController extends GetxController with ExceptionHandler {
           "IsConverted": false,
           "items": selectedItemList.map((item) {
             return {
-              ...item.toJson(),
-              "IsTaxable": item.isTaxable == true ? "TAX" : "NON",
-              "Quantity":
-                  editQuantityControllers[selectedItemList.indexOf(item)].text,
-              "UnitPrice": item.price?.toStringAsFixed(2) ?? "0.00",
-              "TotalPrice": (item.price != null
-                  ? (item.price! *
-                          (int.tryParse(editQuantityControllers[
-                                      selectedItemList.indexOf(item)]
-                                  .text) ??
-                              1))
-                      .toStringAsFixed(2)
-                  : "0.00"),
+              ...item.selectedItem!.toJson(),
+              "IsTaxable": item.selectedItem!.isTaxable == true ? "TAX" : "NON",
+              "Quantity": item.quantity,
+              "UnitPrice":
+                  item.selectedItem!.price?.toStringAsFixed(2) ?? "0.00",
+              "TotalPrice": item.totalPrice,
               // "ItemTyId": item.itemTypeId ?? "",
-              "ItemId": item.id ?? "",
+              "ItemId": item.selectedItem!.id ?? "",
             };
           }).toList()
         }
@@ -952,24 +1102,24 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
   @override
   void dispose() {
-    for (var controller in quantityControllers) {
-      controller.dispose();
-    }
-    for (var controller in amountControllers) {
-      controller.dispose();
-    }
-    for (var controller in descriptionControllers) {
-      controller.dispose();
-    }
-    for (var controller in editQuantityControllers) {
-      controller.dispose();
-    }
-    for (var controller in editAmountControllers) {
-      controller.dispose();
-    }
-    for (var controller in editDescriptionControllers) {
-      controller.dispose();
-    }
+    // for (var controller in quantityControllers) {
+    //   controller.dispose();
+    // }
+    // for (var controller in amountControllers) {
+    //   controller.dispose();
+    // }
+    // for (var controller in descriptionControllers) {
+    //   controller.dispose();
+    // }
+    // for (var controller in editQuantityControllers) {
+    //   controller.dispose();
+    // }
+    // for (var controller in editAmountControllers) {
+    //   controller.dispose();
+    // }
+    // for (var controller in editDescriptionControllers) {
+    //   controller.dispose();
+    // }
     noteTextController.dispose();
     createDiscountTextController.dispose();
     toTextController.dispose();

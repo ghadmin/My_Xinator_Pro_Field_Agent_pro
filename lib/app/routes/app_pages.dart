@@ -11,6 +11,7 @@ import 'package:xinator_fsm_pro/app/modules/signature/bindings/signature_binding
 import 'package:xinator_fsm_pro/app/modules/signature/views/signature_view.dart';
 
 import '../modules/appointment/bindings/appointment_binding.dart';
+import '../modules/appointment/bindings/custom_fields_binding.dart';
 import '../modules/appointment/views/appointment_details_view.dart';
 import '../modules/appointment/views/appointment_view.dart';
 import '../modules/appointment/views/see_all_form_screen.dart';
@@ -77,7 +78,7 @@ class AppPages {
     GetPage(
       name: _Paths.APPOINTMENT,
       page: () => const AppointmentView(),
-      binding: AppointmentBinding(),
+      bindings: [AppointmentBinding(), CustomFieldsBinding()],
     ),
     GetPage(
       name: _Paths.CSLVIEW,
@@ -86,7 +87,7 @@ class AppPages {
     GetPage(
       name: _Paths.APPOINTMENT_DETAILS,
       page: () => AppointmentDetailsView(),
-      binding: AppointmentBinding(),
+      bindings: [AppointmentBinding(), CustomFieldsBinding()],
     ),
     GetPage(
       name: _Paths.SETTINGS,
@@ -97,7 +98,7 @@ class AppPages {
     GetPage(
       name: _Paths.APPOINTMENT_SETTINGS,
       page: () => const AppointmentSettingsView(),
-      binding: SettingsBinding(),
+      bindings: [AppointmentBinding(), CustomFieldsBinding()],
     ),
     GetPage(
       name: _Paths.CUSTOMER,
@@ -146,7 +147,7 @@ class AppPages {
     GetPage(
       name: _Paths.APPOINTMENT_STATUS,
       page: () => const AppointmentStatusView(),
-      binding: SettingsBinding(),
+      bindings: [AppointmentBinding(), CustomFieldsBinding()],
     ),
     GetPage(
       name: _Paths.APPOINTMENT_STATUS,

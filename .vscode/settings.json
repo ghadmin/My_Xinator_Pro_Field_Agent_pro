@@ -19,5 +19,6 @@
     "[swift]": {
         "editor.defaultFormatter": "sweetpad.sweetpad",
         "editor.formatOnSave": true
-    }
+    },
+    "dotnet.defaultSolution": "FSM_PRO_MobileApp.sln"
 }

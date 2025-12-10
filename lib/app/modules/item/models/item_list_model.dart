@@ -81,3 +81,16 @@ class ItemListModel extends HiveObject {
     return map;
   }
 }
+
+class SelectedItemListModel {
+  ItemListModel? selectedItem;
+  int? quantity;
+
+  SelectedItemListModel({this.quantity, this.selectedItem});
+  double get totalPrice {
+    if (selectedItem != null && quantity != null) {
+      return (selectedItem!.price ?? 0) * quantity!;
+    }
+    return 0;
+  }
+}

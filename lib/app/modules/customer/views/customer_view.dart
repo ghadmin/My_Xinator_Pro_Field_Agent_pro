@@ -96,28 +96,28 @@ class CustomerView extends GetView<CustomerController> {
                               radius: 8,
                               color: Colors.white,
                               onPressed: () {
-                                // controller.businessName =
-                                //     "${customer.firstName ?? ""} ${customer.lastName ?? ""}";
-                                // controller.title = customer.jobTitle ?? "";
-                                // controller.address = "${customer.address1}, "
-                                //     "${customer.city}, "
-                                //     "${customer.state}, ";
-                                // controller.phoneNumber = customer.phone ?? "";
-                                // controller.mobileNumber = customer.mobile ?? "";
-                                // controller.email = customer.email ?? "";
-                                // controller.selectedCustomer(customer);
-                                // Get.toNamed(Routes.CUSTOMER_DETAILS);
-                                appointmentC.selectedAppointment.value = null;
+                                controller.businessName =
+                                    "${customer.firstName ?? ""} ${customer.lastName ?? ""}";
+                                controller.title = customer.jobTitle ?? "";
+                                controller.address = "${customer.address1}, "
+                                    "${customer.city}, "
+                                    "${customer.state}, ";
+                                controller.phoneNumber = customer.phone ?? "";
+                                controller.mobileNumber = customer.mobile ?? "";
+                                controller.email = customer.email ?? "";
+                                controller.selectedCustomer(customer);
+                                Get.toNamed(Routes.CUSTOMER_DETAILS);
+                                // appointmentC.selectedAppointment.value = null;
 
-                                final appointment = selectedApp.isEmpty
-                                    ? null
-                                    : selectedApp.first;
-                                appointmentC.selectSingleAppointments(
-                                    appointment,
-                                    appointmentC.appointments
-                                        .indexOf(appointment),
-                                    false);
-                                Get.toNamed(Routes.APPOINTMENT_DETAILS);
+                                // final appointment = selectedApp.isEmpty
+                                //     ? null
+                                //     : selectedApp.first;
+                                // appointmentC.selectSingleAppointments(
+                                //     appointment,
+                                //     appointmentC.appointments
+                                //         .indexOf(appointment),
+                                //     false);
+                                // Get.toNamed(Routes.APPOINTMENT_DETAILS);
                               },
                               child: Padding(
                                 padding: EdgeInsets.all(15.sp),

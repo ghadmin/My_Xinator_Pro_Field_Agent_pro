@@ -80,6 +80,9 @@ class ItemController extends GetxController with ExceptionHandler {
 
     if (sortTextController.text.isEmpty) {
       sortedItems.clear();
+      for (var element in items) {
+        log('element ${element.toJson()}');
+      }
       final alphabetSorted = items.toList()
         ..sort((a, b) => a.name!.compareTo(b.name!));
       sortedItems.addAll(alphabetSorted);

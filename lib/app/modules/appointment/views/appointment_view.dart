@@ -263,7 +263,7 @@ class AppointmentView extends GetView<AppointmentController> {
                                   // controller.resource =
                                   //     appointment.resource?.name ?? "";
 
-                                  // controller.notes = appointment.note ?? "";
+                                  // controller.notes = appointment.note ?? "";hjkgkjhkjhkjhkjh
                                   // controller.noteTextController.text =
                                   //     appointment.note ?? "";
                                   // controller.selectedAptIndex.value = index;

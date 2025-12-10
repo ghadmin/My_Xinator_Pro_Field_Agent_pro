@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -17,6 +18,7 @@ import '../../../../utils/date_converter.dart';
 import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/splash_container.dart';
+import '../../item/models/item_list_model.dart';
 import '../models/qbo_class_dropdown_model.dart' show QboClassModel;
 import '../models/qbo_location_dropdown_model.dart';
 
@@ -26,7 +28,6 @@ class CreateInvoiceView extends GetView<InvoiceController> {
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
-    log("isloc ${controller.isLocAndClassShow.value}");
     return Scaffold(
       appBar: buildAppBar(context, theme),
       body: Obx(() => SafeArea(
@@ -283,7 +284,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                       }),
                     SizedBox(height: 5.sp),
 
-                    controller.descriptionControllers.isEmpty
+                    controller.selectedItemList.isEmpty
                         ? SizedBox.shrink()
                         : Card(
                             elevation: 0,
@@ -321,6 +322,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                     controller
                                                             .selectedItemList[
                                                                 index]
+                                                            .selectedItem!
                                                             .name ??
                                                         "",
                                                     style: theme
@@ -329,18 +331,19 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                 ),
                                                 SizedBox(height: 2.sp),
                                                 controller
-                                                        .descriptionControllers[
-                                                            index]
-                                                        .text
+                                                        .selectedItemList[index]
+                                                        .selectedItem!
+                                                        .description!
                                                         .isEmpty
                                                     ? SizedBox.shrink()
                                                     : SizedBox(
                                                         width: .4.sw,
                                                         child: Text(
                                                           controller
-                                                              .descriptionControllers[
+                                                              .selectedItemList[
                                                                   index]
-                                                              .text,
+                                                              .selectedItem!
+                                                              .description!,
                                                           maxLines: 3,
                                                           overflow: TextOverflow
                                                               .ellipsis,
@@ -356,10 +359,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                       ),
                                                 SizedBox(height: 10.sp),
                                                 Text(
-                                                    "${controller.quantityControllers[index].text} X \$${controller.amountControllers[index].text}"),
+                                                    "${controller.selectedItemList[index].quantity} X \$${controller.selectedItemList[index].selectedItem!.price}"),
                                                 SizedBox(height: 4.sp),
                                                 Text(
-                                                  "Taxable: ${controller.selectedItemList[index].isTaxable == true ? "Yes" : "No"}",
+                                                  "Taxable: ${controller.selectedItemList[index].selectedItem!.isTaxable == true ? "Yes" : "No"}",
                                                   style:
                                                       theme.textTheme.bodySmall,
                                                 )
@@ -479,9 +482,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                                 hint: "Description",
                                                                                 theme: theme,
                                                                                 maxLine: 4,
-                                                                                textEditingController: controller.descriptionControllers[index],
+                                                                                textEditingController: TextEditingController(text: controller.selectedItemList[index].selectedItem!.description ?? ""),
                                                                                 onChanged: (v) {
-                                                                                  controller.selectedItemList[index].description = v;
+                                                                                  controller.selectedItemList[index].selectedItem!.description = v;
                                                                                 },
                                                                               ),
                                                                             ),
@@ -502,7 +505,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                                 hint: "Amount",
                                                                                 textInputType: TextInputType.numberWithOptions(decimal: true),
                                                                                 theme: theme,
-                                                                                textEditingController: controller.amountControllers[index],
+                                                                                textEditingController: TextEditingController(text: controller.selectedItemList[index].totalPrice.toStringAsFixed(2)),
                                                                                 onChanged: (value) {
                                                                                   // Recalculate total when amount changes
                                                                                 },
@@ -525,9 +528,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                                 hint: '1',
                                                                                 textInputType: TextInputType.number,
                                                                                 theme: theme,
-                                                                                textEditingController: controller.quantityControllers[index],
+                                                                                textEditingController: TextEditingController(text: controller.selectedItemList[index].quantity.toString()),
                                                                                 onChanged: (value) {
-                                                                                  controller.createTotal();
+                                                                                  controller.selectedItemList[index].quantity = int.tryParse(value) ?? 1;
+                                                                                  // controller.createTotal();
                                                                                 },
                                                                               ),
                                                                             ),
@@ -545,7 +549,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                             SizedBox(width: 30.sp),
                                                                             Obx(() =>
                                                                                 DropdownButton<bool>(
-                                                                                  value: controller.selectedItemList[index].isTaxable ?? true,
+                                                                                  value: controller.selectedItemList[index].selectedItem!.isTaxable ?? true,
                                                                                   dropdownColor: Colors.white,
                                                                                   items: [
                                                                                     DropdownMenuItem(
@@ -558,9 +562,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                                     ),
                                                                                   ],
                                                                                   onChanged: (value) {
-                                                                                    controller.selectedItemList[index].isTaxable = value;
+                                                                                    controller.selectedItemList[index].selectedItem!.isTaxable = value;
 
-                                                                                    controller.createTotal();
+                                                                                    // controller.createTotal();
                                                                                     controller.selectedItemList.refresh();
                                                                                   },
                                                                                 )),
@@ -611,8 +615,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 separatorBuilder: (context, index) {
                                   return SizedBox(height: 8.sp);
                                 },
-                                itemCount:
-                                    controller.descriptionControllers.length),
+                                itemCount: controller.selectedItemList.length),
                           ),
                     SizedBox(height: 20.sp),
 
@@ -670,7 +673,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                     .map((item) {
                                                   final isSelected = controller
                                                       .selectedItemList
-                                                      .contains(item);
+                                                      .map((e) =>
+                                                          e.selectedItem!.id)
+                                                      .contains(item.id);
 
                                                   return CheckboxListTile(
                                                     activeColor:
@@ -681,41 +686,48 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                           !isSelected) {
                                                         controller
                                                             .selectedItemList
-                                                            .add(item);
-                                                        controller
-                                                            .amountControllers
-                                                            .add(TextEditingController(
-                                                                text: item.price
-                                                                    .toString()));
-                                                        controller
-                                                            .descriptionControllers
-                                                            .add(TextEditingController(
-                                                                text:
-                                                                    item.description ??
-                                                                        ""));
-                                                        controller
-                                                            .quantityControllers
-                                                            .add(
-                                                                TextEditingController(
-                                                                    text: '1'));
+                                                            .add(SelectedItemListModel(
+                                                                quantity: 1,
+                                                                selectedItem:
+                                                                    item));
+                                                        // controller
+                                                        //     .amountControllers
+                                                        //     .add(TextEditingController(
+                                                        //         text: item.price
+                                                        //             .toString()));
+                                                        // controller
+                                                        //     .descriptionControllers
+                                                        //     .add(TextEditingController(
+                                                        //         text:
+                                                        //             item.description ??
+                                                        //                 ""));
+                                                        // controller
+                                                        //     .quantityControllers
+                                                        //     .add(
+                                                        //         TextEditingController(
+                                                        //             text: '1'));
                                                       } else if (checked ==
                                                               false &&
                                                           isSelected) {
                                                         final idx = controller
                                                             .selectedItemList
-                                                            .indexOf(item);
+                                                            .map((e) => e
+                                                                .selectedItem!
+                                                                .id)
+                                                            .toList()
+                                                            .indexOf(item.id);
                                                         controller
                                                             .selectedItemList
                                                             .removeAt(idx);
-                                                        controller
-                                                            .amountControllers
-                                                            .removeAt(idx);
-                                                        controller
-                                                            .descriptionControllers
-                                                            .removeAt(idx);
-                                                        controller
-                                                            .quantityControllers
-                                                            .removeAt(idx);
+                                                        // controller
+                                                        //     .amountControllers
+                                                        //     .removeAt(idx);
+                                                        // controller
+                                                        //     .descriptionControllers
+                                                        //     .removeAt(idx);
+                                                        // controller
+                                                        //     .quantityControllers
+                                                        //     .removeAt(idx);
                                                       }
                                                       Future.delayed(
                                                           Duration(seconds: 1));
@@ -811,7 +823,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                 appointmentController
                                                     .isSelectSingleNeedToCall(
                                                         false);
-                                                controller.createTotal();
+                                                // controller.createTotal();
                                                 Get.back();
                                               },
                                               inactive: false),
@@ -844,60 +856,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 ),
                               ),
                               trailing: Text(
-                                "\$${controller.invoiceSubtotal.value.toStringAsFixed(2)}",
+                                "\$${controller.subTotal.value.toStringAsFixed(2)}",
                                 style: theme.textTheme.bodyLarge,
                               ),
                             ),
-                            // ListTile(
-                            //   title: Text(
-                            //     "Surcharge",
-                            //     style: theme.textTheme.bodyMedium?.copyWith(
-                            //       color: LightThemeColors.bodyTextSecondaryColor,
-                            //       fontSize: 16.sp,
-                            //     ),
-                            //   ),
-                            //   trailing: Text(
-                            //     "3%",
-                            //     style: theme.textTheme.bodyLarge,
-                            //   ),
-                            // ),
-                            // ListTile(
-                            //   title: Row(
-                            //     children: [
-                            //       Text(
-                            //         "Surcharge",
-                            //         style: theme.textTheme.bodyLarge?.copyWith(
-                            //           color: LightThemeColors.hintTextColor,
-                            //           fontSize: 14.sp,
-                            //           fontWeight: FontWeight.w500,
-                            //         ),
-                            //       ),
-                            //       SizedBox(width: 20.sp),
-                            //       Transform.scale(
-                            //         scale: 0.65,
-                            //         child: SizedBox(
-                            //           width: 35.sp,
-                            //           child: CupertinoSwitch(
-                            //             activeTrackColor: theme.primaryColor,
-                            //             inactiveTrackColor: Colors.red,
-                            //             value: controller.isApplyingSurcharge.value,
-                            //             onChanged: (v) async {
-                            //               controller.toggleBlockStatus(v);
-                            //               controller.createTotal();
-                            //             },
-                            //           ),
-                            //         ),
-                            //       ),
-                            //     ],
-                            //   ),
-                            //   trailing: Text(
-                            //     "\$${double.parse(controller.surcharges).toStringAsFixed(2)}",
-                            //     style: theme.textTheme.bodyLarge?.copyWith(
-                            //       fontSize: 14.sp,
-                            //       fontWeight: FontWeight.w500,
-                            //     ),
-                            //   ),
-                            // ),
+
                             // ListTile(
                             //   title: Text(
                             //     "Deposit",
@@ -964,7 +927,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                             controller.selectedDiscountOption
                                                     .value =
                                                 selectedDiscount["value"];
-                                            controller.createTotal();
+                                            // controller.createTotal();
                                           }
                                         });
                                       },
@@ -1035,7 +998,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                           textEditingController: controller
                                               .createDiscountTextController,
                                           onChanged: (value) {
-                                            controller.createTotal();
+                                            // controller.createTotal();
                                           },
                                         ),
                                       ),
@@ -1077,7 +1040,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "-\$${(controller.invoiceDiscount.value).toStringAsFixed(2)}",
+                                    "-\$${(controller.discountAmounts.value).toStringAsFixed(2)}",
                                     style: theme.textTheme.bodyLarge,
                                   ),
                                 ),
@@ -1102,14 +1065,76 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "\$${(controller.amountAfterDiscount.value).toStringAsFixed(2)}",
+                                    "\$${(controller.amountAfterDiscounts.value).toStringAsFixed(2)}",
                                     style: theme.textTheme.bodyLarge,
                                   ),
                                 ),
                               ],
                             ),
-
-                            SizedBox(height: 10.sp),
+                            ListTile(
+                              title: Row(
+                                children: [
+                                  Text(
+                                    "Surcharge (3%)",
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: LightThemeColors.hintTextColor,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(width: 20.sp),
+                                  Transform.scale(
+                                    scale: 0.65,
+                                    child: SizedBox(
+                                      width: 35.sp,
+                                      child: CupertinoSwitch(
+                                        activeTrackColor: theme.primaryColor,
+                                        inactiveTrackColor: Colors.red,
+                                        value: controller
+                                            .isApplyingSurcharge.value,
+                                        onChanged: (v) async {
+                                          controller.toggleBlockStatus(v);
+                                          // controller.createTotal();
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: Text(
+                                controller.isApplyingSurcharge.value
+                                    ? "\$${(controller.amountAfterDiscount.value * 3 / 100).toStringAsFixed(2)}"
+                                    : "0.00",
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            if (controller.isApplyingSurcharge.value) ...[
+                              Divider(
+                                height: 1.sp,
+                                color: Colors.black,
+                              ),
+                              ListTile(
+                                title: Text(
+                                  maxLines: 2,
+                                  "Total amount with Surcharge",
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.primaryColor,
+                                  ),
+                                ),
+                                trailing: Text(
+                                  "\$${controller.totalAmountWithSurcharge.value.toStringAsFixed(2)}",
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            // SizedBox(height: 5.sp),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
@@ -1124,7 +1149,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "\$${(controller.invoiceSubtotal.value - controller.nonTaxableItemTotalInCreate.value).toStringAsFixed(2)}",
+                                    "\$${(controller.taxableTotal.value).toStringAsFixed(2)}",
                                     style: theme.textTheme.bodyLarge?.copyWith(
                                       fontSize: 14.sp,
                                       fontWeight: FontWeight.w500,
@@ -1148,7 +1173,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "\$${(controller.discountedTaxableTotalInCreate.value).toStringAsFixed(2)}",
+                                    "\$${(controller.discountedTaxableTotal.value).toStringAsFixed(2)}",
                                     style: theme.textTheme.bodyLarge?.copyWith(
                                       fontSize: 14.sp,
                                       fontWeight: FontWeight.w500,
@@ -1209,7 +1234,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                               "NO TAX";
                                           controller.tax.value = "0.00";
                                           controller.selectedTaxID.value = "";
-                                          controller.createTotal();
+                                          // controller.createTotal();
                                         } else {
                                           final selectedTax = controller.taxes
                                               .firstWhere((tax) =>
@@ -1222,7 +1247,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                               "0.00";
                                           controller.selectedTaxID.value =
                                               selectedTax.id.toString();
-                                          controller.createTotal();
+                                          // controller.createTotal();
                                         }
                                       }
                                     });
@@ -1260,7 +1285,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                               trailing: SizedBox(
                                 width: 165.sp,
                                 child: Text(
-                                  "\$${(controller.discountedTaxableTotalInCreate.value).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
+                                  "\$${(controller.discountedTaxableTotal).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w500,
@@ -1316,7 +1341,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "+\$${(controller.invoiceTax.value).toStringAsFixed(2)}",
+                                    "+\$${(controller.taxAmount.value).toStringAsFixed(2)}",
                                     style: theme.textTheme.bodyLarge,
                                   ),
                                 ),
@@ -1341,7 +1366,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 Padding(
                                   padding: EdgeInsets.only(right: 12.sp),
                                   child: Text(
-                                    "\$${controller.invoiceTotal.value}",
+                                    "\$${controller.amountAfterAddingTax.value.toStringAsFixed(2)}",
                                     style: theme.textTheme.bodyLarge,
                                   ),
                                 ),
@@ -1358,7 +1383,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 style: theme.textTheme.bodyLarge,
                               ),
                               trailing: Text(
-                                "\$${controller.invoiceTotal.value}",
+                                "\$${controller.amountAfterAddingTax.value.toStringAsFixed(2)}",
                                 style: theme.textTheme.bodyLarge,
                               ),
                             ),

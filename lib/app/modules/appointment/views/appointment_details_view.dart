@@ -17,6 +17,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/empty_widget.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
+import 'package:xinator_fsm_pro/app/modules/appointment/controllers/custom_fields_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/note_model.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
 import 'package:xinator_fsm_pro/app/modules/forms/models/form_model.dart'
@@ -34,6 +35,7 @@ import '../../../routes/app_pages.dart';
 import '../../../service/helper/dialog_helper.dart';
 import '../../item/models/item_list_model.dart';
 import '../controllers/appointment_controller.dart';
+import '../models/custom_field_model.dart';
 import '../models/tag_model.dart';
 import 'map_view.dart';
 
@@ -58,6 +60,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     _tabController1.addListener(() {
       if (_tabController1.index == 0) {
         // forms  tab index
+
         formC.selectAttachedForms();
       }
     });
@@ -68,6 +71,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         // forms  tab index
         formC.formModels.clear();
         formC.fetchTemplates();
+
+        formC.selectAttachedForms();
       }
       if (_tabController.index == 1) {
         Future.delayed(Duration(seconds: 7));
@@ -93,6 +98,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   }
 
   AppointmentController controller = Get.find<AppointmentController>();
+  CustomFieldsController customFieldsController =
+      Get.find<CustomFieldsController>();
 
   FormController formC = Get.find<FormController>();
   @override
@@ -120,6 +127,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         resizeToAvoidBottomInset: false,
         appBar: Get.size.width <= 440
             ? AppBar(
+                leading: GestureDetector(
+                    onTap: () {
+                      Get.back();
+                    },
+                    child: Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.blue,
+                      size: 15.sp,
+                    )),
+                automaticallyImplyLeading: false,
                 title: Text("Appointment Details"),
                 centerTitle: false,
               )
@@ -128,6 +145,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                 child: Padding(
                   padding: EdgeInsets.only(top: 15.sp),
                   child: AppBar(
+                    leading: GestureDetector(
+                        onTap: () {
+                          Get.back();
+                        },
+                        child: Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.blue,
+                          size: 15.sp,
+                        )),
+                    automaticallyImplyLeading: false,
                     title: Text("Appointment Details"),
                     centerTitle: false,
                   ),
@@ -631,87 +658,91 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 )
                               ],
                             ),
-                            TabBar(
-                              isScrollable: true,
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: TabBar(
+                                isScrollable: true,
 
-                              dividerColor: LightThemeColors
-                                  .primaryColor, // for line under tabs
-                              indicatorColor: LightThemeColors
-                                  .primaryColor, // underline indicator color
-                              labelColor: LightThemeColors
-                                  .primaryColor, // selected tab text/icon color
-                              unselectedLabelColor:
-                                  Colors.grey, // unselected tab text/icon color
-                              indicatorWeight: 3.0, controller: _tabController,
-                              tabs: [
-                                // index 0
-                                TextWidget(
-                                  text: "Info",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                      fontSize: 10.sp),
-                                ),
-                                // index 1
-                                TextWidget(
-                                  text: "CSL",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                      fontSize: 10.sp),
-                                ),
+                                dividerColor: LightThemeColors
+                                    .primaryColor, // for line under tabs
+                                indicatorColor: LightThemeColors
+                                    .primaryColor, // underline indicator color
+                                labelColor: LightThemeColors
+                                    .primaryColor, // selected tab text/icon color
+                                unselectedLabelColor: Colors
+                                    .grey, // unselected tab text/icon color
+                                indicatorWeight: 3.0,
+                                controller: _tabController,
+                                tabs: [
+                                  // index 0
+                                  TextWidget(
+                                    text: "Info",
+                                    maxLines: 2,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.visible,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                        fontSize: 10.sp),
+                                  ),
+                                  // index 1
+                                  TextWidget(
+                                    text: "CSL",
+                                    maxLines: 2,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.visible,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                        fontSize: 10.sp),
+                                  ),
 
-                                // index 2
-                                TextWidget(
-                                  text: "Forms",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                      fontSize: 10.sp),
-                                ),
-                                //index 3
-                                TextWidget(
-                                  text: "Estimate/Invoice",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                      fontSize: 10.sp),
-                                ),
-                                //index 4
-                                TextWidget(
-                                  text: "Pictures",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                      fontSize: 10.sp),
-                                ),
-                                //index 5
-                                TextWidget(
-                                  text: "Notes",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                      fontSize: 10.sp),
-                                ),
-                              ],
+                                  // index 2
+                                  TextWidget(
+                                    text: "Forms",
+                                    maxLines: 2,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                        fontSize: 10.sp),
+                                  ),
+                                  //index 3
+                                  TextWidget(
+                                    text: "Estimate/Invoice",
+                                    maxLines: 2,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.visible,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                        fontSize: 10.sp),
+                                  ),
+                                  //index 4
+                                  TextWidget(
+                                    text: "Pictures",
+                                    maxLines: 2,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.visible,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                        fontSize: 10.sp),
+                                  ),
+                                  //index 5
+                                  TextWidget(
+                                    text: "Notes",
+                                    maxLines: 2,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.visible,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                        fontSize: 10.sp),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -956,7 +987,84 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                       ],
                                     ),
                                   ),
-                                  SizedBox(height: 35.sp),
+                                  MainDivider(),
+                                  SizedBox(
+                                    height: 10,
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 15.0),
+                                    child:
+                                        // Row(
+                                        //   children: [
+                                        //     TextWidget(
+                                        //       text: "Custom Fields: ",
+                                        //       style: theme.textTheme.bodyLarge
+                                        //           ?.copyWith(
+                                        //         color:
+                                        //             LightThemeColors.hintTextColor,
+                                        //         fontSize: 14.sp,
+                                        //         fontWeight: FontWeight.w500,
+                                        //       ),
+                                        //     ),
+                                        //     SizedBox(width: 10),
+
+                                        //     // Make dropdown take remaining space
+                                        //     Expanded(
+                                        //       child:
+                                        DropdownButton<CustomFieldModel>(
+                                      isExpanded: true,
+                                      iconSize: 20.sp, // important!
+                                      icon: Icon(Icons.add,
+                                          color: theme.primaryColor),
+                                      underline: SizedBox(),
+                                      value: null,
+                                      items: customFieldsController
+                                          .allCustomFields
+                                          .map((field) {
+                                        return DropdownMenuItem<
+                                            CustomFieldModel>(
+                                          value: field,
+                                          child: Text(
+                                            field.fieldName!,
+                                            softWrap:
+                                                true, // wrap text instead of ellipsis
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        if (value != null) {
+                                          customFieldsController
+                                              .saveCustomField(value);
+                                        }
+                                      },
+                                    ),
+                                    // ),
+                                    //   ],
+                                    // ),
+                                  ),
+                                  MainDivider(),
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: customFieldsController
+                                        .selectedCustomFields.length,
+                                    itemBuilder: (context, index) {
+                                      final field = customFieldsController
+                                          .selectedCustomFields[index];
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8.0),
+                                        child: Container(
+                                          padding: EdgeInsets.all(10.r),
+                                          decoration: BoxDecoration(
+                                              color: Colors.white),
+                                          child: buildCustomFieldWidget(
+                                              field, context),
+                                        ),
+                                      );
+                                    },
+                                  )
                                 ],
                               ),
                             ),
@@ -1260,7 +1368,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   .selectedFormsIdList
                                                   .contains(template.id))
                                               .toList();
-
+                                          log("filterd ${formC.formModels.where((template) => formC.selectedFormsIdList.contains(template.id)).toList()}");
                                           // Handle empty or null case
                                           if (formC.filteredTemplates.isEmpty) {
                                             return EmptyWidget(
@@ -1927,30 +2035,30 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               controller.invoiceController
                                                   .selectedItemList
                                                   .clear();
-                                              for (var c in controller
-                                                  .invoiceController
-                                                  .editAmountControllers) {
-                                                c.dispose();
-                                              }
-                                              for (var c in controller
-                                                  .invoiceController
-                                                  .editDescriptionControllers) {
-                                                c.dispose();
-                                              }
-                                              for (var c in controller
-                                                  .invoiceController
-                                                  .editQuantityControllers) {
-                                                c.dispose();
-                                              }
-                                              controller.invoiceController
-                                                  .editAmountControllers
-                                                  .clear();
-                                              controller.invoiceController
-                                                  .editDescriptionControllers
-                                                  .clear();
-                                              controller.invoiceController
-                                                  .editQuantityControllers
-                                                  .clear();
+                                              // for (var c in controller
+                                              //     .invoiceController
+                                              //     .editAmountControllers) {
+                                              //   c.dispose();
+                                              // }
+                                              // for (var c in controller
+                                              //     .invoiceController
+                                              //     .editDescriptionControllers) {
+                                              //   c.dispose();
+                                              // }
+                                              // for (var c in controller
+                                              //     .invoiceController
+                                              //     .editQuantityControllers) {
+                                              //   c.dispose();
+                                              // }
+                                              // controller.invoiceController
+                                              //     .editAmountControllers
+                                              //     .clear();
+                                              // controller.invoiceController
+                                              //     .editDescriptionControllers
+                                              //     .clear();
+                                              // controller.invoiceController
+                                              //     .editQuantityControllers
+                                              //     .clear();
                                               controller.invoiceController
                                                   .editNoteTextController
                                                   .clear();
@@ -2115,41 +2223,50 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     in proposal.items!) {
                                                   controller.invoiceController
                                                       .selectedItemList
-                                                      .add(ItemListModel(
-                                                    id: item.itemId,
-                                                    name: item.name,
-                                                    description:
-                                                        item.description,
-                                                    price: double.tryParse(
-                                                        item.unitPrice ??
-                                                            "0.00"),
-                                                    isTaxable:
-                                                        item.isTaxable == "TAX"
-                                                            ? true
-                                                            : false,
-                                                    // itemTypeId: int.parse(item.itemTyId!),
-                                                  ));
+                                                      .add(
+                                                          SelectedItemListModel(
+                                                              quantity: double.parse(
+                                                                      item.quantity ??
+                                                                          "1")
+                                                                  .toInt(),
+                                                              selectedItem:
+                                                                  ItemListModel(
+                                                                id: item.itemId,
+                                                                name: item.name,
+                                                                description: item
+                                                                    .description,
+                                                                price: double
+                                                                    .tryParse(item
+                                                                            .unitPrice ??
+                                                                        "0.00"),
+                                                                isTaxable:
+                                                                    item.isTaxable ==
+                                                                            "TAX"
+                                                                        ? true
+                                                                        : false,
+                                                                // itemTypeId: int.parse(item.itemTyId!),
+                                                              )));
 
                                                   // Initialize controllers with existing values
-                                                  controller.invoiceController
-                                                      .editAmountControllers
-                                                      .add(TextEditingController(
-                                                          text:
-                                                              item.unitPrice ??
-                                                                  "0.00"));
+                                                  // controller.invoiceController
+                                                  //     .editAmountControllers
+                                                  //     .add(TextEditingController(
+                                                  //         text:
+                                                  //             item.unitPrice ??
+                                                  //                 "0.00"));
 
-                                                  controller.invoiceController
-                                                      .editDescriptionControllers
-                                                      .add(TextEditingController(
-                                                          text:
-                                                              item.description ??
-                                                                  ""));
+                                                  // controller.invoiceController
+                                                  //     .editDescriptionControllers
+                                                  //     .add(TextEditingController(
+                                                  //         text:
+                                                  //             item.description ??
+                                                  //                 ""));
 
-                                                  controller.invoiceController
-                                                      .editQuantityControllers
-                                                      .add(TextEditingController(
-                                                          text: item.quantity ??
-                                                              "1"));
+                                                  // controller.invoiceController
+                                                  //     .editQuantityControllers
+                                                  //     .add(TextEditingController(
+                                                  //         text: item.quantity ??
+                                                  //             "1"));
                                                 }
                                               }
                                               controller.invoiceController
@@ -2164,7 +2281,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                                               // controller.invoiceController
                                               //     .isDetailsView(true);
-
+// controller.invoiceController. createDiscountTextController.text = controller.selectedAppointment.value.invoices.
                                               Get.toNamed(
                                                   Routes.INVOICE_DETAILS);
                                             },
@@ -5591,6 +5708,105 @@ void showNoteDetailsDialog(
       );
     },
   );
+}
+
+Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
+  switch (field.fieldType) {
+    // ---------------- DROPDOWN ----------------
+    case 'dropdown':
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(field.fieldName!, style: Theme.of(context).textTheme.bodyLarge),
+          SizedBox(height: 10.h),
+          DropdownButton<String>(
+            isExpanded: true,
+            value: field.selectedValue,
+            hint: Text("Select ${field.fieldName}"),
+            items: field.options?.map((option) {
+              return DropdownMenuItem<String>(
+                value: option,
+                child: Text(option),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) field.selectedValue = value;
+            },
+          ),
+        ],
+      );
+
+    // ---------------- CHECKLIST ----------------
+    case 'checklist':
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(field.fieldName!, style: Theme.of(context).textTheme.bodyLarge),
+          SizedBox(height: 10.h),
+          ...field.options!.map((option) {
+            return CheckboxListTile(
+              checkColor: Colors.white,
+              activeColor: Colors.blue,
+              tileColor: field.selectedOptions!.contains(option)
+                  ? Colors.blue.withValues(alpha: 0.2)
+                  : Colors.grey.withValues(alpha: 0.2),
+              title: Text(option),
+              value: field.selectedOptions!.contains(option),
+              onChanged: (isChecked) {
+                if (isChecked == true) {
+                  field.selectedOptions!.add(option);
+                } else {
+                  field.selectedOptions!.remove(option);
+                }
+              },
+            );
+          }),
+        ],
+      );
+
+    // ---------------- TEXT FIELD ----------------
+    case 'text':
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(field.fieldName!, style: Theme.of(context).textTheme.bodyLarge),
+          SizedBox(height: 10.h),
+          TextField(
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: "Enter ${field.fieldName}",
+            ),
+            onChanged: (value) {
+              // field.textValue = value;
+            },
+          ),
+        ],
+      );
+
+    // ---------------- NUMBER FIELD ----------------
+    case 'number':
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(field.fieldName!, style: Theme.of(context).textTheme.bodyLarge),
+          SizedBox(height: 10.h),
+          TextField(
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: "Enter ${field.fieldName}",
+            ),
+            onChanged: (value) {
+              // field. = value; // same storage variable
+            },
+          ),
+        ],
+      );
+
+    // ---------------- UNSUPPORTED ----------------
+    default:
+      return Text("Unsupported field type: ${field.fieldType}");
+  }
 }
 
 void showProductDialog(BuildContext context) {

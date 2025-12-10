@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
-import 'package:xinator_fsm_pro/app/modules/appointment/models/appointments_form_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/image_list_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/models/tag_model.dart';
 import 'package:xinator_fsm_pro/app/modules/appointment/views/appointment_details_view.dart'
@@ -252,30 +251,28 @@ class AppointmentController extends GetxController
     selectedAptIndex.value = index;
     if (selectedAppointment.value!.invoices != null &&
         selectedAppointment.value!.invoices!.isNotEmpty) {
-      debugPrint("coala ${selectedEstimateOrInvoiceIndex.value} ");
       for (var item in selectedAppointment
           .value!.invoices![selectedEstimateOrInvoiceIndex.value].items!) {
         if (invoiceController.selectedItemList
-                .where((e) => e.id == item.itemId)
+                .where((e) => e.selectedItem!.id == item.itemId)
                 .isEmpty &&
             !invoiceController.removedList.contains(item.itemId)) {
-          invoiceController.selectedItemList.add(ItemListModel(
-            id: item.itemId,
-            name: item.name,
-            description: item.description,
-            price: double.tryParse(item.unitPrice ?? "0.00"),
-            isTaxable: item.isTaxable == "TAX" ? true : false,
-            // itemTypeId: int.parse(item.itemTyId!),
-          ));
+          invoiceController.selectedItemList.add(SelectedItemListModel(
+              quantity: double.parse(item.quantity ?? "1").toInt(),
+              selectedItem: ItemListModel(
+                id: item.itemId,
+                name: item.name,
+                description: item.description,
+                price: double.tryParse(item.unitPrice ?? "0.00"),
+                isTaxable: item.isTaxable == "TAX" ? true : false,
+                // itemTypeId: int.parse(item.itemTyId!),
+              )));
 
-          invoiceController.editAmountControllers
-              .add(TextEditingController(text: item.unitPrice ?? "0.00"));
+          // invoiceController.editAmountControllers
+          //     .add(TextEditingController(text: item.unitPrice ?? "0.00"));
 
-          invoiceController.editDescriptionControllers
-              .add(TextEditingController(text: item.description ?? ""));
-
-          invoiceController.editQuantityControllers
-              .add(TextEditingController(text: item.quantity ?? "1"));
+          // invoiceController.editDescriptionControllers
+          //     .add(TextEditingController(text: item.description ?? ""));
         }
       }
       if (!fromPeriodic) invoiceController.createTotalForEdit();

@@ -395,12 +395,10 @@
 // }
 
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart'
-    show TextWidget;
+import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/url_launcher.dart';
@@ -409,9 +407,11 @@ import '../controllers/customer_controller.dart';
 
 class CustomerDetailsView extends GetView<CustomerController> {
   const CustomerDetailsView({super.key});
+
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         toolbarHeight:
@@ -422,7 +422,6 @@ class CustomerDetailsView extends GetView<CustomerController> {
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: SingleChildScrollView(
@@ -430,279 +429,554 @@ class CustomerDetailsView extends GetView<CustomerController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Card(
-                      elevation: 0,
-                      color: Colors.white,
-                      child: Column(
-                        children: [
-                          ListTile(
-                            title: TextWidget(
-                              text: "Business Name",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: TextWidget(
-                              text: controller.businessName,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                                color: theme.primaryColor,
-                              ),
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Title",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: TextWidget(
-                              text: controller.title,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.end,
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Address",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: SizedBox(
-                              width: 200.sp,
-                              child: TextWidget(
-                                text: controller.address,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                textAlign: TextAlign.end,
-                              ),
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Mobile",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: InkWell(
-                              onTap: () async {
-                                await UrlLauncher.phoneCall(
-                                    controller.mobileNumber);
-                              },
-                              child: TextWidget(
-                                text: controller.mobileNumber,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Phone",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: InkWell(
-                              onTap: () async {
-                                await UrlLauncher.phoneCall(
-                                    controller.phoneNumber);
-                              },
-                              child: TextWidget(
-                                text: controller.phoneNumber,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Email",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: SizedBox(
-                              width: 200.sp,
-                              child: InkWell(
-                                onTap: () async {
-                                  await UrlLauncher.email(controller.email);
-                                },
-                                child: TextWidget(
-                                  text: controller.email,
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: theme.primaryColor,
-                                  ),
-                                  textAlign: TextAlign.end,
-                                ),
-                              ),
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Invoices",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: SizedBox(
-                              width: 200.sp,
-                              child: InkWell(
-                                onTap: () {},
-                                child: TextWidget(
-                                  text: "See Invoices >",
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: theme.primaryColor,
-                                  ),
-                                  textAlign: TextAlign.end,
-                                ),
-                              ),
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Estimates",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: SizedBox(
-                              width: 200.sp,
-                              child: InkWell(
-                                onTap: () {},
-                                child: TextWidget(
-                                  text: "See Estimates >",
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: theme.primaryColor,
-                                  ),
-                                  textAlign: TextAlign.end,
-                                ),
-                              ),
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Appointments",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: InkWell(
-                              onTap: () {},
-                              child: TextWidget(
-                                text: "See Appointments >",
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: theme.primaryColor,
-                                ),
-                                textAlign: TextAlign.end,
-                              ),
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Files",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: SizedBox(
-                              width: 200.sp,
-                              child: InkWell(
-                                onTap: () {},
-                                child: TextWidget(
-                                  text: 'View Files >',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    color: theme.primaryColor,
-                                  ),
-                                  textAlign: TextAlign.end,
-                                ),
-                              ),
-                            ),
-                          ),
-                          MainDivider(),
-                          ListTile(
-                            title: TextWidget(
-                              text: "Email History",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: LightThemeColors.hintTextColor,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: InkWell(
-                              onTap: () {},
-                              child: TextWidget(
-                                text: 'See History >',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: theme.primaryColor,
-                                ),
-                                textAlign: TextAlign.end,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildCustomerInfoCard(theme),
+                    SizedBox(height: 20.h),
+                    _buildCreateAppointmentButton(theme, context),
+                    SizedBox(height: 25.h),
+                    _buildAppointmentSection(theme),
                   ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // CUSTOMER INFO SECTION
+  // ---------------------------------------------------------------------------
+  Widget _buildCustomerInfoCard(ThemeData theme) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      child: Column(
+        children: [
+          _tile(
+              "Business Name",
+              controller.businessName != '' ? controller.businessName : "N/A",
+              theme),
+          MainDivider(),
+          _tile("Title", controller.title != '' ? controller.title : "N/A",
+              theme),
+          MainDivider(),
+          _tile("Address",
+              controller.address != '' ? controller.address : "N/A", theme,
+              multiLine: true),
+          MainDivider(),
+          _callTile(
+              "Mobile",
+              controller.mobileNumber != '' ? controller.mobileNumber : "N/A",
+              theme),
+          MainDivider(),
+          _callTile(
+              "Phone",
+              controller.phoneNumber != '' ? controller.phoneNumber : "N/A",
+              theme),
+          MainDivider(),
+          _emailTile("Email", controller.email != '' ? controller.email : "N/A",
+              theme),
+          // MainDivider(),
+          // _navTile("Invoices", "See Invoices >", theme),
+          // MainDivider(),
+          // _navTile("Estimates", "See Estimates >", theme),
+          // MainDivider(),
+          // _navTile("Appointments", "See Appointments >", theme),
+          // MainDivider(),
+          // _navTile("Files", "View Files >", theme),
+          // MainDivider(),
+          // _navTile("Email History", "See History >", theme),
+        ],
+      ),
+    );
+  }
+
+  Widget _tile(String title, String value, ThemeData theme,
+      {bool multiLine = false}) {
+    return ListTile(
+      title: TextWidget(
+        text: title,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: LightThemeColors.hintTextColor,
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: SizedBox(
+        width: multiLine ? 220.sp : null,
+        child: TextWidget(
+          text: value,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.end,
+          maxLines: 100, // 👉 IMPORTANT — full text, no ellipsis
+        ),
+      ),
+    );
+  }
+
+  Widget _callTile(String title, String number, ThemeData theme) {
+    return ListTile(
+      title: TextWidget(
+        text: title,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: LightThemeColors.hintTextColor,
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: InkWell(
+        onTap: () => UrlLauncher.phoneCall(number),
+        child: TextWidget(
+          text: number,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: theme.primaryColor,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _emailTile(String title, String email, ThemeData theme) {
+    return ListTile(
+      title: TextWidget(
+        text: title,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: LightThemeColors.hintTextColor,
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: InkWell(
+        onTap: () => UrlLauncher.email(email),
+        child: SizedBox(
+          width: 220.sp,
+          child: TextWidget(
+            text: email,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+              color: theme.primaryColor,
+            ),
+            textAlign: TextAlign.end,
+            maxLines: 100,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _navTile(String title, String buttonText, ThemeData theme) {
+    return ListTile(
+      title: TextWidget(
+        text: title,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: LightThemeColors.hintTextColor,
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: TextWidget(
+        text: buttonText,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          fontSize: 14.sp,
+          fontWeight: FontWeight.w500,
+          color: theme.primaryColor,
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // CREATE APPOINTMENT BUTTON
+  // ---------------------------------------------------------------------------
+
+  void openCreateAppointmentPopup(BuildContext context) {
+    Get.bottomSheet(
+      CreateAppointmentSheet(),
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+    );
+  }
+
+  Widget _buildCreateAppointmentButton(ThemeData theme, BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => openCreateAppointmentPopup(context),
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 14.sp),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: TextWidget(
+          text: "Create Appointment",
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // APPOINTMENTS SECTION
+  // ---------------------------------------------------------------------------
+  Widget _buildAppointmentSection(ThemeData theme) {
+    // final list = controller.appointments;
+    final list = [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextWidget(
+          text: "Appointments",
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 10.h),
+
+        /// No Appointments
+        if (list.isEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 20.h),
+            child: Center(
+              child: TextWidget(
+                text: "No appointment found",
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontSize: 15.sp,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 350.h,
+            child: ListView.separated(
+              physics: BouncingScrollPhysics(),
+              itemCount: list.length,
+              separatorBuilder: (_, __) => MainDivider(),
+              itemBuilder: (_, index) {
+                final appt = list[index];
+                return ListTile(
+                  title: TextWidget(
+                    text: appt.title,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: TextWidget(
+                    text: appt.date,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontSize: 13.sp,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  trailing: Icon(Icons.arrow_forward_ios, size: 14),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class CreateAppointmentSheet extends StatefulWidget {
+  @override
+  State<CreateAppointmentSheet> createState() => _CreateAppointmentSheetState();
+}
+
+class _CreateAppointmentSheetState extends State<CreateAppointmentSheet> {
+  DateTime? selectedDate;
+  Map<String, dynamic>? selectedTimeSlot;
+  String? selectedType;
+  final TextEditingController noteCtrl = TextEditingController();
+
+  final List<String> appointmentTypes = [
+    "Inspection",
+    "Follow Up",
+    "Diagnostic",
+    "Repair",
+    "Maintenance"
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // DRAG BAR
+            Center(
+              child: Container(
+                width: 55,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+
+            Text("Create Appointment",
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                )),
+            SizedBox(height: 25),
+
+            // DATE PICKER
+            _label("Date"),
+            _selectBox(
+              text: selectedDate == null
+                  ? "Select Date"
+                  : "${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}",
+              onTap: pickDate,
+            ),
+            SizedBox(height: 18),
+
+            // TIME SLOT PICKER
+            _label("Time Slot"),
+            _selectBox(
+              text: selectedTimeSlot == null
+                  ? "Select Time Slot"
+                  : "${selectedTimeSlot!["title"]} (${selectedTimeSlot!["time"]})",
+              onTap: openTimeSlotSheet,
+            ),
+            SizedBox(height: 18),
+
+            // APPOINTMENT TYPE
+            _label("Appointment Type"),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: _decoration(),
+              child: DropdownButton<String>(
+                value: selectedType,
+                isExpanded: true,
+                underline: SizedBox(),
+                hint: Text("Choose Type"),
+                items: appointmentTypes
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (v) => setState(() => selectedType = v),
+              ),
+            ),
+            SizedBox(height: 18),
+
+            // NOTE
+            _label("Note"),
+            Container(
+              decoration: _decoration(),
+              child: TextField(
+                controller: noteCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+              ),
+            ),
+
+            SizedBox(height: 30),
+
+            // SUBMIT BUTTON
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: submit,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(
+                  "Submit to CEC",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+
+            SizedBox(height: 25),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // UI HELPERS
+  BoxDecoration _decoration() => BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+      );
+
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(text,
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+      );
+
+  Widget _selectBox({required String text, required Function() onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: _decoration(),
+        child: Text(text, style: TextStyle(fontSize: 14)),
+      ),
+    );
+  }
+
+  // PICKERS
+  Future<void> pickDate() async {
+    final now = DateTime.now();
+    final d = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 2),
+    );
+
+    if (d != null) setState(() => selectedDate = d);
+  }
+
+  Future<void> openTimeSlotSheet() async {
+    final slot = await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => TimeSlotPicker(),
+    );
+
+    if (slot != null) setState(() => selectedTimeSlot = slot);
+  }
+
+  void submit() {
+    if (selectedDate == null ||
+        selectedTimeSlot == null ||
+        selectedType == null) {
+      Get.snackbar("Error", "Please fill all fields");
+      return;
+    }
+
+    Get.back();
+    Get.defaultDialog(
+      title: "Success",
+      middleText: "Appointment submitted",
+      textConfirm: "OK",
+      onConfirm: () => Get.back(),
+    );
+  }
+}
+
+class TimeSlotPicker extends StatefulWidget {
+  const TimeSlotPicker({super.key});
+
+  @override
+  State<TimeSlotPicker> createState() => _TimeSlotPickerState();
+}
+
+class _TimeSlotPickerState extends State<TimeSlotPicker> {
+  final List<Map<String, dynamic>> slots = [
+    {"title": "Morning", "time": "9:00 AM - 11:00 AM", "blocked": false},
+    {"title": "Afternoon", "time": "1:00 PM - 3:00 PM", "blocked": true},
+    {"title": "Evening", "time": "6:00 PM - 9:00 PM", "blocked": false},
+  ];
+
+  int? selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text("Select Time Slot",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 20),
+          ...List.generate(slots.length, (i) {
+            final s = slots[i];
+
+            return GestureDetector(
+              onTap: s["blocked"] ? null : () => setState(() => selected = i),
+              child: Container(
+                margin: EdgeInsets.only(bottom: 14),
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: s["blocked"]
+                      ? Colors.grey.shade200
+                      : selected == i
+                          ? Colors.blue.shade50
+                          : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected == i ? Colors.blue : Colors.grey.shade300,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(s["title"],
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600)),
+                        SizedBox(height: 4),
+                        Text(s["time"],
+                            style:
+                                TextStyle(fontSize: 13, color: Colors.black54)),
+                      ],
+                    ),
+                    s["blocked"]
+                        ? Icon(Icons.lock, color: Colors.grey)
+                        : selected == i
+                            ? Icon(Icons.check_circle, color: Colors.blue)
+                            : Icon(Icons.circle_outlined, color: Colors.grey),
+                  ],
+                ),
+              ),
+            );
+          }),
+          SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: selected == null
+                ? null
+                : () => Navigator.pop(context, slots[selected!]),
+            child: Padding(
+              padding: EdgeInsets.all(8.0.sp),
+              child: Text("Confirm"),
+            ),
+          ),
+        ],
       ),
     );
   }
