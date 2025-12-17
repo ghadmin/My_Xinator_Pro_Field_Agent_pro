@@ -1,0 +1,197 @@
+//ignore_for_file: must_be_immutable
+
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+
+import '../../../config/theme/light_theme_colors.dart';
+import '../../../utils/constants.dart';
+import '../../data/local/my_shared_pref.dart';
+import '../../modules/auth/controllers/auth_controller.dart';
+import '../../routes/app_pages.dart';
+import '../global-widgets/asset_image_box.dart';
+import '../global-widgets/text_widget.dart';
+
+class CustomDrawer extends StatelessWidget {
+  CustomDrawer({super.key, required this.indexClicked});
+  late int indexClicked;
+
+  @override
+  Widget build(BuildContext context) {
+    // var theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+    final authController = Get.put(AuthController());
+    return Drawer(
+      width: size.width > 600 ? 230.w : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+        child: Column(
+          children: [
+            /// Scrollable part (all menu items including Logout)
+            Expanded(
+              child: ListView(
+                children: [
+                  /// profile section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          ClipOval(
+                            child: AssetImageBox(
+                              height: 40.sp,
+                              width: 40.sp,
+                              assetImage: AppImages.kDemoUser,
+                            ),
+                          ),
+                          SizedBox(width: 12.sp),
+                          SizedBox(
+                            width: 116.sp,
+                            child: TextWidget(
+                              text: "${MySharedPref.getUserName()}",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 16.sp,
+                                color: Colors.black,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        onPressed: () => Get.back(),
+                        icon: Image.asset(
+                          SideBar.profileGoIcon,
+                          color: LightThemeColors.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 35.h),
+
+                  /// drawer items
+                  _drawerItem(
+                    icon: SideBar.homeIcon,
+                    text: 'Home',
+                    indexNumber: 0,
+                    onTap: () => Get.toNamed(Routes.APPOINTMENT),
+                  ),
+                  SizedBox(height: 10.h),
+
+                  _drawerItem(
+                    icon: SideBar.formIcon,
+                    text: 'Forms',
+                    indexNumber: 1,
+                    onTap: () => Get.toNamed(Routes.FORMS),
+                  ),
+                  SizedBox(height: 10.h),
+
+                  _drawerItem(
+                    icon: SideBar.itemsIcon,
+                    text: 'Items',
+                    indexNumber: 3,
+                    onTap: () => Get.toNamed(Routes.ITEM),
+                  ),
+                  SizedBox(height: 10.h),
+
+                  _drawerItem(
+                    icon: SideBar.customerServiceIcon,
+                    text: 'Customers',
+                    indexNumber: 4,
+                    onTap: () => Get.toNamed(Routes.CUSTOMER),
+                  ),
+                  SizedBox(height: 10.h),
+
+                  /// 👇 logout is still part of ListView, right under Customers
+                  _drawerItem(
+                    icon: SideBar.logoutIcon,
+                    text: 'Log out',
+                    indexNumber: 5,
+                    onTap: () async {
+                      Get.back();
+                      showAdaptiveDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const TextWidget(
+                            text: 'Log out',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          content: const TextWidget(
+                            text: 'Are you sure you want to log out?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Get.back(),
+                              child: const TextWidget(text: 'Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                Get.back();
+                                await authController.doLogout();
+                              },
+                              child: TextWidget(
+                                text: 'Log out',
+                                style: TextStyle(
+                                  color:
+                                      LightThemeColors.bodyTextSecondaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            /// fixed version text at very bottom
+            Text(
+              'Version: ${authController.versionController.appVersion.value}',
+              style: TextStyle(
+                fontSize: Get.size.width <= 440 ? 12.sp : 8.sp,
+                color: LightThemeColors.bodyTextSecondaryColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 20.h),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerItem(
+      {required String icon,
+      required String text,
+      required int indexNumber,
+      required GestureTapCallback onTap}) {
+    return ListTile(
+      selected: indexClicked == indexNumber,
+      selectedTileColor: Colors.white,
+      contentPadding: EdgeInsets.symmetric(horizontal: 20.sp),
+      title: Row(
+        children: [
+          Image.asset(height: 25.h, width: 25.w, icon),
+          Padding(
+            padding: EdgeInsets.only(left: 15.sp),
+            child: TextWidget(
+              text: text,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w400,
+                color: indexClicked == indexNumber
+                    ? LightThemeColors.primaryColor
+                    : LightThemeColors.bodyTextColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+      onTap: onTap,
+    );
+  }
+}
