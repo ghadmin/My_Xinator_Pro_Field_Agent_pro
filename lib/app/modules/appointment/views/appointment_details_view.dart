@@ -34,8 +34,6 @@ import '../controllers/appointment_controller.dart';
 import '../controllers/custom_fields_controller.dart';
 import '../models/custom_field_model.dart';
 import '../models/note_model.dart';
-import '../models/tag_model.dart';
-import 'map_view.dart';
 
 class AppointmentDetailsView extends StatefulWidget {
   const AppointmentDetailsView({super.key});

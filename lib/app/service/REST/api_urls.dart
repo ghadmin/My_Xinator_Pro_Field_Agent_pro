@@ -1,9 +1,9 @@
 class ApiUrl {
   /// Base URL
-  // static const baseUrl =
-  //     "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
   static const baseUrl =
-      "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
+      "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
+  // static const baseUrl =
+  //     "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
   static const login = "$baseUrl/VerifyUser";
   static const getAppointment = "$baseUrl/GetAppointmentList";
   static const getAttachedForms = "$baseUrl/GetAppointmentListWithForms";
