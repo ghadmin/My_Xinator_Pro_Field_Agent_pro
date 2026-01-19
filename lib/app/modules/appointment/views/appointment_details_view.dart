@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
@@ -21,10 +22,13 @@ import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_buttons.dart';
+import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../routes/app_pages.dart';
+import '../../../service/REST/api_urls.dart';
+import '../../../service/REST/dio_client.dart';
 import '../../../service/helper/dialog_helper.dart';
 import '../../forms/controllers/form_controller.dart';
 import '../../forms/models/form_model.dart';
@@ -74,6 +78,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         Future.delayed(Duration(seconds: 7));
         controller.isBasicExpanded(true);
       }
+      if (_tabController.index == 0) {
+        // Info tab - Load saved custom fields
+        _loadSavedCustomFields();
+      }
       if (_tabController.index == 4) {
         // Pictures tab index
 
@@ -85,6 +93,94 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         controller.getAllNotes(showLoader: true);
       }
     });
+  }
+
+  /// Load saved custom fields and populate them with values
+  Future<void> _loadSavedCustomFields() async {
+    try {
+      final appointmentId = controller.selectedAppointment.value?.apptID;
+      if (appointmentId == null) return;
+
+      log("📥 Loading saved custom fields for appointment: $appointmentId");
+
+      // Call API to get saved custom fields
+      var response = await DioClient().get(
+        url: "${ApiUrl.saveCustomFieldUrl}/$appointmentId",
+      );
+
+      if (response != null && response is Map) {
+        String fieldsValueJson = response["FeildsValue"] ?? "[]";
+        log("📥 Saved fields JSON: $fieldsValueJson");
+
+        // Parse as array of objects: [{"type": "...", "value1": "...", "value2": "..."}]
+        List<dynamic> savedFieldsArray = jsonDecode(fieldsValueJson);
+
+        // Clear previously selected fields
+        customFieldsController.selectedCustomFields.clear();
+
+        // Add fields from saved data
+        for (var fieldData in savedFieldsArray) {
+          if (fieldData is! Map) continue;
+
+          String? fieldType = fieldData["type"];
+          String? value1 = fieldData["value1"];
+          String? value2 = fieldData["value2"];
+
+          if (fieldType == null) continue;
+
+          // Find matching field definition from allCustomFields
+          var fieldDef = customFieldsController.allCustomFields
+              .firstWhereOrNull((f) => f.fieldName == fieldType);
+
+          if (fieldDef != null) {
+            // Create a new instance of the field
+            var newField = CustomFieldModel(
+              fieldID: fieldDef.fieldID,
+              fieldName: fieldDef.fieldName,
+              fieldType: fieldDef.fieldType,
+              fieldOptions: fieldDef.fieldOptions,
+              isActive: fieldDef.isActive,
+              options: fieldDef.options,
+            );
+
+            // Set the value based on field type
+            switch (fieldDef.fieldType) {
+              case 'text':
+                newField.textValue = value1;
+                break;
+              case 'number':
+                newField.numberValue = value1;
+                break;
+              case 'dropdown':
+                newField.selectedValue = value1;
+                break;
+              case 'checklist':
+                // For checklist, value1 contains selected options (comma-separated)
+                // value2 might contain additional options
+                List<String> options = [];
+                if (value1 != null && value1.isNotEmpty) {
+                  options.addAll(value1.split(','));
+                }
+                if (value2 != null && value2.isNotEmpty) {
+                  options.addAll(value2.split(','));
+                }
+                newField.selectedOptions = options;
+                break;
+            }
+
+            // Add to selected fields
+            customFieldsController.selectedCustomFields.add(newField);
+          }
+        }
+
+        log(
+          "✅ Loaded ${customFieldsController.selectedCustomFields.length} saved custom fields",
+        );
+        setState(() {}); // Refresh UI
+      }
+    } catch (e) {
+      log("❌ Error loading saved custom fields: $e");
+    }
   }
 
   @override
@@ -103,20 +199,50 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     var theme = Theme.of(context);
     return Obx(
       () => Scaffold(
-        floatingActionButton:
-            _tabController1.index == 1 && formC.selectedFormsIdList.isNotEmpty
-            ? FloatingActionButton(
-                backgroundColor: Colors.blue,
-                onPressed: () async {
-                  log("clicking");
-                  await formC.assignFormsToAppointment(
-                    controller.selectedAppointment.value!.customer!.customerID!,
-                    controller.selectedAppointment.value!.apptID.toString(),
-                  );
-                },
-                child: Icon(Icons.add, color: Colors.white),
-              )
-            : SizedBox.shrink(),
+        floatingActionButton: SizedBox(
+          height: (_tabController.index == 0 &&
+                      customFieldsController.selectedCustomFields.isNotEmpty) ||
+                  (_tabController1.index == 1 &&
+                      formC.selectedFormsIdList.isNotEmpty)
+              ? 120
+              : 56,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Info tab Custom Fields Save FAB (tab index 0)
+              if (_tabController.index == 0 &&
+                  customFieldsController.selectedCustomFields.isNotEmpty)
+                FloatingActionButton(
+                  backgroundColor: Colors.green,
+                  heroTag: "save_custom_fields_info",
+                  onPressed: () async {
+                    await _saveCustomFields();
+                  },
+                  child: Icon(Icons.save, color: Colors.white),
+                ),
+              // Forms tab FAB (tab index 2)
+              if (_tabController1.index == 1 &&
+                  formC.selectedFormsIdList.isNotEmpty)
+                SizedBox(height: 10),
+              if (_tabController1.index == 1 &&
+                  formC.selectedFormsIdList.isNotEmpty)
+                FloatingActionButton(
+                  backgroundColor: Colors.blue,
+                  heroTag: "assign_forms",
+                  onPressed: () async {
+                    log("clicking");
+                    await formC.assignFormsToAppointment(
+                      controller
+                          .selectedAppointment.value!.customer!.customerID!,
+                      controller.selectedAppointment.value!.apptID.toString(),
+                    );
+                  },
+                  child: Icon(Icons.add, color: Colors.white),
+                ),
+            ],
+          ),
+        ),
         resizeToAvoidBottomInset: false,
         appBar: Get.size.width <= 440
             ? AppBar(
@@ -253,8 +379,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         ),
                                         SizedBox(height: 10.h),
                                         TextWidget(
-                                          text:
-                                              controller
+                                          text: controller
                                                   .settingController
                                                   .selectedAppointmentsStatus
                                                   .value
@@ -292,11 +417,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     child: Padding(
                                                       padding:
                                                           const EdgeInsets.all(
-                                                            6,
-                                                          ), // Reduced padding
+                                                        6,
+                                                      ), // Reduced padding
                                                       child: CircleAvatar(
-                                                        backgroundColor:
-                                                            controller
+                                                        backgroundColor: controller
                                                                     .settingController
                                                                     .selectedTicket
                                                                     .value
@@ -306,62 +430,60 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                     .toLowerCase()
                                                             ? Color(0xffE98862)
                                                             : controller
-                                                                      .settingController
-                                                                      .selectedTicket
-                                                                      .value
-                                                                      ?.statusName!
-                                                                      .toLowerCase() ==
-                                                                  "On Hold"
-                                                                      .toLowerCase()
-                                                            ? Color.fromARGB(
-                                                                255,
-                                                                243,
-                                                                18,
-                                                                18,
-                                                              )
-                                                            : controller
-                                                                      .settingController
-                                                                      .selectedTicket
-                                                                      .value
-                                                                      ?.statusName!
-                                                                      .toLowerCase() ==
-                                                                  "Parts on Order"
-                                                                      .toLowerCase()
-                                                            ? Color.fromARGB(
-                                                                255,
-                                                                21,
-                                                                234,
-                                                                242,
-                                                              )
-                                                            : controller
-                                                                      .settingController
-                                                                      .selectedTicket
-                                                                      .value
-                                                                      ?.statusName!
-                                                                      .toLowerCase() ==
-                                                                  "Completed"
-                                                                      .toLowerCase()
-                                                            ? Color.fromARGB(
-                                                                255,
-                                                                11,
-                                                                197,
-                                                                145,
-                                                              )
-                                                            : Colors.red,
+                                                                        .settingController
+                                                                        .selectedTicket
+                                                                        .value
+                                                                        ?.statusName!
+                                                                        .toLowerCase() ==
+                                                                    "On Hold"
+                                                                        .toLowerCase()
+                                                                ? Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    243,
+                                                                    18,
+                                                                    18,
+                                                                  )
+                                                                : controller
+                                                                            .settingController
+                                                                            .selectedTicket
+                                                                            .value
+                                                                            ?.statusName!
+                                                                            .toLowerCase() ==
+                                                                        "Parts on Order"
+                                                                            .toLowerCase()
+                                                                    ? Color
+                                                                        .fromARGB(
+                                                                        255,
+                                                                        21,
+                                                                        234,
+                                                                        242,
+                                                                      )
+                                                                    : controller.settingController.selectedTicket.value?.statusName!.toLowerCase() ==
+                                                                            "Completed"
+                                                                                .toLowerCase()
+                                                                        ? Color
+                                                                            .fromARGB(
+                                                                            255,
+                                                                            11,
+                                                                            197,
+                                                                            145,
+                                                                          )
+                                                                        : Colors
+                                                                            .red,
                                                         foregroundColor:
                                                             LightThemeColors
                                                                 .primaryColor
                                                                 .withValues(
-                                                                  alpha: .5,
-                                                                ),
+                                                          alpha: .5,
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
                                                 ),
                                                 SizedBox(height: 10.h),
                                                 TextWidget(
-                                                  text:
-                                                      (controller
+                                                  text: (controller
                                                                   .settingController
                                                                   .selectedTicket
                                                                   .value
@@ -374,11 +496,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   ?.statusName !=
                                                               "")
                                                       ? controller
-                                                                .settingController
-                                                                .selectedTicket
-                                                                .value
-                                                                ?.statusName ??
-                                                            "N/A"
+                                                              .settingController
+                                                              .selectedTicket
+                                                              .value
+                                                              ?.statusName ??
+                                                          "N/A"
                                                       : "N/A",
                                                   maxLines: 2,
                                                   textAlign: TextAlign.center,
@@ -422,7 +544,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               showDialog(
                                                 barrierDismissible: true,
                                                 context: context,
-                                                builder: (BuildContext context) {
+                                                builder:
+                                                    (BuildContext context) {
                                                   return Dialog(
                                                     // Make dialog full width
                                                     child: Column(
@@ -434,31 +557,35 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                             width: double
                                                                 .infinity, // ← This makes it full width
                                                             padding:
-                                                                const EdgeInsets.all(
-                                                                  20,
-                                                                ),
+                                                                const EdgeInsets
+                                                                    .all(
+                                                              20,
+                                                            ),
                                                             decoration:
                                                                 BoxDecoration(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        15.r,
-                                                                      ),
-                                                                ),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                15.r,
+                                                              ),
+                                                            ),
                                                             child: Padding(
-                                                              padding:
-                                                                  EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        12.sp,
-                                                                  ),
+                                                              padding: EdgeInsets
+                                                                  .symmetric(
+                                                                horizontal:
+                                                                    12.sp,
+                                                              ),
                                                               child: Obx(
                                                                 () => Stack(
                                                                   children: [
                                                                     ClipRRect(
                                                                       borderRadius:
-                                                                          BorderRadius.circular(
-                                                                            12.sp,
-                                                                          ),
-                                                                      child: WebViewWidget(
+                                                                          BorderRadius
+                                                                              .circular(
+                                                                        12.sp,
+                                                                      ),
+                                                                      child:
+                                                                          WebViewWidget(
                                                                         controller:
                                                                             controller.webController!,
                                                                       ),
@@ -467,7 +594,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                         .isLoading
                                                                         .value)
                                                                       const Center(
-                                                                        child: CircularProgressIndicator(
+                                                                        child:
+                                                                            CircularProgressIndicator(
                                                                           color:
                                                                               Colors.blue,
                                                                         ),
@@ -503,9 +631,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               text: controller.address,
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                    fontSize: 12.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                               textAlign: TextAlign.start,
                                               overflow: TextOverflow.visible,
                                               maxLines: 5,
@@ -536,13 +664,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             child: TextWidget(
                                               text:
                                                   controller.mobileNumber == ""
-                                                  ? "N/A"
-                                                  : controller.mobileNumber,
+                                                      ? "N/A"
+                                                      : controller.mobileNumber,
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                    fontSize: 12.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -573,9 +701,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   : controller.phoneNumber,
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                    fontSize: 12.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -607,11 +735,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               maxLines: 2,
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                    fontSize: 12.sp,
-                                                    overflow:
-                                                        TextOverflow.visible,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                fontSize: 12.sp,
+                                                overflow: TextOverflow.visible,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -852,21 +979,17 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                     children: [
                                       TextWidget(
                                         text: "Notes: ",
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
-                                              color: LightThemeColors
-                                                  .hintTextColor,
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
+                                          color: LightThemeColors.hintTextColor,
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                       SizedBox(width: 40.w),
                                       Expanded(
                                         child: TextWidget(
-                                          text:
-                                              controller
-                                                  .noteController
-                                                  .text
+                                          text: controller.noteController.text
                                                   .isNotEmpty
                                               ? controller.noteController.text
                                               : "No notes added",
@@ -900,20 +1023,26 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     TextWidget(
                                                       text: "Notes",
                                                       style: theme
-                                                          .textTheme
-                                                          .bodyLarge
+                                                          .textTheme.bodyLarge
                                                           ?.copyWith(
-                                                            color: LightThemeColors
-                                                                .hintTextColor,
-                                                            fontSize: 10.sp,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
+                                                        color: LightThemeColors
+                                                            .hintTextColor,
+                                                        fontSize: 10.sp,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                     ),
                                                     SizedBox(height: 10.h),
                                                     GeneralTextField(
-                                                      isEnabled: true,
                                                       maxLine: 4,
+                                                      minLine: 1,
+                                                      textInputType:
+                                                          TextInputType
+                                                              .multiline,
+                                                      textInputAction:
+                                                          TextInputAction
+                                                              .newline,
+                                                      isEnabled: true,
                                                       hint: "Add a note here..",
                                                       theme: theme,
                                                       textEditingController:
@@ -978,36 +1107,33 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                       //     SizedBox(width: 10),
                                       //     // Make dropdown take remaining space
                                       DropdownButton<CustomFieldModel>(
-                                        isExpanded: true,
-                                        iconSize: 20.sp, // important!
-                                        icon: Icon(
-                                          Icons.add,
-                                          color: theme.primaryColor,
+                                    isExpanded: true,
+                                    iconSize: 20.sp, // important!
+                                    icon: Icon(
+                                      Icons.add,
+                                      color: theme.primaryColor,
+                                    ),
+                                    underline: SizedBox(),
+                                    value: null,
+                                    items: customFieldsController
+                                        .allCustomFields
+                                        .map((field) {
+                                      return DropdownMenuItem<CustomFieldModel>(
+                                        value: field,
+                                        child: Text(
+                                          field.fieldName!,
+                                          softWrap:
+                                              true, // wrap text instead of ellipsis
                                         ),
-                                        underline: SizedBox(),
-                                        value: null,
-                                        items: customFieldsController
-                                            .allCustomFields
-                                            .map((field) {
-                                              return DropdownMenuItem<
-                                                CustomFieldModel
-                                              >(
-                                                value: field,
-                                                child: Text(
-                                                  field.fieldName!,
-                                                  softWrap:
-                                                      true, // wrap text instead of ellipsis
-                                                ),
-                                              );
-                                            })
-                                            .toList(),
-                                        onChanged: (value) {
-                                          if (value != null) {
-                                            customFieldsController
-                                                .saveCustomField(value);
-                                          }
-                                        },
-                                      ),
+                                      );
+                                    }).toList(),
+                                    onChanged: (value) {
+                                      if (value != null) {
+                                        customFieldsController
+                                            .saveCustomField(value);
+                                      }
+                                    },
+                                  ),
                                   // ),
                                   //   ],
                                   // ),
@@ -1017,8 +1143,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   shrinkWrap: true,
                                   physics: NeverScrollableScrollPhysics(),
                                   itemCount: customFieldsController
-                                      .selectedCustomFields
-                                      .length,
+                                      .selectedCustomFields.length,
                                   itemBuilder: (context, index) {
                                     final field = customFieldsController
                                         .selectedCustomFields[index];
@@ -1031,14 +1156,51 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         decoration: BoxDecoration(
                                           color: Colors.white,
                                         ),
-                                        child: buildCustomFieldWidget(
-                                          field,
-                                          context,
+                                        child: Stack(
+                                          children: [
+                                            // Custom field content
+                                            Padding(
+                                              padding: EdgeInsets.only(
+                                                right: 30.w,
+                                              ), // Space for remove button
+                                              child: buildCustomFieldWidget(
+                                                field,
+                                                context,
+                                              ),
+                                            ),
+                                            // Remove button
+                                            Positioned(
+                                              top: 0,
+                                              right: 0,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  customFieldsController
+                                                      .selectedCustomFields
+                                                      .removeAt(index);
+                                                  setState(() {});
+                                                },
+                                                child: Container(
+                                                  padding: EdgeInsets.all(8.r),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red
+                                                        .withValues(alpha: 0.1),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.close,
+                                                    color: Colors.red,
+                                                    size: 20.sp,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     );
                                   },
                                 ),
+                                SizedBox(height: 40.h),
                               ],
                             ),
                           ),
@@ -1115,11 +1277,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           ),
                                           _buildRow(
                                             "Email",
-                                            controller
-                                                    .selectedAppointment
-                                                    .value
-                                                    ?.customer!
-                                                    .email ??
+                                            controller.selectedAppointment.value
+                                                    ?.customer!.email ??
                                                 "N/A",
                                             valueColor: Colors.blue,
                                           ),
@@ -1353,14 +1512,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   controller: _tabController1,
                                   children: [
                                     Obx(() {
-                                      formC.filteredTemplates.value = formC
-                                          .formModels
-                                          .where(
-                                            (template) => formC
-                                                .selectedFormsIdList
-                                                .contains(template.id),
-                                          )
-                                          .toList();
+                                      formC.filteredTemplates.value =
+                                          formC.formModels
+                                              .where(
+                                                (template) => formC
+                                                    .selectedFormsIdList
+                                                    .contains(template.id),
+                                              )
+                                              .toList();
                                       log(
                                         "filterd ${formC.formModels.where((template) => formC.selectedFormsIdList.contains(template.id)).toList()}",
                                       );
@@ -1383,8 +1542,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           Expanded(
                                             child: ListView.builder(
                                               itemCount: formC
-                                                  .filteredTemplates
-                                                  .length,
+                                                  .filteredTemplates.length,
                                               itemBuilder: (context, index) {
                                                 final template = formC
                                                     .filteredTemplates[index];
@@ -1397,8 +1555,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                          8.r,
-                                                        ),
+                                                      8.r,
+                                                    ),
                                                   ),
                                                   child: Padding(
                                                     padding: EdgeInsets.all(
@@ -1417,15 +1575,15 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                             /// ✅ Checkbox for selection
                                                             Expanded(
                                                               child: TextWidget(
-                                                                text:
-                                                                    template
+                                                                text: template
                                                                         .templateName ??
                                                                     "",
                                                                 maxLines: 1,
                                                                 overflow:
                                                                     TextOverflow
                                                                         .ellipsis,
-                                                                style: TextStyle(
+                                                                style:
+                                                                    TextStyle(
                                                                   fontSize:
                                                                       18.sp,
                                                                   fontWeight:
@@ -1438,31 +1596,31 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                               width: 5.w,
                                                             ),
                                                             Container(
-                                                              padding:
-                                                                  EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        8.w,
-                                                                    vertical:
-                                                                        4.h,
-                                                                  ),
-                                                              decoration: BoxDecoration(
-                                                                color:
-                                                                    template
+                                                              padding: EdgeInsets
+                                                                  .symmetric(
+                                                                horizontal: 8.w,
+                                                                vertical: 4.h,
+                                                              ),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: template
                                                                         .isActive!
                                                                     ? Colors
-                                                                          .green
+                                                                        .green
                                                                     : Colors
-                                                                          .orange,
+                                                                        .orange,
                                                                 borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      12.r,
-                                                                    ),
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                  12.r,
+                                                                ),
                                                               ),
                                                               child: Text(
                                                                 template.isActive!
                                                                     ? "Active"
                                                                     : "Inactive",
-                                                                style: TextStyle(
+                                                                style:
+                                                                    TextStyle(
                                                                   color: Colors
                                                                       .white,
                                                                   fontSize:
@@ -1474,8 +1632,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                         ),
                                                         SizedBox(height: 4.h),
                                                         TextWidget(
-                                                          text:
-                                                              template
+                                                          text: template
                                                                   .description ??
                                                               "",
                                                           maxLines: 3,
@@ -1505,7 +1662,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                               children: [
                                                                 Text(
                                                                   "Signature: ",
-                                                                  style: TextStyle(
+                                                                  style:
+                                                                      TextStyle(
                                                                     fontSize:
                                                                         13.sp,
                                                                   ),
@@ -1513,16 +1671,15 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 Icon(
                                                                   template.requireSignature!
                                                                       ? Icons
-                                                                            .check_circle
+                                                                          .check_circle
                                                                       : Icons
-                                                                            .cancel,
-                                                                  color:
-                                                                      template
+                                                                          .cancel,
+                                                                  color: template
                                                                           .requireSignature!
                                                                       ? Colors
-                                                                            .green
+                                                                          .green
                                                                       : Colors
-                                                                            .red,
+                                                                          .red,
                                                                   size: 18.sp,
                                                                 ),
                                                               ],
@@ -1551,24 +1708,21 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                     Obx(() {
                                       final filteredTemplates =
                                           formC.searchQuery.value.isEmpty
-                                          ? formC.formModels
-                                          : formC.formModels
-                                                .where(
-                                                  (template) =>
-                                                      template.templateName
-                                                          ?.toLowerCase()
-                                                          .contains(
-                                                            formC
-                                                                .searchQuery
-                                                                .value
-                                                                .toLowerCase(),
-                                                          ) ??
-                                                      false,
-                                                )
-                                                .toList();
-                                      log(
-                                        "message ${formC.formModels.toString()}",
-                                      );
+                                              ? formC.formModels
+                                              : formC.formModels
+                                                  .where(
+                                                    (template) =>
+                                                        template.templateName
+                                                            ?.toLowerCase()
+                                                            .contains(
+                                                              formC.searchQuery
+                                                                  .value
+                                                                  .toLowerCase(),
+                                                            ) ??
+                                                        false,
+                                                  )
+                                                  .toList();
+
                                       return Column(
                                         children: [
                                           SizedBox(height: 20.h),
@@ -1617,9 +1771,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       InputBorder.none,
                                                   contentPadding:
                                                       EdgeInsets.symmetric(
-                                                        horizontal: 16.w,
-                                                        vertical: 14.h,
-                                                      ),
+                                                    horizontal: 16.w,
+                                                    vertical: 14.h,
+                                                  ),
                                                   fillColor: Colors.white,
                                                   filled: true,
                                                 ),
@@ -1657,11 +1811,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       bottom: 12.h,
                                                     ),
                                                     elevation: 2,
-                                                    shape: RoundedRectangleBorder(
+                                                    shape:
+                                                        RoundedRectangleBorder(
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                            8.r,
-                                                          ),
+                                                        8.r,
+                                                      ),
                                                     ),
                                                     child: Padding(
                                                       padding: EdgeInsets.all(
@@ -1686,11 +1841,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   value: formC
                                                                       .selectedFormsIdList
                                                                       .contains(
-                                                                        template
-                                                                            .id,
-                                                                      ),
-                                                                  onChanged: (value) {
-                                                                    formC.updateSelectedForms(
+                                                                    template.id,
+                                                                  ),
+                                                                  onChanged:
+                                                                      (value) {
+                                                                    formC
+                                                                        .updateSelectedForms(
                                                                       template
                                                                           .id!,
                                                                     );
@@ -1698,16 +1854,17 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 ),
                                                               ),
                                                               Expanded(
-                                                                child: TextWidget(
-                                                                  text:
-                                                                      template
+                                                                child:
+                                                                    TextWidget(
+                                                                  text: template
                                                                           .templateName ??
                                                                       "",
                                                                   maxLines: 1,
                                                                   overflow:
                                                                       TextOverflow
                                                                           .ellipsis,
-                                                                  style: TextStyle(
+                                                                  style:
+                                                                      TextStyle(
                                                                     fontSize:
                                                                         18.sp,
                                                                     fontWeight:
@@ -1720,31 +1877,32 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 width: 5.w,
                                                               ),
                                                               Container(
-                                                                padding:
-                                                                    EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          8.w,
-                                                                      vertical:
-                                                                          4.h,
-                                                                    ),
-                                                                decoration: BoxDecoration(
-                                                                  color:
-                                                                      template
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                  horizontal:
+                                                                      8.w,
+                                                                  vertical: 4.h,
+                                                                ),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: template
                                                                           .isActive!
                                                                       ? Colors
-                                                                            .green
+                                                                          .green
                                                                       : Colors
-                                                                            .orange,
+                                                                          .orange,
                                                                   borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        12.r,
-                                                                      ),
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                    12.r,
+                                                                  ),
                                                                 ),
                                                                 child: Text(
                                                                   template.isActive!
                                                                       ? "Active"
                                                                       : "Inactive",
-                                                                  style: TextStyle(
+                                                                  style:
+                                                                      TextStyle(
                                                                     color: Colors
                                                                         .white,
                                                                     fontSize:
@@ -1756,8 +1914,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           ),
                                                           SizedBox(height: 4.h),
                                                           TextWidget(
-                                                            text:
-                                                                template
+                                                            text: template
                                                                     .description ??
                                                                 "",
                                                             maxLines: 3,
@@ -1780,9 +1937,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 "Category: ${template.category}",
                                                                 style:
                                                                     TextStyle(
-                                                                      fontSize:
-                                                                          13.sp,
-                                                                    ),
+                                                                  fontSize:
+                                                                      13.sp,
+                                                                ),
                                                               ),
                                                               SizedBox(
                                                                 height: 4.h,
@@ -1791,7 +1948,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 children: [
                                                                   Text(
                                                                     "Signature: ",
-                                                                    style: TextStyle(
+                                                                    style:
+                                                                        TextStyle(
                                                                       fontSize:
                                                                           13.sp,
                                                                     ),
@@ -1799,16 +1957,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   Icon(
                                                                     template.requireSignature!
                                                                         ? Icons
-                                                                              .check_circle
+                                                                            .check_circle
                                                                         : Icons
-                                                                              .cancel,
-                                                                    color:
-                                                                        template
-                                                                            .requireSignature!
+                                                                            .cancel,
+                                                                    color: template.requireSignature!
                                                                         ? Colors
-                                                                              .green
+                                                                            .green
                                                                         : Colors
-                                                                              .red,
+                                                                            .red,
                                                                     size: 18.sp,
                                                                   ),
                                                                 ],
@@ -1820,9 +1976,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 "Auto-Assign: ${template.isAutoAssignEnabled! ? "Yes" : "No"}",
                                                                 style:
                                                                     TextStyle(
-                                                                      fontSize:
-                                                                          13.sp,
-                                                                    ),
+                                                                  fontSize:
+                                                                      13.sp,
+                                                                ),
                                                               ),
                                                             ],
                                                           ),
@@ -1868,9 +2024,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           text: "Estimate/Invoice Details",
                                           style: theme.textTheme.headlineSmall
                                               ?.copyWith(
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 18.sp,
-                                              ),
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 18.sp,
+                                          ),
                                         ),
                                       ),
                                       SizedBox(height: 10.sp),
@@ -1885,20 +2041,21 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               RenderBox renderBox =
                                                   context.findRenderObject()
                                                       as RenderBox;
-                                              Offset offset = renderBox
-                                                  .localToGlobal(
-                                                    Offset(32.sp, 40.sp),
-                                                  );
+                                              Offset offset =
+                                                  renderBox.localToGlobal(
+                                                Offset(32.sp, 40.sp),
+                                              );
                                               final RenderBox overlay =
-                                                  Overlay.of(context).context
+                                                  Overlay.of(context)
+                                                          .context
                                                           .findRenderObject()
                                                       as RenderBox;
                                               showMenu(
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.all(
-                                                        Radius.circular(8.r),
-                                                      ),
+                                                    Radius.circular(8.r),
+                                                  ),
                                                 ),
                                                 context: context,
                                                 position: RelativeRect.fromRect(
@@ -1915,66 +2072,54 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     .invoiceController
                                                     .createTypes
                                                     .map((e) {
-                                                      return PopupMenuItem(
-                                                        value: e["name"],
-                                                        child: TextWidget(
-                                                          text: "${e["name"]}",
-                                                        ),
-                                                      );
-                                                    })
-                                                    .toList(),
+                                                  return PopupMenuItem(
+                                                    value: e["name"],
+                                                    child: TextWidget(
+                                                      text: "${e["name"]}",
+                                                    ),
+                                                  );
+                                                }).toList(),
                                               ).then((v) async {
                                                 if (v != null) {
                                                   controller.invoiceController
                                                       .clearAllItems();
                                                   controller
-                                                          .invoiceController
-                                                          .selectedCreateType
-                                                          .value =
-                                                      v;
+                                                      .invoiceController
+                                                      .selectedCreateType
+                                                      .value = v;
 
-                                                  final x =
-                                                      MySharedPref.getCompanyType() ??
+                                                  final x = MySharedPref
+                                                          .getCompanyType() ??
                                                       '';
                                                   controller
-                                                          .invoiceController
-                                                          .isLocAndClassShow
-                                                          .value =
-                                                      x == 'IsPcs';
+                                                      .invoiceController
+                                                      .isLocAndClassShow
+                                                      .value = x == 'IsPcs';
                                                   if (v == "Invoice") {
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .createCustomerName =
                                                         controller.contactName;
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .createCustomerAddress =
                                                         controller.address;
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .createCustomerPhone =
                                                         controller.mobileNumber;
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .createCustomerEmail =
                                                         controller.email;
-                                                    controller
-                                                            .invoiceController
-                                                            .customerID
-                                                            .value =
+                                                    controller.invoiceController
+                                                            .customerID.value =
                                                         controller.customerID;
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .appointmentID =
                                                         controller
                                                             .appointmentID;
                                                     controller
-                                                            .invoiceController
-                                                            .selectedTaxID
-                                                            .value =
-                                                        "";
-                                                    controller
                                                         .invoiceController
+                                                        .selectedTaxID
+                                                        .value = "";
+                                                    controller.invoiceController
                                                         .createDiscountTextController
                                                         .clear();
                                                     await controller
@@ -1984,40 +2129,31 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       Routes.INVOICE_CREATE,
                                                     );
                                                   } else {
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .createCustomerName =
                                                         controller.contactName;
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .createCustomerAddress =
                                                         controller.address;
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .createCustomerPhone =
                                                         controller.mobileNumber;
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .createCustomerEmail =
                                                         controller.email;
-                                                    controller
-                                                            .invoiceController
-                                                            .customerID
-                                                            .value =
+                                                    controller.invoiceController
+                                                            .customerID.value =
                                                         controller.customerID;
 
-                                                    controller
-                                                            .invoiceController
+                                                    controller.invoiceController
                                                             .appointmentID =
                                                         controller
                                                             .appointmentID;
                                                     controller
-                                                            .invoiceController
-                                                            .selectedTaxID
-                                                            .value =
-                                                        "";
-                                                    controller
                                                         .invoiceController
+                                                        .selectedTaxID
+                                                        .value = "";
+                                                    controller.invoiceController
                                                         .createDiscountTextController
                                                         .clear();
                                                     await controller
@@ -2046,14 +2182,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   TextWidget(
                                                     text: "Create New",
                                                     style: theme
-                                                        .textTheme
-                                                        .bodyLarge
+                                                        .textTheme.bodyLarge
                                                         ?.copyWith(
-                                                          color: Colors.white,
-                                                          fontSize: 16.sp,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
+                                                      color: Colors.white,
+                                                      fontSize: 16.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
                                                   ),
                                                 ],
                                               ),
@@ -2069,9 +2204,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   () => ListView.separated(
                                     itemBuilder: (context, index) {
                                       final proposal = controller
-                                          .sortedAppointments[controller
-                                              .selectedAptIndex
-                                              .value]
+                                          .sortedAppointments[
+                                              controller.selectedAptIndex.value]
                                           .invoices![index];
 
                                       return GestureDetector(
@@ -2080,8 +2214,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                                           // Clear previous selection if needed
 
-                                          controller
-                                              .invoiceController
+                                          controller.invoiceController
                                               .selectedItemList
                                               .clear();
                                           // for (var c in controller
@@ -2108,108 +2241,79 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           // controller.invoiceController
                                           //     .editQuantityControllers
                                           //     .clear();
-                                          controller
-                                              .invoiceController
+                                          controller.invoiceController
                                               .editNoteTextController
                                               .clear();
-                                          controller
-                                              .invoiceController
+                                          controller.invoiceController
                                               .editDiscountTextController
                                               .clear();
-                                          controller
-                                                  .invoiceController
-                                                  .initialTaxID
-                                                  .value =
-                                              "";
+                                          controller.invoiceController
+                                              .initialTaxID.value = "";
 
                                           // Set basic info
                                           controller
-                                                  .invoiceController
-                                                  .invoiceItemList
-                                                  .value =
-                                              proposal.items ?? [];
-                                          controller
-                                                  .invoiceController
-                                                  .depositList
-                                                  .value =
+                                              .invoiceController
+                                              .invoiceItemList
+                                              .value = proposal.items ?? [];
+                                          controller.invoiceController
+                                                  .depositList.value =
                                               proposal.paymentList ?? [];
                                           controller
                                                   .invoiceController
                                                   .selectedDiscountOption
                                                   .value =
                                               proposal.discountOption ?? "2";
-                                          controller
-                                                  .invoiceController
+                                          controller.invoiceController
                                                   .invoiceNumber =
                                               proposal.number ?? "";
-                                          controller
-                                                  .invoiceController
-                                                  .isConverted
-                                                  .value =
+                                          controller.invoiceController
+                                                  .isConverted.value =
                                               proposal.isConverted ?? false;
-                                          controller
-                                                  .invoiceController
+                                          controller.invoiceController
                                                   .customerName =
                                               proposal.fullName ?? "";
                                           controller.invoiceController.address =
                                               "${proposal.city}";
-                                          controller
-                                              .invoiceController
-                                              .depositAmount
-                                              .value = proposal.depositAmount
-                                              .toString();
-                                          controller
-                                              .invoiceController
-                                              .invoiceID
-                                              .value = proposal.invoiceID
-                                              .toString();
+                                          controller.invoiceController
+                                                  .depositAmount.value =
+                                              proposal.depositAmount.toString();
+                                          controller.invoiceController.invoiceID
+                                                  .value =
+                                              proposal.invoiceID.toString();
                                           controller.invoiceController.date =
                                               dateTimeConverter(
-                                                inputFormat: "yyyy/MM/dd",
-                                                inputTime: proposal.invoiceDate
-                                                    .toString(),
-                                                outputFormat: "MM/dd/yyyy",
-                                              );
-                                          controller
-                                                  .invoiceController
-                                                  .subtotal =
-                                              proposal.subtotal
+                                            inputFormat: "yyyy/MM/dd",
+                                            inputTime:
+                                                proposal.invoiceDate.toString(),
+                                            outputFormat: "MM/dd/yyyy",
+                                          );
+                                          controller.invoiceController
+                                              .subtotal = proposal.subtotal
                                                   ?.toStringAsFixed(2) ??
                                               "";
-                                          controller
-                                                  .invoiceController
-                                                  .customerID
-                                                  .value =
+                                          controller.invoiceController
+                                                  .customerID.value =
                                               proposal.customerId ?? "";
                                           controller.invoiceController.status =
                                               proposal.status ?? "";
-                                          controller
-                                                  .invoiceController
-                                                  .type
-                                                  .value =
-                                              proposal.type ?? "";
-                                          controller
-                                                  .invoiceController
-                                                  .total
+                                          controller.invoiceController.type
+                                              .value = proposal.type ?? "";
+                                          controller.invoiceController.total
                                                   .value =
                                               proposal.total?.toStringAsFixed(
-                                                2,
-                                              ) ??
-                                              "";
-                                          controller
-                                              .invoiceController
-                                              .newTotal
-                                              .value = controller
-                                              .invoiceController
-                                              .total
-                                              .value;
+                                                    2,
+                                                  ) ??
+                                                  "";
+                                          controller.invoiceController.newTotal
+                                                  .value =
+                                              controller.invoiceController.total
+                                                  .value;
                                           controller.invoiceController.notes =
                                               proposal.note ?? "";
                                           controller
-                                                  .invoiceController
-                                                  .editNoteTextController
-                                                  .text =
-                                              proposal.note ?? "";
+                                              .invoiceController
+                                              .editNoteTextController
+                                              .text = proposal.note ?? "";
                                           controller.invoiceController.due =
                                               proposal.due ?? "";
                                           controller
@@ -2217,16 +2321,15 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               .showingDate
                                               .value = dateTimeConverter(
                                             inputFormat: "yyyy/MM/dd hh:mm a",
-                                            inputTime: proposal.invoiceDate
-                                                .toString(),
+                                            inputTime:
+                                                proposal.invoiceDate.toString(),
                                             outputFormat: "MM/dd/yyyy",
                                           );
                                           if (proposal.taxType != "") {
                                             controller
-                                                    .invoiceController
-                                                    .initialTaxID
-                                                    .value =
-                                                proposal.taxType ?? "";
+                                                .invoiceController
+                                                .initialTaxID
+                                                .value = proposal.taxType ?? "";
                                           }
                                           // Set discount values
                                           controller
@@ -2235,15 +2338,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   .value =
                                               proposal.discount ?? 0.00;
                                           if (proposal.discountOption == "1") {
-                                            final discount =
-                                                double.tryParse(
+                                            final discount = double.tryParse(
                                                   proposal.discount
                                                           ?.toString() ??
                                                       '0',
                                                 ) ??
                                                 0.0;
-                                            final subtotal =
-                                                double.tryParse(
+                                            final subtotal = double.tryParse(
                                                   proposal.subtotal
                                                           ?.toString() ??
                                                       '0',
@@ -2257,13 +2358,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             }
 
                                             controller
-                                                .invoiceController
-                                                .editDiscountTextController
-                                                .text = percentage
-                                                .toStringAsFixed(2);
+                                                    .invoiceController
+                                                    .editDiscountTextController
+                                                    .text =
+                                                percentage.toStringAsFixed(2);
                                           } else {
-                                            final discount =
-                                                double.tryParse(
+                                            final discount = double.tryParse(
                                                   proposal.discount
                                                           ?.toString() ??
                                                       '',
@@ -2271,32 +2371,30 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 0.0;
 
                                             controller
-                                                .invoiceController
-                                                .editDiscountTextController
-                                                .text = discount
-                                                .toStringAsFixed(2);
+                                                    .invoiceController
+                                                    .editDiscountTextController
+                                                    .text =
+                                                discount.toStringAsFixed(2);
                                           }
 
                                           // Set tax values
 
                                           controller
-                                                  .invoiceController
-                                                  .tax
-                                                  .value =
+                                                  .invoiceController.tax.value =
                                               controller.invoiceController.taxes
-                                                  .firstWhereOrNull(
-                                                    (tax) =>
-                                                        tax.id ==
-                                                        int.tryParse(
-                                                          controller
-                                                              .invoiceController
-                                                              .initialTaxID
-                                                              .value,
-                                                        ),
-                                                  )
-                                                  ?.rate
-                                                  ?.toStringAsFixed(2) ??
-                                              "0.00";
+                                                      .firstWhereOrNull(
+                                                        (tax) =>
+                                                            tax.id ==
+                                                            int.tryParse(
+                                                              controller
+                                                                  .invoiceController
+                                                                  .initialTaxID
+                                                                  .value,
+                                                            ),
+                                                      )
+                                                      ?.rate
+                                                      ?.toStringAsFixed(2) ??
+                                                  "0.00";
                                           log(
                                             "alway proposal ${proposal.items}",
                                           ); //
@@ -2304,32 +2402,29 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           if (proposal.items != null &&
                                               proposal.items!.isNotEmpty) {
                                             for (var item in proposal.items!) {
-                                              controller
-                                                  .invoiceController
+                                              controller.invoiceController
                                                   .selectedItemList
                                                   .add(
-                                                    SelectedItemListModel(
-                                                      quantity: double.parse(
-                                                        item.quantity ?? "1",
-                                                      ).toInt(),
-                                                      selectedItem: ItemListModel(
-                                                        id: item.itemId,
-                                                        name: item.name,
-                                                        description:
-                                                            item.description,
-                                                        price: double.tryParse(
-                                                          item.unitPrice ??
-                                                              "0.00",
-                                                        ),
-                                                        isTaxable:
-                                                            item.isTaxable ==
-                                                                "TAX"
+                                                SelectedItemListModel(
+                                                  quantity: double.parse(
+                                                    item.quantity ?? "1.00",
+                                                  ),
+                                                  selectedItem: ItemListModel(
+                                                    id: item.itemId,
+                                                    name: item.name,
+                                                    description:
+                                                        item.description,
+                                                    price: double.tryParse(
+                                                      item.unitPrice ?? "0.00",
+                                                    ),
+                                                    isTaxable:
+                                                        item.isTaxable == "TAX"
                                                             ? true
                                                             : false,
-                                                        // itemTypeId: int.parse(item.itemTyId!),
-                                                      ),
-                                                    ),
-                                                  );
+                                                    // itemTypeId: int.parse(item.itemTyId!),
+                                                  ),
+                                                ),
+                                              );
 
                                               // Initialize controllers with existing values
                                               // controller.invoiceController
@@ -2360,8 +2455,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           controller.hideLoading();
 
                                           controller
-                                              .invoiceController
-                                              .removedList
+                                              .invoiceController.removedList
                                               .clear();
 
                                           // controller.invoiceController
@@ -2381,15 +2475,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   text:
                                                       "${proposal.type ?? ""} Number",
                                                   style: theme
-                                                      .textTheme
-                                                      .bodyLarge
+                                                      .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                        color: LightThemeColors
-                                                            .hintTextColor,
-                                                        fontSize: 12.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
+                                                    color: LightThemeColors
+                                                        .hintTextColor,
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                 ),
                                                 trailing: Container(
                                                   padding: EdgeInsets.symmetric(
@@ -2399,36 +2491,33 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                          5.r,
-                                                        ),
-                                                    color:
-                                                        proposal.type ==
+                                                      5.r,
+                                                    ),
+                                                    color: proposal.type ==
                                                             "Invoice"
                                                         ? theme.primaryColor
                                                         : proposal.type ==
-                                                                  "Estimate" &&
-                                                              proposal.isConverted ==
-                                                                  true
-                                                        ? Colors.green
-                                                        : Colors.yellow,
+                                                                    "Estimate" &&
+                                                                proposal.isConverted ==
+                                                                    true
+                                                            ? Colors.green
+                                                            : Colors.yellow,
                                                   ),
                                                   child: TextWidget(
                                                     text: proposal.number ?? "",
                                                     style: theme
-                                                        .textTheme
-                                                        .bodyLarge
+                                                        .textTheme.bodyLarge
                                                         ?.copyWith(
-                                                          fontSize: 12.sp,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color:
-                                                              proposal.type ==
-                                                                      "Estimate" &&
-                                                                  proposal.isConverted ==
-                                                                      false
-                                                              ? Colors.black
-                                                              : Colors.white,
-                                                        ),
+                                                      fontSize: 12.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color: proposal.type ==
+                                                                  "Estimate" &&
+                                                              proposal.isConverted ==
+                                                                  false
+                                                          ? Colors.black
+                                                          : Colors.white,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -2437,18 +2526,17 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 title: TextWidget(
                                                   text: "Date",
                                                   style: theme
-                                                      .textTheme
-                                                      .bodyLarge
+                                                      .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                        color: LightThemeColors
-                                                            .hintTextColor,
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
+                                                    color: LightThemeColors
+                                                        .hintTextColor,
+                                                    fontSize: 14.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                 ),
-                                                trailing:
-                                                    proposal.invoiceDate != ""
+                                                trailing: proposal
+                                                            .invoiceDate !=
+                                                        ""
                                                     ? TextWidget(
                                                         text: dateTimeConverter(
                                                           inputFormat:
@@ -2460,14 +2548,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                               "MM/dd/yyyy",
                                                         ),
                                                         style: theme
-                                                            .textTheme
-                                                            .bodyLarge
+                                                            .textTheme.bodyLarge
                                                             ?.copyWith(
-                                                              fontSize: 14.sp,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                            ),
+                                                          fontSize: 14.sp,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
                                                       )
                                                     : TextWidget(text: ""),
                                               ),
@@ -2476,27 +2562,23 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 title: TextWidget(
                                                   text: "Required Amount",
                                                   style: theme
-                                                      .textTheme
-                                                      .bodyLarge
+                                                      .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                        color: LightThemeColors
-                                                            .hintTextColor,
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
+                                                    color: LightThemeColors
+                                                        .hintTextColor,
+                                                    fontSize: 14.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                 ),
                                                 trailing: TextWidget(
                                                   text:
                                                       "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
                                                   style: theme
-                                                      .textTheme
-                                                      .bodyLarge
+                                                      .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
+                                                    fontSize: 14.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                 ),
                                               ),
                                               MainDivider(),
@@ -2504,27 +2586,23 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 title: TextWidget(
                                                   text: "Amount Received",
                                                   style: theme
-                                                      .textTheme
-                                                      .bodyLarge
+                                                      .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                        color: LightThemeColors
-                                                            .hintTextColor,
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
+                                                    color: LightThemeColors
+                                                        .hintTextColor,
+                                                    fontSize: 14.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                 ),
                                                 trailing: TextWidget(
                                                   text:
                                                       "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
                                                   style: theme
-                                                      .textTheme
-                                                      .bodyLarge
+                                                      .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
+                                                    fontSize: 14.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -2536,9 +2614,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         (BuildContext context, int index) =>
                                             SizedBox(height: 8.sp),
                                     itemCount: controller
-                                        .sortedAppointments[controller
-                                            .selectedAptIndex
-                                            .value]
+                                        .sortedAppointments[
+                                            controller.selectedAptIndex.value]
                                         .invoices!
                                         .length,
                                     shrinkWrap: true,
@@ -2577,8 +2654,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           size: 25.sp,
                                           color:
                                               controller.mediaList.length == 1
-                                              ? Colors.grey
-                                              : theme.primaryColor,
+                                                  ? Colors.grey
+                                                  : theme.primaryColor,
                                         ),
                                       ),
                                     ),
@@ -2591,8 +2668,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         SizedBox(height: 20.h),
                                         ListView.separated(
                                           itemBuilder: (context, index) {
-                                            final item = controller
-                                                .imageList[index]; // 👈 from RxList
+                                            final item = controller.imageList[
+                                                index]; // 👈 from RxList
                                             return Column(
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
@@ -2640,8 +2717,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     Expanded(
                                                       child: TextWidget(
                                                         maxLines: 5,
-                                                        text:
-                                                            item
+                                                        text: item
                                                                     .imageList!
                                                                     .first
                                                                     .description
@@ -2649,9 +2725,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                     .isNotEmpty ==
                                                                 true
                                                             ? item
-                                                                  .imageList!
-                                                                  .first
-                                                                  .description!
+                                                                .imageList!
+                                                                .first
+                                                                .description!
                                                             : "N/A",
                                                         style: const TextStyle(
                                                           fontSize: 16,
@@ -2674,15 +2750,18 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       Axis.horizontal,
                                                   child: Row(
                                                     children: [
-                                                      ...(item.imageList ?? []).map((
+                                                      ...(item.imageList ?? [])
+                                                          .map((
                                                         img,
                                                       ) {
                                                         return GestureDetector(
                                                           onTap: () {
                                                             showDialog(
                                                               context: context,
-                                                              builder: (_) => Dialog(
-                                                                child: Image.memory(
+                                                              builder: (_) =>
+                                                                  Dialog(
+                                                                child: Image
+                                                                    .memory(
                                                                   img.bytes!,
                                                                   fit: BoxFit
                                                                       .cover,
@@ -2696,21 +2775,25 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                             height: 150,
                                                             width: 150,
                                                             margin:
-                                                                const EdgeInsets.only(
-                                                                  right: 20,
-                                                                ),
-                                                            decoration: BoxDecoration(
+                                                                const EdgeInsets
+                                                                    .only(
+                                                              right: 20,
+                                                            ),
+                                                            decoration:
+                                                                BoxDecoration(
                                                               borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    10.r,
-                                                                  ),
-                                                              image: DecorationImage(
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                10.r,
+                                                              ),
+                                                              image:
+                                                                  DecorationImage(
                                                                 fit:
                                                                     BoxFit.fill,
                                                                 image:
                                                                     MemoryImage(
-                                                                      img.bytes!,
-                                                                    ),
+                                                                  img.bytes!,
+                                                                ),
                                                               ),
                                                             ),
                                                           ),
@@ -2764,20 +2847,24 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       TextField(
                                                         controller: item
                                                             .descriptionController, // make sure each item has a controller
-                                                        decoration: InputDecoration(
+                                                        decoration:
+                                                            InputDecoration(
                                                           hintText:
                                                               "Add description...",
-                                                          border: OutlineInputBorder(
+                                                          border:
+                                                              OutlineInputBorder(
                                                             borderRadius:
-                                                                BorderRadius.circular(
-                                                                  8.r,
-                                                                ),
+                                                                BorderRadius
+                                                                    .circular(
+                                                              8.r,
+                                                            ),
                                                           ),
                                                           contentPadding:
-                                                              EdgeInsets.symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 8,
-                                                              ),
+                                                              EdgeInsets
+                                                                  .symmetric(
+                                                            horizontal: 12,
+                                                            vertical: 8,
+                                                          ),
                                                         ),
                                                       ),
                                                       SizedBox(height: 10.h),
@@ -2794,77 +2881,87 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 return GestureDetector(
                                                                   onTap: () =>
                                                                       showMediaDialog(
-                                                                        context,
-                                                                        e,
-                                                                      ),
-                                                                  child: Padding(
+                                                                    context,
+                                                                    e,
+                                                                  ),
+                                                                  child:
+                                                                      Padding(
                                                                     padding:
-                                                                        const EdgeInsets.only(
-                                                                          right:
-                                                                              8.0,
-                                                                        ),
-                                                                    child: FutureBuilder<String?>(
+                                                                        const EdgeInsets
+                                                                            .only(
+                                                                      right:
+                                                                          8.0,
+                                                                    ),
+                                                                    child: FutureBuilder<
+                                                                        String?>(
                                                                       future:
                                                                           generateVideoThumbnail(
-                                                                            e,
-                                                                          ),
-                                                                      builder:
-                                                                          (
-                                                                            context,
-                                                                            snapshot,
-                                                                          ) {
-                                                                            if (snapshot.connectionState ==
-                                                                                ConnectionState.waiting) {
-                                                                              return Container(
+                                                                        e,
+                                                                      ),
+                                                                      builder: (
+                                                                        context,
+                                                                        snapshot,
+                                                                      ) {
+                                                                        if (snapshot.connectionState ==
+                                                                            ConnectionState.waiting) {
+                                                                          return Container(
+                                                                            height:
+                                                                                150,
+                                                                            width:
+                                                                                150,
+                                                                            alignment:
+                                                                                Alignment.center,
+                                                                            child:
+                                                                                const CircularProgressIndicator(),
+                                                                          );
+                                                                        }
+                                                                        if (snapshot.hasData &&
+                                                                            snapshot.data !=
+                                                                                null) {
+                                                                          return Stack(
+                                                                            children: [
+                                                                              Container(
                                                                                 height: 150,
                                                                                 width: 150,
-                                                                                alignment: Alignment.center,
-                                                                                child: const CircularProgressIndicator(),
-                                                                              );
-                                                                            }
-                                                                            if (snapshot.hasData &&
-                                                                                snapshot.data !=
-                                                                                    null) {
-                                                                              return Stack(
-                                                                                children: [
-                                                                                  Container(
-                                                                                    height: 150,
-                                                                                    width: 150,
-                                                                                    decoration: BoxDecoration(
-                                                                                      borderRadius: BorderRadius.circular(
-                                                                                        10.r,
-                                                                                      ),
-                                                                                      image: DecorationImage(
-                                                                                        fit: BoxFit.fill,
-                                                                                        image: FileImage(
-                                                                                          File(
-                                                                                            snapshot.data!,
-                                                                                          ),
-                                                                                        ),
+                                                                                decoration: BoxDecoration(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    10.r,
+                                                                                  ),
+                                                                                  image: DecorationImage(
+                                                                                    fit: BoxFit.fill,
+                                                                                    image: FileImage(
+                                                                                      File(
+                                                                                        snapshot.data!,
                                                                                       ),
                                                                                     ),
                                                                                   ),
-                                                                                  const Positioned.fill(
-                                                                                    child: Center(
-                                                                                      child: Icon(
-                                                                                        Icons.play_circle_fill,
-                                                                                        size: 40,
-                                                                                        color: Colors.white,
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                ],
-                                                                              );
-                                                                            }
-                                                                            return Container(
-                                                                              height: 150,
-                                                                              width: 150,
-                                                                              color: Colors.grey[300],
-                                                                              child: const Icon(
-                                                                                Icons.play_circle_fill,
+                                                                                ),
                                                                               ),
-                                                                            );
-                                                                          },
+                                                                              const Positioned.fill(
+                                                                                child: Center(
+                                                                                  child: Icon(
+                                                                                    Icons.play_circle_fill,
+                                                                                    size: 40,
+                                                                                    color: Colors.white,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          );
+                                                                        }
+                                                                        return Container(
+                                                                          height:
+                                                                              150,
+                                                                          width:
+                                                                              150,
+                                                                          color:
+                                                                              Colors.grey[300],
+                                                                          child:
+                                                                              const Icon(
+                                                                            Icons.play_circle_fill,
+                                                                          ),
+                                                                        );
+                                                                      },
                                                                     ),
                                                                   ),
                                                                 );
@@ -2872,26 +2969,31 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 return GestureDetector(
                                                                   onTap: () =>
                                                                       showMediaDialog(
-                                                                        context,
-                                                                        e,
-                                                                      ),
-                                                                  child: Container(
+                                                                    context,
+                                                                    e,
+                                                                  ),
+                                                                  child:
+                                                                      Container(
                                                                     height: 150,
                                                                     width: 150,
                                                                     margin:
-                                                                        EdgeInsets.only(
-                                                                          right:
-                                                                              20,
-                                                                        ),
-                                                                    decoration: BoxDecoration(
+                                                                        EdgeInsets
+                                                                            .only(
+                                                                      right: 20,
+                                                                    ),
+                                                                    decoration:
+                                                                        BoxDecoration(
                                                                       borderRadius:
-                                                                          BorderRadius.circular(
-                                                                            10.r,
-                                                                          ),
-                                                                      image: DecorationImage(
+                                                                          BorderRadius
+                                                                              .circular(
+                                                                        10.r,
+                                                                      ),
+                                                                      image:
+                                                                          DecorationImage(
                                                                         fit: BoxFit
                                                                             .fill,
-                                                                        image: FileImage(
+                                                                        image:
+                                                                            FileImage(
                                                                           File(
                                                                             e,
                                                                           ),
@@ -2905,29 +3007,35 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                             GestureDetector(
                                                               onTap: () =>
                                                                   showMediaBottomSheet(
-                                                                    context,
-                                                                    index,
-                                                                  ),
+                                                                context,
+                                                                index,
+                                                              ),
                                                               child: Container(
                                                                 height: 150,
                                                                 width: 150,
                                                                 margin:
-                                                                    const EdgeInsets.only(
-                                                                      right: 8,
-                                                                    ),
-                                                                decoration: BoxDecoration(
+                                                                    const EdgeInsets
+                                                                        .only(
+                                                                  right: 8,
+                                                                ),
+                                                                decoration:
+                                                                    BoxDecoration(
                                                                   color: Colors
-                                                                      .grey[200],
+                                                                          .grey[
+                                                                      200],
                                                                   borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        10.r,
-                                                                      ),
-                                                                  border: Border.all(
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                    10.r,
+                                                                  ),
+                                                                  border: Border
+                                                                      .all(
                                                                     color: Colors
                                                                         .grey,
                                                                   ),
                                                                 ),
-                                                                child: const Icon(
+                                                                child:
+                                                                    const Icon(
                                                                   Icons.add,
                                                                   size: 40,
                                                                   color: Colors
@@ -2944,11 +3052,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                         width: double.infinity,
                                                         child: ElevatedButton(
                                                           onPressed: () async {
-                                                            await controller.uploadImages(
+                                                            await controller
+                                                                .uploadImages(
                                                               tagName: item.time
                                                                   .split(
-                                                                    " ",
-                                                                  )[0],
+                                                                " ",
+                                                              )[0],
                                                               description: item
                                                                   .descriptionController
                                                                   .text,
@@ -2962,11 +3071,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     ],
                                                   );
                                                 },
-                                                separatorBuilder:
-                                                    (
-                                                      BuildContext context,
-                                                      int index,
-                                                    ) => SizedBox(height: 8.sp),
+                                                separatorBuilder: (
+                                                  BuildContext context,
+                                                  int index,
+                                                ) =>
+                                                    SizedBox(height: 8.sp),
                                                 itemCount:
                                                     controller.mediaList.length,
                                                 shrinkWrap: true,
@@ -3023,8 +3132,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           size: 25.sp,
                                           color:
                                               controller.mediaList.length == 1
-                                              ? Colors.grey
-                                              : theme.primaryColor,
+                                                  ? Colors.grey
+                                                  : theme.primaryColor,
                                         ),
                                       ),
                                     ),
@@ -3033,15 +3142,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                                   // Notes list
                                   Obx(
-                                    () =>
-                                        controller.noteList
+                                    () => controller.noteList
                                             .where((e) {
                                               //     log("selected apptId ${controller.selectedAppointment.value!.apptID} and note appt id ${e.appointmentId}");
                                               return e.appointmentId ==
-                                                  controller
-                                                      .selectedAppointment
-                                                      .value!
-                                                      .apptID;
+                                                  controller.selectedAppointment
+                                                      .value!.apptID;
                                             })
                                             .toList()
                                             .isEmpty
@@ -3078,32 +3184,32 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   .toList()[index];
 
                                               return GestureDetector(
-                                                onTap:
-                                                    note.userId!.trim() ==
+                                                onTap: note.userId!.trim() ==
                                                         controller.userId
                                                             .toString()
                                                             .trim()
                                                     ? () {
                                                         controller
                                                             .selectedTagId(
-                                                              note.tagId,
-                                                            );
+                                                          note.tagId,
+                                                        );
                                                         controller
                                                                 .note1Controller
                                                                 .text =
                                                             note.description!;
                                                         controller
-                                                            .selectedTagController
-                                                            .value
-                                                            .text = controller
-                                                            .allTagList
-                                                            .where(
-                                                              (e) =>
-                                                                  e.id ==
-                                                                  note.tagId,
-                                                            )
-                                                            .first
-                                                            .name;
+                                                                .selectedTagController
+                                                                .value
+                                                                .text =
+                                                            controller
+                                                                .allTagList
+                                                                .where(
+                                                                  (e) =>
+                                                                      e.id ==
+                                                                      note.tagId,
+                                                                )
+                                                                .first
+                                                                .name;
                                                         controller.noteId(
                                                           note.id,
                                                         );
@@ -3138,8 +3244,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       12.sp,
                                                     ),
                                                     decoration: BoxDecoration(
-                                                      color:
-                                                          note.userId!.trim() ==
+                                                      color: note.userId!
+                                                                  .trim() ==
                                                               controller.userId
                                                                   .toString()
                                                                   .trim()
@@ -3147,8 +3253,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           : Colors.grey[100],
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                            8.sp,
-                                                          ),
+                                                        8.sp,
+                                                      ),
                                                     ),
                                                     child: Column(
                                                       crossAxisAlignment:
@@ -3167,7 +3273,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   Icons.person,
                                                                   size: 14.sp,
                                                                   color: Colors
-                                                                      .grey[600],
+                                                                          .grey[
+                                                                      600],
                                                                 ),
                                                                 SizedBox(
                                                                   width: 6.w,
@@ -3179,9 +3286,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                       .textTheme
                                                                       .bodySmall
                                                                       ?.copyWith(
-                                                                        fontWeight:
-                                                                            FontWeight.w600,
-                                                                      ),
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w600,
+                                                                  ),
                                                                 ),
                                                               ],
                                                             ),
@@ -3197,9 +3305,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   .textTheme
                                                                   .bodySmall
                                                                   ?.copyWith(
-                                                                    color: Colors
-                                                                        .grey[600],
-                                                                  ),
+                                                                color: Colors
+                                                                    .grey[600],
+                                                              ),
                                                             ),
                                                           ],
                                                         ),
@@ -3207,20 +3315,22 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                                                         // Tag as a chip
                                                         Container(
-                                                          padding:
-                                                              EdgeInsets.symmetric(
-                                                                horizontal: 8.w,
-                                                                vertical: 4.h,
-                                                              ),
-                                                          decoration: BoxDecoration(
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                            horizontal: 8.w,
+                                                            vertical: 4.h,
+                                                          ),
+                                                          decoration:
+                                                              BoxDecoration(
                                                             color: Colors.blue
                                                                 .withValues(
-                                                                  alpha: 0.1,
-                                                                ),
+                                                              alpha: 0.1,
+                                                            ),
                                                             borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12.sp,
-                                                                ),
+                                                                BorderRadius
+                                                                    .circular(
+                                                              12.sp,
+                                                            ),
                                                           ),
                                                           child: Text(
                                                             controller
@@ -3232,25 +3342,25 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                     )
                                                                     .isNotEmpty
                                                                 ? controller
-                                                                      .allTagList
-                                                                      .where(
-                                                                        (e) =>
-                                                                            e.id ==
-                                                                            note.tagId,
-                                                                      )
-                                                                      .first
-                                                                      .name
+                                                                    .allTagList
+                                                                    .where(
+                                                                      (e) =>
+                                                                          e.id ==
+                                                                          note.tagId,
+                                                                    )
+                                                                    .first
+                                                                    .name
                                                                 : "N/A",
                                                             style: theme
                                                                 .textTheme
                                                                 .bodySmall
                                                                 ?.copyWith(
-                                                                  color: Colors
-                                                                      .blue,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                ),
+                                                              color:
+                                                                  Colors.blue,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
                                                           ),
                                                         ),
                                                         SizedBox(height: 8.h),
@@ -3259,9 +3369,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                         TextWidget(
                                                           text:
                                                               note.description! ??
-                                                              "N/A",
-                                                          style: theme
-                                                              .textTheme
+                                                                  "N/A",
+                                                          style: theme.textTheme
                                                               .bodyMedium,
                                                         ),
                                                       ],
@@ -3365,6 +3474,61 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               ),
       ),
     );
+  }
+
+  /// Save all custom fields to the server
+  Future<void> _saveCustomFields() async {
+    try {
+      // Get the appointment ID
+      final appointmentId = controller.selectedAppointment.value?.apptID;
+      if (appointmentId == null) {
+        MySnackBar.showErrorToast(
+          message: "Appointment ID not found",
+        );
+        return;
+      }
+
+      // Collect all custom field values as array of objects
+      // Format: [{"type": "FieldName", "value1": "...", "value2": "..."}]
+      final List<Map<String, dynamic>> fieldsArray = [];
+      for (var field in customFieldsController.selectedCustomFields) {
+        final value = field.getFieldValue();
+        if (value != null && value.isNotEmpty) {
+          fieldsArray.add({
+            "type": field.fieldName,
+            "value1": value,
+            "value2": "", // Can be used for additional values if needed
+          });
+        }
+      }
+
+      // Check if there are any fields to save
+      if (fieldsArray.isEmpty) {
+        MySnackBar.showInfoToast(
+          message: "Please fill in at least one custom field",
+        );
+        return;
+      }
+
+      // Convert to JSON string
+      final fieldsValue = jsonEncode(fieldsArray);
+
+      log("📤 Saving custom fields for appointment: $appointmentId");
+      log("📤 Fields: $fieldsValue");
+
+      // Call the API
+      await customFieldsController.saveCustomFieldToServer(
+        appointmentId: appointmentId,
+        fieldsValue: fieldsValue,
+      );
+
+      // Success is handled by the controller (shows toast)
+    } catch (e) {
+      log("❌ Error saving custom fields: $e");
+      MySnackBar.showErrorToast(
+        message: "Failed to save custom fields",
+      );
+    }
   }
 }
 
@@ -3519,6 +3683,9 @@ void showNotesDialog(
                     padding: const EdgeInsets.all(8.0),
                     child: GeneralTextField(
                       maxLine: 4,
+                      minLine: 1,
+                      textInputType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
                       hint: "Add a note here..",
                       theme: theme,
                       isEnabled: true,
@@ -3561,8 +3728,8 @@ void showNotesDialog(
                           child: PrimaryButton(
                             backgroundColor:
                                 controller.selectedTagId.value != -1
-                                ? LightThemeColors.primaryColor
-                                : LightThemeColors.buttonDisabledColor,
+                                    ? LightThemeColors.primaryColor
+                                    : LightThemeColors.buttonDisabledColor,
                             title: isOld ? "Update" : "Save",
                             onPressed: () async {
                               await controller.saveNote(isOld);
@@ -3759,8 +3926,8 @@ void showMediaBottomSheet(BuildContext context, int index) {
                         return;
                       }
 
-                      final List<XFile?> files = await ImagePicker()
-                          .pickMultiImage();
+                      final List<XFile?> files =
+                          await ImagePicker().pickMultiImage();
                       if (files.isNotEmpty) {
                         // Compress images before adding
                         final newImages = <String>[];
@@ -5753,7 +5920,7 @@ class ResourceItem {
   RxBool selected;
 
   ResourceItem({required this.title, bool selected = false})
-    : selected = selected.obs;
+      : selected = selected.obs;
 }
 
 final List<String> productList = ["Computer", "Plumbing", "Tailoring", "AC"];
@@ -5964,7 +6131,7 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
               hintText: "Enter ${field.fieldName}",
             ),
             onChanged: (value) {
-              // field.textValue = value;
+              field.textValue = value;
             },
           ),
         ],
@@ -5984,7 +6151,7 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
               hintText: "Enter ${field.fieldName}",
             ),
             onChanged: (value) {
-              // field. = value; // same storage variable
+              field.numberValue = value;
             },
           ),
         ],

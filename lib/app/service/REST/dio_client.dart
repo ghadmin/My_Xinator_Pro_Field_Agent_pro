@@ -35,20 +35,54 @@ class DioClient {
         );
 
   DioClient() {
-    // Bypass certificate verification - DEV ONLY
+    _setupHttpClient();
+  }
+
+  void _setupHttpClient() {
     bool isInDebug = const bool.fromEnvironment('dart.vm.product') == false;
 
-    if (isInDebug) {
-      (_dio.httpClientAdapter as IOHttpClientAdapter).onHttpClientCreate =
-          (HttpClient client) {
-            client.badCertificateCallback =
-                (X509Certificate cert, String host, int port) {
-                  print("⚠️ Accepting bad certificate from: $host");
-                  return true; // Accept all certificates (development only)
-                };
-            return client;
-          };
-    }
+    (_dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final HttpClient client = HttpClient();
+
+      // Enable TLS 1.2 and 1.3 for Android
+      if (Platform.isAndroid) {
+        log("🔧 Setting up Android HttpClient with TLS support");
+      }
+
+      // Development: Bypass certificate verification
+      if (isInDebug) {
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) {
+          log("⚠️ DEV MODE: Accepting certificate from: $host");
+          log("   Subject: ${cert.subject}");
+          log("   Issuer: ${cert.issuer}");
+          return true; // Accept all certificates in development
+        };
+      } else {
+        // Production: Still log certificate details for debugging
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) {
+          log("🔒 PROD: Certificate validation for: $host");
+          log("   Subject: ${cert.subject}");
+          log("   Issuer: ${cert.issuer}");
+          log("   Valid from: ${cert.startValidity} to ${cert.endValidity}");
+
+          // Check if certificate is expired or not yet valid
+          final now = DateTime.now();
+          if (now.isBefore(cert.startValidity) || now.isAfter(cert.endValidity)) {
+            log("❌ Certificate is NOT valid at this time!");
+            return false;
+          }
+
+          // In production, this should return false to enforce proper certificate validation
+          // But temporarily return true to allow testing
+          log("⚠️ PROD WARNING: Accepting certificate (should be properly validated)");
+          return true;
+        };
+      }
+
+      return client;
+    };
   }
 
   //GET

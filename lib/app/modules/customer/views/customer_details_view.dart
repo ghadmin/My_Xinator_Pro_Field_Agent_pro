@@ -401,6 +401,7 @@ import 'package:get/get.dart';
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/main_divider.dart';
+import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../controllers/customer_controller.dart';
 
@@ -905,7 +906,7 @@ class _CreateAppointmentSheetState extends State<CreateAppointmentSheet> {
     if (selectedDate == null ||
         selectedTimeSlot == null ||
         selectedType == null) {
-      Get.snackbar("Error", "Please fill all fields");
+      MySnackBar.showErrorToast(message: "Please fill all fields");
       return;
     }
 

@@ -59,15 +59,14 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         color: controller.type.value == "Invoice"
                             ? theme.primaryColor
                             : controller.type.value == "Estimate" &&
-                                  controller.isConverted.value == true
-                            ? Colors.green
-                            : Colors.yellow,
+                                    controller.isConverted.value == true
+                                ? Colors.green
+                                : Colors.yellow,
                       ),
                       child: Text(
                         "${controller.type.value}: ${controller.invoiceNumber}",
                         style: theme.textTheme.bodyLarge?.copyWith(
-                          color:
-                              controller.type.value == "Estimate" &&
+                          color: controller.type.value == "Estimate" &&
                                   controller.isConverted.value == false
                               ? Colors.black
                               : Colors.white,
@@ -270,11 +269,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   children: [
                                     Text(
                                       "Send Email",
-                                      style: theme.textTheme.bodyLarge
-                                          ?.copyWith(
-                                            fontSize: 18.sp,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                      style:
+                                          theme.textTheme.bodyLarge?.copyWith(
+                                        fontSize: 18.sp,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                     SizedBox(height: 15.sp),
                                     GeneralTextField(
@@ -339,11 +338,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                           "Send XPayLink",
                                           style: theme.textTheme.bodyLarge
                                               ?.copyWith(
-                                                color: LightThemeColors
-                                                    .hintTextColor,
-                                                fontSize: 14.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                            color:
+                                                LightThemeColors.hintTextColor,
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -500,9 +499,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                           "Send Email",
                                           style: theme.textTheme.bodyLarge
                                               ?.copyWith(
-                                                fontSize: 18.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                            fontSize: 18.sp,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                         SizedBox(height: 15.sp),
                                         GeneralTextField(
@@ -553,8 +552,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(
-                                                        4.r,
-                                                      ),
+                                                    4.r,
+                                                  ),
                                                 ),
                                                 side: BorderSide(
                                                   color: LightThemeColors
@@ -562,13 +561,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                   width: 1.sp,
                                                 ),
                                                 value: controller
-                                                    .isSendXPayLink
-                                                    .value,
+                                                    .isSendXPayLink.value,
                                                 onChanged: (value) {
-                                                  controller
-                                                          .isSendXPayLink
-                                                          .value =
-                                                      value!;
+                                                  controller.isSendXPayLink
+                                                      .value = value!;
                                                 },
                                               ),
                                             ),
@@ -576,11 +572,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                               "Send XPayLink",
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                    color: LightThemeColors
-                                                        .hintTextColor,
-                                                    fontSize: 14.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                color: LightThemeColors
+                                                    .hintTextColor,
+                                                fontSize: 14.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -840,7 +836,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                       ),
                                 SizedBox(height: 4.sp),
                                 Text(
-                                  "${item.quantity ?? ""} + X \$${item.selectedItem!.price}",
+                                  "${item.quantity ?? ""} X \$${item.selectedItem!.price}",
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: theme.primaryColor,
                                   ),
@@ -881,12 +877,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 child: Text(
                                                   'Edit Item',
                                                   style: theme
-                                                      .textTheme
-                                                      .bodyLarge
+                                                      .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                        color:
-                                                            theme.primaryColor,
-                                                      ),
+                                                    color: theme.primaryColor,
+                                                  ),
                                                 ),
                                               ),
 
@@ -903,30 +897,29 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Description",
-                                                          style: theme
-                                                              .textTheme
+                                                          style: theme.textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 10.sp),
                                                         Expanded(
-                                                          child: GeneralTextField(
+                                                          child:
+                                                              GeneralTextField(
                                                             hint: "Description",
                                                             theme: theme,
                                                             maxLine: 4,
                                                             textEditingController:
                                                                 TextEditingController(
-                                                                  text:
-                                                                      item
-                                                                          .selectedItem!
-                                                                          .description ??
-                                                                      "",
-                                                                ),
+                                                              text: item
+                                                                      .selectedItem!
+                                                                      .description ??
+                                                                  "",
+                                                            ),
                                                             onChanged: (v) {
                                                               controller
-                                                                      .selectedItemList[index]
-                                                                      .selectedItem!
-                                                                      .description =
-                                                                  v;
+                                                                  .selectedItemList[
+                                                                      index]
+                                                                  .selectedItem!
+                                                                  .description = v;
                                                               controller
                                                                   .markAsDirty();
                                                             },
@@ -939,31 +932,44 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Amount: \$",
-                                                          style: theme
-                                                              .textTheme
+                                                          style: theme.textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 18.sp),
                                                         Expanded(
-                                                          child: GeneralTextField(
+                                                          child:
+                                                              GeneralTextField(
                                                             hint: "Amount",
                                                             textInputType:
-                                                                TextInputType.numberWithOptions(
-                                                                  decimal: true,
-                                                                ),
+                                                                TextInputType
+                                                                    .numberWithOptions(
+                                                              decimal: true,
+                                                            ),
                                                             theme: theme,
                                                             textEditingController:
                                                                 TextEditingController(
-                                                                  text: item
-                                                                      .selectedItem!
-                                                                      .price!
-                                                                      .toStringAsFixed(
-                                                                        2,
-                                                                      ),
-                                                                ),
+                                                              text: item
+                                                                  .selectedItem!
+                                                                  .price!
+                                                                  .toStringAsFixed(
+                                                                2,
+                                                              ),
+                                                            ),
                                                             onChanged: (value) {
                                                               controller
                                                                   .markAsDirty();
+                                                              controller
+                                                                  .selectedItemList[
+                                                                      index]
+                                                                  .selectedItem!
+                                                                  .price = double
+                                                                      .tryParse(
+                                                                    value,
+                                                                  ) ??
+                                                                  0.00;
+                                                              controller
+                                                                  .selectedItemList
+                                                                  .refresh();
                                                               controller
                                                                   .createTotalForEdit(); // Recalculate total when amount changes
 
@@ -979,13 +985,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Quantity:",
-                                                          style: theme
-                                                              .textTheme
+                                                          style: theme.textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 25.sp),
                                                         Expanded(
-                                                          child: GeneralTextField(
+                                                          child:
+                                                              GeneralTextField(
                                                             isEnabled: true,
                                                             hint: '1',
                                                             textInputType:
@@ -994,13 +1000,24 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                             theme: theme,
                                                             textEditingController:
                                                                 TextEditingController(
-                                                                  text: item
-                                                                      .quantity
-                                                                      .toString(),
-                                                                ),
+                                                              text: item
+                                                                  .quantity
+                                                                  .toString(),
+                                                            ),
                                                             onChanged: (value) {
                                                               controller
                                                                   .markAsDirty();
+                                                              controller
+                                                                  .selectedItemList[
+                                                                      index]
+                                                                  .quantity = double
+                                                                      .tryParse(
+                                                                    value,
+                                                                  ) ??
+                                                                  1;
+                                                              controller
+                                                                  .selectedItemList
+                                                                  .refresh();
                                                               controller
                                                                   .createTotalForEdit();
                                                               controller
@@ -1015,16 +1032,16 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Taxable:",
-                                                          style: theme
-                                                              .textTheme
+                                                          style: theme.textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 30.sp),
                                                         Obx(
-                                                          () => DropdownButton<bool>(
-                                                            value:
-                                                                controller
-                                                                    .selectedItemList[index]
+                                                          () => DropdownButton<
+                                                              bool>(
+                                                            value: controller
+                                                                    .selectedItemList[
+                                                                        index]
                                                                     .selectedItem!
                                                                     .isTaxable ??
                                                                 true,
@@ -1048,10 +1065,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                               controller
                                                                   .markAsDirty();
                                                               controller
-                                                                      .selectedItemList[index]
-                                                                      .selectedItem!
-                                                                      .isTaxable =
-                                                                  value;
+                                                                  .selectedItemList[
+                                                                      index]
+                                                                  .selectedItem!
+                                                                  .isTaxable = value;
 
                                                               controller
                                                                   .createTotalForEdit();
@@ -1081,8 +1098,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                     onPressed: () {
                                                       appointmentController
                                                           .isSelectSingleNeedToCall(
-                                                            false,
-                                                          );
+                                                        false,
+                                                      );
                                                       controller
                                                           .createTotalForEdit();
                                                       controller
@@ -1196,9 +1213,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           Offset offset = renderBox.localToGlobal(
                             Offset(0, 32.sp),
                           );
-                          final RenderBox overlay =
-                              Overlay.of(context).context.findRenderObject()
-                                  as RenderBox;
+                          final RenderBox overlay = Overlay.of(context)
+                              .context
+                              .findRenderObject() as RenderBox;
                           showMenu(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.all(
@@ -1225,12 +1242,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           ).then((selectedValue) {
                             if (selectedValue != null) {
                               controller.markAsDirty();
-                              final selectedDiscount = controller
-                                  .discountOptions
-                                  .firstWhere(
-                                    (element) =>
-                                        element["value"] == selectedValue,
-                                  );
+                              final selectedDiscount =
+                                  controller.discountOptions.firstWhere(
+                                (element) => element["value"] == selectedValue,
+                              );
                               controller.selectedDiscountOption.value =
                                   selectedDiscount["value"];
                               controller.createTotalForEdit();
@@ -1446,9 +1461,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       RenderBox renderBox =
                           context.findRenderObject() as RenderBox;
                       Offset offset = renderBox.localToGlobal(Offset(0, 32.sp));
-                      final RenderBox overlay =
-                          Overlay.of(context).context.findRenderObject()
-                              as RenderBox;
+                      final RenderBox overlay = Overlay.of(context)
+                          .context
+                          .findRenderObject() as RenderBox;
                       showMenu(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(8.r)),
@@ -1495,10 +1510,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 selectedTax.name ?? "";
                             controller.tax.value =
                                 selectedTax.rate?.toStringAsFixed(2) ?? "0.00";
-                            controller.selectedTaxID.value = selectedTax.id
-                                .toString();
-                            controller.initialTaxID.value = selectedTax.id
-                                .toString();
+                            controller.selectedTaxID.value =
+                                selectedTax.id.toString();
+                            controller.initialTaxID.value =
+                                selectedTax.id.toString();
                             controller.createTotalForEdit();
                             controller.updateRequestedDepositAmount();
                           }
@@ -1749,37 +1764,37 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             controller.type.value == "Invoice"
                 ? SizedBox.shrink()
                 : controller.isConverted.value
-                ? SizedBox.shrink()
-                : Row(
-                    children: [
-                      Obx(
-                        () => Checkbox(
-                          activeColor: theme.primaryColor,
-                          checkColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4.r),
+                    ? SizedBox.shrink()
+                    : Row(
+                        children: [
+                          Obx(
+                            () => Checkbox(
+                              activeColor: theme.primaryColor,
+                              checkColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              side: BorderSide(
+                                color: LightThemeColors.primaryColor,
+                                width: 1.sp,
+                              ),
+                              value: controller.convertToInvoice.value,
+                              onChanged: (value) {
+                                controller.convertToInvoice.value = value!;
+                                controller.markAsDirty();
+                              },
+                            ),
                           ),
-                          side: BorderSide(
-                            color: LightThemeColors.primaryColor,
-                            width: 1.sp,
+                          Text(
+                            "Convert to Invoice",
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: LightThemeColors.hintTextColor,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                          value: controller.convertToInvoice.value,
-                          onChanged: (value) {
-                            controller.convertToInvoice.value = value!;
-                            controller.markAsDirty();
-                          },
-                        ),
+                        ],
                       ),
-                      Text(
-                        "Convert to Invoice",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: LightThemeColors.hintTextColor,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
             MainDivider(),
             SizedBox(height: 20.sp),
             Padding(
@@ -1793,9 +1808,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       RenderBox renderBox =
                           context.findRenderObject() as RenderBox;
                       Offset offset = renderBox.localToGlobal(Offset(0, 36.sp));
-                      final RenderBox overlay =
-                          Overlay.of(context).context.findRenderObject()
-                              as RenderBox;
+                      final RenderBox overlay = Overlay.of(context)
+                          .context
+                          .findRenderObject() as RenderBox;
                       showMenu(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(8.r)),
@@ -1818,9 +1833,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     e["name"] == "Requested Deposit Amount:(%)"
                                         ? "Requested Payment Amount:(%)"
                                         : e["name"] ==
-                                              "Requested Deposit Amount:(\$)"
-                                        ? "Requested Payment Amount:(\$)"
-                                        : e["name"],
+                                                "Requested Deposit Amount:(\$)"
+                                            ? "Requested Payment Amount:(\$)"
+                                            : e["name"],
                                   )
                                 : Text(e["name"] ?? ""),
                           );
@@ -1832,11 +1847,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               .clear();
                           controller.requestDepositRateEditTextController
                               .clear();
-                          final selectedDeposit = controller
-                              .depositRequestOptions
-                              .firstWhere(
-                                (element) => element["value"] == selectedValue,
-                              );
+                          final selectedDeposit =
+                              controller.depositRequestOptions.firstWhere(
+                            (element) => element["value"] == selectedValue,
+                          );
                           controller.selectedDepositRequestOption.value =
                               selectedDeposit["value"];
                           controller.selectedDepositRequestOptionName.value =
@@ -1862,19 +1876,17 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         children: [
                           controller.type.value == "Invoice"
                               ? Text(
-                                  controller
-                                              .selectedDepositRequestOptionName
+                                  controller.selectedDepositRequestOptionName
                                               .value ==
                                           "Requested Deposit Amount:(%)"
                                       ? "Requested Payment Amount:(%)"
-                                      : controller
-                                                .selectedDepositRequestOptionName
-                                                .value ==
-                                            "Requested Deposit Amount:(\$)"
-                                      ? "Requested Payment Amount:(\$)"
-                                      : controller
-                                            .selectedDepositRequestOptionName
-                                            .value,
+                                      : controller.selectedDepositRequestOptionName
+                                                  .value ==
+                                              "Requested Deposit Amount:(\$)"
+                                          ? "Requested Payment Amount:(\$)"
+                                          : controller
+                                              .selectedDepositRequestOptionName
+                                              .value,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color:
                                         LightThemeColors.bodyTextSecondaryColor,
@@ -1883,8 +1895,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 )
                               : Text(
                                   controller
-                                      .selectedDepositRequestOptionName
-                                      .value,
+                                      .selectedDepositRequestOptionName.value,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color:
                                         LightThemeColors.bodyTextSecondaryColor,
@@ -1929,19 +1940,18 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               final rate = double.tryParse(v) ?? 0.0;
 
                               // Get the current balance due
-                              final balanceDue =
-                                  controller.amountAfterAddingTax.value -
+                              final balanceDue = controller
+                                      .amountAfterAddingTax.value -
                                   double.parse(controller.depositAmount.value);
 
                               // Calculate requested deposit based on balance due
-                              final depositAmount = (balanceDue * rate / 100)
-                                  .toStringAsFixed(2);
+                              final depositAmount =
+                                  (balanceDue * rate / 100).toStringAsFixed(2);
 
                               // Update the text field
                               controller
-                                      .requestedDepositAmountEditTextController
-                                      .text =
-                                  depositAmount;
+                                  .requestedDepositAmountEditTextController
+                                  .text = depositAmount;
                             },
                             textEditingController:
                                 controller.requestDepositRateEditTextController,
@@ -1966,8 +1976,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       textInputType: TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      readOnly:
-                          controller.selectedDepositRequestOption.value ==
+                      readOnly: controller.selectedDepositRequestOption.value ==
                                   "1" ||
                               controller.selectedDepositRequestOption.value ==
                                   "0"
@@ -2117,11 +2126,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               controller.createTotalForEdit();
                               controller.updateRequestedDepositAmount();
                             } else if (checked == false && alreadySelected) {
-                              final index = controller.selectedItemList
-                                  .indexWhere(
-                                    (selected) =>
-                                        selected.selectedItem!.id == item.id,
-                                  );
+                              final index =
+                                  controller.selectedItemList.indexWhere(
+                                (selected) =>
+                                    selected.selectedItem!.id == item.id,
+                              );
                               if (index != -1) {
                                 controller.selectedItemList.removeAt(index);
                                 // controller.editAmountControllers

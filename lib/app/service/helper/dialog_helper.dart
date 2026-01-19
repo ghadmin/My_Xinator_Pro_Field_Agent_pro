@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,7 +9,7 @@ import '../../../utils/constants.dart';
 import '../../components/global-widgets/my_buttons.dart';
 
 class DialogHelper {
-  static get context => null;
+  static Null get context => null;
 
   ///show error dialog
   static void showErrorDialog(String title, String description) {
@@ -19,7 +17,7 @@ class DialogHelper {
       Dialog(
         backgroundColor: Colors.black,
         elevation: 6,
-        shadowColor: Colors.black12.withOpacity(.2),
+        shadowColor: Colors.black12.withValues(alpha: .2),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
         child: Padding(
@@ -52,7 +50,6 @@ class DialogHelper {
                 SizedBox(height: 15.sp),
                 Text(
                   title,
-                  textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w400,
@@ -86,7 +83,7 @@ class DialogHelper {
       Dialog(
         backgroundColor: Colors.white,
         elevation: 6,
-        shadowColor: Colors.black12.withOpacity(.2),
+        shadowColor: Colors.black12.withValues(alpha: .2),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
         child: Padding(
@@ -101,7 +98,6 @@ class DialogHelper {
                   children: [
                     Text(
                       "Download PDF?",
-                      textScaler: TextScaler.linear(1.0),
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 16.sp,
@@ -123,7 +119,6 @@ class DialogHelper {
                 SizedBox(height: 20.sp),
                 Text(
                   fileName,
-                  textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
                     color: LightThemeColors.bodyTextSecondaryColor,
                     fontWeight: FontWeight.w400,
@@ -133,7 +128,6 @@ class DialogHelper {
                 SizedBox(height: 8.sp),
                 Text(
                   "Download the PDF of this conversation?",
-                  textScaler: TextScaler.linear(1.0),
                   style: TextStyle(
                     color: LightThemeColors.bodyTextSecondaryColor,
                     fontWeight: FontWeight.w400,
@@ -179,100 +173,105 @@ class DialogHelper {
 
   ///show loading
   static Future<void> showLoading() async {
-    if (Get.isSnackbarOpen) {
-      await Future.delayed(Duration(milliseconds: 100));
-
-      Get.closeAllSnackbars();
-
-      Get.dialog(
-        barrierDismissible: false,
-        barrierColor: Colors.black.withOpacity(.1),
-        // barrierColor: LightThemeColors.bodyTextColor,
-        Center(
-          child: Container(
-            height: 80.h,
-            decoration: const BoxDecoration(
-              color: Colors.transparent,
-              shape: BoxShape.circle,
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // App Icon
-                Container(
-                  height: 50.sp,
-                  width: 50.sp,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: AssetImage(
-                        AppImages.kLoaderIcon,
-                      ),
+    Get.dialog(
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: .1),
+      // barrierColor: LightThemeColors.bodyTextColor,
+      Center(
+        child: Container(
+          height: 80.h,
+          decoration: const BoxDecoration(
+            color: Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // App Icon
+              Container(
+                height: 50.sp,
+                width: 50.sp,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    image: AssetImage(
+                      AppImages.kLoaderIcon,
                     ),
                   ),
                 ),
-                // Loader
-                SizedBox(
-                  height: 60.sp,
-                  width: 60.sp,
-                  child: const CircularProgressIndicator(),
-                ),
-              ],
-            ),
+              ),
+              // Loader
+              SizedBox(
+                height: 60.sp,
+                width: 60.sp,
+                child: const CircularProgressIndicator(),
+              ),
+            ],
           ),
         ),
-      );
-    } else {
-      Get.dialog(
-        barrierDismissible: false,
-        barrierColor: LightThemeColors.bodyTextColor.withOpacity(.1),
-        //  barrierColor: LightThemeColors.bodyTextColor,
-        Center(
-          child: Container(
-            height: 80.h,
-            decoration: const BoxDecoration(
-              color: Colors.transparent,
-              shape: BoxShape.circle,
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // App Icon
-                Container(
-                  height: 50.sp,
-                  width: 50.sp,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                        image: AssetImage(
-                      AppImages.kLoaderIcon,
-                    )),
-                  ),
-                ),
-                // Loader
-                SizedBox(
-                  height: 60.sp,
-                  width: 60.sp,
-                  child: const CircularProgressIndicator(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+      ),
+    );
   }
 
   ///hide loading
   static Future<void> hideLoading() async {
-    if (Get.isDialogOpen!) {
-      if (Get.isSnackbarOpen) {
-        await SnackBarDurations.kMySnackBarDuration.delay();
-        Get.closeAllSnackbars();
-        Get.back();
-      } else {
-        Get.back();
+    try {
+      if (Get.isDialogOpen == true) {
+        Get.until((route) => !Get.isDialogOpen!);
+        // Wait for dialog to fully close
+        await Future.delayed(const Duration(milliseconds: 100));
       }
+    } catch (_) {
+      // Safe ignore
     }
+  }
+
+  ///show loading with optional message
+  static Future<void> showLoadingWithMessage(String message) async {
+    Get.dialog(
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      Center(
+        child: Container(
+          padding: EdgeInsets.all(24.sp),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Modern spinkit-style loader
+              SizedBox(
+                width: 50.sp,
+                height: 50.sp,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    LightThemeColors.primaryColor,
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: LightThemeColors.bodyTextColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

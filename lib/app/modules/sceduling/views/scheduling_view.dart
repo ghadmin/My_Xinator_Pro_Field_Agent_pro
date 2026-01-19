@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:myxinator_pro_field_agent_pro/app/modules/sceduling/views/map_view_tab.dart'
-    show MapViewTab;
 
 import '../../../components/global-widgets/text_widget.dart';
 
@@ -50,7 +48,6 @@ class SchedulingView extends StatelessWidget {
             _DateViewTab(),
             _ViewIcon(icon: Icons.people_outline, label: "Resource View"),
             _ViewIcon(icon: Icons.list_alt, label: "List View"),
-            MapViewTab(),
           ],
         ),
       ),

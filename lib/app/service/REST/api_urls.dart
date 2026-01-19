@@ -37,4 +37,5 @@ class ApiUrl {
   static const getQBOLocationsUrl = "$baseUrl/GetQBOLocations";
   static const getQBOClassesUrl = "$baseUrl/GetQBOClasses";
   static const getCustomFieldsUrl = "$baseUrl/GetAllCustomFields";
+  static const saveCustomFieldUrl = "$baseUrl/SaveCustomFeild";
 }

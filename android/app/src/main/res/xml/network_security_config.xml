@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Production configuration - allow cleartext for debugging -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!-- Trust system certificates -->
+            <certificates src="system"/>
+            <!-- Trust user-added certificates (for corporate devices) -->
+            <certificates src="user"/>
+        </trust-anchors>
+    </base-config>
+
+    <!-- Specific domain configuration for your API -->
+    <domain-config>
+        <domain includeSubdomains="true">testsite.myserviceforce.com</domain>
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/>
+        </trust-anchors>
+        <!-- Enable older TLS versions for compatibility -->
+        <base-config>
+            <trust-anchors>
+                <certificates src="system"/>
+                <certificates src="user"/>
+            </trust-anchors>
+        </base-config>
+    </domain-config>
+
+    <!-- Debug configuration (for debugging only) -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/>
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

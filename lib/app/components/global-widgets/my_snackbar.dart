@@ -4,57 +4,122 @@ import 'package:get/get.dart';
 import '../../../utils/constants.dart';
 
 class MySnackBar {
+  /// Get current context safely
+  static BuildContext? get _context {
+    return Get.context;
+  }
+
   /// SnackBar ///
 
   // 1. success snackbar
-  static showSnackBar(
+  static void showSnackBar(
       {required String title, required String message, Duration? duration}) {
-    Get.snackbar(
-      title,
-      message,
-      duration:
-          duration ?? Duration(seconds: SnackBarDurations.kMySnackBarDuration),
-      margin: const EdgeInsets.only(top: 10, left: 10, right: 10),
-      padding: const EdgeInsets.all(18),
-      borderRadius: 50,
-      colorText: Colors.white,
-      backgroundColor: Colors.green,
-      snackPosition: SnackPosition.TOP,
-      icon: const Padding(
-        padding: EdgeInsets.only(left: 15.0),
-        child: Icon(
-          Icons.check_circle_outline_outlined,
-          color: Colors.white,
-          size: 30,
+    final context = _context;
+    if (context == null) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: duration ?? const Duration(seconds: 3),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_outline_outlined,
+              color: Colors.white,
+              size: 30,
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 10,
+          left: 10,
+          right: 10,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
   // 2. error snackbar
-  static showErrorSnackBar(
+  static void showErrorSnackBar(
       {required String title,
       required String message,
       Color? color,
       Duration? duration}) {
-    Get.snackbar(
-      title,
-      message,
-      duration:
-          duration ?? Duration(seconds: SnackBarDurations.kMySnackBarDuration),
-      margin: const EdgeInsets.only(top: 10, left: 10, right: 10),
-      padding: const EdgeInsets.all(18),
-      borderRadius: 50,
-      colorText: Colors.white,
-      backgroundColor: color ?? Colors.redAccent,
-      snackPosition: SnackPosition.TOP,
-      icon: const Padding(
-        padding: EdgeInsets.only(left: 15.0),
-        child: Icon(
-          Icons.error_outline_outlined,
-          color: Colors.white,
-          size: 30,
+    final context = _context;
+    if (context == null) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: duration ?? const Duration(seconds: 3),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.error_outline_outlined,
+              color: Colors.white,
+              size: 30,
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    message,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
+        backgroundColor: color ?? Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 10,
+          left: 10,
+          right: 10,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
@@ -62,117 +127,185 @@ class MySnackBar {
   /// Toast ///
 
   // 1. success toast
-  static showToast(
-      {required String message, Color? color, Duration? duration}) {
-    Get.rawSnackbar(
-      duration:
-          duration ?? Duration(seconds: SnackBarDurations.kMySnackBarDuration),
-      margin: const EdgeInsets.only(top: 10, left: 18, right: 18),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      borderRadius: 50,
-      snackPosition: SnackPosition.TOP,
-      snackStyle: SnackStyle.FLOATING,
-      backgroundColor: color ?? Colors.green,
-      icon: const Padding(
-        padding: EdgeInsets.only(left: 15.0),
-        child: Icon(
-          Icons.check_circle_outline_outlined,
-          color: Colors.white,
-          size: 22,
+  static void showToast(
+      {required String message,
+      Color? color,
+      Duration? duration,
+      SnackBarBehavior? behavior}) {
+    final context = _context;
+    if (context == null) return;
+
+    final snackBarBehavior = behavior ?? SnackBarBehavior.fixed;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: duration ??
+            Duration(seconds: SnackBarDurations.kMySnackBarDuration),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.check_circle_outline_outlined,
+              color: Colors.white,
+              size: 22,
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
+        backgroundColor: color ?? Colors.green,
+        behavior: snackBarBehavior,
+        margin: snackBarBehavior == SnackBarBehavior.floating
+            ? EdgeInsets.only(
+                bottom: 10,
+                left: 18,
+                right: 18,
+              )
+            : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
       ),
-      onTap: (snack) {
-        Get.closeAllSnackbars();
-      },
-      // overlayBlur: 0.8,
-      message: message,
     );
   }
 
   // 2. info toast
-  static showInfoToast(
-      {required String message, Color? color, Duration? duration}) {
-    Get.rawSnackbar(
-      duration:
-          duration ?? Duration(seconds: SnackBarDurations.kMySnackBarDuration),
-      margin: const EdgeInsets.only(top: 10, left: 18, right: 18),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      borderRadius: 50,
-      snackPosition: SnackPosition.TOP,
-      snackStyle: SnackStyle.FLOATING,
+  static void showInfoToast(
+      {required String message,
+      Color? color,
+      Duration? duration,
+      SnackBarBehavior? behavior}) {
+    final context = _context;
+    if (context == null) return;
 
-      backgroundColor: color ?? const Color(0xff2E9AFE),
+    final snackBarBehavior = behavior ?? SnackBarBehavior.fixed;
 
-      onTap: (snack) {
-        Get.closeAllSnackbars();
-      },
-      // overlayBlur: 0.8,
-      message: message,
-      icon: const Padding(
-        padding: EdgeInsets.only(left: 15.0),
-        child: Icon(
-          Icons.info_outline_rounded,
-          color: Colors.white,
-          size: 22,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: duration ??
+            Duration(seconds: SnackBarDurations.kMySnackBarDuration),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.info_outline_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
+        backgroundColor: color ?? const Color(0xff2E9AFE),
+        behavior: snackBarBehavior,
+        margin: snackBarBehavior == SnackBarBehavior.floating
+            ? EdgeInsets.only(
+                bottom: 10,
+                left: 18,
+                right: 18,
+              )
+            : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
       ),
     );
   }
 
   // 3. error toast
-  static showErrorToast(
-      {required String message, Color? color, Duration? duration}) {
-    Get.rawSnackbar(
-      duration:
-          duration ?? Duration(seconds: SnackBarDurations.kMySnackBarDuration),
-      margin: const EdgeInsets.only(bottom: 18, left: 18, right: 18),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      borderRadius: 50,
-      snackPosition: SnackPosition.TOP,
-      snackStyle: SnackStyle.FLOATING,
-      backgroundColor: color ?? Colors.red.withValues(alpha: .9),
-      icon: const Padding(
-        padding: EdgeInsets.only(left: 15.0),
-        child: Icon(
-          Icons.error_outline_outlined,
-          color: Colors.white,
-          size: 22,
+  static void showErrorToast(
+      {required String message,
+      Color? color,
+      Duration? duration,
+      SnackBarBehavior? behavior}) {
+    final context = _context;
+    if (context == null) return;
+
+    final snackBarBehavior = behavior ?? SnackBarBehavior.fixed;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: duration ??
+            Duration(seconds: SnackBarDurations.kMySnackBarDuration),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.error_outline_outlined,
+              color: Colors.white,
+              size: 22,
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
+        backgroundColor: color ?? Colors.red.withValues(alpha: .9),
+        behavior: snackBarBehavior,
+        margin: snackBarBehavior == SnackBarBehavior.floating
+            ? EdgeInsets.only(
+                bottom: 10,
+                left: 18,
+                right: 18,
+              )
+            : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
       ),
-      onTap: (snack) {
-        Get.closeAllSnackbars();
-      },
-      // overlayBlur: 0.8,
-      message: message,
     );
   }
 
-  static showBottomToast(
+  static void showBottomToast(
       {required String message, Color? color, Duration? duration}) {
-    Get.rawSnackbar(
-      duration:
-          duration ?? Duration(seconds: SnackBarDurations.kMySnackBarDuration),
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      borderRadius: 50,
+    final context = _context;
+    if (context == null) return;
 
-      snackPosition: SnackPosition.BOTTOM,
-      snackStyle: SnackStyle.GROUNDED,
-
-      backgroundColor: color ?? const Color(0xff2E9AFE),
-
-      onTap: (snack) {
-        Get.closeAllSnackbars();
-      },
-      // overlayBlur: 0.8,
-      message: message,
-      icon: const Padding(
-        padding: EdgeInsets.only(left: 15.0),
-        child: Icon(
-          Icons.info_outline_rounded,
-          color: Colors.white,
-          size: 22,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: duration ??
+            Duration(seconds: SnackBarDurations.kMySnackBarDuration),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.info_outline_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
+        backgroundColor: color ?? const Color(0xff2E9AFE),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
       ),
     );
   }

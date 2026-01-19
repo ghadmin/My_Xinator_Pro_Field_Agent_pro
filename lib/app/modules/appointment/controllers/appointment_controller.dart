@@ -3,16 +3,13 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:intl/intl.dart';
-import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/appointment_model.dart';
-import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/note_model.dart';
-import 'package:myxinator_pro_field_agent_pro/utils/date_converter.dart'
-    show dateTimeConverter;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../../../utils/date_converter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../data/local/hive/my_hive.dart';
@@ -29,7 +26,9 @@ import '../../item/models/item_list_model.dart';
 import '../../settings/controllers/settings_controller.dart';
 import '../../settings/models/appointment_status_setting.dart';
 import '../../settings/models/ticket_status_model.dart';
+import '../models/appointment_model.dart';
 import '../models/image_list_model.dart';
+import '../models/note_model.dart';
 import '../models/tag_model.dart';
 import '../views/appointment_details_view.dart';
 
@@ -133,9 +132,9 @@ class AppointmentController extends GetxController
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
 
-      var response = await DioClient()
-          .get(url: ApiUrl.getAllNotesUrl, params: {"companyId": companyID})
-          .catchError(!showLoader ? handleError : () {});
+      var response = await DioClient().get(url: ApiUrl.getAllNotesUrl, params: {
+        "companyId": companyID
+      }).catchError(!showLoader ? handleError : () {});
 
       if (response == null) {
         hideLoading();
@@ -229,8 +228,7 @@ class AppointmentController extends GetxController
 
     contactName =
         "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
-    address =
-        "${appointment.customer?.address1}, "
+    address = "${appointment.customer?.address1}, "
         "${appointment.customer?.city}, "
         "${appointment.customer?.state}, ";
     mobileNumber = appointment.customer?.mobile ?? "";
@@ -262,18 +260,15 @@ class AppointmentController extends GetxController
     selectedAptIndex.value = index;
     if (selectedAppointment.value!.invoices != null &&
         selectedAppointment.value!.invoices!.isNotEmpty) {
-      for (var item
-          in selectedAppointment
-              .value!
-              .invoices![selectedEstimateOrInvoiceIndex.value]
-              .items!) {
+      for (var item in selectedAppointment
+          .value!.invoices![selectedEstimateOrInvoiceIndex.value].items!) {
         if (invoiceController.selectedItemList
                 .where((e) => e.selectedItem!.id == item.itemId)
                 .isEmpty &&
             !invoiceController.removedList.contains(item.itemId)) {
           invoiceController.selectedItemList.add(
             SelectedItemListModel(
-              quantity: double.parse(item.quantity ?? "1").toInt(),
+              quantity: double.parse(item.quantity ?? "1.00"),
               selectedItem: ItemListModel(
                 id: item.itemId,
                 name: item.name,
@@ -388,9 +383,9 @@ class AppointmentController extends GetxController
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
 
-      var response = await DioClient()
-          .get(url: ApiUrl.getAllTagUrl, params: {"CompanyId": companyID})
-          .catchError(handleError);
+      var response = await DioClient().get(
+          url: ApiUrl.getAllTagUrl,
+          params: {"CompanyId": companyID}).catchError(handleError);
 
       // log("refreshing appointments ${jsonEncode(response)}");
 
@@ -456,13 +451,8 @@ class AppointmentController extends GetxController
       );
 
       if (response != null && response['success'] == true) {
-        Get.snackbar(
-          "Success",
-          "Tag $tagName added successfully",
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(12),
+        MySnackBar.showToast(
+          message: "Tag $tagName added successfully",
           duration: const Duration(seconds: 2),
         ); // refresh UI immediately
         return true;
@@ -552,15 +542,14 @@ class AppointmentController extends GetxController
               params: queryParams,
             )
           : await DioClient()
-                .get(url: ApiUrl.getImageListUrl, params: queryParams)
-                .catchError(handleError);
+              .get(url: ApiUrl.getImageListUrl, params: queryParams)
+              .catchError(handleError);
       log("image res : ${jsonEncode(response)}");
       if (response == null) {
         MySnackBar.showErrorToast(message: "Failed to load images");
       } else {
-        final List<ImageListModel> fetchedImages = (response as List)
-            .map((e) => ImageListModel.fromJson(e))
-            .toList();
+        final List<ImageListModel> fetchedImages =
+            (response as List).map((e) => ImageListModel.fromJson(e)).toList();
         imageList.clear();
         imageList.addAll(fetchedImages);
       }
@@ -606,20 +595,18 @@ class AppointmentController extends GetxController
       var userID = await MySharedPref.getUserName();
       var currentDateTime = DateTime.now();
 
-      var response = await DioClient()
-          .get(
-            url: ApiUrl.getAppointment,
-            params: {
-              "appointmentTypeStatus": 2,
-              "appointmentDate": dateTimeConverter(
-                inputTime: currentDateTime.toString(),
-                outputFormat: "yyyy/MM/dd",
-              ),
-              "CompanyId": companyID,
-              "userId": userID,
-            },
-          )
-          .catchError(!showLoader ? handleError : () {});
+      var response = await DioClient().get(
+        url: ApiUrl.getAppointment,
+        params: {
+          "appointmentTypeStatus": 2,
+          "appointmentDate": dateTimeConverter(
+            inputTime: currentDateTime.toString(),
+            outputFormat: "yyyy/MM/dd",
+          ),
+          "CompanyId": companyID,
+          "userId": userID,
+        },
+      ).catchError(!showLoader ? handleError : () {});
       log("refreshing appointments ${jsonEncode(response)}");
       if (response == null) {
         hideLoading();
@@ -639,15 +626,16 @@ class AppointmentController extends GetxController
       );
 
       sortedAppointments.assignAll(
-        (response).map((e) => Appointments.fromJson(e)).toList()..sort((a, b) {
-          final aDate = DateFormat(
-            "yyyy/MM/dd hh:mm a",
-          ).parse(a.startDateTime!);
-          final bDate = DateFormat(
-            "yyyy/MM/dd hh:mm a",
-          ).parse(b.startDateTime!);
-          return aDate.compareTo(bDate);
-        }),
+        (response).map((e) => Appointments.fromJson(e)).toList()
+          ..sort((a, b) {
+            final aDate = DateFormat(
+              "yyyy/MM/dd hh:mm a",
+            ).parse(a.startDateTime!);
+            final bDate = DateFormat(
+              "yyyy/MM/dd hh:mm a",
+            ).parse(b.startDateTime!);
+            return aDate.compareTo(bDate);
+          }),
       );
       if (sortTextController.text.isNotEmpty) {
         sortAppointmentsText(); // re-apply filter after refresh
@@ -700,8 +688,8 @@ class AppointmentController extends GetxController
         final fName =
             '${p0.customer!.firstName ?? ''} ${p0.customer!.lastName ?? ''}';
         return fName.toLowerCase().contains(
-          sortTextController.text.toLowerCase(),
-        );
+              sortTextController.text.toLowerCase(),
+            );
       }).toList();
       sortedAppointments.clear();
       sortedAppointments.addAll(list);
@@ -830,52 +818,49 @@ class AppointmentController extends GetxController
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
-    var response = await DioClient()
-        .post(
-          url: ApiUrl.updateAppointment,
-          body: {
-            "appointment": {
-              "CompanyID": companyID,
-              "ApptID": appointmentID,
-              "AppoinmentUId": appointmentUID,
-              "CustomerID": customerID,
-              "ServiceType": serviceType,
-              "ServiceTypeId": serviceTypeID,
-              "ResourceID": resourceID,
-              "TimeSlotId": timeSlotID,
-              "ApptDateTime": dateTimeConverter(
-                inputTime: requestDate,
-                outputFormat: "yyyy/MM/dd hh:mm a",
-                inputFormat: "MM/dd/yyyy hh:mm a",
-              ),
-              "StartDateTime": dateTimeConverter(
-                inputTime: startDate,
-                outputFormat: "yyyy/MM/dd hh:mm a",
-                inputFormat: "MM/dd/yyyy hh:mm a",
-              ),
-              "EndDateTime": dateTimeConverter(
-                inputTime: endDate,
-                outputFormat: "yyyy/MM/dd hh:mm a",
-                inputFormat: "MM/dd/yyyy hh:mm a",
-              ),
-              "CreatedDateTime": dateTimeConverter(
-                inputTime: requestDate,
-                outputFormat: "yyyy/MM/dd hh:mm a",
-                inputFormat: "MM/dd/yyyy hh:mm a",
-              ),
-              "TimeSlot": timeSlot,
-              "Note": noteText.value,
-              "PromoCode": promoCode,
-              "StatusId":
-                  settingController.selectedAppointmentsStatus.value!.statusId,
-              "TicketStatusId":
-                  settingController.selectedTicket.value!.statusId,
-              "UserID": userID,
-              "CreatedBy": createdBy,
-            },
-          },
-        )
-        .catchError(handleError);
+    var response = await DioClient().post(
+      url: ApiUrl.updateAppointment,
+      body: {
+        "appointment": {
+          "CompanyID": companyID,
+          "ApptID": appointmentID,
+          "AppoinmentUId": appointmentUID,
+          "CustomerID": customerID,
+          "ServiceType": serviceType,
+          "ServiceTypeId": serviceTypeID,
+          "ResourceID": resourceID,
+          "TimeSlotId": timeSlotID,
+          "ApptDateTime": dateTimeConverter(
+            inputTime: requestDate,
+            outputFormat: "yyyy/MM/dd hh:mm a",
+            inputFormat: "MM/dd/yyyy hh:mm a",
+          ),
+          "StartDateTime": dateTimeConverter(
+            inputTime: startDate,
+            outputFormat: "yyyy/MM/dd hh:mm a",
+            inputFormat: "MM/dd/yyyy hh:mm a",
+          ),
+          "EndDateTime": dateTimeConverter(
+            inputTime: endDate,
+            outputFormat: "yyyy/MM/dd hh:mm a",
+            inputFormat: "MM/dd/yyyy hh:mm a",
+          ),
+          "CreatedDateTime": dateTimeConverter(
+            inputTime: requestDate,
+            outputFormat: "yyyy/MM/dd hh:mm a",
+            inputFormat: "MM/dd/yyyy hh:mm a",
+          ),
+          "TimeSlot": timeSlot,
+          "Note": noteText.value,
+          "PromoCode": promoCode,
+          "StatusId":
+              settingController.selectedAppointmentsStatus.value!.statusId,
+          "TicketStatusId": settingController.selectedTicket.value!.statusId,
+          "UserID": userID,
+          "CreatedBy": createdBy,
+        },
+      },
+    ).catchError(handleError);
 
     if (response == null) return;
 
@@ -893,27 +878,25 @@ class AppointmentController extends GetxController
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
 
-    var response = await DioClient()
-        .post(
-          url: isForUpdate
-              ? ApiUrl.updateNoteUrl
-              : ApiUrl.saveNoteUrl, // 👈 Replace with your actual endpoint
-          body: {
-            "note": {
-              "Id": noteId.value == -1 ? 0 : noteId.value,
-              "Description": noteText
-                  .value, // 👈 assuming you have a TextEditingController or Rx variable
-              "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now()),
-              "CSLId": 0,
-              "CustomerId": customerID,
-              "AppointmentId": appointmentID,
-              "CompanyId": companyID,
-              "UserId": userID,
-              "TagId": selectedTagId.value,
-            },
-          },
-        )
-        .catchError(handleError);
+    var response = await DioClient().post(
+      url: isForUpdate
+          ? ApiUrl.updateNoteUrl
+          : ApiUrl.saveNoteUrl, // 👈 Replace with your actual endpoint
+      body: {
+        "note": {
+          "Id": noteId.value == -1 ? 0 : noteId.value,
+          "Description": noteText
+              .value, // 👈 assuming you have a TextEditingController or Rx variable
+          "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now()),
+          "CSLId": 0,
+          "CustomerId": customerID,
+          "AppointmentId": appointmentID,
+          "CompanyId": companyID,
+          "UserId": userID,
+          "TagId": selectedTagId.value,
+        },
+      },
+    ).catchError(handleError);
 
     if (response == null) return;
 

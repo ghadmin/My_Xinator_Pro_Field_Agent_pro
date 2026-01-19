@@ -24,8 +24,10 @@ class DioExceptions implements Exception {
         message = Strings.sendTimeout.tr;
         break;
       case DioExceptionType.badResponse:
-        message = _handleError(dioException.response!.statusCode!.toInt(),
-            dioException.response!.data);
+        message = _handleError(
+          dioException.response!.statusCode!.toInt(),
+          dioException.response!.data,
+        );
         break;
 
       default:

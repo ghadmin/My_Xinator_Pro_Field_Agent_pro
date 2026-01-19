@@ -138,10 +138,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                           controller.createCustomerPhone,
                                           style: theme.textTheme.bodySmall
                                               ?.copyWith(
-                                                color: LightThemeColors
-                                                    .hintTextColor,
-                                                fontSize: 12.sp,
-                                              ),
+                                            color:
+                                                LightThemeColors.hintTextColor,
+                                            fontSize: 12.sp,
+                                          ),
                                         ),
                                       ),
                                 controller.createCustomerEmail.isEmpty
@@ -156,10 +156,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                           controller.createCustomerEmail,
                                           style: theme.textTheme.bodySmall
                                               ?.copyWith(
-                                                color: LightThemeColors
-                                                    .hintTextColor,
-                                                fontSize: 12.sp,
-                                              ),
+                                            color:
+                                                LightThemeColors.hintTextColor,
+                                            fontSize: 12.sp,
+                                          ),
                                         ),
                                       ),
                               ],
@@ -266,19 +266,19 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 ),
                               ]
                             : classList.isEmpty
-                            ? [
-                                const DropdownMenuItem(
-                                  value: null,
-                                  enabled: false,
-                                  child: Text("No data available"),
-                                ),
-                              ]
-                            : classList.map((cls) {
-                                return DropdownMenuItem(
-                                  value: cls,
-                                  child: Text(cls.name),
-                                );
-                              }).toList(),
+                                ? [
+                                    const DropdownMenuItem(
+                                      value: null,
+                                      enabled: false,
+                                      child: Text("No data available"),
+                                    ),
+                                  ]
+                                : classList.map((cls) {
+                                    return DropdownMenuItem(
+                                      value: cls,
+                                      child: Text(cls.name),
+                                    );
+                                  }).toList(),
 
                         onChanged: controller.isNoneSelected.value
                             ? null
@@ -357,21 +357,21 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                     width: .4.sw,
                                                     child: Text(
                                                       controller
-                                                          .selectedItemList[index]
+                                                          .selectedItemList[
+                                                              index]
                                                           .selectedItem!
                                                           .description!,
                                                       maxLines: 3,
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                       style: theme
-                                                          .textTheme
-                                                          .bodyLarge
+                                                          .textTheme.bodyLarge
                                                           ?.copyWith(
-                                                            color: LightThemeColors
-                                                                .bodyTextSecondaryColor,
-                                                            fontWeight:
-                                                                FontWeight.w400,
-                                                          ),
+                                                        color: LightThemeColors
+                                                            .bodyTextSecondaryColor,
+                                                        fontWeight:
+                                                            FontWeight.w400,
+                                                      ),
                                                     ),
                                                   ),
                                             SizedBox(height: 10.sp),
@@ -416,8 +416,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                             Get.back();
                                                             controller
                                                                 .removeItem(
-                                                                  index,
-                                                                );
+                                                              index,
+                                                            );
                                                           },
                                                           child: Text(
                                                             'Delete',
@@ -447,10 +447,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                     return Dialog(
                                                       insetPadding:
                                                           EdgeInsets.symmetric(
-                                                            horizontal: 16.sp,
-                                                          ), // Add padding for smaller screens
+                                                        horizontal: 16.sp,
+                                                      ), // Add padding for smaller screens
                                                       child: ConstrainedBox(
-                                                        constraints: BoxConstraints(
+                                                        constraints:
+                                                            BoxConstraints(
                                                           maxWidth: 1
                                                               .sw, // Enforce the calculated width
                                                         ),
@@ -460,28 +461,29 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                           children: [
                                                             Padding(
                                                               padding:
-                                                                  EdgeInsets.all(
-                                                                    16.sp,
-                                                                  ),
+                                                                  EdgeInsets
+                                                                      .all(
+                                                                16.sp,
+                                                              ),
                                                               child: Text(
                                                                 'Edit Item',
                                                                 style: theme
                                                                     .textTheme
                                                                     .bodyLarge
                                                                     ?.copyWith(
-                                                                      color: theme
-                                                                          .primaryColor,
-                                                                    ),
+                                                                  color: theme
+                                                                      .primaryColor,
+                                                                ),
                                                               ),
                                                             ),
 
                                                             // Content
                                                             Padding(
-                                                              padding:
-                                                                  EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        16.sp,
-                                                                  ),
+                                                              padding: EdgeInsets
+                                                                  .symmetric(
+                                                                horizontal:
+                                                                    16.sp,
+                                                              ),
                                                               child: Column(
                                                                 mainAxisSize:
                                                                     MainAxisSize
@@ -500,19 +502,21 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                             .sp,
                                                                       ),
                                                                       Expanded(
-                                                                        child: GeneralTextField(
+                                                                        child:
+                                                                            GeneralTextField(
                                                                           hint:
                                                                               "Description",
                                                                           theme:
                                                                               theme,
                                                                           maxLine:
                                                                               4,
-                                                                          textEditingController: TextEditingController(
+                                                                          textEditingController:
+                                                                              TextEditingController(
                                                                             text:
-                                                                                controller.selectedItemList[index].selectedItem!.description ??
-                                                                                "",
+                                                                                controller.selectedItemList[index].selectedItem!.description ?? "",
                                                                           ),
-                                                                          onChanged: (v) {
+                                                                          onChanged:
+                                                                              (v) {
                                                                             controller.selectedItemList[index].selectedItem!.description =
                                                                                 v;
                                                                           },
@@ -537,26 +541,33 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                             .sp,
                                                                       ),
                                                                       Expanded(
-                                                                        child: GeneralTextField(
+                                                                        child:
+                                                                            GeneralTextField(
                                                                           hint:
                                                                               "Amount",
-                                                                          textInputType: TextInputType.numberWithOptions(
+                                                                          textInputType:
+                                                                              TextInputType.numberWithOptions(
                                                                             decimal:
                                                                                 true,
                                                                           ),
                                                                           theme:
                                                                               theme,
-                                                                          textEditingController: TextEditingController(
-                                                                            text: controller.selectedItemList[index].totalPrice.toStringAsFixed(
+                                                                          textEditingController:
+                                                                              TextEditingController(
+                                                                            text:
+                                                                                controller.selectedItemList[index].selectedItem!.price!.toStringAsFixed(
                                                                               2,
                                                                             ),
                                                                           ),
                                                                           onChanged:
-                                                                              (
-                                                                                value,
-                                                                              ) {
-                                                                                // Recalculate total when amount changes
-                                                                              },
+                                                                              (value) {
+                                                                            controller.selectedItemList[index].selectedItem!.price = double.tryParse(
+                                                                                  value,
+                                                                                ) ??
+                                                                                0.00;
+                                                                            controller.selectedItemList.refresh();
+                                                                            // controller.createTotal();
+                                                                          },
                                                                         ),
                                                                       ),
                                                                     ],
@@ -578,28 +589,30 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                             .sp,
                                                                       ),
                                                                       Expanded(
-                                                                        child: GeneralTextField(
+                                                                        child:
+                                                                            GeneralTextField(
                                                                           hint:
                                                                               '1',
                                                                           textInputType:
                                                                               TextInputType.number,
                                                                           theme:
                                                                               theme,
-                                                                          textEditingController: TextEditingController(
+                                                                          textEditingController:
+                                                                              TextEditingController(
                                                                             text:
                                                                                 controller.selectedItemList[index].quantity.toString(),
                                                                           ),
                                                                           onChanged:
                                                                               (
-                                                                                value,
-                                                                              ) {
-                                                                                controller.selectedItemList[index].quantity =
-                                                                                    int.tryParse(
-                                                                                      value,
-                                                                                    ) ??
-                                                                                    1;
-                                                                                // controller.createTotal();
-                                                                              },
+                                                                            value,
+                                                                          ) {
+                                                                            controller.selectedItemList[index].quantity = double.tryParse(
+                                                                                  value,
+                                                                                ) ??
+                                                                                1;
+                                                                            controller.selectedItemList.refresh();
+                                                                            // controller.createTotal();
+                                                                          },
                                                                         ),
                                                                       ),
                                                                     ],
@@ -621,10 +634,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                             .sp,
                                                                       ),
                                                                       Obx(
-                                                                        () => DropdownButton<bool>(
+                                                                        () => DropdownButton<
+                                                                            bool>(
                                                                           value:
-                                                                              controller.selectedItemList[index].selectedItem!.isTaxable ??
-                                                                              true,
+                                                                              controller.selectedItemList[index].selectedItem!.isTaxable ?? true,
                                                                           dropdownColor:
                                                                               Colors.white,
                                                                           items: [
@@ -643,13 +656,14 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                           ],
                                                                           onChanged:
                                                                               (
-                                                                                value,
-                                                                              ) {
-                                                                                controller.selectedItemList[index].selectedItem!.isTaxable = value;
+                                                                            value,
+                                                                          ) {
+                                                                            controller.selectedItemList[index].selectedItem!.isTaxable =
+                                                                                value;
 
-                                                                                // controller.createTotal();
-                                                                                controller.selectedItemList.refresh();
-                                                                              },
+                                                                            // controller.createTotal();
+                                                                            controller.selectedItemList.refresh();
+                                                                          },
                                                                         ),
                                                                       ),
                                                                     ],
@@ -663,16 +677,19 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                             ),
                                                             Padding(
                                                               padding:
-                                                                  EdgeInsets.all(
-                                                                    16.sp,
-                                                                  ),
+                                                                  EdgeInsets
+                                                                      .all(
+                                                                16.sp,
+                                                              ),
                                                               child: SizedBox(
                                                                 height: 45.sp,
                                                                 width: .4.sw,
-                                                                child: PrimaryButton(
+                                                                child:
+                                                                    PrimaryButton(
                                                                   title:
                                                                       "Close",
-                                                                  onPressed: () {
+                                                                  onPressed:
+                                                                      () {
                                                                     Get.back();
                                                                   },
                                                                   inactive:
@@ -756,7 +773,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                         Expanded(
                                           child: Obx(
                                             () => ListView(
-                                              children: controller.itemController.sortedItems.map((
+                                              children: controller
+                                                  .itemController.sortedItems
+                                                  .map((
                                                 item,
                                               ) {
                                                 final isSelected = controller
@@ -776,12 +795,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                       controller
                                                           .selectedItemList
                                                           .add(
-                                                            SelectedItemListModel(
-                                                              quantity: 1,
-                                                              selectedItem:
-                                                                  item,
-                                                            ),
-                                                          );
+                                                        SelectedItemListModel(
+                                                          quantity: 1,
+                                                          selectedItem: item,
+                                                        ),
+                                                      );
                                                       // controller
                                                       //     .amountControllers
                                                       //     .add(TextEditingController(
@@ -830,14 +848,14 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                   title: Container(
                                                     padding:
                                                         EdgeInsets.symmetric(
-                                                          horizontal: 5.sp,
-                                                          vertical: 10.sp,
-                                                        ),
+                                                      horizontal: 5.sp,
+                                                      vertical: 10.sp,
+                                                    ),
                                                     decoration: BoxDecoration(
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                            8.sp,
-                                                          ),
+                                                        8.sp,
+                                                      ),
                                                       border: Border.all(
                                                         color: LightThemeColors
                                                             .bodyTextSecondaryColor,
@@ -913,8 +931,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                             onPressed: () {
                                               appointmentController
                                                   .isSelectSingleNeedToCall(
-                                                    false,
-                                                  );
+                                                false,
+                                              );
                                               // controller.createTotal();
                                               Get.back();
                                             },
@@ -980,17 +998,14 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                     color: Colors.white,
                                     radius: 8,
                                     onPressed: () {
-                                      RenderBox renderBox =
-                                          context.findRenderObject()
-                                              as RenderBox;
+                                      RenderBox renderBox = context
+                                          .findRenderObject() as RenderBox;
                                       Offset offset = renderBox.localToGlobal(
                                         Offset(0, 32.sp),
                                       );
-                                      final RenderBox overlay =
-                                          Overlay.of(
-                                                context,
-                                              ).context.findRenderObject()
-                                              as RenderBox;
+                                      final RenderBox overlay = Overlay.of(
+                                        context,
+                                      ).context.findRenderObject() as RenderBox;
                                       showMenu(
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.all(
@@ -1021,12 +1036,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                           final selectedDiscount = controller
                                               .discountOptions
                                               .firstWhere(
-                                                (element) =>
-                                                    element["value"] ==
-                                                    selectedValue,
-                                              );
-                                          controller
-                                                  .selectedDiscountOption
+                                            (element) =>
+                                                element["value"] ==
+                                                selectedValue,
+                                          );
+                                          controller.selectedDiscountOption
                                                   .value =
                                               selectedDiscount["value"];
                                           // controller.createTotal();
@@ -1054,10 +1068,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                             "Discount",
                                             style: theme.textTheme.bodyMedium
                                                 ?.copyWith(
-                                                  color: LightThemeColors
-                                                      .bodyTextSecondaryColor,
-                                                  fontSize: 16.sp,
-                                                ),
+                                              color: LightThemeColors
+                                                  .bodyTextSecondaryColor,
+                                              fontSize: 16.sp,
+                                            ),
                                           ),
                                           SizedBox(width: 5.sp),
                                           Icon(
@@ -1088,16 +1102,15 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                   ),
                                   SizedBox(width: 5.sp),
                                   SizedBox(
-                                    height: Get.size.width <= 440
-                                        ? 35.sp
-                                        : null,
+                                    height:
+                                        Get.size.width <= 440 ? 35.sp : null,
                                     width: 100.sp,
                                     child: GeneralTextField(
                                       hint: "0.00",
                                       textInputType:
                                           TextInputType.numberWithOptions(
-                                            decimal: true,
-                                          ),
+                                        decimal: true,
+                                      ),
                                       theme: theme,
                                       textAlignment: TextAlign.end,
                                       textEditingController: controller
@@ -1291,11 +1304,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                   Offset offset = renderBox.localToGlobal(
                                     Offset(0, 32.sp),
                                   );
-                                  final RenderBox overlay =
-                                      Overlay.of(
-                                            context,
-                                          ).context.findRenderObject()
-                                          as RenderBox;
+                                  final RenderBox overlay = Overlay.of(
+                                    context,
+                                  ).context.findRenderObject() as RenderBox;
                                   showMenu(
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.all(
@@ -1337,17 +1348,17 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                         controller.selectedTaxID.value = "";
                                         // controller.createTotal();
                                       } else {
-                                        final selectedTax = controller.taxes
-                                            .firstWhere(
-                                              (tax) => tax.id == selectedValue,
-                                            );
+                                        final selectedTax =
+                                            controller.taxes.firstWhere(
+                                          (tax) => tax.id == selectedValue,
+                                        );
                                         controller.selectedTaxName.value =
                                             selectedTax.name ?? "";
                                         controller.tax.value =
                                             selectedTax.rate?.toStringAsFixed(
-                                              2,
-                                            ) ??
-                                            "0.00";
+                                                  2,
+                                                ) ??
+                                                "0.00";
                                         controller.selectedTaxID.value =
                                             selectedTax.id.toString();
                                         // controller.createTotal();
@@ -1372,13 +1383,12 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                     children: [
                                       Text(
                                         "Tax Rate",
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
-                                              color: LightThemeColors
-                                                  .hintTextColor,
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
+                                          color: LightThemeColors.hintTextColor,
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                       SizedBox(width: 5.sp),
                                       Icon(
@@ -1411,11 +1421,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                   children: [
                                     Text(
                                       "NO TAX (0.00%)",
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: LightThemeColors
-                                                .bodyTextSecondaryColor,
-                                          ),
+                                      style:
+                                          theme.textTheme.bodySmall?.copyWith(
+                                        color: LightThemeColors
+                                            .bodyTextSecondaryColor,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1427,11 +1437,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                   children: [
                                     Text(
                                       "${controller.selectedTaxName.value} (${controller.tax.value}%)",
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: LightThemeColors
-                                                .bodyTextSecondaryColor,
-                                          ),
+                                      style:
+                                          theme.textTheme.bodySmall?.copyWith(
+                                        color: LightThemeColors
+                                            .bodyTextSecondaryColor,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1536,13 +1546,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                               () => Checkbox(
                                                 activeColor: Colors.blue,
                                                 value: controller
-                                                    .isNoneSelected
-                                                    .value,
+                                                    .isNoneSelected.value,
                                                 onChanged: (val) {
-                                                  controller
-                                                          .isNoneSelected
-                                                          .value =
-                                                      val ?? false;
+                                                  controller.isNoneSelected
+                                                      .value = val ?? false;
                                                   if (val == true) {
                                                     controller.selectedLocation(
                                                       null,
@@ -1574,8 +1581,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
 
                                 // If user selected "Not applicable", continue to create invoice
                                 if (result == true) {
-                                  final isPop = await controller
-                                      .createInvoice();
+                                  final isPop =
+                                      await controller.createInvoice();
                                   log("message: $isPop");
                                   if (isPop) {
                                     Get.close(1);
@@ -1658,9 +1665,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                               "Send Email",
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                    fontSize: 18.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                fontSize: 18.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                             SizedBox(height: 15.sp),
                                             GeneralTextField(
@@ -1789,7 +1796,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                     child: PrimaryButton(
                                                       title: "Send",
                                                       onPressed: () async {
-                                                        await controller.sendEmail(
+                                                        await controller
+                                                            .sendEmail(
                                                           pdfType: controller
                                                               .selectedCreateType
                                                               .value,
@@ -1876,13 +1884,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                 Text(
                                                   "Send Email",
                                                   style: theme
-                                                      .textTheme
-                                                      .bodyLarge
+                                                      .textTheme.bodyLarge
                                                       ?.copyWith(
-                                                        fontSize: 18.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
+                                                    fontSize: 18.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                 ),
                                                 SizedBox(height: 15.sp),
                                                 GeneralTextField(
@@ -2015,7 +2021,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                         child: PrimaryButton(
                                                           title: "Send",
                                                           onPressed: () async {
-                                                            await controller.sendEmail(
+                                                            await controller
+                                                                .sendEmail(
                                                               pdfType: controller
                                                                   .selectedCreateType
                                                                   .value,

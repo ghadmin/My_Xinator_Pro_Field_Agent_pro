@@ -84,7 +84,7 @@ class ItemListModel extends HiveObject {
 
 class SelectedItemListModel {
   ItemListModel? selectedItem;
-  int? quantity;
+  double? quantity;
 
   SelectedItemListModel({this.quantity, this.selectedItem});
   double get totalPrice {

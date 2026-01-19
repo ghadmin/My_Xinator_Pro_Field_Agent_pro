@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/my_buttons.dart';
+import '../../../components/global-widgets/my_snackbar.dart';
 import '../controllers/invoice_controller.dart';
 
 class PaymentByCheckView extends GetView<InvoiceController> {
@@ -195,17 +196,15 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                                 onPressed: () async {
                                   if (controller
                                       .checkNameTextController.text.isEmpty) {
-                                    Get.snackbar(
-                                        snackPosition: SnackPosition.BOTTOM,
-                                        "Error",
-                                        "Please enter check name");
+                                    MySnackBar.showErrorToast(
+                                      message: "Please enter check name",
+                                    );
                                     return;
                                   } else if (controller
                                       .checkNumberTextController.text.isEmpty) {
-                                    Get.snackbar(
-                                        snackPosition: SnackPosition.BOTTOM,
-                                        "Error",
-                                        "Please enter check number");
+                                    MySnackBar.showErrorToast(
+                                      message: "Please enter check number",
+                                    );
                                     return;
                                   }
                                   bool confirmed = await showDialog<bool>(
@@ -257,33 +256,27 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                                 onPressed: () async {
                                   if (controller
                                       .checkNameTextController.text.isEmpty) {
-                                    Get.snackbar(
-                                        snackPosition: SnackPosition.BOTTOM,
-                                        "Error",
-                                        "Please enter check name");
+                                    MySnackBar.showErrorToast(
+                                      message: "Please enter check name",
+                                    );
                                     return;
                                   } else if (controller
                                       .checkNumberTextController.text.isEmpty) {
-                                    Get.snackbar(
-                                        snackPosition: SnackPosition.BOTTOM,
-                                        "Error",
-                                        "Please enter check number");
+                                    MySnackBar.showErrorToast(
+                                      message: "Please enter check number",
+                                    );
                                     return;
                                   } else if (controller
                                       .checkAmtTextController.text.isEmpty) {
-                                    Get.snackbar(
-                                      'Error',
-                                      'Please enter the amount to pay.',
-                                      snackPosition: SnackPosition.BOTTOM,
+                                    MySnackBar.showErrorToast(
+                                      message: 'Please enter the amount to pay.',
                                     );
                                     return;
                                   } else if (double.parse(controller
                                           .checkAmtTextController.text) <=
                                       0) {
-                                    Get.snackbar(
-                                      'Error',
-                                      'Amount must be greater than zero.',
-                                      snackPosition: SnackPosition.BOTTOM,
+                                    MySnackBar.showErrorToast(
+                                      message: 'Amount must be greater than zero.',
                                     );
                                     return;
                                   }

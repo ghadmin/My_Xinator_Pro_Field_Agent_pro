@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:get/get.dart';
-import 'package:myxinator_pro_field_agent_pro/app/modules/forms/models/form_model.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/my_shared_pref.dart';
@@ -11,6 +10,7 @@ import '../../../service/handler/exception_handler.dart';
 import '../../../service/helper/network_connectivity.dart';
 import '../../appointment/models/appointments_form_model.dart';
 import '../models/create_new_form_template_model.dart';
+import '../models/form_model.dart';
 
 class FormController extends GetxController with ExceptionHandler {
   final searchQuery = RxString(''); // 👈 reactive search query
@@ -47,14 +47,14 @@ class FormController extends GetxController with ExceptionHandler {
     final ifOrNot = appointmentController.selectedAppointment.value == null
         ? false
         : formList
-              .where(
-                (p0) =>
-                    p0.apptId ==
-                    appointmentController.selectedAppointment.value!.apptID,
-              )
-              .first
-              .formIds
-              .isNotEmpty;
+            .where(
+              (p0) =>
+                  p0.apptId ==
+                  appointmentController.selectedAppointment.value!.apptID,
+            )
+            .first
+            .formIds
+            .isNotEmpty;
 
     if (ifOrNot) {
       final tempAttachedFormIds = formList
@@ -145,20 +145,18 @@ class FormController extends GetxController with ExceptionHandler {
 
       final userId = await MySharedPref.getUserName();
 
-      final response = await DioClient()
-          .post(
-            url: ApiUrl.assignFormUrl, // <-- create endpoint in ApiUrl
-            body: {
-              "requestPeram": {
-                "AppointmentId": appointmentId,
-                "CustomerId": customerId,
-                "CompanyId": companyID,
-                "FormIds": selectedFormsIdList,
-                "UserId": userId,
-              },
-            },
-          )
-          .catchError(handleError);
+      final response = await DioClient().post(
+        url: ApiUrl.assignFormUrl, // <-- create endpoint in ApiUrl
+        body: {
+          "requestPeram": {
+            "AppointmentId": appointmentId,
+            "CustomerId": customerId,
+            "CompanyId": companyID,
+            "FormIds": selectedFormsIdList,
+            "UserId": userId,
+          },
+        },
+      ).catchError(handleError);
 
       log("assignForms response ${jsonEncode(response)}");
 
@@ -178,25 +176,23 @@ class FormController extends GetxController with ExceptionHandler {
     try {
       final companyID = await MySharedPref.getCompanyID();
 
-      final response = await DioClient()
-          .post(
-            url: ApiUrl.saveFormUrl,
-            body: {
-              "requestPeram": {
-                "CompanyID": companyID,
-                "TemplateName": createNewFormData.value!.templateName,
-                "Category": createNewFormData.value!.category,
-                "Description": createNewFormData.value!.description,
-                "RequireSignature": createNewFormData.value!.signature,
-                "RequireTip": createNewFormData.value!.tpCapture,
-                "IsAutoAssignEnabled":
-                    createNewFormData.value!.autoAssignAppointment,
-                "IsActive": createNewFormData.value!.isActive,
-                "FormStructure": "test",
-              },
-            },
-          )
-          .catchError(handleError);
+      final response = await DioClient().post(
+        url: ApiUrl.saveFormUrl,
+        body: {
+          "requestPeram": {
+            "CompanyID": companyID,
+            "TemplateName": createNewFormData.value!.templateName,
+            "Category": createNewFormData.value!.category,
+            "Description": createNewFormData.value!.description,
+            "RequireSignature": createNewFormData.value!.signature,
+            "RequireTip": createNewFormData.value!.tpCapture,
+            "IsAutoAssignEnabled":
+                createNewFormData.value!.autoAssignAppointment,
+            "IsActive": createNewFormData.value!.isActive,
+            "FormStructure": "test",
+          },
+        },
+      ).catchError(handleError);
       log("save data ${jsonEncode(response)}");
       if (response == null) return;
 
@@ -216,26 +212,24 @@ class FormController extends GetxController with ExceptionHandler {
     try {
       final companyID = await MySharedPref.getCompanyID();
 
-      final response = await DioClient()
-          .post(
-            url: ApiUrl.updateFormUrl,
-            body: {
-              "requestPeram": {
-                "Id": createNewFormData.value!.id,
-                "CompanyID": companyID,
-                "TemplateName": createNewFormData.value!.templateName,
-                "Category": createNewFormData.value!.category,
-                "Description": createNewFormData.value!.description,
-                "RequireSignature": createNewFormData.value!.signature,
-                "RequireTip": createNewFormData.value!.tpCapture,
-                "IsAutoAssignEnabled":
-                    createNewFormData.value!.autoAssignAppointment,
-                "FormStructure": "test",
-                "IsActive": createNewFormData.value!.isActive,
-              },
-            },
-          )
-          .catchError(handleError);
+      final response = await DioClient().post(
+        url: ApiUrl.updateFormUrl,
+        body: {
+          "requestPeram": {
+            "Id": createNewFormData.value!.id,
+            "CompanyID": companyID,
+            "TemplateName": createNewFormData.value!.templateName,
+            "Category": createNewFormData.value!.category,
+            "Description": createNewFormData.value!.description,
+            "RequireSignature": createNewFormData.value!.signature,
+            "RequireTip": createNewFormData.value!.tpCapture,
+            "IsAutoAssignEnabled":
+                createNewFormData.value!.autoAssignAppointment,
+            "FormStructure": "test",
+            "IsActive": createNewFormData.value!.isActive,
+          },
+        },
+      ).catchError(handleError);
       log("save data ${jsonEncode(response)}");
       if (response == null) return;
 
@@ -256,30 +250,28 @@ class FormController extends GetxController with ExceptionHandler {
     try {
       final companyID = await MySharedPref.getCompanyID();
 
-      final response = await DioClient()
-          .post(
-            url: ApiUrl.updateFormUrl,
-            body: {
-              "requestPeram": {
-                "Id": createNewFormData.value!.id,
-                "CompanyID": companyID,
-                "TemplateName": createNewFormData.value!.templateName,
-                "Category": createNewFormData.value!.category,
-                "Description": createNewFormData.value!.description,
-                "RequireSignature": createNewFormData.value!.signature,
-                "RequireTip": createNewFormData.value!.tpCapture,
-                "IsAutoAssignEnabled":
-                    createNewFormData.value!.autoAssignAppointment,
-                "FormStructure": "test",
-                "IsActive": template.isActive != null
-                    ? template.isActive!
-                          ? false
-                          : true
-                    : true,
-              },
-            },
-          )
-          .catchError(handleError);
+      final response = await DioClient().post(
+        url: ApiUrl.updateFormUrl,
+        body: {
+          "requestPeram": {
+            "Id": createNewFormData.value!.id,
+            "CompanyID": companyID,
+            "TemplateName": createNewFormData.value!.templateName,
+            "Category": createNewFormData.value!.category,
+            "Description": createNewFormData.value!.description,
+            "RequireSignature": createNewFormData.value!.signature,
+            "RequireTip": createNewFormData.value!.tpCapture,
+            "IsAutoAssignEnabled":
+                createNewFormData.value!.autoAssignAppointment,
+            "FormStructure": "test",
+            "IsActive": template.isActive != null
+                ? template.isActive!
+                    ? false
+                    : true
+                : true,
+          },
+        },
+      ).catchError(handleError);
       log("save data ${jsonEncode(response)}");
       if (response == null) return;
       fetchTemplates();
@@ -295,18 +287,17 @@ class FormController extends GetxController with ExceptionHandler {
     try {
       showLoading();
       var companyID = await MySharedPref.getCompanyID();
-      var response = await DioClient()
-          .get(url: ApiUrl.getFormTypeUrl, params: {"companyId": companyID})
-          .catchError(handleError);
+      var response = await DioClient().get(
+          url: ApiUrl.getFormTypeUrl,
+          params: {"companyId": companyID}).catchError(handleError);
       log("response of all templates $response");
       if (response != null) {
         // Assuming the response is a list of template names
         // Adjust this based on your actual API response structure
         formModels.clear();
         final resData = response as List<dynamic>;
-        final tempData = resData
-            .map((item) => FormModel.fromJson(item))
-            .toList();
+        final tempData =
+            resData.map((item) => FormModel.fromJson(item)).toList();
         formModels.assignAll(tempData);
         log(
           "Templates fetched successfully: ${formModels.length}",

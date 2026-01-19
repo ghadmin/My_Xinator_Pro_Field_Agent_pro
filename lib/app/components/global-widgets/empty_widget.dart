@@ -3,9 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:lottie/lottie.dart';
-import 'package:myxinator_pro_field_agent_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../config/translations/strings_enum.dart';
+import 'text_widget.dart';
 
 class EmptyWidget extends StatelessWidget {
   const EmptyWidget({

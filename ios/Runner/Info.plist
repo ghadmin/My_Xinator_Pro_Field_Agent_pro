@@ -68,5 +68,32 @@
 	This app needs permission to save images to your photo library.
 	</string>
 
+	<!-- 📡 Local Network Access -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>
+	This app needs local network access to communicate with servers and services.
+	</string>
+
+	<!-- 🌐 App Transport Security (ATS) -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Allow arbitrary loads for development/testing - REMOVE IN PRODUCTION -->
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<!-- Allow specific domain if needed -->
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>testsite.myserviceforce.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+
 </dict>
 </plist>
