@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
 
 import '../../components/global-widgets/my_snackbar.dart';
 import '../../modules/appointment/controllers/appointment_controller.dart';
@@ -34,9 +33,9 @@ class NetworkConnectivity {
   static void initConnectivityListener() {
     if (!_isListenerInitialized) {
       _isListenerInitialized = true;
-      Connectivity()
-          .onConnectivityChanged
-          .listen((List<ConnectivityResult> result) {
+      Connectivity().onConnectivityChanged.listen((
+        List<ConnectivityResult> result,
+      ) {
         // Assuming only one result is relevant for you, take the first result from the list.
         bool isConnected =
             result.isNotEmpty && (result.first != ConnectivityResult.none);
@@ -71,12 +70,16 @@ class NetworkConnectivity {
 
     await 2.delay();
     MySnackBar.showSnackBar(
-        title: "Connection restored!", message: 'Data loaded from network');
+      title: "Connection restored!",
+      message: 'Data loaded from network',
+    );
   }
 
   static void _runDisconnectedOperations() async {
     await 2.delay();
     MySnackBar.showErrorSnackBar(
-        title: "Connection lost!", message: 'Data loaded from memory');
+      title: "Connection lost!",
+      message: 'Data loaded from memory',
+    );
   }
 }

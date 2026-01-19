@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
+
+import '../../../components/global-widgets/text_widget.dart';
 
 class BnplView extends GetView {
   const BnplView({super.key});

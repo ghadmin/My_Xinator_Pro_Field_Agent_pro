@@ -619,11 +619,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
-
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../components/global-widgets/my_buttons.dart';
+import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/onboarding_controller.dart';
 
@@ -633,12 +632,11 @@ class OnboardingView extends GetView<OnboardingController> {
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
     return Scaffold(
-        backgroundColor: theme.primaryColor,
-        body: SafeArea(
-          child: Column(children: [
-            SizedBox(
-              height: 40.h,
-            ),
+      backgroundColor: theme.primaryColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            SizedBox(height: 40.h),
             Expanded(
               child: Container(
                 width: MediaQuery.of(context).size.width,
@@ -739,7 +737,9 @@ class OnboardingView extends GetView<OnboardingController> {
                     const Spacer(),
                     Padding(
                       padding: EdgeInsets.symmetric(
-                          horizontal: 25.sp, vertical: 20.sp),
+                        horizontal: 25.sp,
+                        vertical: 20.sp,
+                      ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -761,9 +761,7 @@ class OnboardingView extends GetView<OnboardingController> {
                               ),
                             ),
                           ),
-                          SizedBox(
-                            width: 10.w,
-                          ),
+                          SizedBox(width: 10.w),
                           Expanded(
                             child: SizedBox(
                               // width: 120.sp,
@@ -778,7 +776,7 @@ class OnboardingView extends GetView<OnboardingController> {
                                 inactive: false,
                               ),
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -786,7 +784,9 @@ class OnboardingView extends GetView<OnboardingController> {
                 ),
               ),
             ),
-          ]),
-        ));
+          ],
+        ),
+      ),
+    );
   }
 }

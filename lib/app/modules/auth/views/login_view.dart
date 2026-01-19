@@ -941,18 +941,15 @@
 //   }
 // }
 
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart'
-    show TextWidget;
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../components/global-widgets/my_buttons.dart';
+import '../../../components/global-widgets/text_widget.dart';
 import '../controllers/auth_controller.dart';
 
 class LoginView extends GetView<AuthController> {
@@ -1003,8 +1000,9 @@ class LoginView extends GetView<AuthController> {
                       cursorColor: LightThemeColors.primaryColor,
                       onTapOutside: (_) =>
                           FocusManager.instance.primaryFocus?.unfocus(),
-                      onEditingComplete: () => FocusScope.of(context)
-                          .requestFocus(controller.passwordFocusNode),
+                      onEditingComplete: () => FocusScope.of(
+                        context,
+                      ).requestFocus(controller.passwordFocusNode),
                       decoration: InputDecoration(
                         hintText: "Email",
                         prefixIcon: Icon(Remix.mail_line),
@@ -1020,8 +1018,10 @@ class LoginView extends GetView<AuthController> {
                           alignment: Alignment.centerLeft,
                           child: TextWidget(
                             text: controller.emailValidator.value,
-                            style:
-                                TextStyle(color: Colors.red, fontSize: 12.sp),
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 12.sp,
+                            ),
                           ),
                         ),
                       ),
@@ -1037,9 +1037,11 @@ class LoginView extends GetView<AuthController> {
                         hintText: "Password",
                         prefixIcon: Icon(Remix.lock_line),
                         suffixIcon: IconButton(
-                          icon: Icon(controller.isPasswordVisible.value
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            controller.isPasswordVisible.value
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: controller.togglePasswordVisibility,
                           iconSize: 18.sp,
                         ),
@@ -1055,8 +1057,10 @@ class LoginView extends GetView<AuthController> {
                           alignment: Alignment.centerLeft,
                           child: TextWidget(
                             text: controller.passwordValidator.value,
-                            style:
-                                TextStyle(color: Colors.red, fontSize: 12.sp),
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 12.sp,
+                            ),
                           ),
                         ),
                       ),
@@ -1081,9 +1085,8 @@ class LoginView extends GetView<AuthController> {
                             controller.emailValidator.value = email.isEmpty
                                 ? "Email address is not valid!"
                                 : '';
-                            controller.passwordValidator.value = password
-                                        .length <
-                                    6
+                            controller.passwordValidator.value =
+                                password.length < 6
                                 ? "Password should be at least 6 characters long!"
                                 : '';
                           }

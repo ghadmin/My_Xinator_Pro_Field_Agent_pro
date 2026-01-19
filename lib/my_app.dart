@@ -30,19 +30,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       useInheritedMediaQuery: true,
       rebuildFactor: (old, data) => true,
       builder: (context, widget) {
+        bool themeIsLight = MySharedPref.getThemeIsLight();
         return GetMaterialApp(
           title: "XinatorBMS Field Agent Pro",
           useInheritedMediaQuery: true,
           debugShowCheckedModeBanner: false,
+          theme: MyTheme.getThemeData(isLight: themeIsLight),
           builder: (context, widget) {
-            bool themeIsLight = MySharedPref.getThemeIsLight();
-            return Theme(
-              data: MyTheme.getThemeData(isLight: themeIsLight),
-              child: MediaQuery(
-                data: MediaQuery.of(context)
-                    .copyWith(textScaler: const TextScaler.linear(1.0)),
-                child: widget!,
-              ),
+            return MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: const TextScaler.linear(1.0)),
+              child: widget!,
             );
           },
           initialRoute: Routes.SPLASH,

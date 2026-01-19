@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
-
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../components/global-widgets/splash_container.dart';
+import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/settings_controller.dart';
 

@@ -3,7 +3,7 @@ class ApiUrl {
   static const baseUrl =
       "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
   // static const baseUrl =
-  //   "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
+  //     "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
   static const login = "$baseUrl/VerifyUser";
   static const getAppointment = "$baseUrl/GetAppointmentList";
   static const getAttachedForms = "$baseUrl/GetAppointmentListWithForms";
@@ -37,4 +37,5 @@ class ApiUrl {
   static const getQBOLocationsUrl = "$baseUrl/GetQBOLocations";
   static const getQBOClassesUrl = "$baseUrl/GetQBOClasses";
   static const getCustomFieldsUrl = "$baseUrl/GetAllCustomFields";
+  static const saveCustomFieldUrl = "$baseUrl/SaveCustomFeild";
 }

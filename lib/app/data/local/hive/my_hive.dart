@@ -1,10 +1,10 @@
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:logger/logger.dart';
-import 'package:xinator_fsm_pro/app/modules/item/models/item_list_model.dart';
 
 import '../../../modules/appointment/models/appointment_model.dart';
 import '../../../modules/customer/models/customer_model.dart';
 import '../../../modules/invoice/models/tax_model.dart';
+import '../../../modules/item/models/item_list_model.dart';
 import '../../../modules/settings/models/appointment_status_setting.dart';
 import '../../../modules/settings/models/ticket_status_model.dart';
 
@@ -32,8 +32,10 @@ class MyHive {
 
   /// Initialize local db (HIVE)
   /// Pass testPath only if you are testing hive
-  static Future<void> init(
-      {Function(HiveInterface)? registerAdapters, String? testPath}) async {
+  static Future<void> init({
+    Function(HiveInterface)? registerAdapters,
+    String? testPath,
+  }) async {
     if (testPath != null) {
       Hive.init(testPath);
     } else {
@@ -61,14 +63,16 @@ class MyHive {
 
   /// Initialize ticketStatusSetting box
   static Future<void> initTicketStatusSettingBox() async {
-    _ticketStatusSettingBox =
-        await Hive.openBox<TicketStatusSettings>(_ticketStatusSettingBoxName);
+    _ticketStatusSettingBox = await Hive.openBox<TicketStatusSettings>(
+      _ticketStatusSettingBoxName,
+    );
   }
 
   /// Initialize appointmentStatusSetting box
   static Future<void> initAppointmentStatusSettingBox() async {
     _appointmentStatusSettingBox = await Hive.openBox<AppointmentStatusSetting>(
-        _appointmentStatusSettingBoxName);
+      _appointmentStatusSettingBoxName,
+    );
   }
 
   /// Initialize tax box
@@ -83,7 +87,8 @@ class MyHive {
 
   /// Save all appointments to the database
   static Future<void> saveAllAppointments(
-      List<Appointments> appointments) async {
+    List<Appointments> appointments,
+  ) async {
     try {
       await _appointmentBox.clear();
       await _appointmentBox.addAll(appointments);
@@ -104,7 +109,8 @@ class MyHive {
 
   /// Save all ticketStatusSetting to the database
   static Future<void> saveAllTicketStatusSetting(
-      List<TicketStatusSettings> ticketStatusSetting) async {
+    List<TicketStatusSettings> ticketStatusSetting,
+  ) async {
     try {
       await _ticketStatusSettingBox.clear();
       await _ticketStatusSettingBox.addAll(ticketStatusSetting);
@@ -115,7 +121,8 @@ class MyHive {
 
   /// Save all appointmentStatusSetting to the database
   static Future<void> saveAllAppointmentStatusSetting(
-      List<AppointmentStatusSetting> appointmentStatusSetting) async {
+    List<AppointmentStatusSetting> appointmentStatusSetting,
+  ) async {
     try {
       await _appointmentStatusSettingBox.clear();
       await _appointmentStatusSettingBox.addAll(appointmentStatusSetting);
@@ -164,8 +171,8 @@ class MyHive {
 
   /// Get all appointmentStatusSetting from Hive
   static List<AppointmentStatusSetting> getAllAppointmentStatusSetting() {
-    final appointmentStatusSetting =
-        _appointmentStatusSettingBox.values.toList();
+    final appointmentStatusSetting = _appointmentStatusSettingBox.values
+        .toList();
     return appointmentStatusSetting.cast<AppointmentStatusSetting>();
   }
 

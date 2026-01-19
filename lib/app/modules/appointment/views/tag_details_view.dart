@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/modules/appointment/controllers/appointment_controller.dart';
+
+import '../controllers/appointment_controller.dart';
 
 class TagSelectionScreen extends GetView<AppointmentController> {
   TagSelectionScreen({super.key});
@@ -10,10 +11,7 @@ class TagSelectionScreen extends GetView<AppointmentController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: Get.size.width <= 440
-          ? AppBar(
-              title: Text("Select or Add Tag"),
-              centerTitle: false,
-            )
+          ? AppBar(title: Text("Select or Add Tag"), centerTitle: false)
           : PreferredSize(
               preferredSize: Size.fromHeight(40.sp),
               child: Padding(
@@ -31,9 +29,7 @@ class TagSelectionScreen extends GetView<AppointmentController> {
         return Column(
           children: [
             // Search field
-            SizedBox(
-              height: 20.h,
-            ),
+            SizedBox(height: 20.h),
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: TextField(
@@ -67,7 +63,8 @@ class TagSelectionScreen extends GetView<AppointmentController> {
                                 controller.selectedTagController.value.text =
                                     controller.filteredTags[index].name;
                                 controller.selectedTagId(
-                                    controller.filteredTags[index].id);
+                                  controller.filteredTags[index].id,
+                                );
                               },
                             ),
                           );
@@ -79,29 +76,31 @@ class TagSelectionScreen extends GetView<AppointmentController> {
 
             // Add New button
             SafeArea(
-              child: Obx(() => Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: () => _showAddTagDialog(context),
-                        child: controller.addNewTagLoading.value
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text("Add New"),
+              child: Obx(
+                () => Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
+                      onPressed: () => _showAddTagDialog(context),
+                      child: controller.addNewTagLoading.value
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text("Add New"),
                     ),
-                  )),
+                  ),
+                ),
+              ),
             ),
           ],
         );

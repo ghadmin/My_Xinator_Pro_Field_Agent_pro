@@ -3,16 +3,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:lottie/lottie.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../config/translations/strings_enum.dart';
+import 'text_widget.dart';
 
 class EmptyWidget extends StatelessWidget {
-  const EmptyWidget(
-      {super.key,
-      required this.onPressed,
-      this.title,
-      this.isRefreshShown = true});
+  const EmptyWidget({
+    super.key,
+    required this.onPressed,
+    this.title,
+    this.isRefreshShown = true,
+  });
   final VoidCallback onPressed;
   final String? title;
   final bool isRefreshShown;
@@ -47,26 +48,25 @@ class EmptyWidget extends StatelessWidget {
           SizedBox(
             height: 44.h,
             child: ElevatedButton(
-                onPressed: onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade50,
-                  elevation: .5,
-                  shadowColor: theme.hintColor,
-                  padding: EdgeInsets.zero,
-                ),
-                child: Icon(
-                  Ionicons.refresh,
-                  size: 24,
-                  color: theme.primaryColor.withOpacity(.7),
-                )),
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey.shade50,
+                elevation: .5,
+                shadowColor: theme.hintColor,
+                padding: EdgeInsets.zero,
+              ),
+              child: Icon(
+                Ionicons.refresh,
+                size: 24,
+                color: theme.primaryColor.withOpacity(.7),
+              ),
+            ),
           ),
         const SizedBox(height: 5),
         if (isRefreshShown)
           TextWidget(
             text: Strings.refresh.tr,
-            style: TextStyle(
-              color: theme.hintColor.withOpacity(.5),
-            ),
+            style: TextStyle(color: theme.hintColor.withOpacity(.5)),
           ),
       ],
     );

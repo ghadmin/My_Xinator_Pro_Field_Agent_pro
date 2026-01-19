@@ -1,20 +1,16 @@
 import 'dart:convert';
 import 'dart:developer';
-
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/my_snackbar.dart';
-import 'package:xinator_fsm_pro/app/data/local/my_shared_pref.dart';
-import 'package:xinator_fsm_pro/app/modules/appointment/models/appointments_form_model.dart'
-    show AppointmentsFormModel;
-import 'package:xinator_fsm_pro/app/modules/forms/models/form_model.dart';
-import 'package:xinator_fsm_pro/app/service/REST/api_urls.dart';
-import 'package:xinator_fsm_pro/app/service/REST/dio_client.dart';
-import 'package:xinator_fsm_pro/app/service/helper/network_connectivity.dart'
-    show NetworkConnectivity, appointmentController;
-
 import '../../../../utils/date_converter.dart';
+import '../../../components/global-widgets/my_snackbar.dart';
+import '../../../data/local/my_shared_pref.dart';
+import '../../../service/REST/api_urls.dart';
+import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
+import '../../../service/helper/network_connectivity.dart';
+import '../../appointment/models/appointments_form_model.dart';
 import '../models/create_new_form_template_model.dart';
+import '../models/form_model.dart';
 
 class FormController extends GetxController with ExceptionHandler {
   final searchQuery = RxString(''); // 👈 reactive search query
@@ -51,26 +47,32 @@ class FormController extends GetxController with ExceptionHandler {
     final ifOrNot = appointmentController.selectedAppointment.value == null
         ? false
         : formList
-            .where((p0) =>
-                p0.apptId ==
-                appointmentController.selectedAppointment.value!.apptID)
+            .where(
+              (p0) =>
+                  p0.apptId ==
+                  appointmentController.selectedAppointment.value!.apptID,
+            )
             .first
             .formIds
             .isNotEmpty;
 
     if (ifOrNot) {
       final tempAttachedFormIds = formList
-          .where((p0) =>
-              p0.apptId ==
-              appointmentController.selectedAppointment.value!.apptID)
+          .where(
+            (p0) =>
+                p0.apptId ==
+                appointmentController.selectedAppointment.value!.apptID,
+          )
           .first
           .formIds;
 
       // Create a Set to remove duplicates, then convert back to List
-      selectedFormsIdList.assignAll(<int>{
-        ...selectedFormsIdList.toSet(),
-        ...tempAttachedFormIds.toSet()
-      }.toList());
+      selectedFormsIdList.assignAll(
+        <int>{
+          ...selectedFormsIdList.toSet(),
+          ...tempAttachedFormIds.toSet(),
+        }.toList(),
+      );
       update();
     } else {
       selectedFormsIdList.clear();
@@ -101,8 +103,9 @@ class FormController extends GetxController with ExceptionHandler {
           params: {
             "appointmentTypeStatus": 2,
             "appointmentDate": dateTimeConverter(
-                inputTime: currentDateTime.toString(),
-                outputFormat: "yyyy/MM/dd"),
+              inputTime: currentDateTime.toString(),
+              outputFormat: "yyyy/MM/dd",
+            ),
             "CompanyId": companyID,
             "userId": userID,
           },
@@ -114,8 +117,9 @@ class FormController extends GetxController with ExceptionHandler {
         }
 
         if ((response as List).isNotEmpty) {
-          List<AppointmentsFormModel> tempFormList =
-              parseAppointmentForms(response);
+          List<AppointmentsFormModel> tempFormList = parseAppointmentForms(
+            response,
+          );
           selectAttachedForms();
           formList(tempFormList);
         }
@@ -131,7 +135,9 @@ class FormController extends GetxController with ExceptionHandler {
   }
 
   Future<void> assignFormsToAppointment(
-      String customerId, String appointmentId) async {
+    String customerId,
+    String appointmentId,
+  ) async {
     showLoading();
 
     try {
@@ -148,7 +154,7 @@ class FormController extends GetxController with ExceptionHandler {
             "CompanyId": companyID,
             "FormIds": selectedFormsIdList,
             "UserId": userId,
-          }
+          },
         },
       ).catchError(handleError);
 
@@ -183,8 +189,8 @@ class FormController extends GetxController with ExceptionHandler {
             "IsAutoAssignEnabled":
                 createNewFormData.value!.autoAssignAppointment,
             "IsActive": createNewFormData.value!.isActive,
-            "FormStructure": "test"
-          }
+            "FormStructure": "test",
+          },
         },
       ).catchError(handleError);
       log("save data ${jsonEncode(response)}");
@@ -221,7 +227,7 @@ class FormController extends GetxController with ExceptionHandler {
                 createNewFormData.value!.autoAssignAppointment,
             "FormStructure": "test",
             "IsActive": createNewFormData.value!.isActive,
-          }
+          },
         },
       ).catchError(handleError);
       log("save data ${jsonEncode(response)}");
@@ -263,7 +269,7 @@ class FormController extends GetxController with ExceptionHandler {
                     ? false
                     : true
                 : true,
-          }
+          },
         },
       ).catchError(handleError);
       log("save data ${jsonEncode(response)}");
@@ -282,9 +288,8 @@ class FormController extends GetxController with ExceptionHandler {
       showLoading();
       var companyID = await MySharedPref.getCompanyID();
       var response = await DioClient().get(
-        url: ApiUrl.getFormTypeUrl,
-        params: {"companyId": companyID},
-      ).catchError(handleError);
+          url: ApiUrl.getFormTypeUrl,
+          params: {"companyId": companyID}).catchError(handleError);
       log("response of all templates $response");
       if (response != null) {
         // Assuming the response is a list of template names

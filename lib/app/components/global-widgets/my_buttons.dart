@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../config/theme/light_theme_colors.dart';
+import 'text_widget.dart';
 
 class PrimaryButton extends StatelessWidget {
-  const PrimaryButton(
-      {super.key,
-      required this.title,
-      required this.onPressed,
-      required this.inactive,
-      this.borderColor,
-      this.backgroundColor,
-      this.fontColor,
-      this.foregroundColor});
+  const PrimaryButton({
+    super.key,
+    required this.title,
+    required this.onPressed,
+    required this.inactive,
+    this.borderColor,
+    this.backgroundColor,
+    this.fontColor,
+    this.foregroundColor,
+  });
   final String title;
   final VoidCallback onPressed;
   final bool inactive;
@@ -55,11 +56,12 @@ class PrimaryButton extends StatelessWidget {
 }
 
 class SecondaryButton extends StatelessWidget {
-  const SecondaryButton(
-      {super.key,
-      required this.title,
-      required this.onPressed,
-      required this.inactive});
+  const SecondaryButton({
+    super.key,
+    required this.title,
+    required this.onPressed,
+    required this.inactive,
+  });
   final String title;
   final VoidCallback onPressed;
   final bool inactive;
@@ -76,17 +78,16 @@ class SecondaryButton extends StatelessWidget {
           shadowColor: Colors.white,
           shape: RoundedRectangleBorder(
             side: const BorderSide(
-                width: 1, color: LightThemeColors.buttonBorderColor),
+              width: 1,
+              color: LightThemeColors.buttonBorderColor,
+            ),
             borderRadius: BorderRadius.circular(10.r),
           ),
           elevation: 0,
         ),
         child: TextWidget(
           text: title,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -94,12 +95,13 @@ class SecondaryButton extends StatelessWidget {
 }
 
 class SecondaryButtonWithIcon extends StatelessWidget {
-  const SecondaryButtonWithIcon(
-      {super.key,
-      required this.title,
-      required this.onPressed,
-      required this.iconData,
-      required this.inactive});
+  const SecondaryButtonWithIcon({
+    super.key,
+    required this.title,
+    required this.onPressed,
+    required this.iconData,
+    required this.inactive,
+  });
   final String title;
   final VoidCallback onPressed;
   final IconData iconData;
@@ -117,7 +119,9 @@ class SecondaryButtonWithIcon extends StatelessWidget {
           shadowColor: Colors.white,
           shape: RoundedRectangleBorder(
             side: const BorderSide(
-                width: 1, color: LightThemeColors.buttonBorderColor),
+              width: 1,
+              color: LightThemeColors.buttonBorderColor,
+            ),
             borderRadius: BorderRadius.circular(10.r),
           ),
           elevation: 0,
@@ -125,18 +129,11 @@ class SecondaryButtonWithIcon extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              iconData,
-              size: 20.sp,
-              color: LightThemeColors.primaryColor,
-            ),
+            Icon(iconData, size: 20.sp, color: LightThemeColors.primaryColor),
             SizedBox(width: 15.w),
             TextWidget(
               text: title,
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -146,12 +143,13 @@ class SecondaryButtonWithIcon extends StatelessWidget {
 }
 
 class PrimaryButtonWithIcon extends StatelessWidget {
-  const PrimaryButtonWithIcon(
-      {super.key,
-      required this.title,
-      required this.onPressed,
-      required this.iconData,
-      required this.inactive});
+  const PrimaryButtonWithIcon({
+    super.key,
+    required this.title,
+    required this.onPressed,
+    required this.iconData,
+    required this.inactive,
+  });
   final String title;
   final VoidCallback onPressed;
   final IconData iconData;
@@ -180,10 +178,7 @@ class PrimaryButtonWithIcon extends StatelessWidget {
             SizedBox(width: 15.w),
             TextWidget(
               text: title,
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700),
             ),
           ],
         ),

@@ -14,6 +14,10 @@ class CustomFieldModel {
   String? selectedValue; // For dropdown
   List<String>? selectedOptions = []; // For checklist
 
+  // Added to store field values
+  String? textValue; // For text field
+  String? numberValue; // For number field
+
   CustomFieldModel(
       {this.fieldID,
       this.fieldName,
@@ -50,6 +54,29 @@ class CustomFieldModel {
     data['CreatedDateTime'] = createdDateTime;
     data['CompanyId'] = companyId;
     return data;
+  }
+
+  /// Get the value of the custom field as a string
+  String? getFieldValue() {
+    switch (fieldType) {
+      case 'dropdown':
+        return selectedValue;
+      case 'checklist':
+        return selectedOptions?.join(', ');
+      case 'text':
+        return textValue;
+      case 'number':
+        return numberValue;
+      default:
+        return null;
+    }
+  }
+
+  /// Get a map of field name to value
+  Map<String, dynamic> toFieldMap() {
+    return {
+      fieldName!: getFieldValue(),
+    };
   }
 
   List<CustomFieldModel> parseCustomFields(String jsonResponse) {

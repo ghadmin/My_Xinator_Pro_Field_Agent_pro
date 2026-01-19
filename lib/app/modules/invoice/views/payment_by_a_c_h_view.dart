@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
+import '../../../components/global-widgets/text_widget.dart';
 import '../controllers/invoice_controller.dart';
 
 class PaymentByACHView extends GetView<InvoiceController> {
@@ -54,9 +54,7 @@ class PaymentByACHView extends GetView<InvoiceController> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
-              TextField(
-                decoration: InputDecoration(labelText: 'Account Name'),
-              ),
+              TextField(decoration: InputDecoration(labelText: 'Account Name')),
               SizedBox(height: 16),
               TextField(
                 decoration: InputDecoration(labelText: 'Account Number'),

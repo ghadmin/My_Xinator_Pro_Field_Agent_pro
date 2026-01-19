@@ -6,19 +6,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/asset_image_box.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
-import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
-import 'package:xinator_fsm_pro/app/service/helper/network_connectivity.dart';
-import 'package:xinator_fsm_pro/utils/constants.dart';
-
 import '../../../../config/theme/light_theme_colors.dart';
+import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../../utils/url_launcher.dart';
+import '../../../components/global-widgets/asset_image_box.dart';
+import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/main_divider.dart';
+import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/splash_container.dart';
+import '../../../service/helper/network_connectivity.dart';
 import '../../item/models/item_list_model.dart';
+import '../controllers/invoice_controller.dart';
 import '../models/qbo_class_dropdown_model.dart' show QboClassModel;
 import '../models/qbo_location_dropdown_model.dart';
 
@@ -30,603 +29,709 @@ class CreateInvoiceView extends GetView<InvoiceController> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: buildAppBar(context, theme),
-      body: Obx(() => SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
-              child: SingleChildScrollView(
-                physics: BouncingScrollPhysics(),
-                child: Column(
-                  children: [
-                    SplashContainer(
-                      radius: 8,
-                      color: Colors.white,
-                      onPressed: () {},
-                      child: Padding(
-                        padding: EdgeInsets.all(20.sp),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "INFO",
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: LightThemeColors.hintTextColor,
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.w400,
-                                  ),
+      body: Obx(
+        () => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
+            child: SingleChildScrollView(
+              physics: BouncingScrollPhysics(),
+              child: Column(
+                children: [
+                  SplashContainer(
+                    radius: 8,
+                    color: Colors.white,
+                    onPressed: () {},
+                    child: Padding(
+                      padding: EdgeInsets.all(20.sp),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "INFO",
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: LightThemeColors.hintTextColor,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w400,
                                 ),
-                                Text(
-                                  controller.invoiceName.value,
-                                  style: theme.textTheme.bodyLarge,
-                                ),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Date",
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: LightThemeColors.hintTextColor,
-                                    fontSize: 18.sp,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                                Text(
-                                  dateTimeConverter(
-                                      inputTime: DateTime.now().toString(),
-                                      outputFormat: "MM/dd/yyyy"),
-                                  style: theme.textTheme.bodyLarge,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 15.sp),
-                    SplashContainer(
-                      radius: 8,
-                      color: Colors.white,
-                      onPressed: () {},
-                      child: Padding(
-                        padding: EdgeInsets.all(20.sp),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 220.sp,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "To",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors.hintTextColor,
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                  Text(
-                                    controller.createCustomerName,
-                                    style: theme.textTheme.bodyMedium
-                                        ?.copyWith(fontWeight: FontWeight.w600),
-                                  ),
-                                  SizedBox(height: 3.sp),
-                                  Text(
-                                    controller.createCustomerAddress,
-                                    style: theme.textTheme.bodySmall
-                                        ?.copyWith(fontSize: 12.sp),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  controller.createCustomerPhone.isEmpty
-                                      ? SizedBox.shrink()
-                                      : InkWell(
-                                          onTap: () async {
-                                            await UrlLauncher.phoneCall(
-                                                controller.createCustomerPhone);
-                                          },
-                                          child: Text(
-                                            controller.createCustomerPhone,
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                                    color: LightThemeColors
-                                                        .hintTextColor,
-                                                    fontSize: 12.sp),
-                                          ),
-                                        ),
-                                  controller.createCustomerEmail.isEmpty
-                                      ? SizedBox.shrink()
-                                      : InkWell(
-                                          onTap: () async {
-                                            await UrlLauncher.email(
-                                                controller.createCustomerEmail);
-                                          },
-                                          child: Text(
-                                            controller.createCustomerEmail,
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                                    color: LightThemeColors
-                                                        .hintTextColor,
-                                                    fontSize: 12.sp),
-                                          ),
-                                        ),
-                                ],
                               ),
+                              Text(
+                                controller.invoiceName.value,
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Date",
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: LightThemeColors.hintTextColor,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Text(
+                                dateTimeConverter(
+                                  inputTime: DateTime.now().toString(),
+                                  outputFormat: "MM/dd/yyyy",
+                                ),
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 15.sp),
+                  SplashContainer(
+                    radius: 8,
+                    color: Colors.white,
+                    onPressed: () {},
+                    child: Padding(
+                      padding: EdgeInsets.all(20.sp),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 220.sp,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "To",
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: LightThemeColors.hintTextColor,
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                                Text(
+                                  controller.createCustomerName,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 3.sp),
+                                Text(
+                                  controller.createCustomerAddress,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontSize: 12.sp,
+                                  ),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                controller.createCustomerPhone.isEmpty
+                                    ? SizedBox.shrink()
+                                    : InkWell(
+                                        onTap: () async {
+                                          await UrlLauncher.phoneCall(
+                                            controller.createCustomerPhone,
+                                          );
+                                        },
+                                        child: Text(
+                                          controller.createCustomerPhone,
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color:
+                                                LightThemeColors.hintTextColor,
+                                            fontSize: 12.sp,
+                                          ),
+                                        ),
+                                      ),
+                                controller.createCustomerEmail.isEmpty
+                                    ? SizedBox.shrink()
+                                    : InkWell(
+                                        onTap: () async {
+                                          await UrlLauncher.email(
+                                            controller.createCustomerEmail,
+                                          );
+                                        },
+                                        child: Text(
+                                          controller.createCustomerEmail,
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color:
+                                                LightThemeColors.hintTextColor,
+                                            fontSize: 12.sp,
+                                          ),
+                                        ),
+                                      ),
+                              ],
                             ),
-                            AssetImageBox(
-                                height: 60.sp,
-                                width: 60.sp,
-                                assetImage: AppImages.kAppIcon),
-                          ],
+                          ),
+                          AssetImageBox(
+                            height: 60.sp,
+                            width: 60.sp,
+                            assetImage: AppImages.kAppIcon,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 15.sp),
+                  if (controller.isLocAndClassShow.value)
+                    Align(
+                      alignment: AlignmentGeometry.centerLeft,
+                      child: Text(
+                        "Location",
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: LightThemeColors.bodyTextSecondaryColor,
+                          fontSize: 16.sp,
                         ),
                       ),
                     ),
-                    SizedBox(height: 15.sp),
-                    if (controller.isLocAndClassShow.value)
-                      Align(
-                        alignment: AlignmentGeometry.centerLeft,
-                        child: Text(
-                          "Location",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: LightThemeColors.bodyTextSecondaryColor,
-                            fontSize: 16.sp,
-                          ),
+                  if (controller.isLocAndClassShow.value)
+                    SizedBox(height: 5.sp),
+                  if (controller.isLocAndClassShow.value)
+                    DropdownButtonFormField<QboLocationModel>(
+                      initialValue: controller.isNoneSelected.value
+                          ? null
+                          : controller.selectedLocation.value,
+                      hint: Text("Select Location"),
+                      isExpanded: true,
+                      dropdownColor: Colors.white,
+                      borderRadius: BorderRadius.circular(8.r),
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.sp,
+                          vertical: 8.sp,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.r),
                         ),
                       ),
+                      items: controller.qboLocationList.map((loc) {
+                        return DropdownMenuItem(
+                          value: loc,
+                          child: Text(loc.name),
+                        );
+                      }).toList(),
+                      onChanged: controller.isNoneSelected.value
+                          ? null
+                          : (val) {
+                              controller.selectedLocation(val);
+                            },
+                    ),
+                  if (controller.isLocAndClassShow.value)
                     if (controller.isLocAndClassShow.value)
                       SizedBox(height: 5.sp),
-                    if (controller.isLocAndClassShow.value)
-                      DropdownButtonFormField<QboLocationModel>(
-                        initialValue: controller.isNoneSelected.value
-                            ? null
-                            : controller.selectedLocation.value,
-                        hint: Text("Select Location"),
+
+                  // Class Dropdown
+                  if (controller.isLocAndClassShow.value)
+                    Align(
+                      alignment: AlignmentGeometry.centerLeft,
+                      child: Text(
+                        "Class",
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: LightThemeColors.bodyTextSecondaryColor,
+                          fontSize: 16.sp,
+                        ),
+                      ),
+                    ),
+                  SizedBox(height: 5.sp),
+                  if (controller.isLocAndClassShow.value)
+                    Obx(() {
+                      // This forces Obx to listen to the loading state
+                      final isLoading = controller.isLoadingQboClass.value;
+                      final classList = controller.qboClassList;
+
+                      return DropdownButtonFormField<QboClassModel>(
+                        initialValue: controller.selectedQboClass.value,
+                        hint: const Text("Select Class"),
                         isExpanded: true,
                         dropdownColor: Colors.white,
                         borderRadius: BorderRadius.circular(8.r),
                         decoration: InputDecoration(
                           contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12.sp, vertical: 8.sp),
+                            horizontal: 12.sp,
+                            vertical: 8.sp,
+                          ),
                           border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.r)),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
                         ),
-                        items: controller.qboLocationList.map((loc) {
-                          return DropdownMenuItem(
-                              value: loc, child: Text(loc.name));
-                        }).toList(),
+
+                        items: isLoading
+                            ? [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  enabled: false,
+                                  child: Text("Loading..."),
+                                ),
+                              ]
+                            : classList.isEmpty
+                                ? [
+                                    const DropdownMenuItem(
+                                      value: null,
+                                      enabled: false,
+                                      child: Text("No data available"),
+                                    ),
+                                  ]
+                                : classList.map((cls) {
+                                    return DropdownMenuItem(
+                                      value: cls,
+                                      child: Text(cls.name),
+                                    );
+                                  }).toList(),
+
                         onChanged: controller.isNoneSelected.value
                             ? null
                             : (val) {
-                                controller.selectedLocation(val);
+                                controller.selectedQboClass.value = val;
                               },
-                      ),
-                    if (controller.isLocAndClassShow.value)
-                      if (controller.isLocAndClassShow.value)
-                        SizedBox(height: 5.sp),
 
-                    // Class Dropdown
-                    if (controller.isLocAndClassShow.value)
-                      Align(
-                          alignment: AlignmentGeometry.centerLeft,
-                          child: Text(
-                            "Class",
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: LightThemeColors.bodyTextSecondaryColor,
-                              fontSize: 16.sp,
+                        // onTap: () async {
+                        //   if (controller.qboClassList.isEmpty &&
+                        //       !controller.isLoadingQboClass.value) {
+                        //     controller.isLoadingQboClass.value = true;
+                        //     // Small delay to ensure UI updates
+                        //     await Future.delayed(Duration.zero);
+                        //     await controller.getQBOClasses();
+                        //     controller.isLoadingQboClass.value = false;
+                        //   }
+                        // },
+                      );
+                    }),
+                  SizedBox(height: 5.sp),
+
+                  controller.selectedItemList.isEmpty
+                      ? SizedBox.shrink()
+                      : Card(
+                          elevation: 0,
+                          color: Colors.white,
+                          child: ListView.separated(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10.sp,
+                              vertical: 10.sp,
                             ),
-                          )),
-                    SizedBox(height: 5.sp),
-                    if (controller.isLocAndClassShow.value)
-                      Obx(() {
-                        // This forces Obx to listen to the loading state
-                        final isLoading = controller.isLoadingQboClass.value;
-                        final classList = controller.qboClassList;
-
-                        return DropdownButtonFormField<QboClassModel>(
-                          initialValue: controller.selectedQboClass.value,
-                          hint: const Text("Select Class"),
-                          isExpanded: true,
-                          dropdownColor: Colors.white,
-                          borderRadius: BorderRadius.circular(8.r),
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12.sp, vertical: 8.sp),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                          ),
-
-                          items: isLoading
-                              ? [
-                                  const DropdownMenuItem(
-                                    value: null,
-                                    enabled: false,
-                                    child: Text("Loading..."),
-                                  )
-                                ]
-                              : classList.isEmpty
-                                  ? [
-                                      const DropdownMenuItem(
-                                        value: null,
-                                        enabled: false,
-                                        child: Text("No data available"),
-                                      )
-                                    ]
-                                  : classList.map((cls) {
-                                      return DropdownMenuItem(
-                                        value: cls,
-                                        child: Text(cls.name),
-                                      );
-                                    }).toList(),
-
-                          onChanged: controller.isNoneSelected.value
-                              ? null
-                              : (val) {
-                                  controller.selectedQboClass.value = val;
-                                },
-
-                          // onTap: () async {
-                          //   if (controller.qboClassList.isEmpty &&
-                          //       !controller.isLoadingQboClass.value) {
-                          //     controller.isLoadingQboClass.value = true;
-                          //     // Small delay to ensure UI updates
-                          //     await Future.delayed(Duration.zero);
-                          //     await controller.getQBOClasses();
-                          //     controller.isLoadingQboClass.value = false;
-                          //   }
-                          // },
-                        );
-                      }),
-                    SizedBox(height: 5.sp),
-
-                    controller.selectedItemList.isEmpty
-                        ? SizedBox.shrink()
-                        : Card(
-                            elevation: 0,
-                            color: Colors.white,
-                            child: ListView.separated(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 10.sp, vertical: 10.sp),
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                itemBuilder: (context, index) {
-                                  return SplashContainer(
-                                    radius: 8,
-                                    onPressed: () {},
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                            width: .5.sp,
-                                            color: theme.primaryColor),
-                                        borderRadius:
-                                            BorderRadius.circular(8.sp),
-                                      ),
-                                      child: Padding(
-                                        padding: EdgeInsets.all(20.sp),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemBuilder: (context, index) {
+                              return SplashContainer(
+                                radius: 8,
+                                onPressed: () {},
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      width: .5.sp,
+                                      color: theme.primaryColor,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8.sp),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(20.sp),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                SizedBox(
-                                                  width: .4.sw,
-                                                  child: Text(
-                                                    controller
-                                                            .selectedItemList[
-                                                                index]
-                                                            .selectedItem!
-                                                            .name ??
-                                                        "",
-                                                    style: theme
-                                                        .textTheme.bodyLarge,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 2.sp),
+                                            SizedBox(
+                                              width: .4.sw,
+                                              child: Text(
                                                 controller
                                                         .selectedItemList[index]
                                                         .selectedItem!
-                                                        .description!
-                                                        .isEmpty
-                                                    ? SizedBox.shrink()
-                                                    : SizedBox(
-                                                        width: .4.sw,
-                                                        child: Text(
-                                                          controller
-                                                              .selectedItemList[
-                                                                  index]
-                                                              .selectedItem!
-                                                              .description!,
-                                                          maxLines: 3,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style: theme.textTheme
-                                                              .bodyLarge
-                                                              ?.copyWith(
-                                                            color: LightThemeColors
-                                                                .bodyTextSecondaryColor,
-                                                            fontWeight:
-                                                                FontWeight.w400,
-                                                          ),
+                                                        .name ??
+                                                    "",
+                                                style:
+                                                    theme.textTheme.bodyLarge,
+                                              ),
+                                            ),
+                                            SizedBox(height: 2.sp),
+                                            controller
+                                                    .selectedItemList[index]
+                                                    .selectedItem!
+                                                    .description!
+                                                    .isEmpty
+                                                ? SizedBox.shrink()
+                                                : SizedBox(
+                                                    width: .4.sw,
+                                                    child: Text(
+                                                      controller
+                                                          .selectedItemList[
+                                                              index]
+                                                          .selectedItem!
+                                                          .description!,
+                                                      maxLines: 3,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: theme
+                                                          .textTheme.bodyLarge
+                                                          ?.copyWith(
+                                                        color: LightThemeColors
+                                                            .bodyTextSecondaryColor,
+                                                        fontWeight:
+                                                            FontWeight.w400,
+                                                      ),
+                                                    ),
+                                                  ),
+                                            SizedBox(height: 10.sp),
+                                            Text(
+                                              "${controller.selectedItemList[index].quantity} X \$${controller.selectedItemList[index].selectedItem!.price}",
+                                            ),
+                                            SizedBox(height: 4.sp),
+                                            Text(
+                                              "Taxable: ${controller.selectedItemList[index].selectedItem!.isTaxable == true ? "Yes" : "No"}",
+                                              style: theme.textTheme.bodySmall,
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          children: [
+                                            IconButton(
+                                              onPressed: () {
+                                                showAdaptiveDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return AlertDialog(
+                                                      title: const Text(
+                                                        'Delete Item',
+                                                        style: TextStyle(
+                                                          color: Colors.red,
                                                         ),
                                                       ),
-                                                SizedBox(height: 10.sp),
-                                                Text(
-                                                    "${controller.selectedItemList[index].quantity} X \$${controller.selectedItemList[index].selectedItem!.price}"),
-                                                SizedBox(height: 4.sp),
-                                                Text(
-                                                  "Taxable: ${controller.selectedItemList[index].selectedItem!.isTaxable == true ? "Yes" : "No"}",
-                                                  style:
-                                                      theme.textTheme.bodySmall,
-                                                )
-                                              ],
+                                                      content: const Text(
+                                                        'Are you sure you want to delete the item?',
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () {
+                                                            Get.back();
+                                                          },
+                                                          child: const Text(
+                                                            'Cancel',
+                                                          ),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed: () {
+                                                            Get.back();
+                                                            controller
+                                                                .removeItem(
+                                                              index,
+                                                            );
+                                                          },
+                                                          child: Text(
+                                                            'Delete',
+                                                            style: TextStyle(
+                                                              color: LightThemeColors
+                                                                  .bodyTextSecondaryColor,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                              icon: Icon(
+                                                Remix.delete_bin_2_line,
+                                                color: Colors.red,
+                                              ),
                                             ),
-                                            Row(
-                                              children: [
-                                                IconButton(
-                                                    onPressed: () {
-                                                      showAdaptiveDialog(
-                                                          context: context,
-                                                          builder: (context) {
-                                                            return AlertDialog(
-                                                              title: const Text(
-                                                                'Delete Item',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .red,
+                                            SizedBox(width: 10.sp),
+                                            IconButton(
+                                              onPressed: () {
+                                                showAdaptiveDialog(
+                                                  context: context,
+                                                  barrierDismissible: false,
+                                                  builder: (context) {
+                                                    return Dialog(
+                                                      insetPadding:
+                                                          EdgeInsets.symmetric(
+                                                        horizontal: 16.sp,
+                                                      ), // Add padding for smaller screens
+                                                      child: ConstrainedBox(
+                                                        constraints:
+                                                            BoxConstraints(
+                                                          maxWidth: 1
+                                                              .sw, // Enforce the calculated width
+                                                        ),
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(
+                                                                16.sp,
+                                                              ),
+                                                              child: Text(
+                                                                'Edit Item',
+                                                                style: theme
+                                                                    .textTheme
+                                                                    .bodyLarge
+                                                                    ?.copyWith(
+                                                                  color: theme
+                                                                      .primaryColor,
                                                                 ),
                                                               ),
-                                                              content: const Text(
-                                                                  'Are you sure you want to delete the item?'),
-                                                              actions: [
-                                                                TextButton(
-                                                                  onPressed:
-                                                                      () {
-                                                                    Get.back();
-                                                                  },
-                                                                  child: const Text(
-                                                                      'Cancel'),
-                                                                ),
-                                                                TextButton(
-                                                                  onPressed:
-                                                                      () {
-                                                                    Get.back();
-                                                                    controller
-                                                                        .removeItem(
-                                                                            index);
-                                                                  },
-                                                                  child: Text(
-                                                                    'Delete',
-                                                                    style:
-                                                                        TextStyle(
-                                                                      color: LightThemeColors
-                                                                          .bodyTextSecondaryColor,
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            );
-                                                          });
-                                                    },
-                                                    icon: Icon(
-                                                      Remix.delete_bin_2_line,
-                                                      color: Colors.red,
-                                                    )),
-                                                SizedBox(width: 10.sp),
-                                                IconButton(
-                                                    onPressed: () {
-                                                      showAdaptiveDialog(
-                                                        context: context,
-                                                        barrierDismissible:
-                                                            false,
-                                                        builder: (context) {
-                                                          return Dialog(
-                                                            insetPadding: EdgeInsets
-                                                                .symmetric(
-                                                                    horizontal:
-                                                                        16.sp), // Add padding for smaller screens
-                                                            child:
-                                                                ConstrainedBox(
-                                                              constraints:
-                                                                  BoxConstraints(
-                                                                maxWidth: 1
-                                                                    .sw, // Enforce the calculated width
+                                                            ),
+
+                                                            // Content
+                                                            Padding(
+                                                              padding: EdgeInsets
+                                                                  .symmetric(
+                                                                horizontal:
+                                                                    16.sp,
                                                               ),
                                                               child: Column(
                                                                 mainAxisSize:
                                                                     MainAxisSize
                                                                         .min,
                                                                 children: [
-                                                                  Padding(
-                                                                    padding: EdgeInsets
-                                                                        .all(16
-                                                                            .sp),
-                                                                    child: Text(
-                                                                      'Edit Item',
-                                                                      style: theme
-                                                                          .textTheme
-                                                                          .bodyLarge
-                                                                          ?.copyWith(
-                                                                              color: theme.primaryColor),
-                                                                    ),
-                                                                  ),
-
-                                                                  // Content
-                                                                  Padding(
-                                                                    padding: EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            16.sp),
-                                                                    child:
-                                                                        Column(
-                                                                      mainAxisSize:
-                                                                          MainAxisSize
-                                                                              .min,
-                                                                      children: [
-                                                                        Row(
-                                                                          children: [
-                                                                            Text(
+                                                                  Row(
+                                                                    children: [
+                                                                      Text(
+                                                                        "Description",
+                                                                        style: theme
+                                                                            .textTheme
+                                                                            .bodyLarge,
+                                                                      ),
+                                                                      SizedBox(
+                                                                        width: 10
+                                                                            .sp,
+                                                                      ),
+                                                                      Expanded(
+                                                                        child:
+                                                                            GeneralTextField(
+                                                                          hint:
                                                                               "Description",
-                                                                              style: theme.textTheme.bodyLarge,
-                                                                            ),
-                                                                            SizedBox(width: 10.sp),
-                                                                            Expanded(
-                                                                              child: GeneralTextField(
-                                                                                hint: "Description",
-                                                                                theme: theme,
-                                                                                maxLine: 4,
-                                                                                textEditingController: TextEditingController(text: controller.selectedItemList[index].selectedItem!.description ?? ""),
-                                                                                onChanged: (v) {
-                                                                                  controller.selectedItemList[index].selectedItem!.description = v;
-                                                                                },
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                        SizedBox(
-                                                                            height:
-                                                                                10.sp),
-                                                                        Row(
-                                                                          children: [
-                                                                            Text(
-                                                                              "Amount: \$",
-                                                                              style: theme.textTheme.bodyLarge,
-                                                                            ),
-                                                                            SizedBox(width: 18.sp),
-                                                                            Expanded(
-                                                                              child: GeneralTextField(
-                                                                                hint: "Amount",
-                                                                                textInputType: TextInputType.numberWithOptions(decimal: true),
-                                                                                theme: theme,
-                                                                                textEditingController: TextEditingController(text: controller.selectedItemList[index].totalPrice.toStringAsFixed(2)),
-                                                                                onChanged: (value) {
-                                                                                  // Recalculate total when amount changes
-                                                                                },
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                        SizedBox(
-                                                                            height:
-                                                                                10.sp),
-                                                                        Row(
-                                                                          children: [
-                                                                            Text(
-                                                                              "Quantity:",
-                                                                              style: theme.textTheme.bodyLarge,
-                                                                            ),
-                                                                            SizedBox(width: 25.sp),
-                                                                            Expanded(
-                                                                              child: GeneralTextField(
-                                                                                hint: '1',
-                                                                                textInputType: TextInputType.number,
-                                                                                theme: theme,
-                                                                                textEditingController: TextEditingController(text: controller.selectedItemList[index].quantity.toString()),
-                                                                                onChanged: (value) {
-                                                                                  controller.selectedItemList[index].quantity = int.tryParse(value) ?? 1;
-                                                                                  // controller.createTotal();
-                                                                                },
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                        SizedBox(
-                                                                            height:
-                                                                                10.sp),
-                                                                        Row(
-                                                                          children: [
-                                                                            Text(
-                                                                              "Taxable:",
-                                                                              style: theme.textTheme.bodyLarge,
-                                                                            ),
-                                                                            SizedBox(width: 30.sp),
-                                                                            Obx(() =>
-                                                                                DropdownButton<bool>(
-                                                                                  value: controller.selectedItemList[index].selectedItem!.isTaxable ?? true,
-                                                                                  dropdownColor: Colors.white,
-                                                                                  items: [
-                                                                                    DropdownMenuItem(
-                                                                                      value: true,
-                                                                                      child: Text("Yes"),
-                                                                                    ),
-                                                                                    DropdownMenuItem(
-                                                                                      value: false,
-                                                                                      child: Text("No"),
-                                                                                    ),
-                                                                                  ],
-                                                                                  onChanged: (value) {
-                                                                                    controller.selectedItemList[index].selectedItem!.isTaxable = value;
-
-                                                                                    // controller.createTotal();
-                                                                                    controller.selectedItemList.refresh();
-                                                                                  },
-                                                                                )),
-                                                                          ],
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-
-                                                                  SizedBox(
-                                                                      height: 15
-                                                                          .sp),
-                                                                  Padding(
-                                                                    padding: EdgeInsets
-                                                                        .all(16
-                                                                            .sp),
-                                                                    child:
-                                                                        SizedBox(
-                                                                      height:
-                                                                          45.sp,
-                                                                      width:
-                                                                          .4.sw,
-                                                                      child: PrimaryButton(
-                                                                          title: "Close",
-                                                                          onPressed: () {
-                                                                            Get.back();
+                                                                          theme:
+                                                                              theme,
+                                                                          maxLine:
+                                                                              4,
+                                                                          textEditingController:
+                                                                              TextEditingController(
+                                                                            text:
+                                                                                controller.selectedItemList[index].selectedItem!.description ?? "",
+                                                                          ),
+                                                                          onChanged:
+                                                                              (v) {
+                                                                            controller.selectedItemList[index].selectedItem!.description =
+                                                                                v;
                                                                           },
-                                                                          inactive: false),
-                                                                    ),
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  SizedBox(
+                                                                    height:
+                                                                        10.sp,
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      Text(
+                                                                        "Amount: \$",
+                                                                        style: theme
+                                                                            .textTheme
+                                                                            .bodyLarge,
+                                                                      ),
+                                                                      SizedBox(
+                                                                        width: 18
+                                                                            .sp,
+                                                                      ),
+                                                                      Expanded(
+                                                                        child:
+                                                                            GeneralTextField(
+                                                                          hint:
+                                                                              "Amount",
+                                                                          textInputType:
+                                                                              TextInputType.numberWithOptions(
+                                                                            decimal:
+                                                                                true,
+                                                                          ),
+                                                                          theme:
+                                                                              theme,
+                                                                          textEditingController:
+                                                                              TextEditingController(
+                                                                            text:
+                                                                                controller.selectedItemList[index].selectedItem!.price!.toStringAsFixed(
+                                                                              2,
+                                                                            ),
+                                                                          ),
+                                                                          onChanged:
+                                                                              (value) {
+                                                                            controller.selectedItemList[index].selectedItem!.price = double.tryParse(
+                                                                                  value,
+                                                                                ) ??
+                                                                                0.00;
+                                                                            controller.selectedItemList.refresh();
+                                                                            // controller.createTotal();
+                                                                          },
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  SizedBox(
+                                                                    height:
+                                                                        10.sp,
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      Text(
+                                                                        "Quantity:",
+                                                                        style: theme
+                                                                            .textTheme
+                                                                            .bodyLarge,
+                                                                      ),
+                                                                      SizedBox(
+                                                                        width: 25
+                                                                            .sp,
+                                                                      ),
+                                                                      Expanded(
+                                                                        child:
+                                                                            GeneralTextField(
+                                                                          hint:
+                                                                              '1',
+                                                                          textInputType:
+                                                                              TextInputType.number,
+                                                                          theme:
+                                                                              theme,
+                                                                          textEditingController:
+                                                                              TextEditingController(
+                                                                            text:
+                                                                                controller.selectedItemList[index].quantity.toString(),
+                                                                          ),
+                                                                          onChanged:
+                                                                              (
+                                                                            value,
+                                                                          ) {
+                                                                            controller.selectedItemList[index].quantity = double.tryParse(
+                                                                                  value,
+                                                                                ) ??
+                                                                                1;
+                                                                            controller.selectedItemList.refresh();
+                                                                            // controller.createTotal();
+                                                                          },
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  SizedBox(
+                                                                    height:
+                                                                        10.sp,
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      Text(
+                                                                        "Taxable:",
+                                                                        style: theme
+                                                                            .textTheme
+                                                                            .bodyLarge,
+                                                                      ),
+                                                                      SizedBox(
+                                                                        width: 30
+                                                                            .sp,
+                                                                      ),
+                                                                      Obx(
+                                                                        () => DropdownButton<
+                                                                            bool>(
+                                                                          value:
+                                                                              controller.selectedItemList[index].selectedItem!.isTaxable ?? true,
+                                                                          dropdownColor:
+                                                                              Colors.white,
+                                                                          items: [
+                                                                            DropdownMenuItem(
+                                                                              value: true,
+                                                                              child: Text(
+                                                                                "Yes",
+                                                                              ),
+                                                                            ),
+                                                                            DropdownMenuItem(
+                                                                              value: false,
+                                                                              child: Text(
+                                                                                "No",
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                          onChanged:
+                                                                              (
+                                                                            value,
+                                                                          ) {
+                                                                            controller.selectedItemList[index].selectedItem!.isTaxable =
+                                                                                value;
+
+                                                                            // controller.createTotal();
+                                                                            controller.selectedItemList.refresh();
+                                                                          },
+                                                                        ),
+                                                                      ),
+                                                                    ],
                                                                   ),
                                                                 ],
                                                               ),
                                                             ),
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                    icon: Icon(
-                                                        Remix.edit_2_line)),
-                                              ],
+
+                                                            SizedBox(
+                                                              height: 15.sp,
+                                                            ),
+                                                            Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(
+                                                                16.sp,
+                                                              ),
+                                                              child: SizedBox(
+                                                                height: 45.sp,
+                                                                width: .4.sw,
+                                                                child:
+                                                                    PrimaryButton(
+                                                                  title:
+                                                                      "Close",
+                                                                  onPressed:
+                                                                      () {
+                                                                    Get.back();
+                                                                  },
+                                                                  inactive:
+                                                                      false,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                              icon: Icon(Remix.edit_2_line),
                                             ),
                                           ],
                                         ),
-                                      ),
+                                      ],
                                     ),
-                                  );
-                                },
-                                separatorBuilder: (context, index) {
-                                  return SizedBox(height: 8.sp);
-                                },
-                                itemCount: controller.selectedItemList.length),
+                                  ),
+                                ),
+                              );
+                            },
+                            separatorBuilder: (context, index) {
+                              return SizedBox(height: 8.sp);
+                            },
+                            itemCount: controller.selectedItemList.length,
                           ),
-                    SizedBox(height: 20.sp),
+                        ),
+                  SizedBox(height: 20.sp),
 
-                    Builder(builder: (context) {
+                  Builder(
+                    builder: (context) {
                       return SizedBox(
                         height: 48.sp,
                         child: SecondaryButtonWithIcon(
                           title: "Add item",
                           onPressed: () {
-                            appointmentController
-                                .isSelectSingleNeedToCall(true);
+                            appointmentController.isSelectSingleNeedToCall(
+                              true,
+                            );
                             controller.itemController.sortTextController
                                 .clear();
                             controller.itemController.sortItems();
@@ -646,187 +751,193 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                         SizedBox(
                                           height: 40.sp,
                                           child: GeneralTextField(
-                                              isEnabled: true,
-                                              hint: "Search item",
-                                              suffixIcon: Icon(
-                                                Icons.search,
-                                                color: LightThemeColors
-                                                    .bodyTextSecondaryColor,
-                                              ),
-                                              theme: theme,
-                                              textInputAction:
-                                                  TextInputAction.search,
-                                              onChanged: (_) => controller
-                                                  .itemController
-                                                  .sortItems(),
-                                              textEditingController: controller
-                                                  .itemController
-                                                  .sortTextController),
+                                            isEnabled: true,
+                                            hint: "Search item",
+                                            suffixIcon: Icon(
+                                              Icons.search,
+                                              color: LightThemeColors
+                                                  .bodyTextSecondaryColor,
+                                            ),
+                                            theme: theme,
+                                            textInputAction:
+                                                TextInputAction.search,
+                                            onChanged: (_) => controller
+                                                .itemController
+                                                .sortItems(),
+                                            textEditingController: controller
+                                                .itemController
+                                                .sortTextController,
+                                          ),
                                         ),
-                                        SizedBox(
-                                          height: 10.sp,
-                                        ),
+                                        SizedBox(height: 10.sp),
                                         Expanded(
-                                          child: Obx(() => ListView(
-                                                children: controller
-                                                    .itemController.sortedItems
-                                                    .map((item) {
-                                                  final isSelected = controller
-                                                      .selectedItemList
-                                                      .map((e) =>
-                                                          e.selectedItem!.id)
-                                                      .contains(item.id);
+                                          child: Obx(
+                                            () => ListView(
+                                              children: controller
+                                                  .itemController.sortedItems
+                                                  .map((
+                                                item,
+                                              ) {
+                                                final isSelected = controller
+                                                    .selectedItemList
+                                                    .map(
+                                                      (e) => e.selectedItem!.id,
+                                                    )
+                                                    .contains(item.id);
 
-                                                  return CheckboxListTile(
-                                                    activeColor:
-                                                        theme.primaryColor,
-                                                    value: isSelected,
-                                                    onChanged: (checked) {
-                                                      if (checked == true &&
-                                                          !isSelected) {
-                                                        controller
-                                                            .selectedItemList
-                                                            .add(SelectedItemListModel(
-                                                                quantity: 1,
-                                                                selectedItem:
-                                                                    item));
-                                                        // controller
-                                                        //     .amountControllers
-                                                        //     .add(TextEditingController(
-                                                        //         text: item.price
-                                                        //             .toString()));
-                                                        // controller
-                                                        //     .descriptionControllers
-                                                        //     .add(TextEditingController(
-                                                        //         text:
-                                                        //             item.description ??
-                                                        //                 ""));
-                                                        // controller
-                                                        //     .quantityControllers
-                                                        //     .add(
-                                                        //         TextEditingController(
-                                                        //             text: '1'));
-                                                      } else if (checked ==
-                                                              false &&
-                                                          isSelected) {
-                                                        final idx = controller
-                                                            .selectedItemList
-                                                            .map((e) => e
-                                                                .selectedItem!
-                                                                .id)
-                                                            .toList()
-                                                            .indexOf(item.id);
-                                                        controller
-                                                            .selectedItemList
-                                                            .removeAt(idx);
-                                                        // controller
-                                                        //     .amountControllers
-                                                        //     .removeAt(idx);
-                                                        // controller
-                                                        //     .descriptionControllers
-                                                        //     .removeAt(idx);
-                                                        // controller
-                                                        //     .quantityControllers
-                                                        //     .removeAt(idx);
-                                                      }
-                                                      Future.delayed(
-                                                          Duration(seconds: 1));
-                                                    },
-                                                    title: Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              horizontal: 5.sp,
-                                                              vertical: 10.sp),
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(8.sp),
-                                                        border: Border.all(
-                                                          color: LightThemeColors
-                                                              .bodyTextSecondaryColor,
+                                                return CheckboxListTile(
+                                                  activeColor:
+                                                      theme.primaryColor,
+                                                  value: isSelected,
+                                                  onChanged: (checked) {
+                                                    if (checked == true &&
+                                                        !isSelected) {
+                                                      controller
+                                                          .selectedItemList
+                                                          .add(
+                                                        SelectedItemListModel(
+                                                          quantity: 1,
+                                                          selectedItem: item,
                                                         ),
+                                                      );
+                                                      // controller
+                                                      //     .amountControllers
+                                                      //     .add(TextEditingController(
+                                                      //         text: item.price
+                                                      //             .toString()));
+                                                      // controller
+                                                      //     .descriptionControllers
+                                                      //     .add(TextEditingController(
+                                                      //         text:
+                                                      //             item.description ??
+                                                      //                 ""));
+                                                      // controller
+                                                      //     .quantityControllers
+                                                      //     .add(
+                                                      //         TextEditingController(
+                                                      //             text: '1'));
+                                                    } else if (checked ==
+                                                            false &&
+                                                        isSelected) {
+                                                      final idx = controller
+                                                          .selectedItemList
+                                                          .map(
+                                                            (e) => e
+                                                                .selectedItem!
+                                                                .id,
+                                                          )
+                                                          .toList()
+                                                          .indexOf(item.id);
+                                                      controller
+                                                          .selectedItemList
+                                                          .removeAt(idx);
+                                                      // controller
+                                                      //     .amountControllers
+                                                      //     .removeAt(idx);
+                                                      // controller
+                                                      //     .descriptionControllers
+                                                      //     .removeAt(idx);
+                                                      // controller
+                                                      //     .quantityControllers
+                                                      //     .removeAt(idx);
+                                                    }
+                                                    Future.delayed(
+                                                      Duration(seconds: 1),
+                                                    );
+                                                  },
+                                                  title: Container(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                      horizontal: 5.sp,
+                                                      vertical: 10.sp,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                        8.sp,
                                                       ),
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            item.name ?? "",
-                                                            style: TextStyle(
-                                                              color: LightThemeColors
-                                                                  .primaryColor,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              fontSize: 16.sp,
-                                                            ),
-                                                          ),
-                                                          SizedBox(
-                                                              height: 5.sp),
-                                                          item.description == ""
-                                                              ? SizedBox
-                                                                  .shrink()
-                                                              : Text(
-                                                                  item.description ??
-                                                                      ""),
-                                                          SizedBox(
-                                                              height: 8.sp),
-                                                          Row(
-                                                            children: [
-                                                              Text(
-                                                                "Price: ",
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: LightThemeColors
-                                                                      .bodyTextSecondaryColor,
-                                                                  fontSize:
-                                                                      12.sp,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                "\$${(item.price ?? 0.00).toStringAsFixed(2)}",
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: theme
-                                                                      .primaryColor,
-                                                                  fontSize:
-                                                                      12.sp,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          SizedBox(
-                                                              height: 5.sp),
-                                                          Text(
-                                                            "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
-                                                            style: TextStyle(
-                                                              color: LightThemeColors
-                                                                  .bodyTextSecondaryColor,
-                                                              fontSize: 12.sp,
-                                                            ),
-                                                          ),
-                                                        ],
+                                                      border: Border.all(
+                                                        color: LightThemeColors
+                                                            .bodyTextSecondaryColor,
                                                       ),
                                                     ),
-                                                  );
-                                                }).toList(),
-                                              )),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          item.name ?? "",
+                                                          style: TextStyle(
+                                                            color:
+                                                                LightThemeColors
+                                                                    .primaryColor,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            fontSize: 16.sp,
+                                                          ),
+                                                        ),
+                                                        SizedBox(height: 5.sp),
+                                                        item.description == ""
+                                                            ? SizedBox.shrink()
+                                                            : Text(
+                                                                item.description ??
+                                                                    "",
+                                                              ),
+                                                        SizedBox(height: 8.sp),
+                                                        Row(
+                                                          children: [
+                                                            Text(
+                                                              "Price: ",
+                                                              style: TextStyle(
+                                                                color: LightThemeColors
+                                                                    .bodyTextSecondaryColor,
+                                                                fontSize: 12.sp,
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              "\$${(item.price ?? 0.00).toStringAsFixed(2)}",
+                                                              style: TextStyle(
+                                                                color: theme
+                                                                    .primaryColor,
+                                                                fontSize: 12.sp,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        SizedBox(height: 5.sp),
+                                                        Text(
+                                                          "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
+                                                          style: TextStyle(
+                                                            color: LightThemeColors
+                                                                .bodyTextSecondaryColor,
+                                                            fontSize: 12.sp,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
                                         ),
                                         SizedBox(height: 16.sp),
                                         SizedBox(
                                           height: 42.sp,
                                           width: double.infinity,
                                           child: PrimaryButton(
-                                              title: "Close",
-                                              onPressed: () {
-                                                appointmentController
-                                                    .isSelectSingleNeedToCall(
-                                                        false);
-                                                // controller.createTotal();
-                                                Get.back();
-                                              },
-                                              inactive: false),
+                                            title: "Close",
+                                            onPressed: () {
+                                              appointmentController
+                                                  .isSelectSingleNeedToCall(
+                                                false,
+                                              );
+                                              // controller.createTotal();
+                                              Get.back();
+                                            },
+                                            inactive: false,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -839,662 +950,669 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                           inactive: false,
                         ),
                       );
-                    }),
+                    },
+                  ),
 
-                    // Checkbox
-
-                    SizedBox(height: 15.sp),
-                    Obx(() => Column(
-                          children: [
-                            ListTile(
-                              title: Text(
-                                "Subtotal",
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color:
-                                      LightThemeColors.bodyTextSecondaryColor,
-                                  fontSize: 16.sp,
-                                ),
-                              ),
-                              trailing: Text(
-                                "\$${controller.subTotal.value.toStringAsFixed(2)}",
-                                style: theme.textTheme.bodyLarge,
-                              ),
+                  // Checkbox
+                  SizedBox(height: 15.sp),
+                  Obx(
+                    () => Column(
+                      children: [
+                        ListTile(
+                          title: Text(
+                            "Subtotal",
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: LightThemeColors.bodyTextSecondaryColor,
+                              fontSize: 16.sp,
                             ),
+                          ),
+                          trailing: Text(
+                            "\$${controller.subTotal.value.toStringAsFixed(2)}",
+                            style: theme.textTheme.bodyLarge,
+                          ),
+                        ),
 
-                            // ListTile(
-                            //   title: Text(
-                            //     "Deposit",
-                            //     style: theme.textTheme.bodyMedium?.copyWith(
-                            //       color: LightThemeColors.bodyTextSecondaryColor,
-                            //       fontSize: 16.sp,
-                            //     ),
-                            //   ),
-                            //   trailing: Text(
-                            //     "\$0.00",
-                            //     style: theme.textTheme.bodyLarge,
-                            //   ),
-                            // ),
-
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8.sp, vertical: 10.sp),
-                              child: Row(
-                                children: [
-                                  Builder(builder: (context) {
-                                    return SplashContainer(
-                                      color: Colors.white,
-                                      radius: 8,
-                                      onPressed: () {
-                                        RenderBox renderBox = context
-                                            .findRenderObject() as RenderBox;
-                                        Offset offset = renderBox
-                                            .localToGlobal(Offset(0, 32.sp));
-                                        final RenderBox overlay =
-                                            Overlay.of(context)
-                                                    .context
-                                                    .findRenderObject()
-                                                as RenderBox;
-                                        showMenu(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.all(
-                                                Radius.circular(8.r)),
+                        // ListTile(
+                        //   title: Text(
+                        //     "Deposit",
+                        //     style: theme.textTheme.bodyMedium?.copyWith(
+                        //       color: LightThemeColors.bodyTextSecondaryColor,
+                        //       fontSize: 16.sp,
+                        //     ),
+                        //   ),
+                        //   trailing: Text(
+                        //     "\$0.00",
+                        //     style: theme.textTheme.bodyLarge,
+                        //   ),
+                        // ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.sp,
+                            vertical: 10.sp,
+                          ),
+                          child: Row(
+                            children: [
+                              Builder(
+                                builder: (context) {
+                                  return SplashContainer(
+                                    color: Colors.white,
+                                    radius: 8,
+                                    onPressed: () {
+                                      RenderBox renderBox = context
+                                          .findRenderObject() as RenderBox;
+                                      Offset offset = renderBox.localToGlobal(
+                                        Offset(0, 32.sp),
+                                      );
+                                      final RenderBox overlay = Overlay.of(
+                                        context,
+                                      ).context.findRenderObject() as RenderBox;
+                                      showMenu(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(8.r),
                                           ),
-                                          context: context,
-                                          position: RelativeRect.fromRect(
-                                              offset &
-                                                  Size(
-                                                      32.sp,
-                                                      32
-                                                          .sp), // smaller rect, the touch area
-                                              Offset.zero &
-                                                  overlay
-                                                      .size // Bigger rect, the entire screen
-                                              ),
-                                          items: controller.discountOptions
-                                              .map((e) {
-                                            return PopupMenuItem(
-                                              value: e["value"],
-                                              child: Text(e["name"] ?? ""),
-                                            );
-                                          }).toList(),
-                                        ).then((selectedValue) {
-                                          if (selectedValue != null) {
-                                            final selectedDiscount = controller
-                                                .discountOptions
-                                                .firstWhere((element) =>
-                                                    element["value"] ==
-                                                    selectedValue);
-                                            controller.selectedDiscountOption
-                                                    .value =
-                                                selectedDiscount["value"];
-                                            // controller.createTotal();
-                                          }
-                                        });
-                                      },
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 10.sp, vertical: 5.sp),
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(5.r),
-                                          border: Border.all(
-                                              color:
-                                                  LightThemeColors.primaryColor,
-                                              width: 1.sp),
                                         ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              "Discount",
-                                              style: theme.textTheme.bodyMedium
-                                                  ?.copyWith(
-                                                color: LightThemeColors
-                                                    .bodyTextSecondaryColor,
-                                                fontSize: 16.sp,
-                                              ),
+                                        context: context,
+                                        position: RelativeRect.fromRect(
+                                          offset &
+                                              Size(
+                                                32.sp,
+                                                32.sp,
+                                              ), // smaller rect, the touch area
+                                          Offset.zero &
+                                              overlay
+                                                  .size, // Bigger rect, the entire screen
+                                        ),
+                                        items: controller.discountOptions.map((
+                                          e,
+                                        ) {
+                                          return PopupMenuItem(
+                                            value: e["value"],
+                                            child: Text(e["name"] ?? ""),
+                                          );
+                                        }).toList(),
+                                      ).then((selectedValue) {
+                                        if (selectedValue != null) {
+                                          final selectedDiscount = controller
+                                              .discountOptions
+                                              .firstWhere(
+                                            (element) =>
+                                                element["value"] ==
+                                                selectedValue,
+                                          );
+                                          controller.selectedDiscountOption
+                                                  .value =
+                                              selectedDiscount["value"];
+                                          // controller.createTotal();
+                                        }
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 10.sp,
+                                        vertical: 5.sp,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                          5.r,
+                                        ),
+                                        border: Border.all(
+                                          color: LightThemeColors.primaryColor,
+                                          width: 1.sp,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "Discount",
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                              color: LightThemeColors
+                                                  .bodyTextSecondaryColor,
+                                              fontSize: 16.sp,
                                             ),
-                                            SizedBox(width: 5.sp),
-                                            Icon(
-                                              Icons.arrow_drop_down,
-                                              color:
-                                                  LightThemeColors.primaryColor,
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                          SizedBox(width: 5.sp),
+                                          Icon(
+                                            Icons.arrow_drop_down,
+                                            color:
+                                                LightThemeColors.primaryColor,
+                                          ),
+                                        ],
                                       ),
-                                    );
-                                  }),
-                                  Spacer(),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        controller.selectedDiscountOption
-                                                    .value ==
-                                                "2"
-                                            ? "\$"
-                                            : "%",
-                                        style:
-                                            theme.textTheme.bodyLarge?.copyWith(
-                                          fontSize: 14.sp,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      SizedBox(width: 5.sp),
-                                      SizedBox(
-                                        height: Get.size.width <= 440
-                                            ? 35.sp
-                                            : null,
-                                        width: 100.sp,
-                                        child: GeneralTextField(
-                                          hint: "0.00",
-                                          textInputType:
-                                              TextInputType.numberWithOptions(
-                                                  decimal: true),
-                                          theme: theme,
-                                          textAlignment: TextAlign.end,
-                                          textEditingController: controller
-                                              .createDiscountTextController,
-                                          onChanged: (value) {
-                                            // controller.createTotal();
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(left: 18.sp),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
+                              Spacer(),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   Text(
-                                      controller.selectedDiscountOption.value ==
-                                              "2"
-                                          ? "Fixed"
-                                          : "Percentage",
-                                      style:
-                                          theme.textTheme.bodySmall?.copyWith(
-                                        color: LightThemeColors
-                                            .bodyTextSecondaryColor,
-                                      )),
-                                ],
-                              ),
-                            ),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Discount amounts:",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 10.sp,
-                                      color: LightThemeColors
-                                          .bodyTextSecondaryColor),
-                                ),
-                                SizedBox(width: 20.sp),
-                                Padding(
-                                  padding: EdgeInsets.only(right: 12.sp),
-                                  child: Text(
-                                    "-\$${(controller.discountAmounts.value).toStringAsFixed(2)}",
-                                    style: theme.textTheme.bodyLarge,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 5.sp),
-                            Divider(
-                              height: 1.sp,
-                              color: Colors.black,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Amount after discount:",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 10.sp,
-                                      color: LightThemeColors
-                                          .bodyTextSecondaryColor),
-                                ),
-                                SizedBox(width: 20.sp),
-                                Padding(
-                                  padding: EdgeInsets.only(right: 12.sp),
-                                  child: Text(
-                                    "\$${(controller.amountAfterDiscounts.value).toStringAsFixed(2)}",
-                                    style: theme.textTheme.bodyLarge,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            ListTile(
-                              title: Row(
-                                children: [
-                                  Text(
-                                    "Surcharge (3%)",
+                                    controller.selectedDiscountOption.value ==
+                                            "2"
+                                        ? "\$"
+                                        : "%",
                                     style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors.hintTextColor,
                                       fontSize: 14.sp,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  SizedBox(width: 20.sp),
-                                  Transform.scale(
-                                    scale: 0.65,
-                                    child: SizedBox(
-                                      width: 35.sp,
-                                      child: CupertinoSwitch(
-                                        activeTrackColor: theme.primaryColor,
-                                        inactiveTrackColor: Colors.red,
-                                        value: controller
-                                            .isApplyingSurcharge.value,
-                                        onChanged: (v) async {
-                                          controller.toggleBlockStatus(v);
-                                          // controller.createTotal();
-                                        },
+                                  SizedBox(width: 5.sp),
+                                  SizedBox(
+                                    height:
+                                        Get.size.width <= 440 ? 35.sp : null,
+                                    width: 100.sp,
+                                    child: GeneralTextField(
+                                      hint: "0.00",
+                                      textInputType:
+                                          TextInputType.numberWithOptions(
+                                        decimal: true,
                                       ),
+                                      theme: theme,
+                                      textAlignment: TextAlign.end,
+                                      textEditingController: controller
+                                          .createDiscountTextController,
+                                      onChanged: (value) {
+                                        // controller.createTotal();
+                                      },
                                     ),
                                   ),
                                 ],
                               ),
-                              trailing: Text(
-                                controller.isApplyingSurcharge.value
-                                    ? "\$${(controller.amountAfterDiscount.value * 3 / 100).toStringAsFixed(2)}"
-                                    : "0.00",
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(left: 18.sp),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Text(
+                                controller.selectedDiscountOption.value == "2"
+                                    ? "Fixed"
+                                    : "Percentage",
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color:
+                                      LightThemeColors.bodyTextSecondaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              "Discount amounts:",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontSize: 10.sp,
+                                color: LightThemeColors.bodyTextSecondaryColor,
+                              ),
+                            ),
+                            SizedBox(width: 20.sp),
+                            Padding(
+                              padding: EdgeInsets.only(right: 12.sp),
+                              child: Text(
+                                "-\$${(controller.discountAmounts.value).toStringAsFixed(2)}",
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 5.sp),
+                        Divider(height: 1.sp, color: Colors.black),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              "Amount after discount:",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontSize: 10.sp,
+                                color: LightThemeColors.bodyTextSecondaryColor,
+                              ),
+                            ),
+                            SizedBox(width: 20.sp),
+                            Padding(
+                              padding: EdgeInsets.only(right: 12.sp),
+                              child: Text(
+                                "\$${(controller.amountAfterDiscounts.value).toStringAsFixed(2)}",
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            ),
+                          ],
+                        ),
+                        ListTile(
+                          title: Row(
+                            children: [
+                              Text(
+                                "Surcharge (3%)",
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: LightThemeColors.hintTextColor,
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(width: 20.sp),
+                              Transform.scale(
+                                scale: 0.65,
+                                child: SizedBox(
+                                  width: 35.sp,
+                                  child: CupertinoSwitch(
+                                    activeTrackColor: theme.primaryColor,
+                                    inactiveTrackColor: Colors.red,
+                                    value: controller.isApplyingSurcharge.value,
+                                    onChanged: (v) async {
+                                      controller.toggleBlockStatus(v);
+                                      // controller.createTotal();
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: Text(
+                            controller.isApplyingSurcharge.value
+                                ? "\$${(controller.amountAfterDiscount.value * 3 / 100).toStringAsFixed(2)}"
+                                : "0.00",
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (controller.isApplyingSurcharge.value) ...[
+                          Divider(height: 1.sp, color: Colors.black),
+                          ListTile(
+                            title: Text(
+                              maxLines: 2,
+                              "Total amount with Surcharge",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.primaryColor,
+                              ),
+                            ),
+                            trailing: Text(
+                              "\$${controller.totalAmountWithSurcharge.value.toStringAsFixed(2)}",
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.primaryColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                        // SizedBox(height: 5.sp),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              "Taxable total",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontSize: 10.sp,
+                                color: LightThemeColors.bodyTextSecondaryColor,
+                              ),
+                            ),
+                            SizedBox(width: 20.sp),
+                            Padding(
+                              padding: EdgeInsets.only(right: 12.sp),
+                              child: Text(
+                                "\$${(controller.taxableTotal.value).toStringAsFixed(2)}",
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
-                            if (controller.isApplyingSurcharge.value) ...[
-                              Divider(
-                                height: 1.sp,
-                                color: Colors.black,
+                          ],
+                        ),
+                        SizedBox(height: 10.sp),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              "Discounted Taxable total",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontSize: 10.sp,
+                                color: LightThemeColors.bodyTextSecondaryColor,
                               ),
-                              ListTile(
-                                title: Text(
-                                  maxLines: 2,
-                                  "Total amount with Surcharge",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.primaryColor,
-                                  ),
-                                ),
-                                trailing: Text(
-                                  "\$${controller.totalAmountWithSurcharge.value.toStringAsFixed(2)}",
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.primaryColor,
-                                  ),
+                            ),
+                            SizedBox(width: 20.sp),
+                            Padding(
+                              padding: EdgeInsets.only(right: 12.sp),
+                              child: Text(
+                                "\$${(controller.discountedTaxableTotal.value).toStringAsFixed(2)}",
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ],
-                            // SizedBox(height: 5.sp),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Taxable total",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 10.sp,
-                                      color: LightThemeColors
-                                          .bodyTextSecondaryColor),
-                                ),
-                                SizedBox(width: 20.sp),
-                                Padding(
-                                  padding: EdgeInsets.only(right: 12.sp),
-                                  child: Text(
-                                    "\$${(controller.taxableTotal.value).toStringAsFixed(2)}",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ),
-                            SizedBox(height: 10.sp),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Discounted Taxable total",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 10.sp,
-                                      color: LightThemeColors
-                                          .bodyTextSecondaryColor),
-                                ),
-                                SizedBox(width: 20.sp),
-                                Padding(
-                                  padding: EdgeInsets.only(right: 12.sp),
-                                  child: Text(
-                                    "\$${(controller.discountedTaxableTotal.value).toStringAsFixed(2)}",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            ListTile(
-                              title: Builder(builder: (context) {
-                                return SplashContainer(
-                                  color: Colors.white,
-                                  radius: 8,
-                                  onPressed: () {
-                                    RenderBox renderBox =
-                                        context.findRenderObject() as RenderBox;
-                                    Offset offset = renderBox
-                                        .localToGlobal(Offset(0, 32.sp));
-                                    final RenderBox overlay =
-                                        Overlay.of(context)
-                                            .context
-                                            .findRenderObject() as RenderBox;
-                                    showMenu(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(8.r)),
+                          ],
+                        ),
+                        ListTile(
+                          title: Builder(
+                            builder: (context) {
+                              return SplashContainer(
+                                color: Colors.white,
+                                radius: 8,
+                                onPressed: () {
+                                  RenderBox renderBox =
+                                      context.findRenderObject() as RenderBox;
+                                  Offset offset = renderBox.localToGlobal(
+                                    Offset(0, 32.sp),
+                                  );
+                                  final RenderBox overlay = Overlay.of(
+                                    context,
+                                  ).context.findRenderObject() as RenderBox;
+                                  showMenu(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.all(
+                                        Radius.circular(8.r),
                                       ),
-                                      context: context,
-                                      position: RelativeRect.fromRect(
-                                          offset &
-                                              Size(
-                                                  32.sp,
-                                                  32
-                                                      .sp), // smaller rect, the touch area
-                                          Offset.zero &
-                                              overlay
-                                                  .size // Bigger rect, the entire screen
-                                          ),
-                                      items: [
-                                        PopupMenuItem(
-                                          value: "",
-                                          child: Text(
-                                            "NO TAX",
-                                            style: TextStyle(color: Colors.red),
-                                          ),
+                                    ),
+                                    context: context,
+                                    position: RelativeRect.fromRect(
+                                      offset &
+                                          Size(
+                                            32.sp,
+                                            32.sp,
+                                          ), // smaller rect, the touch area
+                                      Offset.zero &
+                                          overlay
+                                              .size, // Bigger rect, the entire screen
+                                    ),
+                                    items: [
+                                      PopupMenuItem(
+                                        value: "",
+                                        child: Text(
+                                          "NO TAX",
+                                          style: TextStyle(color: Colors.red),
                                         ),
-                                        ...controller.taxes.map((tax) {
-                                          return PopupMenuItem(
-                                            value: tax.id,
-                                            child: Text(tax.name ?? ""),
-                                          );
-                                        }),
-                                      ],
-                                    ).then((selectedValue) async {
-                                      if (selectedValue != null) {
-                                        if (selectedValue == "") {
-                                          controller.selectedTaxName.value =
-                                              "NO TAX";
-                                          controller.tax.value = "0.00";
-                                          controller.selectedTaxID.value = "";
-                                          // controller.createTotal();
-                                        } else {
-                                          final selectedTax = controller.taxes
-                                              .firstWhere((tax) =>
-                                                  tax.id == selectedValue);
-                                          controller.selectedTaxName.value =
-                                              selectedTax.name ?? "";
-                                          controller.tax.value = selectedTax
-                                                  .rate
-                                                  ?.toStringAsFixed(2) ??
-                                              "0.00";
-                                          controller.selectedTaxID.value =
-                                              selectedTax.id.toString();
-                                          // controller.createTotal();
-                                        }
+                                      ),
+                                      ...controller.taxes.map((tax) {
+                                        return PopupMenuItem(
+                                          value: tax.id,
+                                          child: Text(tax.name ?? ""),
+                                        );
+                                      }),
+                                    ],
+                                  ).then((selectedValue) async {
+                                    if (selectedValue != null) {
+                                      if (selectedValue == "") {
+                                        controller.selectedTaxName.value =
+                                            "NO TAX";
+                                        controller.tax.value = "0.00";
+                                        controller.selectedTaxID.value = "";
+                                        // controller.createTotal();
+                                      } else {
+                                        final selectedTax =
+                                            controller.taxes.firstWhere(
+                                          (tax) => tax.id == selectedValue,
+                                        );
+                                        controller.selectedTaxName.value =
+                                            selectedTax.name ?? "";
+                                        controller.tax.value =
+                                            selectedTax.rate?.toStringAsFixed(
+                                                  2,
+                                                ) ??
+                                                "0.00";
+                                        controller.selectedTaxID.value =
+                                            selectedTax.id.toString();
+                                        // controller.createTotal();
                                       }
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 10.sp, vertical: 5.sp),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(5.r),
-                                      border: Border.all(
-                                          color: LightThemeColors.primaryColor,
-                                          width: 1.sp),
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 10.sp,
+                                    vertical: 5.sp,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5.r),
+                                    border: Border.all(
+                                      color: LightThemeColors.primaryColor,
+                                      width: 1.sp,
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text("Tax Rate",
-                                            style: theme.textTheme.bodyLarge
-                                                ?.copyWith(
-                                              color: LightThemeColors
-                                                  .hintTextColor,
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.w500,
-                                            )),
-                                        SizedBox(width: 5.sp),
-                                        Icon(
-                                          Icons.arrow_drop_down,
-                                          color: LightThemeColors.primaryColor,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "Tax Rate",
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
+                                          color: LightThemeColors.hintTextColor,
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      ],
+                                      ),
+                                      SizedBox(width: 5.sp),
+                                      Icon(
+                                        Icons.arrow_drop_down,
+                                        color: LightThemeColors.primaryColor,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          trailing: SizedBox(
+                            width: 165.sp,
+                            child: Text(
+                              "\$${(controller.discountedTaxableTotal).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                        ),
+                        controller.selectedTaxName.value == ""
+                            ? Padding(
+                                padding: EdgeInsets.only(left: 18.sp),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "NO TAX (0.00%)",
+                                      style:
+                                          theme.textTheme.bodySmall?.copyWith(
+                                        color: LightThemeColors
+                                            .bodyTextSecondaryColor,
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }),
-                              trailing: SizedBox(
-                                width: 165.sp,
-                                child: Text(
-                                  "\$${(controller.discountedTaxableTotal).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  textAlign: TextAlign.end,
+                                  ],
+                                ),
+                              )
+                            : Padding(
+                                padding: EdgeInsets.only(left: 18.sp),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${controller.selectedTaxName.value} (${controller.tax.value}%)",
+                                      style:
+                                          theme.textTheme.bodySmall?.copyWith(
+                                        color: LightThemeColors
+                                            .bodyTextSecondaryColor,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            controller.selectedTaxName.value == ""
-                                ? Padding(
-                                    padding: EdgeInsets.only(left: 18.sp),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        Text("NO TAX (0.00%)",
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                              color: LightThemeColors
-                                                  .bodyTextSecondaryColor,
-                                            )),
-                                      ],
-                                    ),
-                                  )
-                                : Padding(
-                                    padding: EdgeInsets.only(left: 18.sp),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                            "${controller.selectedTaxName.value} (${controller.tax.value}%)",
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(
-                                              color: LightThemeColors
-                                                  .bodyTextSecondaryColor,
-                                            )),
-                                      ],
-                                    ),
-                                  ),
 
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Tax amount:",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 10.sp,
-                                      color: LightThemeColors
-                                          .bodyTextSecondaryColor),
-                                ),
-                                SizedBox(width: 20.sp),
-                                Padding(
-                                  padding: EdgeInsets.only(right: 12.sp),
-                                  child: Text(
-                                    "+\$${(controller.taxAmount.value).toStringAsFixed(2)}",
-                                    style: theme.textTheme.bodyLarge,
-                                  ),
-                                ),
-                              ],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              "Tax amount:",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontSize: 10.sp,
+                                color: LightThemeColors.bodyTextSecondaryColor,
+                              ),
                             ),
-                            SizedBox(height: 5.sp),
-                            Divider(
-                              height: 1.sp,
-                              color: Colors.black,
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  "Amount after adding Tax:",
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontSize: 10.sp,
-                                      color: LightThemeColors
-                                          .bodyTextSecondaryColor),
-                                ),
-                                SizedBox(width: 20.sp),
-                                Padding(
-                                  padding: EdgeInsets.only(right: 12.sp),
-                                  child: Text(
-                                    "\$${controller.amountAfterAddingTax.value.toStringAsFixed(2)}",
-                                    style: theme.textTheme.bodyLarge,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 20.sp),
-                            Divider(
-                              height: 1.sp,
-                              color: theme.primaryColor,
-                            ),
-                            ListTile(
-                              title: Text(
-                                "Total",
+                            SizedBox(width: 20.sp),
+                            Padding(
+                              padding: EdgeInsets.only(right: 12.sp),
+                              child: Text(
+                                "+\$${(controller.taxAmount.value).toStringAsFixed(2)}",
                                 style: theme.textTheme.bodyLarge,
                               ),
-                              trailing: Text(
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 5.sp),
+                        Divider(height: 1.sp, color: Colors.black),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              "Amount after adding Tax:",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontSize: 10.sp,
+                                color: LightThemeColors.bodyTextSecondaryColor,
+                              ),
+                            ),
+                            SizedBox(width: 20.sp),
+                            Padding(
+                              padding: EdgeInsets.only(right: 12.sp),
+                              child: Text(
                                 "\$${controller.amountAfterAddingTax.value.toStringAsFixed(2)}",
                                 style: theme.textTheme.bodyLarge,
                               ),
                             ),
                           ],
-                        )),
-                    SizedBox(height: 15.sp),
-                    GeneralTextField(
-                        hint: "Add a note",
-                        theme: theme,
-                        maxLine: 4,
-                        textEditingController: controller.noteTextController),
-                    MainDivider(),
-                    SizedBox(height: 20.sp),
-                    SizedBox(
-                      height: 48.sp,
-                      width: double.infinity,
-                      child: PrimaryButton(
-                        title: "Create",
-                        onPressed: controller.isLocAndClassShow.value
-                            ? () async {
-                                final bool isNoneChecked =
-                                    controller.isNoneSelected.value;
-                                final bool hasLocation =
-                                    controller.selectedLocation.value != null;
-                                final bool hasClass =
-                                    controller.selectedClass.value != null;
+                        ),
+                        SizedBox(height: 20.sp),
+                        Divider(height: 1.sp, color: theme.primaryColor),
+                        ListTile(
+                          title: Text(
+                            "Total",
+                            style: theme.textTheme.bodyLarge,
+                          ),
+                          trailing: Text(
+                            "\$${controller.amountAfterAddingTax.value.toStringAsFixed(2)}",
+                            style: theme.textTheme.bodyLarge,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 15.sp),
+                  GeneralTextField(
+                    hint: "Add a note",
+                    theme: theme,
+                    maxLine: 4,
+                    textEditingController: controller.noteTextController,
+                  ),
+                  MainDivider(),
+                  SizedBox(height: 20.sp),
+                  SizedBox(
+                    height: 48.sp,
+                    width: double.infinity,
+                    child: PrimaryButton(
+                      title: "Create",
+                      onPressed: controller.isLocAndClassShow.value
+                          ? () async {
+                              final bool isNoneChecked =
+                                  controller.isNoneSelected.value;
+                              final bool hasLocation =
+                                  controller.selectedLocation.value != null;
+                              final bool hasClass =
+                                  controller.selectedClass.value != null;
 
-                                if (!isNoneChecked &&
-                                    !hasLocation &&
-                                    !hasClass) {
-                                  // Show dialog
-                                  final bool? result = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: const Text("Missing Information"),
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Text(
-                                            "Please select a Location and Class, or check 'Do Not Show Again'.",
-                                          ),
-                                          SizedBox(height: 10.h),
-                                          Row(
-                                            children: [
-                                              Obx(() => Checkbox(
-                                                    activeColor: Colors.blue,
-                                                    value: controller
-                                                        .isNoneSelected.value,
-                                                    onChanged: (val) {
-                                                      controller.isNoneSelected
-                                                          .value = val ?? false;
-                                                      if (val == true) {
-                                                        controller
-                                                            .selectedLocation(
-                                                                null);
-                                                        controller
-                                                            .selectedClass(
-                                                                null);
-                                                      }
-                                                    },
-                                                  )),
-                                              const Text("Do Not Show Again"),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(ctx).pop(controller
-                                                .isNoneSelected.value);
-                                          },
-                                          child: const Text("OK"),
+                              if (!isNoneChecked && !hasLocation && !hasClass) {
+                                // Show dialog
+                                final bool? result = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text("Missing Information"),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text(
+                                          "Please select a Location and Class, or check 'Do Not Show Again'.",
+                                        ),
+                                        SizedBox(height: 10.h),
+                                        Row(
+                                          children: [
+                                            Obx(
+                                              () => Checkbox(
+                                                activeColor: Colors.blue,
+                                                value: controller
+                                                    .isNoneSelected.value,
+                                                onChanged: (val) {
+                                                  controller.isNoneSelected
+                                                      .value = val ?? false;
+                                                  if (val == true) {
+                                                    controller.selectedLocation(
+                                                      null,
+                                                    );
+                                                    controller.selectedClass(
+                                                      null,
+                                                    );
+                                                  }
+                                                },
+                                              ),
+                                            ),
+                                            const Text("Do Not Show Again"),
+                                          ],
                                         ),
                                       ],
                                     ),
-                                  );
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(ctx).pop(
+                                            controller.isNoneSelected.value,
+                                          );
+                                        },
+                                        child: const Text("OK"),
+                                      ),
+                                    ],
+                                  ),
+                                );
 
-                                  // If user selected "Not applicable", continue to create invoice
-                                  if (result == true) {
-                                    final isPop =
-                                        await controller.createInvoice();
-                                    log("message: $isPop");
-                                    if (isPop) {
-                                      Get.close(1);
-                                    }
+                                // If user selected "Not applicable", continue to create invoice
+                                if (result == true) {
+                                  final isPop =
+                                      await controller.createInvoice();
+                                  log("message: $isPop");
+                                  if (isPop) {
+                                    Get.close(1);
                                   }
-
-                                  return; // stop further execution if dialog was shown
                                 }
 
-                                // Proceed normally if all conditions are already satisfied
-                                final isPop = await controller.createInvoice();
-                                if (isPop) {
-                                  Get.close(1);
-                                }
+                                return; // stop further execution if dialog was shown
                               }
-                            : () async {
-                                final isPop = await controller.createInvoice();
-                                if (isPop) {
-                                  Get.close(1);
-                                }
-                              },
-                        inactive: controller.selectedItemList.isEmpty,
-                      ),
+
+                              // Proceed normally if all conditions are already satisfied
+                              final isPop = await controller.createInvoice();
+                              if (isPop) {
+                                Get.close(1);
+                              }
+                            }
+                          : () async {
+                              final isPop = await controller.createInvoice();
+                              if (isPop) {
+                                Get.close(1);
+                              }
+                            },
+                      inactive: controller.selectedItemList.isEmpty,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          )),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1510,7 +1628,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                         child: IconButton(
                           onPressed: () async {
                             await controller.getEmailAutofill(
-                                emailType: controller.selectedCreateType.value);
+                              emailType: controller.selectedCreateType.value,
+                            );
                             if (context.mounted) {
                               showModalBottomSheet(
                                 context: context,
@@ -1520,32 +1639,36 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 enableDrag: true,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(20)),
+                                    top: Radius.circular(20),
+                                  ),
                                 ),
                                 builder: (BuildContext context) {
                                   return Padding(
                                     padding: EdgeInsets.only(
-                                      bottom: MediaQuery.of(context)
-                                          .viewInsets
-                                          .bottom,
+                                      bottom: MediaQuery.of(
+                                        context,
+                                      ).viewInsets.bottom,
                                     ),
                                     child: Container(
                                       padding: EdgeInsets.only(
-                                          left: 20.sp,
-                                          right: 20.sp,
-                                          bottom: 20.sp,
-                                          top: 5.sp),
+                                        left: 20.sp,
+                                        right: 20.sp,
+                                        bottom: 20.sp,
+                                        top: 5.sp,
+                                      ),
                                       child: SingleChildScrollView(
                                         physics: BouncingScrollPhysics(),
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Text("Send Email",
-                                                style: theme.textTheme.bodyLarge
-                                                    ?.copyWith(
-                                                  fontSize: 18.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                )),
+                                            Text(
+                                              "Send Email",
+                                              style: theme.textTheme.bodyLarge
+                                                  ?.copyWith(
+                                                fontSize: 18.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
                                             SizedBox(height: 15.sp),
                                             GeneralTextField(
                                               hint: "To",
@@ -1671,17 +1794,20 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                   child: SizedBox(
                                                     height: 48.sp,
                                                     child: PrimaryButton(
-                                                        title: "Send",
-                                                        onPressed: () async {
-                                                          await controller.sendEmail(
-                                                              pdfType: controller
-                                                                  .selectedCreateType
-                                                                  .value,
-                                                              emailType: controller
-                                                                  .selectedCreateType
-                                                                  .value);
-                                                        },
-                                                        inactive: false),
+                                                      title: "Send",
+                                                      onPressed: () async {
+                                                        await controller
+                                                            .sendEmail(
+                                                          pdfType: controller
+                                                              .selectedCreateType
+                                                              .value,
+                                                          emailType: controller
+                                                              .selectedCreateType
+                                                              .value,
+                                                        );
+                                                      },
+                                                      inactive: false,
+                                                    ),
                                                   ),
                                                 ),
                                               ],
@@ -1721,8 +1847,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                             child: IconButton(
                               onPressed: () async {
                                 await controller.getEmailAutofill(
-                                    emailType:
-                                        controller.selectedCreateType.value);
+                                  emailType:
+                                      controller.selectedCreateType.value,
+                                );
                                 if (context.mounted) {
                                   showModalBottomSheet(
                                     context: context,
@@ -1732,34 +1859,37 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                     enableDrag: true,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(20)),
+                                        top: Radius.circular(20),
+                                      ),
                                     ),
                                     builder: (BuildContext context) {
                                       return Padding(
                                         padding: EdgeInsets.only(
-                                          bottom: MediaQuery.of(context)
-                                              .viewInsets
-                                              .bottom,
+                                          bottom: MediaQuery.of(
+                                            context,
+                                          ).viewInsets.bottom,
                                         ),
                                         child: Container(
                                           padding: EdgeInsets.only(
-                                              left: 20.sp,
-                                              right: 20.sp,
-                                              bottom: 20.sp,
-                                              top: 5.sp),
+                                            left: 20.sp,
+                                            right: 20.sp,
+                                            bottom: 20.sp,
+                                            top: 5.sp,
+                                          ),
                                           child: SingleChildScrollView(
                                             physics: BouncingScrollPhysics(),
                                             child: Column(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Text("Send Email",
-                                                    style: theme
-                                                        .textTheme.bodyLarge
-                                                        ?.copyWith(
-                                                      fontSize: 18.sp,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    )),
+                                                Text(
+                                                  "Send Email",
+                                                  style: theme
+                                                      .textTheme.bodyLarge
+                                                      ?.copyWith(
+                                                    fontSize: 18.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
                                                 SizedBox(height: 15.sp),
                                                 GeneralTextField(
                                                   hint: "To",
@@ -1889,19 +2019,20 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                       child: SizedBox(
                                                         height: 48.sp,
                                                         child: PrimaryButton(
-                                                            title: "Send",
-                                                            onPressed:
-                                                                () async {
-                                                              await controller.sendEmail(
-                                                                  pdfType: controller
-                                                                      .selectedCreateType
-                                                                      .value,
-                                                                  emailType:
-                                                                      controller
-                                                                          .selectedCreateType
-                                                                          .value);
-                                                            },
-                                                            inactive: false),
+                                                          title: "Send",
+                                                          onPressed: () async {
+                                                            await controller
+                                                                .sendEmail(
+                                                              pdfType: controller
+                                                                  .selectedCreateType
+                                                                  .value,
+                                                              emailType: controller
+                                                                  .selectedCreateType
+                                                                  .value,
+                                                            );
+                                                          },
+                                                          inactive: false,
+                                                        ),
                                                       ),
                                                     ),
                                                   ],

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/my_buttons.dart';
+import '../../../components/global-widgets/my_snackbar.dart';
 import '../controllers/invoice_controller.dart';
 
 class PaymentByCashView extends GetView<InvoiceController> {
@@ -213,19 +214,15 @@ class PaymentByCashView extends GetView<InvoiceController> {
                               onPressed: () async {
                                 if (controller
                                     .cashAmtTextController.text.isEmpty) {
-                                  Get.snackbar(
-                                    'Error',
-                                    'Please enter the amount to pay.',
-                                    snackPosition: SnackPosition.BOTTOM,
+                                  MySnackBar.showErrorToast(
+                                    message: 'Please enter the amount to pay.',
                                   );
                                   return;
                                 } else if (double.parse(controller
                                         .cashAmtTextController.text) <=
                                     0) {
-                                  Get.snackbar(
-                                    'Error',
-                                    'Amount must be greater than zero.',
-                                    snackPosition: SnackPosition.BOTTOM,
+                                  MySnackBar.showErrorToast(
+                                    message: 'Amount must be greater than zero.',
                                   );
                                   return;
                                 }

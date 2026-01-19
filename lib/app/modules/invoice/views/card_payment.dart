@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:xinator_fsm_pro/app/clearant_service.dart';
+import '../../../clearant_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   @override
@@ -8,7 +8,9 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   final ClearentService _service = ClearentService();
-  final TextEditingController _amountController = TextEditingController(text: "1.00");
+  final TextEditingController _amountController = TextEditingController(
+    text: "1.00",
+  );
   String _log = "Waiting...";
 
   @override
@@ -71,13 +73,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: Card(
                 child: Padding(
                   padding: EdgeInsets.all(12),
-                  child: Text(
-                    _log,
-                    style: TextStyle(fontFamily: 'monospace'),
-                  ),
+                  child: Text(_log, style: TextStyle(fontFamily: 'monospace')),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

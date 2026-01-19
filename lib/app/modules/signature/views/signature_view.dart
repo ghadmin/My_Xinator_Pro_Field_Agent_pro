@@ -1,12 +1,9 @@
-import 'dart:io';
 import 'package:get/get.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:signature/signature.dart';
-import 'package:xinator_fsm_pro/app/modules/signature/controllers/signature_controller.dart';
+
+import '../controllers/signature_controller.dart';
 
 class SignatureScreen extends GetView<SignatureGetxController> {
   const SignatureScreen({super.key});

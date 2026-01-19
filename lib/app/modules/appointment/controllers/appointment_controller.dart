@@ -2,36 +2,35 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
-import 'package:xinator_fsm_pro/app/modules/appointment/models/image_list_model.dart';
-import 'package:xinator_fsm_pro/app/modules/appointment/models/tag_model.dart';
-import 'package:xinator_fsm_pro/app/modules/appointment/views/appointment_details_view.dart'
-    show Note, ResourceItem;
-import 'package:xinator_fsm_pro/app/modules/customer/controllers/customer_controller.dart';
-import 'package:xinator_fsm_pro/app/modules/customer/models/customer_model.dart';
-import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
-import 'package:xinator_fsm_pro/app/modules/invoice/controllers/invoice_controller.dart';
-import 'package:xinator_fsm_pro/app/modules/settings/controllers/settings_controller.dart';
-import 'package:xinator_fsm_pro/app/modules/settings/models/appointment_status_setting.dart';
 
 import '../../../../utils/date_converter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
+import '../../../components/global-widgets/text_widget.dart';
 import '../../../data/local/hive/my_hive.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../service/REST/api_urls.dart';
 import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
 import '../../../service/helper/network_connectivity.dart';
+import '../../customer/controllers/customer_controller.dart';
+import '../../customer/models/customer_model.dart';
+import '../../forms/controllers/form_controller.dart';
+import '../../invoice/controllers/invoice_controller.dart';
 import '../../item/models/item_list_model.dart';
+import '../../settings/controllers/settings_controller.dart';
+import '../../settings/models/appointment_status_setting.dart';
 import '../../settings/models/ticket_status_model.dart';
 import '../models/appointment_model.dart';
+import '../models/image_list_model.dart';
 import '../models/note_model.dart';
+import '../models/tag_model.dart';
+import '../views/appointment_details_view.dart';
 
 class MediaModel {
   String time;
@@ -121,7 +120,7 @@ class AppointmentController extends GetxController
     "History note one ",
     "History note two ",
     "History note three ",
-    "History note four "
+    "History note four ",
   ];
   final selectedAppointment = Rx<Appointments?>(null);
   final isTyping = RxBool(false);
@@ -133,12 +132,9 @@ class AppointmentController extends GetxController
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
 
-      var response = await DioClient().get(
-        url: ApiUrl.getAllNotesUrl,
-        params: {
-          "companyId": companyID,
-        },
-      ).catchError(!showLoader ? handleError : () {});
+      var response = await DioClient().get(url: ApiUrl.getAllNotesUrl, params: {
+        "companyId": companyID
+      }).catchError(!showLoader ? handleError : () {});
 
       if (response == null) {
         hideLoading();
@@ -166,7 +162,10 @@ class AppointmentController extends GetxController
   }
 
   void selectSingleAppointments(
-      Appointments? appointment, int index, bool fromPeriodic) {
+    Appointments? appointment,
+    int index,
+    bool fromPeriodic,
+  ) {
     if (!fromPeriodic) {
       imageList.clear();
       mediaList.clear();
@@ -177,34 +176,44 @@ class AppointmentController extends GetxController
 
     // set full customer object
     customerController.selectedCustomer(
-        CustomerModel.fromJson(appointment.customer!.toJson()));
+      CustomerModel.fromJson(appointment.customer!.toJson()),
+    );
 
     companyId = appointment.companyID ?? "";
 
-    settingController.selectedAppointmentsStatus(AppointmentStatusSetting(
+    settingController.selectedAppointmentsStatus(
+      AppointmentStatusSetting(
         companyId: appointment.status?.companyId,
         statusId: appointment.status?.statusId,
-        statusName: appointment.status?.statusName));
+        statusName: appointment.status?.statusName,
+      ),
+    );
 
-    settingController.selectedTicket(TicketStatusSettings(
+    settingController.selectedTicket(
+      TicketStatusSettings(
         companyId: appointment.ticketStatus?.companyId,
         statusId: appointment.ticketStatus?.statusId,
-        statusName: appointment.ticketStatus?.statusName));
+        statusName: appointment.ticketStatus?.statusName,
+      ),
+    );
 
     var createdDateTime = dateTimeConverter(
-        inputFormat: "yyyy/MM/dd hh:mm a",
-        inputTime: appointment.createdDateTime.toString(),
-        outputFormat: "MM/dd/yyyy hh:mm a");
+      inputFormat: "yyyy/MM/dd hh:mm a",
+      inputTime: appointment.createdDateTime.toString(),
+      outputFormat: "MM/dd/yyyy hh:mm a",
+    );
 
     var startTime = dateTimeConverter(
-        inputFormat: "yyyy/MM/dd hh:mm a",
-        inputTime: appointment.startDateTime.toString(),
-        outputFormat: "MM/dd/yyyy hh:mm a");
+      inputFormat: "yyyy/MM/dd hh:mm a",
+      inputTime: appointment.startDateTime.toString(),
+      outputFormat: "MM/dd/yyyy hh:mm a",
+    );
 
     var endTime = dateTimeConverter(
-        inputFormat: "yyyy/MM/dd hh:mm a",
-        inputTime: appointment.endDateTime.toString(),
-        outputFormat: "MM/dd/yyyy hh:mm a");
+      inputFormat: "yyyy/MM/dd hh:mm a",
+      inputTime: appointment.endDateTime.toString(),
+      outputFormat: "MM/dd/yyyy hh:mm a",
+    );
 
     // ✅ Added missing assignments
     createdBy = appointment.createdBy ?? "";
@@ -257,8 +266,9 @@ class AppointmentController extends GetxController
                 .where((e) => e.selectedItem!.id == item.itemId)
                 .isEmpty &&
             !invoiceController.removedList.contains(item.itemId)) {
-          invoiceController.selectedItemList.add(SelectedItemListModel(
-              quantity: double.parse(item.quantity ?? "1").toInt(),
+          invoiceController.selectedItemList.add(
+            SelectedItemListModel(
+              quantity: double.parse(item.quantity ?? "1.00"),
               selectedItem: ItemListModel(
                 id: item.itemId,
                 name: item.name,
@@ -266,7 +276,9 @@ class AppointmentController extends GetxController
                 price: double.tryParse(item.unitPrice ?? "0.00"),
                 isTaxable: item.isTaxable == "TAX" ? true : false,
                 // itemTypeId: int.parse(item.itemTyId!),
-              )));
+              ),
+            ),
+          );
 
           // invoiceController.editAmountControllers
           //     .add(TextEditingController(text: item.unitPrice ?? "0.00"));
@@ -289,7 +301,8 @@ class AppointmentController extends GetxController
       builder: (context) => AlertDialog(
         title: TextWidget(text: 'Choose Date Selection'),
         content: TextWidget(
-            text: 'Do you want to pick a single date or a date range?'),
+          text: 'Do you want to pick a single date or a date range?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop('single'),
@@ -352,8 +365,9 @@ class AppointmentController extends GetxController
   }
 
   final isTaglistLoading = RxBool(false);
-  final selectedTagController =
-      Rx<TextEditingController>(TextEditingController());
+  final selectedTagController = Rx<TextEditingController>(
+    TextEditingController(),
+  );
   final selectedTagId = RxInt(-1);
 
   final userId = Rx<dynamic>(null);
@@ -370,9 +384,8 @@ class AppointmentController extends GetxController
       var companyID = await MySharedPref.getCompanyID();
 
       var response = await DioClient().get(
-        url: ApiUrl.getAllTagUrl,
-        params: {"CompanyId": companyID},
-      ).catchError(handleError);
+          url: ApiUrl.getAllTagUrl,
+          params: {"CompanyId": companyID}).catchError(handleError);
 
       // log("refreshing appointments ${jsonEncode(response)}");
 
@@ -411,7 +424,8 @@ class AppointmentController extends GetxController
     } else {
       filteredTags.assignAll(
         allTagList.where(
-            (tag) => tag.name.toLowerCase().contains(query.toLowerCase())),
+          (tag) => tag.name.toLowerCase().contains(query.toLowerCase()),
+        ),
       );
     }
     selectedTabOption(filteredTags.first.name);
@@ -427,21 +441,18 @@ class AppointmentController extends GetxController
           "Name": tagName,
           "CompanyId": companyId,
           "Description": "",
-          "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now())
-        }
+          "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now()),
+        },
       };
 
-      final response =
-          await DioClient().post(url: ApiUrl.saveTagUrl, body: params);
+      final response = await DioClient().post(
+        url: ApiUrl.saveTagUrl,
+        body: params,
+      );
 
       if (response != null && response['success'] == true) {
-        Get.snackbar(
-          "Success",
-          "Tag $tagName added successfully",
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(12),
+        MySnackBar.showToast(
+          message: "Tag $tagName added successfully",
           duration: const Duration(seconds: 2),
         ); // refresh UI immediately
         return true;
@@ -477,7 +488,7 @@ class AppointmentController extends GetxController
         "ImageName": file.uri.pathSegments.last,
         "ImageBase64": base64Image,
         "Description": description,
-        "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now())
+        "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now()),
       });
     }
 
@@ -489,16 +500,13 @@ class AppointmentController extends GetxController
         "CSLId": 0,
         "CompanyId": companyId,
         "TagName": tagName,
-        "ImageList": imageList
-      }
+        "ImageList": imageList,
+      },
     };
     log(" body: $requestBody");
     // Send request
     final response = await DioClient()
-        .post(
-          url: ApiUrl.saveImageUrl,
-          body: requestBody,
-        )
+        .post(url: ApiUrl.saveImageUrl, body: requestBody)
         .catchError(handleError);
     log("chill $response");
     hideLoading();
@@ -534,10 +542,7 @@ class AppointmentController extends GetxController
               params: queryParams,
             )
           : await DioClient()
-              .get(
-                url: ApiUrl.getImageListUrl,
-                params: queryParams,
-              )
+              .get(url: ApiUrl.getImageListUrl, params: queryParams)
               .catchError(handleError);
       log("image res : ${jsonEncode(response)}");
       if (response == null) {
@@ -565,8 +570,11 @@ class AppointmentController extends GetxController
 
         if (selectedAppointment.value != null &&
             !isSelectSingleNeedToCall.value) {
-          selectSingleAppointments(sortedAppointments[selectedAptIndex.value],
-              selectedAptIndex.value, true);
+          selectSingleAppointments(
+            sortedAppointments[selectedAptIndex.value],
+            selectedAptIndex.value,
+            true,
+          );
         }
       }
     });
@@ -592,8 +600,9 @@ class AppointmentController extends GetxController
         params: {
           "appointmentTypeStatus": 2,
           "appointmentDate": dateTimeConverter(
-              inputTime: currentDateTime.toString(),
-              outputFormat: "yyyy/MM/dd"),
+            inputTime: currentDateTime.toString(),
+            outputFormat: "yyyy/MM/dd",
+          ),
           "CompanyId": companyID,
           "userId": userID,
         },
@@ -613,15 +622,18 @@ class AppointmentController extends GetxController
       }
 
       appointments.assignAll(
-          (response as List).map((e) => Appointments.fromJson(e)).toList());
+        (response as List).map((e) => Appointments.fromJson(e)).toList(),
+      );
 
       sortedAppointments.assignAll(
         (response).map((e) => Appointments.fromJson(e)).toList()
           ..sort((a, b) {
-            final aDate =
-                DateFormat("yyyy/MM/dd hh:mm a").parse(a.startDateTime!);
-            final bDate =
-                DateFormat("yyyy/MM/dd hh:mm a").parse(b.startDateTime!);
+            final aDate = DateFormat(
+              "yyyy/MM/dd hh:mm a",
+            ).parse(a.startDateTime!);
+            final bDate = DateFormat(
+              "yyyy/MM/dd hh:mm a",
+            ).parse(b.startDateTime!);
             return aDate.compareTo(bDate);
           }),
       );
@@ -672,15 +684,13 @@ class AppointmentController extends GetxController
       sortedAppointments.clear();
       sortedAppointments.addAll(appointments);
     } else {
-      final list = appointments.where(
-        (p0) {
-          final fName =
-              '${p0.customer!.firstName ?? ''} ${p0.customer!.lastName ?? ''}';
-          return fName
-              .toLowerCase()
-              .contains(sortTextController.text.toLowerCase());
-        },
-      ).toList();
+      final list = appointments.where((p0) {
+        final fName =
+            '${p0.customer!.firstName ?? ''} ${p0.customer!.lastName ?? ''}';
+        return fName.toLowerCase().contains(
+              sortTextController.text.toLowerCase(),
+            );
+      }).toList();
       sortedAppointments.clear();
       sortedAppointments.addAll(list);
     }
@@ -715,7 +725,8 @@ class AppointmentController extends GetxController
     // Get current position
     try {
       Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+        desiredAccuracy: LocationAccuracy.high,
+      );
       return position;
     } catch (e) {
       print("Error getting location: $e");
@@ -787,8 +798,9 @@ class AppointmentController extends GetxController
       final list = appointments.where((p0) {
         final date = DateFormat("yyyy/MM/dd hh:mm a").parse(p0.startDateTime!);
         final formattedDate = DateFormat("yyyy/MM/dd").format(date);
-        final formattedSelectedDate =
-            DateFormat("yyyy/MM/dd").format(selectedDate.value!);
+        final formattedSelectedDate = DateFormat(
+          "yyyy/MM/dd",
+        ).format(selectedDate.value!);
         return formattedDate == formattedSelectedDate;
       }).toList();
       sortedAppointments.clear();
@@ -819,21 +831,25 @@ class AppointmentController extends GetxController
           "ResourceID": resourceID,
           "TimeSlotId": timeSlotID,
           "ApptDateTime": dateTimeConverter(
-              inputTime: requestDate,
-              outputFormat: "yyyy/MM/dd hh:mm a",
-              inputFormat: "MM/dd/yyyy hh:mm a"),
+            inputTime: requestDate,
+            outputFormat: "yyyy/MM/dd hh:mm a",
+            inputFormat: "MM/dd/yyyy hh:mm a",
+          ),
           "StartDateTime": dateTimeConverter(
-              inputTime: startDate,
-              outputFormat: "yyyy/MM/dd hh:mm a",
-              inputFormat: "MM/dd/yyyy hh:mm a"),
+            inputTime: startDate,
+            outputFormat: "yyyy/MM/dd hh:mm a",
+            inputFormat: "MM/dd/yyyy hh:mm a",
+          ),
           "EndDateTime": dateTimeConverter(
-              inputTime: endDate,
-              outputFormat: "yyyy/MM/dd hh:mm a",
-              inputFormat: "MM/dd/yyyy hh:mm a"),
+            inputTime: endDate,
+            outputFormat: "yyyy/MM/dd hh:mm a",
+            inputFormat: "MM/dd/yyyy hh:mm a",
+          ),
           "CreatedDateTime": dateTimeConverter(
-              inputTime: requestDate,
-              outputFormat: "yyyy/MM/dd hh:mm a",
-              inputFormat: "MM/dd/yyyy hh:mm a"),
+            inputTime: requestDate,
+            outputFormat: "yyyy/MM/dd hh:mm a",
+            inputFormat: "MM/dd/yyyy hh:mm a",
+          ),
           "TimeSlot": timeSlot,
           "Note": noteText.value,
           "PromoCode": promoCode,
@@ -841,8 +857,8 @@ class AppointmentController extends GetxController
               settingController.selectedAppointmentsStatus.value!.statusId,
           "TicketStatusId": settingController.selectedTicket.value!.statusId,
           "UserID": userID,
-          "CreatedBy": createdBy
-        }
+          "CreatedBy": createdBy,
+        },
       },
     ).catchError(handleError);
 
@@ -877,8 +893,8 @@ class AppointmentController extends GetxController
           "AppointmentId": appointmentID,
           "CompanyId": companyID,
           "UserId": userID,
-          "TagId": selectedTagId.value
-        }
+          "TagId": selectedTagId.value,
+        },
       },
     ).catchError(handleError);
 

@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart'
-    show TextWidget;
-import 'package:xinator_fsm_pro/app/modules/appointment/controllers/appointment_controller.dart'
-    show AppointmentController;
-import 'package:xinator_fsm_pro/app/modules/appointment/views/appointment_details_view.dart';
-import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
 
 import '../../../components/global-widgets/empty_widget.dart';
+import '../../../components/global-widgets/text_widget.dart';
+import '../../forms/controllers/form_controller.dart';
 import '../../forms/models/form_model.dart';
+import '../controllers/appointment_controller.dart';
 
 class SeeAllFormsScreen extends StatefulWidget {
   int initialTabIndex;
@@ -30,56 +26,45 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
 
     if (widget.initialTabIndex == 0) {
       return Scaffold(
-          appBar: Get.size.width <= 440
-              ? AppBar(
-                  title: Text("Attached Forms"),
-                  centerTitle: true,
-                )
-              : PreferredSize(
-                  preferredSize: Size.fromHeight(40.sp),
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 15.sp),
-                    child: AppBar(
-                      title: Text("Attached Forms"),
-                      centerTitle: true,
-                    ),
+        appBar: Get.size.width <= 440
+            ? AppBar(title: Text("Attached Forms"), centerTitle: true)
+            : PreferredSize(
+                preferredSize: Size.fromHeight(40.sp),
+                child: Padding(
+                  padding: EdgeInsets.only(top: 15.sp),
+                  child: AppBar(
+                    title: Text("Attached Forms"),
+                    centerTitle: true,
                   ),
                 ),
-          body: _buildFilteredTemplatesView());
+              ),
+        body: _buildFilteredTemplatesView(),
+      );
     } else {
       return Scaffold(
-          appBar: Get.size.width <= 440
-              ? AppBar(
-                  title: Text("Add Forms"),
-                  centerTitle: true,
-                )
-              : PreferredSize(
-                  preferredSize: Size.fromHeight(40.sp),
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 15.sp),
-                    child: AppBar(
-                      title: Text("Add Forms"),
-                      centerTitle: true,
-                    ),
-                  ),
+        appBar: Get.size.width <= 440
+            ? AppBar(title: Text("Add Forms"), centerTitle: true)
+            : PreferredSize(
+                preferredSize: Size.fromHeight(40.sp),
+                child: Padding(
+                  padding: EdgeInsets.only(top: 15.sp),
+                  child: AppBar(title: Text("Add Forms"), centerTitle: true),
                 ),
-          floatingActionButton: formC.selectedFormsIdList.isNotEmpty
-              ? FloatingActionButton(
-                  backgroundColor: Colors.blue,
-                  onPressed: () async {
-                    await formC.assignFormsToAppointment(
-                        controller
-                            .selectedAppointment.value!.customer!.customerID!,
-                        controller.selectedAppointment.value!.apptID
-                            .toString());
-                  },
-                  child: Icon(
-                    Icons.add,
-                    color: Colors.white,
-                  ),
-                )
-              : SizedBox.shrink(),
-          body: _buildAllFormsView());
+              ),
+        floatingActionButton: formC.selectedFormsIdList.isNotEmpty
+            ? FloatingActionButton(
+                backgroundColor: Colors.blue,
+                onPressed: () async {
+                  await formC.assignFormsToAppointment(
+                    controller.selectedAppointment.value!.customer!.customerID!,
+                    controller.selectedAppointment.value!.apptID.toString(),
+                  );
+                },
+                child: Icon(Icons.add, color: Colors.white),
+              )
+            : SizedBox.shrink(),
+        body: _buildAllFormsView(),
+      );
     }
   }
 
@@ -107,11 +92,15 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
             itemBuilder: (context, index) {
               final template = filteredTemplates[index];
               return GestureDetector(
-                  onTap: () {
-                    showDetailsForms(
-                        context: context, formC: formC, data: template);
-                  },
-                  child: _buildFormCard(template, false));
+                onTap: () {
+                  showDetailsForms(
+                    context: context,
+                    formC: formC,
+                    data: template,
+                  );
+                },
+                child: _buildFormCard(template, false),
+              );
             },
           ),
         ),
@@ -124,12 +113,14 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
       final filteredTemplates = formC.searchQuery.value.isEmpty
           ? formC.formModels
           : formC.formModels
-              .where((template) =>
-                  template.templateName
-                      ?.toLowerCase()
-                      .contains(formC.searchQuery.value.toLowerCase()) ??
-                  false)
-              .toList();
+                .where(
+                  (template) =>
+                      template.templateName?.toLowerCase().contains(
+                        formC.searchQuery.value.toLowerCase(),
+                      ) ??
+                      false,
+                )
+                .toList();
 
       return Column(
         children: [
@@ -167,8 +158,10 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 14.h,
+                  ),
                   fillColor: Colors.white,
                   filled: true,
                 ),
@@ -196,7 +189,10 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
                       return GestureDetector(
                         onTap: () {
                           showDetailsForms(
-                              context: context, formC: formC, data: template);
+                            context: context,
+                            formC: formC,
+                            data: template,
+                          );
                         },
                         child: _buildFormCard(template, true),
                       );
@@ -212,9 +208,7 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
     return Card(
       margin: EdgeInsets.only(bottom: 12.h),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8.r),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
       child: Padding(
         padding: EdgeInsets.all(12.w),
         child: Column(
@@ -270,8 +264,10 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Category: ${template.category}",
-                    style: TextStyle(fontSize: 13.sp)),
+                Text(
+                  "Category: ${template.category}",
+                  style: TextStyle(fontSize: 13.sp),
+                ),
                 SizedBox(height: 4.h),
                 Row(
                   children: [
@@ -315,167 +311,187 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
       barrierDismissible: true,
       builder: (BuildContext context) {
         return Dialog(
-            insetPadding:
-                EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r)),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: 0.9.sh,
-                maxWidth: 0.9.sw,
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(16.w),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Form Details",
-                        style: TextStyle(
-                            fontSize: 18.sp, fontWeight: FontWeight.bold),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: 0.9.sh, maxWidth: 0.9.sw),
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Form Details",
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
                       ),
-                      SizedBox(height: 16.h),
-                      // Template Name
-                      TextField(
-                        controller: titleC,
-                        enabled: false,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          labelText: "Template Name *",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12.w, vertical: 12.h),
+                    ),
+                    SizedBox(height: 16.h),
+                    // Template Name
+                    TextField(
+                      controller: titleC,
+                      enabled: false,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: "Template Name *",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 12.h,
                         ),
                       ),
-                      SizedBox(height: 12.h),
-                      // Category
-                      TextFormField(
-                        enabled: false,
-                        readOnly: true, // Makes it non-interactive
-                        controller: categoryC, // Display the API value
-                        decoration: InputDecoration(
-                          labelText: "Category",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12.w, vertical: 12.h),
-                          // Optional: Add a suffix icon to make it look more like a dropdown
-                          suffixIcon: Icon(
-                            Icons.arrow_drop_down,
-                            color: Colors.grey,
-                          ),
+                    ),
+                    SizedBox(height: 12.h),
+                    // Category
+                    TextFormField(
+                      enabled: false,
+                      readOnly: true, // Makes it non-interactive
+                      controller: categoryC, // Display the API value
+                      decoration: InputDecoration(
+                        labelText: "Category",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.r),
                         ),
-                        // Optional: Style the text inside
-                        style: TextStyle(fontSize: 14.sp),
-                      ),
-                      SizedBox(height: 12.h),
-                      // Description
-                      TextField(
-                        enabled: false, readOnly: true,
-                        maxLines: 3, // Makes it non-interactive
-                        controller: descriptionC,
-                        decoration: InputDecoration(
-                          labelText: "Description",
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12.w, vertical: 12.h),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 12.h,
+                        ),
+                        // Optional: Add a suffix icon to make it look more like a dropdown
+                        suffixIcon: Icon(
+                          Icons.arrow_drop_down,
+                          color: Colors.grey,
                         ),
                       ),
-                      SizedBox(height: 12.h),
-                      // Checkboxes
-                      Wrap(
-                        runSpacing: 8.h,
-                        spacing: 12.w,
-                        children: [
-                          CheckboxListTile(
-                            value: data.requireSignature,
-                            onChanged: (v) {},
-                            title: Text("Require Signature",
-                                style: TextStyle(fontSize: 14.sp),
-                                overflow: TextOverflow.ellipsis),
-                            controlAffinity: ListTileControlAffinity.leading,
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            activeColor: Colors.blue,
-                            checkColor: Colors.white,
-                          ),
-                          CheckboxListTile(
-                            value: data.requireTip,
-                            onChanged: (v) {},
-                            title: Text("Enable Tip Capture",
-                                style: TextStyle(fontSize: 14.sp),
-                                overflow: TextOverflow.ellipsis),
-                            controlAffinity: ListTileControlAffinity.leading,
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            activeColor: Colors.blue,
-                            checkColor: Colors.white,
-                          ),
-                          CheckboxListTile(
-                            value: data.isAutoAssignEnabled,
-                            onChanged: (v) {},
-                            title: Text("Auto-assign to appointment types",
-                                style: TextStyle(fontSize: 14.sp),
-                                overflow: TextOverflow.ellipsis),
-                            controlAffinity: ListTileControlAffinity.leading,
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            activeColor: Colors.blue,
-                            checkColor: Colors.white,
-                          ),
-                          CheckboxListTile(
-                            value: data.isActive,
-                            onChanged: (v) {},
-                            title: Text("Active",
-                                style: TextStyle(fontSize: 14.sp),
-                                overflow: TextOverflow.ellipsis),
-                            controlAffinity: ListTileControlAffinity.leading,
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            activeColor: Colors.blue,
-                            checkColor: Colors.white,
-                          ),
-                        ],
+                      // Optional: Style the text inside
+                      style: TextStyle(fontSize: 14.sp),
+                    ),
+                    SizedBox(height: 12.h),
+                    // Description
+                    TextField(
+                      enabled: false,
+                      readOnly: true,
+                      maxLines: 3, // Makes it non-interactive
+                      controller: descriptionC,
+                      decoration: InputDecoration(
+                        labelText: "Description",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 12.h,
+                        ),
                       ),
-                      SizedBox(height: 20.h),
-                      // Buttons
-                      Wrap(
-                        alignment: WrapAlignment.end,
-                        spacing: 12.w,
-                        children: [
-                          // TextButton(
-                          //   onPressed: () => Navigator.pop(context),
-                          //   child: Text("Cancel",
-                          //       style: TextStyle(fontSize: 14.sp)),
-                          // ),
-                          ElevatedButton(
-                            onPressed: () {
-                              Get.back();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 20.w, vertical: 12.h),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.r)),
+                    ),
+                    SizedBox(height: 12.h),
+                    // Checkboxes
+                    Wrap(
+                      runSpacing: 8.h,
+                      spacing: 12.w,
+                      children: [
+                        CheckboxListTile(
+                          value: data.requireSignature,
+                          onChanged: (v) {},
+                          title: Text(
+                            "Require Signature",
+                            style: TextStyle(fontSize: 14.sp),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: Colors.blue,
+                          checkColor: Colors.white,
+                        ),
+                        CheckboxListTile(
+                          value: data.requireTip,
+                          onChanged: (v) {},
+                          title: Text(
+                            "Enable Tip Capture",
+                            style: TextStyle(fontSize: 14.sp),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: Colors.blue,
+                          checkColor: Colors.white,
+                        ),
+                        CheckboxListTile(
+                          value: data.isAutoAssignEnabled,
+                          onChanged: (v) {},
+                          title: Text(
+                            "Auto-assign to appointment types",
+                            style: TextStyle(fontSize: 14.sp),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: Colors.blue,
+                          checkColor: Colors.white,
+                        ),
+                        CheckboxListTile(
+                          value: data.isActive,
+                          onChanged: (v) {},
+                          title: Text(
+                            "Active",
+                            style: TextStyle(fontSize: 14.sp),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: Colors.blue,
+                          checkColor: Colors.white,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20.h),
+                    // Buttons
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 12.w,
+                      children: [
+                        // TextButton(
+                        //   onPressed: () => Navigator.pop(context),
+                        //   child: Text("Cancel",
+                        //       style: TextStyle(fontSize: 14.sp)),
+                        // ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Get.back();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 20.w,
+                              vertical: 12.h,
                             ),
-                            child: Text("Close",
-                                style: TextStyle(fontSize: 14.sp)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                          child: Text(
+                            "Close",
+                            style: TextStyle(fontSize: 14.sp),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ));
+            ),
+          ),
+        );
       },
     );
   }

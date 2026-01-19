@@ -3,7 +3,6 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/service/helper/network_connectivity.dart';
 
 import '../../../../utils/version_controller.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
@@ -12,12 +11,14 @@ import '../../../routes/app_pages.dart';
 import '../../../service/REST/api_urls.dart';
 import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
+import '../../../service/helper/network_connectivity.dart';
 
 class AuthController extends GetxController with ExceptionHandler {
   final versionController = Get.put(VersionController());
 
-  final TextEditingController emailLoginTextController =
-      TextEditingController(text: MySharedPref.getEmail() ?? "");
+  final TextEditingController emailLoginTextController = TextEditingController(
+    text: MySharedPref.getEmail() ?? "",
+  );
   final TextEditingController passwordLoginTextController =
       TextEditingController();
   final TextEditingController emailSignupTextController =
@@ -55,7 +56,8 @@ class AuthController extends GetxController with ExceptionHandler {
   }
 
   void _validateForm() {
-    isButtonActive.value = emailLoginTextController.text.isNotEmpty &&
+    isButtonActive.value =
+        emailLoginTextController.text.isNotEmpty &&
         passwordLoginTextController.text.isNotEmpty;
   }
 
@@ -82,27 +84,87 @@ class AuthController extends GetxController with ExceptionHandler {
 
   Future<void> login(String userId, String password) async {
     showLoading();
-    var response = await DioClient().get(
-      url: ApiUrl.login,
-      params: {
-        "UserName": userId.trim(),
-        "Password": password.trim(),
-        "AppType": 2
-      },
-    ).catchError(handleError);
-    log("auth response ${jsonEncode(response)}");
-    if (response == null) return;
 
-    hideLoading();
-    if (response["IsValid"] == true) {
-      log("Profile all data: ${response.toString()}");
-      await storeUserData(response);
+    try {
+      var response = await DioClient().get(
+        url: ApiUrl.login,
+        params: {
+          "UserName": userId.trim(),
+          "Password": password.trim(),
+          "AppType": 2,
+        },
+      );
 
-      MySnackBar.showToast(message: "Login Successful");
-      Get.offAllNamed(Routes.APPOINTMENT);
-    } else {
-      MySnackBar.showErrorToast(message: "Wrong Credentials");
+      log("✅ Login successful - Response: ${jsonEncode(response)}");
+      hideLoading();
+
+      if (response["IsValid"] == true) {
+        log("✅ Profile all data: ${response.toString()}");
+        await storeUserData(response);
+        MySnackBar.showToast(message: "Login Successful");
+        Get.offAllNamed(Routes.APPOINTMENT);
+      } else {
+        log("⚠️ Invalid credentials - Response: $response");
+        MySnackBar.showErrorToast(message: "Wrong Credentials");
+      }
+    } catch (e, stackTrace) {
+      hideLoading();
+      log("❌ Login error: $e");
+      log("❌ Stack trace: $stackTrace");
+
+      // Enhanced error handling with device info
+      final errorMessage = _getDetailedErrorMessage(e);
+      MySnackBar.showErrorToast(message: errorMessage);
+
+      // Log detailed error for debugging
+      log("📱 Device Error Details:", name: "LoginError");
+      log("Error Type: ${e.runtimeType}", name: "LoginError");
+      log("Error Message: $errorMessage", name: "LoginError");
+      log("User ID: ${userId.trim()}", name: "LoginError");
     }
+  }
+
+  String _getDetailedErrorMessage(dynamic error) {
+    final errorString = error.toString();
+
+    // Network connectivity issues
+    if (errorString.contains("SocketException") || errorString.contains("NetworkException")) {
+      return "No internet connection. Please check your network and try again.";
+    }
+
+    // Timeout issues
+    if (errorString.contains("TimeoutException") || errorString.contains("TimeoutException")) {
+      return "Request timed out. Please check your connection and try again.";
+    }
+
+    // SSL/TLS Certificate issues (critical for production)
+    if (errorString.contains("HandshakeException") ||
+        errorString.contains("Certificate") ||
+        errorString.contains("SSL") ||
+        errorString.contains("TLS")) {
+      log("🔒 SSL/TLS Error Details: $errorString", name: "SSLError");
+      return "Secure connection failed. This may be due to an outdated device or certificate issue. Please contact support with error code: SSL-001";
+    }
+
+    // HTTP status codes
+    if (errorString.contains("401") || errorString.contains("403")) {
+      return "Invalid username or password.";
+    }
+    if (errorString.contains("404")) {
+      return "Service not found. Please contact support.";
+    }
+    if (errorString.contains("500") || errorString.contains("502") || errorString.contains("503")) {
+      return "Server error. Please try again later.";
+    }
+
+    // Connection errors
+    if (errorString.contains("Connection") || errorString.contains("ConnectException")) {
+      return "Network error. Please check your internet connection or try again later.";
+    }
+
+    
+
+    return "Something went wrong. Please try again or contact support.";
   }
 
   Future<void> doLogout() async {

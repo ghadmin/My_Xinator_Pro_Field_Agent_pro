@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/drawer/custom_drawer.dart';
-import 'package:xinator_fsm_pro/utils/constants.dart';
-
+import '../../../../utils/constants.dart';
+import '../../../components/drawer/custom_drawer.dart';
 import '../../../components/global-widgets/asset_image_box.dart';
 
 class CslScreen extends StatefulWidget {
@@ -28,7 +27,7 @@ class _CslScreenState extends State<CslScreen> {
     {
       'firstName': 'Data',
       'lastName': 'Test',
-      'status': 'Pending'
+      'status': 'Pending',
     }, // Highlighted row
   ];
 
@@ -104,7 +103,8 @@ class _CslScreenState extends State<CslScreen> {
                     ),
                   ],
                 ),
-              )),
+              ),
+            ),
       drawer: CustomDrawer(indexClicked: 2),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -117,16 +117,12 @@ class _CslScreenState extends State<CslScreen> {
                 SizedBox(height: 20.h),
 
                 // Dropdown + Search
-
                 SizedBox(
                   width: 120.w,
                   child: DropdownButtonFormField<String>(
                     value: selectedStatus,
                     items: statusOptions.map((e) {
-                      return DropdownMenuItem(
-                        value: e,
-                        child: Text(e),
-                      );
+                      return DropdownMenuItem(value: e, child: Text(e));
                     }).toList(),
                     onChanged: (value) {
                       setState(() {
@@ -135,16 +131,16 @@ class _CslScreenState extends State<CslScreen> {
                     },
                     decoration: InputDecoration(
                       contentPadding: EdgeInsets.symmetric(
-                          vertical: 10.h, horizontal: 10.w),
+                        vertical: 10.h,
+                        horizontal: 10.w,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(
-                  height: 10.h,
-                ),
+                SizedBox(height: 10.h),
                 Container(
                   margin: EdgeInsets.only(left: 20.w),
                   child: TextField(
@@ -152,7 +148,9 @@ class _CslScreenState extends State<CslScreen> {
                       labelText: 'Search',
                       prefixIcon: Icon(Icons.search),
                       contentPadding: EdgeInsets.symmetric(
-                          vertical: 10.h, horizontal: 10.w),
+                        vertical: 10.h,
+                        horizontal: 10.w,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -242,85 +240,94 @@ class _CslScreenState extends State<CslScreen> {
                                 ),
                               ),
                             ],
-                            rows: data.where((item) {
-                              final firstName = item['firstName'].toLowerCase();
-                              final lastName = item['lastName'].toLowerCase();
-                              final status = item['status'].toLowerCase();
-                              final query = searchQuery.toLowerCase();
+                            rows: data
+                                .where((item) {
+                                  final firstName = item['firstName']
+                                      .toLowerCase();
+                                  final lastName = item['lastName']
+                                      .toLowerCase();
+                                  final status = item['status'].toLowerCase();
+                                  final query = searchQuery.toLowerCase();
 
-                              if (selectedStatus == 'All Statuses') {
-                                return firstName.contains(query) ||
-                                    lastName.contains(query) ||
-                                    status.contains(query);
-                              } else {
-                                return (selectedStatus!.toLowerCase() ==
-                                            status ||
-                                        status.contains(query)) &&
-                                    (firstName.contains(query) ||
-                                        lastName.contains(query));
-                              }
-                            }).map((item) {
-                              Color statusColor = item['status'] == 'Scheduled'
-                                  ? Colors.green
-                                  : Colors.amber;
+                                  if (selectedStatus == 'All Statuses') {
+                                    return firstName.contains(query) ||
+                                        lastName.contains(query) ||
+                                        status.contains(query);
+                                  } else {
+                                    return (selectedStatus!.toLowerCase() ==
+                                                status ||
+                                            status.contains(query)) &&
+                                        (firstName.contains(query) ||
+                                            lastName.contains(query));
+                                  }
+                                })
+                                .map((item) {
+                                  Color statusColor =
+                                      item['status'] == 'Scheduled'
+                                      ? Colors.green
+                                      : Colors.amber;
 
-                              return DataRow(
-                                selected: item['firstName'] == 'Data' &&
-                                    item['lastName'] == 'Test',
-                                onSelectChanged: (value) {
-                                  // Handle selection if needed
-                                },
-                                cells: [
-                                  DataCell(
-                                    SizedBox(
-                                      width: 100.w,
-                                      child: Text(
-                                        item['firstName'],
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    SizedBox(
-                                      width: 100.w,
-                                      child: Text(
-                                        item['lastName'],
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 10.w,
-                                        vertical: 5.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: statusColor,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        item['status'],
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12.sp,
+                                  return DataRow(
+                                    selected:
+                                        item['firstName'] == 'Data' &&
+                                        item['lastName'] == 'Test',
+                                    onSelectChanged: (value) {
+                                      // Handle selection if needed
+                                    },
+                                    cells: [
+                                      DataCell(
+                                        SizedBox(
+                                          width: 100.w,
+                                          child: Text(
+                                            item['firstName'],
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    IconButton(
-                                      icon: Icon(Icons.edit),
-                                      onPressed: () {},
-                                      iconSize: 18.sp,
-                                    ),
-                                    onTap: () {
-                                      // Optional: handle tap
-                                    },
-                                  ),
-                                ],
-                              );
-                            }).toList(),
+                                      DataCell(
+                                        SizedBox(
+                                          width: 100.w,
+                                          child: Text(
+                                            item['lastName'],
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 10.w,
+                                            vertical: 5.h,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: statusColor,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            item['status'],
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12.sp,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      DataCell(
+                                        IconButton(
+                                          icon: Icon(Icons.edit),
+                                          onPressed: () {},
+                                          iconSize: 18.sp,
+                                        ),
+                                        onTap: () {
+                                          // Optional: handle tap
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                })
+                                .toList(),
                             columnSpacing: 10.w,
                             horizontalMargin: 10.w,
                             // Optional: control text overflow

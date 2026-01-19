@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
-import 'package:xinator_fsm_pro/app/modules/forms/views/widgets/form_builder_widget.dart';
+
+import '../../../components/global-widgets/text_widget.dart';
+import 'widgets/form_builder_widget.dart';
 
 class FieldModel {
   String name;
@@ -22,61 +23,44 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
   List<FieldModel> formFields = [];
   final List<FieldModel> availableFields = [
     FieldModel(
-        name: "Text Input",
-        child: TextInputWidget(
-          onChanged: (value) {},
-        ),
-        icon: Icon(
-          Icons.text_rotation_none_outlined,
-          size: 30,
-        )),
+      name: "Text Input",
+      child: TextInputWidget(onChanged: (value) {}),
+      icon: Icon(Icons.text_rotation_none_outlined, size: 30),
+    ),
     FieldModel(
-        child: TextAreaWidget(
-          onChanged: (value) {},
-        ),
-        name: "Text Area",
-        icon: Icon(Icons.short_text_rounded, size: 30)),
+      child: TextAreaWidget(onChanged: (value) {}),
+      name: "Text Area",
+      icon: Icon(Icons.short_text_rounded, size: 30),
+    ),
     FieldModel(
       name: "Number",
       icon: Icon(Icons.numbers, size: 30),
-      child: NumberInputWidget(
-        onChanged: (value) {},
-      ),
+      child: NumberInputWidget(onChanged: (value) {}),
     ),
     FieldModel(
       name: "Date",
       icon: Icon(Icons.calendar_today, size: 30),
-      child: DateInputWidget(
-        onChanged: (value) {},
-      ),
+      child: DateInputWidget(onChanged: (value) {}),
     ),
     FieldModel(
       name: "Dropdown",
       icon: Icon(Icons.arrow_drop_down, size: 30),
-      child: DropdownWidget(
-        onChanged: (value) {},
-      ),
+      child: DropdownWidget(onChanged: (value) {}),
     ),
     FieldModel(
       name: "Checkbox",
       icon: Icon(Icons.check_box, size: 30),
-      child: CheckboxWidget(
-        onChanged: (value) {},
-      ),
+      child: CheckboxWidget(onChanged: (value) {}),
     ),
     FieldModel(
       name: "Radio Button",
       icon: Icon(Icons.radio_button_checked, size: 30),
-      child: RadioButtonsWidget(
-        onChanged: (value) {},
-      ),
+      child: RadioButtonsWidget(onChanged: (value) {}),
     ),
     FieldModel(
       name: "Signature",
       icon: Icon(Icons.brush, size: 30),
-      child: SignatureWidget(
-        onClear: () {},
-      ),
+      child: SignatureWidget(onClear: () {}),
     ),
   ];
 
@@ -85,9 +69,7 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const TextWidget(text: "Form Builder"),
-      ),
+      appBar: AppBar(title: const TextWidget(text: "Form Builder")),
       body: Row(
         children: [
           /// Left - Field Types
@@ -99,14 +81,16 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(8),
                 children: availableFields
-                    .map((field) => Draggable<FieldModel>(
-                          data: field,
-                          feedback: Material(
-                            child: fieldCard(field, dragging: true),
-                          ),
-                          childWhenDragging: fieldCard(field, disabled: true),
-                          child: fieldCard(field),
-                        ))
+                    .map(
+                      (field) => Draggable<FieldModel>(
+                        data: field,
+                        feedback: Material(
+                          child: fieldCard(field, dragging: true),
+                        ),
+                        childWhenDragging: fieldCard(field, disabled: true),
+                        child: fieldCard(field),
+                      ),
+                    )
                     .toList(),
               ),
             ),
@@ -126,10 +110,11 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: candidateData.isNotEmpty
-                            ? Colors.blue
-                            : Colors.grey,
-                        style: BorderStyle.solid),
+                      color: candidateData.isNotEmpty
+                          ? Colors.blue
+                          : Colors.grey,
+                      style: BorderStyle.solid,
+                    ),
                   ),
                   child: formFields.isEmpty
                       ? const Center(
@@ -144,7 +129,9 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
                             final field = formFields[index];
                             return Card(
                               margin: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                               child: Padding(
                                 padding: const EdgeInsets.all(12.0),
                                 child: Column(
@@ -169,8 +156,9 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
                                             Text(
                                               " ${field.name}",
                                               style: TextStyle(
-                                                  height: 1.0,
-                                                  fontWeight: FontWeight.w600),
+                                                height: 1.0,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -181,18 +169,20 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
                                               MainAxisAlignment.start,
                                           children: [
                                             GestureDetector(
-                                              child: Icon(Icons.edit,
-                                                  color: Colors.blue),
+                                              child: Icon(
+                                                Icons.edit,
+                                                color: Colors.blue,
+                                              ),
                                               onTap: () {
                                                 // _showRenameDialog();
                                               },
                                             ),
-                                            SizedBox(
-                                              width: 8.w,
-                                            ),
+                                            SizedBox(width: 8.w),
                                             GestureDetector(
-                                              child: Icon(Icons.delete,
-                                                  color: Colors.red),
+                                              child: Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
+                                              ),
                                               onTap: () {
                                                 formFields.removeAt(index);
                                                 setState(() {});
@@ -203,7 +193,7 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
                                       ],
                                     ),
                                     SizedBox(height: 8),
-                                    field.child
+                                    field.child,
                                   ],
                                 ),
                               ),
@@ -225,10 +215,7 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            OutlinedButton(
-              onPressed: () {},
-              child: const Text("Cancel"),
-            ),
+            OutlinedButton(onPressed: () {}, child: const Text("Cancel")),
             const SizedBox(width: 12),
             ElevatedButton(
               onPressed: () {
@@ -242,8 +229,11 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
     );
   }
 
-  Widget fieldCard(FieldModel field,
-      {bool dragging = false, bool disabled = false}) {
+  Widget fieldCard(
+    FieldModel field, {
+    bool dragging = false,
+    bool disabled = false,
+  }) {
     return Card(
       elevation: dragging ? 6 : 2,
       color: disabled ? Colors.grey[300] : Colors.white,
@@ -256,11 +246,9 @@ class _FormBuilderScreenState extends State<FormBuilderScreen> {
             field.icon,
             const SizedBox(width: 10),
             TextWidget(
-                text: field.name,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black,
-                )),
+              text: field.name,
+              style: TextStyle(fontSize: 16, color: Colors.black),
+            ),
           ],
         ),
       ),

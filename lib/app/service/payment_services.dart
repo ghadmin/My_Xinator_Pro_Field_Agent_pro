@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 
 class ThreeDSHelper {
   // Match the channel name used in Swift
-  static const MethodChannel _channel =
-      MethodChannel('com.yourcompany.payment/3ds');
+  static const MethodChannel _channel = MethodChannel(
+    'com.yourcompany.payment/3ds',
+  );
 
   /// Initialize the 3DS SDK on iOS
   static Future<void> initialize3DS() async {

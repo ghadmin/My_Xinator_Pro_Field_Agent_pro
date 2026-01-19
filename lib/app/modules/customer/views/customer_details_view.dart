@@ -398,11 +398,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
-
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/main_divider.dart';
+import '../../../components/global-widgets/my_snackbar.dart';
+import '../../../components/global-widgets/text_widget.dart';
 import '../controllers/customer_controller.dart';
 
 class CustomerDetailsView extends GetView<CustomerController> {
@@ -414,8 +414,9 @@ class CustomerDetailsView extends GetView<CustomerController> {
 
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight:
-            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
+        toolbarHeight: Platform.isAndroid
+            ? kToolbarHeight
+            : kToolbarHeight + 60,
         title: const TextWidget(text: 'Customer Details'),
         centerTitle: true,
       ),
@@ -454,29 +455,41 @@ class CustomerDetailsView extends GetView<CustomerController> {
       child: Column(
         children: [
           _tile(
-              "Business Name",
-              controller.businessName != '' ? controller.businessName : "N/A",
-              theme),
+            "Business Name",
+            controller.businessName != '' ? controller.businessName : "N/A",
+            theme,
+          ),
           MainDivider(),
-          _tile("Title", controller.title != '' ? controller.title : "N/A",
-              theme),
+          _tile(
+            "Title",
+            controller.title != '' ? controller.title : "N/A",
+            theme,
+          ),
           MainDivider(),
-          _tile("Address",
-              controller.address != '' ? controller.address : "N/A", theme,
-              multiLine: true),
+          _tile(
+            "Address",
+            controller.address != '' ? controller.address : "N/A",
+            theme,
+            multiLine: true,
+          ),
           MainDivider(),
           _callTile(
-              "Mobile",
-              controller.mobileNumber != '' ? controller.mobileNumber : "N/A",
-              theme),
+            "Mobile",
+            controller.mobileNumber != '' ? controller.mobileNumber : "N/A",
+            theme,
+          ),
           MainDivider(),
           _callTile(
-              "Phone",
-              controller.phoneNumber != '' ? controller.phoneNumber : "N/A",
-              theme),
+            "Phone",
+            controller.phoneNumber != '' ? controller.phoneNumber : "N/A",
+            theme,
+          ),
           MainDivider(),
-          _emailTile("Email", controller.email != '' ? controller.email : "N/A",
-              theme),
+          _emailTile(
+            "Email",
+            controller.email != '' ? controller.email : "N/A",
+            theme,
+          ),
           // MainDivider(),
           // _navTile("Invoices", "See Invoices >", theme),
           // MainDivider(),
@@ -492,8 +505,12 @@ class CustomerDetailsView extends GetView<CustomerController> {
     );
   }
 
-  Widget _tile(String title, String value, ThemeData theme,
-      {bool multiLine = false}) {
+  Widget _tile(
+    String title,
+    String value,
+    ThemeData theme, {
+    bool multiLine = false,
+  }) {
     return ListTile(
       title: TextWidget(
         text: title,
@@ -711,7 +728,7 @@ class _CreateAppointmentSheetState extends State<CreateAppointmentSheet> {
     "Follow Up",
     "Diagnostic",
     "Repair",
-    "Maintenance"
+    "Maintenance",
   ];
 
   @override
@@ -743,11 +760,13 @@ class _CreateAppointmentSheetState extends State<CreateAppointmentSheet> {
             ),
             SizedBox(height: 20),
 
-            Text("Create Appointment",
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                )),
+            Text(
+              "Create Appointment",
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             SizedBox(height: 25),
 
             // DATE PICKER
@@ -797,8 +816,10 @@ class _CreateAppointmentSheetState extends State<CreateAppointmentSheet> {
                 maxLines: 3,
                 decoration: InputDecoration(
                   border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ),
@@ -813,7 +834,8 @@ class _CreateAppointmentSheetState extends State<CreateAppointmentSheet> {
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: Text(
                   "Submit to CEC",
@@ -831,15 +853,17 @@ class _CreateAppointmentSheetState extends State<CreateAppointmentSheet> {
 
   // UI HELPERS
   BoxDecoration _decoration() => BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
-      );
+    border: Border.all(color: Colors.grey.shade300),
+    borderRadius: BorderRadius.circular(12),
+  );
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(text,
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-      );
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(
+      text,
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+    ),
+  );
 
   Widget _selectBox({required String text, required Function() onTap}) {
     return GestureDetector(
@@ -882,7 +906,7 @@ class _CreateAppointmentSheetState extends State<CreateAppointmentSheet> {
     if (selectedDate == null ||
         selectedTimeSlot == null ||
         selectedType == null) {
-      Get.snackbar("Error", "Please fill all fields");
+      MySnackBar.showErrorToast(message: "Please fill all fields");
       return;
     }
 
@@ -919,8 +943,10 @@ class _TimeSlotPickerState extends State<TimeSlotPicker> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text("Select Time Slot",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            "Select Time Slot",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           SizedBox(height: 20),
           ...List.generate(slots.length, (i) {
             final s = slots[i];
@@ -934,8 +960,8 @@ class _TimeSlotPickerState extends State<TimeSlotPicker> {
                   color: s["blocked"]
                       ? Colors.grey.shade200
                       : selected == i
-                          ? Colors.blue.shade50
-                          : Colors.white,
+                      ? Colors.blue.shade50
+                      : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: selected == i ? Colors.blue : Colors.grey.shade300,
@@ -947,20 +973,25 @@ class _TimeSlotPickerState extends State<TimeSlotPicker> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(s["title"],
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600)),
+                        Text(
+                          s["title"],
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         SizedBox(height: 4),
-                        Text(s["time"],
-                            style:
-                                TextStyle(fontSize: 13, color: Colors.black54)),
+                        Text(
+                          s["time"],
+                          style: TextStyle(fontSize: 13, color: Colors.black54),
+                        ),
                       ],
                     ),
                     s["blocked"]
                         ? Icon(Icons.lock, color: Colors.grey)
                         : selected == i
-                            ? Icon(Icons.check_circle, color: Colors.blue)
-                            : Icon(Icons.circle_outlined, color: Colors.grey),
+                        ? Icon(Icons.check_circle, color: Colors.blue)
+                        : Icon(Icons.circle_outlined, color: Colors.grey),
                   ],
                 ),
               ),

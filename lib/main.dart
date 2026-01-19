@@ -2,19 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/utils/version_controller.dart';
 import 'app/data/local/hive/hive_adapters.dart';
 import 'app/data/local/my_shared_pref.dart';
 import 'app/service/helper/network_connectivity.dart';
 import 'my_app.dart';
+import 'utils/version_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Get.put(VersionController());
   // Device orientation
-  SystemChrome.setPreferredOrientations(
-    [DeviceOrientation.portraitUp],
-  );
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // init hive and adapters
   await HiveAdapters.registerAll();
@@ -43,9 +41,7 @@ Future<void> main() async {
 
   ///****************************************** My App ************************************///
 
-  runApp(
-    const MyApp(),
-  );
+  runApp(const MyApp());
   FlutterForegroundTask.init(
     androidNotificationOptions: AndroidNotificationOptions(
       channelId: 'com.pravera.flutter_foreground_task',
@@ -56,6 +52,7 @@ Future<void> main() async {
     ),
     iosNotificationOptions: IOSNotificationOptions(),
     foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction: ForegroundTaskEventAction.repeat(5000)),
+      eventAction: ForegroundTaskEventAction.repeat(5000),
+    ),
   );
 }

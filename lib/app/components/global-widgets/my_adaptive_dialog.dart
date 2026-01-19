@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
+
+import 'text_widget.dart';
 
 enum AdaptiveDialogAction { yes, no, cancel }
 

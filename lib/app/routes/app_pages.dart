@@ -1,14 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:xinator_fsm_pro/app/modules/csl/views/csl_view.dart';
-import 'package:xinator_fsm_pro/app/modules/customer/bindings/customer_binding.dart';
-import 'package:xinator_fsm_pro/app/modules/forms/bindings/form_binding.dart';
-import 'package:xinator_fsm_pro/app/modules/forms/controllers/form_controller.dart';
-import 'package:xinator_fsm_pro/app/modules/forms/views/form_builder_screen.dart'
-    show FormBuilderScreen;
-import 'package:xinator_fsm_pro/app/modules/invoice/views/payment_web_view.dart';
-import 'package:xinator_fsm_pro/app/modules/signature/bindings/signature_binding.dart';
-import 'package:xinator_fsm_pro/app/modules/signature/views/signature_view.dart';
 
 import '../modules/appointment/bindings/appointment_binding.dart';
 import '../modules/appointment/bindings/custom_fields_binding.dart';
@@ -19,8 +9,12 @@ import '../modules/appointment/views/tag_details_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/sign_up_view.dart';
+import '../modules/csl/views/csl_view.dart';
+import '../modules/customer/bindings/customer_binding.dart';
 import '../modules/customer/views/customer_details_view.dart';
 import '../modules/customer/views/customer_view.dart';
+import '../modules/forms/bindings/form_binding.dart';
+import '../modules/forms/views/form_builder_screen.dart';
 import '../modules/forms/views/form_view.dart';
 import '../modules/invoice/bindings/invoice_binding.dart';
 import '../modules/invoice/views/create_invoice_view.dart';
@@ -30,6 +24,7 @@ import '../modules/invoice/views/payment_by_a_c_h_view.dart';
 import '../modules/invoice/views/payment_by_cash_view.dart';
 import '../modules/invoice/views/payment_by_check_view.dart';
 import '../modules/invoice/views/payment_method_selection_view.dart';
+import '../modules/invoice/views/payment_web_view.dart';
 import '../modules/item/bindings/item_binding.dart';
 import '../modules/item/views/item_view.dart';
 import '../modules/onboarding/bindings/onboarding_binding.dart';
@@ -39,6 +34,8 @@ import '../modules/settings/views/appointment_settings_view.dart';
 import '../modules/settings/views/appointment_status_view.dart';
 import '../modules/settings/views/settings_view.dart';
 import '../modules/settings/views/ticket_status_view.dart';
+import '../modules/signature/bindings/signature_binding.dart';
+import '../modules/signature/views/signature_view.dart';
 import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
 
@@ -80,10 +77,7 @@ class AppPages {
       page: () => const AppointmentView(),
       bindings: [AppointmentBinding(), CustomFieldsBinding()],
     ),
-    GetPage(
-      name: _Paths.CSLVIEW,
-      page: () => const CslScreen(),
-    ),
+    GetPage(name: _Paths.CSLVIEW, page: () => const CslScreen()),
     GetPage(
       name: _Paths.APPOINTMENT_DETAILS,
       page: () => AppointmentDetailsView(),
@@ -135,10 +129,7 @@ class AppPages {
       page: () => const FormView(),
       binding: FormBinding(),
     ),
-    GetPage(
-      name: _Paths.X_PAY_LINK_WEB,
-      page: () => XPayLinkScreen(),
-    ),
+    GetPage(name: _Paths.X_PAY_LINK_WEB, page: () => XPayLinkScreen()),
     GetPage(
       name: _Paths.TICKET_STATUS,
       page: () => const TicketStatusView(),
@@ -191,9 +182,8 @@ class AppPages {
     ),
     GetPage(
       name: Routes.SEEALLFORMS,
-      page: () => SeeAllFormsScreen(
-        initialTabIndex: Get.arguments['tabIndex'] ?? 0,
-      ),
+      page: () =>
+          SeeAllFormsScreen(initialTabIndex: Get.arguments['tabIndex'] ?? 0),
     ),
   ];
 }

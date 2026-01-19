@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
+
+import '../../../components/global-widgets/text_widget.dart';
 
 class MapViewTab extends StatelessWidget {
   const MapViewTab({super.key});
@@ -113,12 +114,17 @@ class MapViewTab extends StatelessWidget {
             value: "All Statuses",
             items: const [
               DropdownMenuItem(
-                  value: "All Statuses",
-                  child: TextWidget(text: "All Statuses")),
+                value: "All Statuses",
+                child: TextWidget(text: "All Statuses"),
+              ),
               DropdownMenuItem(
-                  value: "Pending", child: TextWidget(text: "Pending")),
+                value: "Pending",
+                child: TextWidget(text: "Pending"),
+              ),
               DropdownMenuItem(
-                  value: "Arrived", child: TextWidget(text: "Arrived")),
+                value: "Arrived",
+                child: TextWidget(text: "Arrived"),
+              ),
             ],
             onChanged: (value) {},
           ),
@@ -145,8 +151,11 @@ class MapViewTab extends StatelessWidget {
               width: 80,
               height: 80,
               point: LatLng(40.7128, -74.0060),
-              child:
-                  const Icon(Icons.location_pin, color: Colors.red, size: 40),
+              child: const Icon(
+                Icons.location_pin,
+                color: Colors.red,
+                size: 40,
+              ),
             ),
           ],
         ),
@@ -167,7 +176,10 @@ class _StatusDot extends StatelessWidget {
       children: [
         Icon(Icons.circle, color: color, size: 10),
         const SizedBox(width: 4),
-        TextWidget(text: label, style: const TextStyle(color: Colors.white)),
+        TextWidget(
+          text: label,
+          style: const TextStyle(color: Colors.white),
+        ),
       ],
     );
   }

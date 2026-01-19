@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/date_converter.dart';
+import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/invoice_controller.dart';
 
@@ -17,10 +17,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
     var theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: TextWidget(text: 'Payment'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: TextWidget(text: 'Payment'), centerTitle: false),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -181,10 +178,14 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                           (double.parse(controller.total.value) -
                                   double.parse(controller.depositAmount.value))
                               .toStringAsFixed(2);
-                      await controller.initializeWebController(controller
-                          .requestedDepositAmountEditTextController.text);
+                      await controller.initializeWebController(
+                        controller
+                            .requestedDepositAmountEditTextController
+                            .text,
+                      );
                       Get.toNamed(Routes.MANUAL_PAYMENT);
-                    })
+                    },
+                  )
                 : PaymentOption(
                     icon: Remix.bank_card_2_fill,
                     label: 'Credit/Debit Card',
@@ -194,17 +195,20 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                                   double.parse(controller.depositAmount.value))
                               .toStringAsFixed(2);
                       await controller.initializeWebController(
-                          controller.finalCollectionAmount.value);
+                        controller.finalCollectionAmount.value,
+                      );
                       Get.toNamed(Routes.MANUAL_PAYMENT);
-                    }),
+                    },
+                  ),
             SizedBox(height: 8.sp),
             PaymentOption(
-                icon: Remix.bank_card_line,
-                loading: controller.xpayLinkLoading.value,
-                label: 'Pay Via Xpay Link',
-                onTap: () async {
-                  controller.paymentViaXpayLink();
-                }),
+              icon: Remix.bank_card_line,
+              loading: controller.xpayLinkLoading.value,
+              label: 'Pay Via Xpay Link',
+              onTap: () async {
+                controller.paymentViaXpayLink();
+              },
+            ),
             SizedBox(height: 8.sp),
             // PaymentOption(
             //   icon: Remix.bank_card_2_fill,
@@ -236,12 +240,13 @@ class PaymentOption extends StatelessWidget {
   final VoidCallback onTap;
   final bool loading;
 
-  const PaymentOption(
-      {super.key,
-      required this.icon,
-      this.loading = false,
-      required this.label,
-      required this.onTap});
+  const PaymentOption({
+    super.key,
+    required this.icon,
+    this.loading = false,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -257,9 +262,7 @@ class PaymentOption extends StatelessWidget {
                 height: 15,
                 width: 15,
                 child: Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
                 ),
               )
             : TextWidget(text: label),

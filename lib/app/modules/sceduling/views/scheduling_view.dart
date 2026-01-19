@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:xinator_fsm_pro/app/components/global-widgets/text_widget.dart';
-import 'package:xinator_fsm_pro/app/modules/sceduling/views/map_view_tab.dart';
+
+import '../../../components/global-widgets/text_widget.dart';
 
 class SchedulingView extends StatelessWidget {
   const SchedulingView({super.key});
@@ -48,7 +48,6 @@ class SchedulingView extends StatelessWidget {
             _DateViewTab(),
             _ViewIcon(icon: Icons.people_outline, label: "Resource View"),
             _ViewIcon(icon: Icons.list_alt, label: "List View"),
-            MapViewTab(),
           ],
         ),
       ),
@@ -89,9 +88,10 @@ class _DateViewTab extends StatelessWidget {
       children: [
         _dropdown(label: "View", items: ["Day", "Week"], theme: theme),
         _dropdown(
-            label: "Filter",
-            items: ["All Service", "IT Support"],
-            theme: theme),
+          label: "Filter",
+          items: ["All Service", "IT Support"],
+          theme: theme,
+        ),
         _datePicker(),
       ],
     );
@@ -111,13 +111,15 @@ class _DateViewTab extends StatelessWidget {
         ),
         IconButton(onPressed: () {}, icon: const Icon(Icons.chevron_right)),
         TextButton(
-            onPressed: () {},
-            child: TextWidget(
-                text: "Today",
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w500,
-                ))),
+          onPressed: () {},
+          child: TextWidget(
+            text: "Today",
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -130,12 +132,14 @@ class _DateViewTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Center(
-          child: TextWidget(
-              text: "Calendar View Placeholder",
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w500,
-              ))),
+        child: TextWidget(
+          text: "Calendar View Placeholder",
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: 10.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
     );
   }
 
@@ -144,32 +148,41 @@ class _DateViewTab extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextWidget(
-            text: "Unassigned Appointments",
-            style: theme.textTheme.bodySmall
-                ?.copyWith(fontSize: 10.sp, fontWeight: FontWeight.bold)),
+          text: "Unassigned Appointments",
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontSize: 10.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 12),
         _dropdown(
-            label: "Status", items: ["All Status", "Pending"], theme: theme),
+          label: "Status",
+          items: ["All Status", "Pending"],
+          theme: theme,
+        ),
         const SizedBox(height: 8),
         _dropdown(
-            label: "Services",
-            items: ["All Services", "IT Support"],
-            theme: theme),
+          label: "Services",
+          items: ["All Services", "IT Support"],
+          theme: theme,
+        ),
         const SizedBox(height: 8),
         _dropdown(
-            label: "Province",
-            items: ["All Provinces/Territories"],
-            theme: theme),
+          label: "Province",
+          items: ["All Provinces/Territories"],
+          theme: theme,
+        ),
         const SizedBox(height: 8),
         _dropdown(label: "Postal", items: ["All Postal Codes"], theme: theme),
       ],
     );
   }
 
-  Widget _dropdown(
-      {required String label,
-      required List<String> items,
-      required ThemeData theme}) {
+  Widget _dropdown({
+    required String label,
+    required List<String> items,
+    required ThemeData theme,
+  }) {
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
         labelText: label,
@@ -178,12 +191,18 @@ class _DateViewTab extends StatelessWidget {
       value: items.first,
       onChanged: (value) {},
       items: items
-          .map((item) => DropdownMenuItem(
+          .map(
+            (item) => DropdownMenuItem(
               value: item,
               child: TextWidget(
-                  text: item,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      fontSize: 10.sp, fontWeight: FontWeight.bold))))
+                text: item,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          )
           .toList(),
     );
   }
@@ -223,9 +242,12 @@ class _ViewIcon extends StatelessWidget {
           Icon(icon, size: 80, color: Colors.blue),
           const SizedBox(height: 10),
           TextWidget(
-              text: label,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(fontSize: 10.sp, fontWeight: FontWeight.bold)),
+            text: label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
