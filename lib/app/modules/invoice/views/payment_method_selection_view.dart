@@ -84,7 +84,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                                     style: TextStyle(color: Colors.white70),
                                   ),
                                   Text(
-                                    '\$${controller.requestedDepositAmountEditTextController.text.isEmpty ? '0.00' : controller.requestedDepositAmountEditTextController.text}',
+                                    '\$${controller.requestedDepositAmountEditTextController.text.isEmpty ? '0.00' : double.parse(controller.requestedDepositAmountEditTextController.text).toStringAsFixed(2)}',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 26.sp,
@@ -180,10 +180,11 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                               .toStringAsFixed(2);
                       await controller.initializeWebController(
                         controller
-                            .requestedDepositAmountEditTextController
-                            .text,
+                            .requestedDepositAmountEditTextController.text,
                       );
-                      Get.toNamed(Routes.MANUAL_PAYMENT);
+                      Get.toNamed(Routes.MANUAL_PAYMENT, arguments: {
+                        'invoiceId': controller.invoiceID.value,
+                      });
                     },
                   )
                 : PaymentOption(
@@ -197,19 +198,13 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                       await controller.initializeWebController(
                         controller.finalCollectionAmount.value,
                       );
-                      Get.toNamed(Routes.MANUAL_PAYMENT);
+                      Get.toNamed(Routes.MANUAL_PAYMENT, arguments: {
+                        'invoiceId': controller.invoiceID.value,
+                      });
                     },
                   ),
             SizedBox(height: 8.sp),
-            PaymentOption(
-              icon: Remix.bank_card_line,
-              loading: controller.xpayLinkLoading.value,
-              label: 'Pay Via Xpay Link',
-              onTap: () async {
-                controller.paymentViaXpayLink();
-              },
-            ),
-            SizedBox(height: 8.sp),
+
             // PaymentOption(
             //   icon: Remix.bank_card_2_fill,
             //   label: 'Pay by Card',

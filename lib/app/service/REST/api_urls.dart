@@ -4,6 +4,11 @@ class ApiUrl {
       "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
   // static const baseUrl =
   //     "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
+
+  // static const paymentBaseUrl =  "https://paymentportal.xceleran.com/webterminal/Clearent/AppCCPayment_CL.aspx";
+  static const paymentBaseUrl =
+      "https://dev-services.myserviceforce.com/webterminal/Clearent/AppCCPayment_CL.aspx";
+
   static const login = "$baseUrl/VerifyUser";
   static const getAppointment = "$baseUrl/GetAppointmentList";
   static const getAttachedForms = "$baseUrl/GetAppointmentListWithForms";
@@ -23,8 +28,10 @@ class ApiUrl {
   static const emailAutofill = "$baseUrl/GetAutoFillValuesForEmail";
   static const convertEST = "$baseUrl/ConvertEstimateToInvoice";
   static const getFormTypeUrl = "$baseUrl/GetAllFormTemplates";
-  static const saveImageUrl = "$baseUrl/SaveImageForCSL";
-  static const getImageListUrl = "$baseUrl/GetImageForCSL";
+  // static const saveImageUrl = "$baseUrl/SaveImageForCSL";
+  static const saveImageUrl = "$baseUrl/SavePictures";
+  // static const getImageListUrl = "$baseUrl/GetImageForCSL";
+  static const getImageListUrl = "$baseUrl/GetPictures";
   static const saveFormUrl = "$baseUrl/SaveFormTemplate";
   static const updateFormUrl = "$baseUrl/UpdateFormTemplate";
   static const assignFormUrl = "$baseUrl/AssignForm";
@@ -38,4 +45,5 @@ class ApiUrl {
   static const getQBOClassesUrl = "$baseUrl/GetQBOClasses";
   static const getCustomFieldsUrl = "$baseUrl/GetAllCustomFields";
   static const saveCustomFieldUrl = "$baseUrl/SaveCustomFeild";
+  static const generateTuaPaymentLink = "$baseUrl/GenerateTuaPaymentLink";
 }

@@ -194,7 +194,7 @@ class AppointmentView extends GetView<AppointmentController> {
                                     (element) =>
                                         element.apptID == appointment.apptID,
                                   ),
-                                  false,
+                                  // false,
                                 );
                                 controller.getTagList();
                                 controller.getCurrentUserId();
@@ -268,7 +268,8 @@ class AppointmentView extends GetView<AppointmentController> {
                                 // controller.noteTextController.text =
                                 //     appointment.note ?? "";
                                 // controller.selectedAptIndex.value = index;
-
+                                controller
+                                    .selectedCustomer(appointment.customer);
                                 Get.toNamed(Routes.APPOINTMENT_DETAILS);
                               },
                               child: Padding(
@@ -287,18 +288,16 @@ class AppointmentView extends GetView<AppointmentController> {
                                             Text(
                                               "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
                                               style: theme
-                                                  .textTheme
-                                                  .headlineSmall
+                                                  .textTheme.headlineSmall
                                                   ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             SizedBox(height: 2.sp),
                                             Text(
-                                              appointment
-                                                      .serviceType
+                                              appointment.serviceType
                                                       ?.serviceName ??
                                                   "",
                                             ),
@@ -338,62 +337,53 @@ class AppointmentView extends GetView<AppointmentController> {
                                               decoration: BoxDecoration(
                                                 borderRadius:
                                                     BorderRadius.circular(15.r),
-                                                color:
-                                                    appointment
-                                                            .status
+                                                color: appointment.status
                                                             ?.statusName ==
                                                         "Installation In Progress"
                                                     ? Color(0xffE98862)
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Installation in Progress"
-                                                    ? Color(0xffE98862)
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Scheduled"
-                                                    ? Color(0xff2E888B)
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Cancelled"
-                                                    ? Colors.red
-                                                    : Color(0xff0CBC8B),
+                                                    : appointment.status
+                                                                ?.statusName ==
+                                                            "Installation in Progress"
+                                                        ? Color(0xffE98862)
+                                                        : appointment.status
+                                                                    ?.statusName ==
+                                                                "Scheduled"
+                                                            ? Color(0xff2E888B)
+                                                            : appointment.status
+                                                                        ?.statusName ==
+                                                                    "Cancelled"
+                                                                ? Colors.red
+                                                                : Color(
+                                                                    0xff0CBC8B),
                                               ),
                                               child: Text(
-                                                appointment
-                                                            .status
+                                                appointment.status
                                                             ?.statusName ==
                                                         "Installation In Progress"
                                                     ? "In Progress"
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Installation in Progress"
-                                                    ? "In Progress"
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ??
-                                                          "",
+                                                    : appointment.status
+                                                                ?.statusName ==
+                                                            "Installation in Progress"
+                                                        ? "In Progress"
+                                                        : appointment.status
+                                                                ?.statusName ??
+                                                            "",
                                                 style: theme
-                                                    .textTheme
-                                                    .bodyMedium
+                                                    .textTheme.bodyMedium
                                                     ?.copyWith(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                               ),
                                             ),
                                             Text(
                                               "Click to see details",
                                               style: theme.textTheme.bodySmall
                                                   ?.copyWith(
-                                                    color: theme.primaryColor,
-                                                    fontSize: 11.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                color: theme.primaryColor,
+                                                fontSize: 11.sp,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                           ],
                                         ),

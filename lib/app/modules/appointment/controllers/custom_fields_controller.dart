@@ -15,8 +15,9 @@ import '../models/custom_field_model.dart';
 class CustomFieldsController extends GetxController
     with ExceptionHandler, WidgetsBindingObserver {
   @override
-  onReady() {
-    super.onReady();
+  void onInit() {
+    super.onInit();
+    log("CustomFieldsController: onInit called");
     getCustomFields();
   }
 
@@ -105,17 +106,22 @@ class CustomFieldsController extends GetxController
   }
 
   Future<void> getCustomFields() async {
+    log("getCustomFields: Starting to fetch custom fields...");
     // showLoading();
     try {
       if (await NetworkConnectivity.isNetworkAvailable()) {
         var companyID = await MySharedPref.getCompanyID();
+        log("getCustomFields: CompanyID = $companyID");
 
         var response = await DioClient().get(
           url: ApiUrl.getCustomFieldsUrl,
           params: {"companyId": companyID},
         ).catchError(handleError);
 
+        log("getCustomFields: Response = $response");
+
         if (response == null || response.isEmpty) {
+          log("getCustomFields: Response is null or empty");
           return;
         }
 
@@ -126,12 +132,14 @@ class CustomFieldsController extends GetxController
         allCustomFields.value = customFields;
 
         // Process or store the custom fields as needed
-        log("Custom Fields: ${customFields.length}");
+        log("✅ Custom Fields loaded successfully: ${customFields.length} fields");
       } else {
+        log("❌ getCustomFields: No network connection");
         MySnackBar.showErrorToast(message: "No network connection.");
       }
-    } catch (e) {
-      log("Error fetching custom fields: $e");
+    } catch (e, stackTrace) {
+      log("❌ Error fetching custom fields: $e");
+      log("❌ Stack trace: $stackTrace");
     } finally {
       // hideLoading();
     }

@@ -62,6 +62,7 @@ class AppointmentController extends GetxController
     }
   }
 
+  final selectedCustomer = Rx<Customer?>(null);
   final noteText = RxString("");
   final settingController = Get.put(SettingsController());
   final formC = Get.put(FormController());
@@ -104,8 +105,8 @@ class AppointmentController extends GetxController
   RxInt selectedAptIndex = 0.obs;
   RxBool isAppointmentEmpty = false.obs;
 
-  RxInt selectedStatusValue = 0.obs;
-  RxInt selectedTicketStatusValue = 0.obs;
+  RxInt selectedStatusValue = 0.obs; //khel
+  RxInt selectedTicketStatusValue = 0.obs; //khel
   RxString selectedTabOption = "Appointment".obs;
   final noteList = RxList<NoteModel>([]);
 
@@ -161,115 +162,109 @@ class AppointmentController extends GetxController
     }
   }
 
-  void selectSingleAppointments(
-    Appointments? appointment,
-    int index,
-    bool fromPeriodic,
-  ) {
-    if (!fromPeriodic) {
-      imageList.clear();
-      mediaList.clear();
-      selectedTagController.value.clear();
-    }
-    if (appointment == null) return;
-    selectedAppointment(appointment);
+  RxBool statusChange = RxBool(false);
 
-    // set full customer object
-    customerController.selectedCustomer(
-      CustomerModel.fromJson(appointment.customer!.toJson()),
-    );
+  final TextEditingController noteTextController = TextEditingController();
+  RxBool ticketStatusChange = RxBool(false);
+  void selectSingleAppointments(Appointments? appointment, int index) {
+    try {
+      if (appointment == null) return;
+      selectedAppointment(appointment);
 
-    companyId = appointment.companyID ?? "";
+      // settingController.selectedAppointmentsStatus(AppointmentStatusSetting(
+      //     companyId: appointment.status?.companyId,
+      //     statusId: appointment.status?.statusId,
+      //     statusName: appointment.status?.statusName));
 
-    settingController.selectedAppointmentsStatus(
-      AppointmentStatusSetting(
-        companyId: appointment.status?.companyId,
-        statusId: appointment.status?.statusId,
-        statusName: appointment.status?.statusName,
-      ),
-    );
+      // settingController.selectedTicket(TicketStatusSettings(
+      //     companyId: appointment.ticketStatus?.companyId,
+      //     statusId: appointment.ticketStatus?.statusId,
+      //     statusName: appointment.ticketStatus?.statusName));
 
-    settingController.selectedTicket(
-      TicketStatusSettings(
-        companyId: appointment.ticketStatus?.companyId,
-        statusId: appointment.ticketStatus?.statusId,
-        statusName: appointment.ticketStatus?.statusName,
-      ),
-    );
+      var createdDateTime = dateTimeConverter(
+        inputFormat: "yyyy/MM/dd hh:mm a",
+        inputTime: appointment.createdDateTime.toString(),
+        outputFormat: "MM/dd/yyyy hh:mm a",
+      );
 
-    var createdDateTime = dateTimeConverter(
-      inputFormat: "yyyy/MM/dd hh:mm a",
-      inputTime: appointment.createdDateTime.toString(),
-      outputFormat: "MM/dd/yyyy hh:mm a",
-    );
+      var startTime = dateTimeConverter(
+        inputFormat: "yyyy/MM/dd hh:mm a",
+        inputTime: appointment.startDateTime.toString(),
+        outputFormat: "MM/dd/yyyy hh:mm a",
+      );
 
-    var startTime = dateTimeConverter(
-      inputFormat: "yyyy/MM/dd hh:mm a",
-      inputTime: appointment.startDateTime.toString(),
-      outputFormat: "MM/dd/yyyy hh:mm a",
-    );
+      var endTime = dateTimeConverter(
+        inputFormat: "yyyy/MM/dd hh:mm a",
+        inputTime: appointment.endDateTime.toString(),
+        outputFormat: "MM/dd/yyyy hh:mm a",
+      );
 
-    var endTime = dateTimeConverter(
-      inputFormat: "yyyy/MM/dd hh:mm a",
-      inputTime: appointment.endDateTime.toString(),
-      outputFormat: "MM/dd/yyyy hh:mm a",
-    );
+      // ✅ Added missing assignments
+      createdBy = appointment.createdBy ?? "";
+      appointmentID = "${appointment.apptID ?? ""}";
+      appointmentUID = appointment.appoinmentUId ?? "";
+      customerID = "${appointment.customerID ?? ""}";
+      promoCode = appointment.promoCode ?? "";
+      serviceTypeID = appointment.serviceTypeId ?? "";
 
-    // ✅ Added missing assignments
-    createdBy = appointment.createdBy ?? "";
-    appointmentID = "${appointment.apptID ?? ""}";
-    appointmentUID = appointment.appoinmentUId ?? "";
-    customerID = "${appointment.customerID ?? ""}";
-    promoCode = appointment.promoCode ?? "";
-    serviceTypeID = appointment.serviceTypeId ?? "";
+      resourceID = appointment.resourceID!;
+      timeSlotID = appointment.timeSlotId!;
 
-    resourceID = appointment.resourceID!;
-    timeSlotID = appointment.timeSlotId!;
+      contactName =
+          "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
+      address = "${appointment.customer?.address1}, "
+          "${appointment.customer?.city}, "
+          "${appointment.customer?.state}, ";
+      mobileNumber = appointment.customer?.mobile ?? "";
+      phoneNumber = appointment.customer?.phone ?? "";
+      customerTitle =
+          "${appointment.customer?.title ?? ""} ${appointment.customer?.title2 ?? ""}";
 
-    contactName =
-        "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
-    address = "${appointment.customer?.address1}, "
-        "${appointment.customer?.city}, "
-        "${appointment.customer?.state}, ";
-    mobileNumber = appointment.customer?.mobile ?? "";
-    phoneNumber = appointment.customer?.phone ?? "";
-    customerTitle =
-        "${appointment.customer?.title ?? ""} ${appointment.customer?.title2 ?? ""}";
+      // ✅ Added missing assignment
+      email = appointment.customer?.email ?? "";
 
-    // ✅ Added missing assignment
-    email = appointment.customer?.email ?? "";
+      invoiceController.toTextController.text =
+          appointment.customer?.email ?? "";
+      invoiceController.customerFirstName.value =
+          appointment.customer?.firstName ?? "";
 
-    invoiceController.toTextController.text = appointment.customer?.email ?? "";
-    invoiceController.customerFirstName.value =
-        appointment.customer?.firstName ?? "";
+      requestDate = createdDateTime;
+      startDate = startTime;
+      endDate = endTime;
 
-    requestDate = createdDateTime;
-    startDate = startTime;
-    endDate = endTime;
+      timeSlot = appointment.timeSlot ?? "";
+      serviceType = appointment.serviceType?.serviceName ?? "";
 
-    timeSlot = appointment.timeSlot ?? "";
-    serviceType = appointment.serviceType?.serviceName ?? "";
+      if (!statusChange.value) {
+        selectedStatusValue.value = appointment.status?.statusId ?? 0;
+      }
+      if (!ticketStatusChange.value) {
+        selectedTicketStatusValue.value =
+            appointment.ticketStatus?.statusId ?? 0;
+      }
 
-    selectedStatusValue.value = appointment.status?.statusId ?? 0;
-    selectedTicketStatusValue.value = appointment.ticketStatus?.statusId ?? 0;
-    resource = appointment.resource?.name ?? "";
-    if (!isTyping.value) {
-      noteText(appointment.note ?? "");
-      noteController.text = noteText.value;
-    }
-    selectedAptIndex.value = index;
-    if (selectedAppointment.value!.invoices != null &&
-        selectedAppointment.value!.invoices!.isNotEmpty) {
-      for (var item in selectedAppointment
-          .value!.invoices![selectedEstimateOrInvoiceIndex.value].items!) {
-        if (invoiceController.selectedItemList
-                .where((e) => e.selectedItem!.id == item.itemId)
-                .isEmpty &&
-            !invoiceController.removedList.contains(item.itemId)) {
-          invoiceController.selectedItemList.add(
-            SelectedItemListModel(
-              quantity: double.parse(item.quantity ?? "1.00"),
-              selectedItem: ItemListModel(
+      settingController.selectedAppointmentsStatus(
+          settingController.appointmentsStatus.firstWhere((status) =>
+              status.statusId == (appointment.status?.statusId ?? 0)));
+      settingController.selectedTicket(settingController.tickets.firstWhere(
+          (status) =>
+              status.statusId == (appointment.ticketStatus?.statusId ?? 0)));
+      resource = appointment.resource?.name ?? "";
+      if (!isTyping.value) {
+        noteText(appointment.note ?? "");
+        noteTextController.text = noteText.value;
+      }
+      selectedAptIndex.value = index;
+      if (selectedAppointment.value!.invoices != null &&
+          selectedAppointment.value!.invoices!.isNotEmpty) {
+        for (var item in selectedAppointment
+            .value!.invoices![selectedEstimateOrInvoiceIndex.value].items!) {
+          if (invoiceController.selectedItemList
+                  .where((e) => e.id == item.itemId)
+                  .isEmpty &&
+              !invoiceController.removedList.contains(item.itemId)) {
+            invoiceController.selectedItemList.add(
+              ItemListModel(
                 id: item.itemId,
                 name: item.name,
                 description: item.description,
@@ -277,19 +272,26 @@ class AppointmentController extends GetxController
                 isTaxable: item.isTaxable == "TAX" ? true : false,
                 // itemTypeId: int.parse(item.itemTyId!),
               ),
-            ),
-          );
+            );
 
-          // invoiceController.editAmountControllers
-          //     .add(TextEditingController(text: item.unitPrice ?? "0.00"));
+            invoiceController.editAmountControllers.add(
+              TextEditingController(text: item.unitPrice ?? "0.00"),
+            );
 
-          // invoiceController.editDescriptionControllers
-          //     .add(TextEditingController(text: item.description ?? ""));
+            invoiceController.editDescriptionControllers.add(
+              TextEditingController(text: item.description ?? ""),
+            );
+
+            invoiceController.editQuantityControllers.add(
+              TextEditingController(text: item.quantity ?? "1"),
+            );
+          }
         }
+        invoiceController.createTotalForEdit();
       }
-      if (!fromPeriodic) invoiceController.createTotalForEdit();
+    } catch (e) {
+      log(" message : $e");
     }
-    getAllNotes(showLoader: false);
   }
 
   Future<void> pickDate() async {
@@ -476,7 +478,41 @@ class AppointmentController extends GetxController
     await Future.delayed(Duration.zero); // <- give UI a chance to render
 
     // Convert image files to Base64
-    final List<Map<String, dynamic>> imageList = [];
+    // final List<Map<String, dynamic>> imageList = [];
+    // for (final path in mediaList.first.images) {
+    //   final file = File(path);
+    //   if (!file.existsSync()) continue;
+
+    //   final bytes = await file.readAsBytes();
+    //   final base64Image = base64Encode(bytes);
+
+    //   imageList.add({
+    //     "ImageName": file.uri.pathSegments.last,
+    //     "ImageBase64": base64Image,
+    //     "Description": description,
+    //     "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now()),
+    //   });
+    // }
+
+    // var userID = await MySharedPref.getUserName();
+    // final requestBody = {
+    //   "requestPeram": {
+    //     "CustomerId": customerID,
+    //     "AppointmentId": appointmentID,
+    //     "CSLId": 0,
+    //     "UploadedBy": userID,
+    //     "CompanyId": companyId,
+    //     "TagName": tagName,
+    //     "ImageList": imageList,
+    //   },
+    // };
+
+    // ============================================
+    // NEW REQUEST BODY STRUCTURE (Kept for reference)
+    // ============================================
+    final List<Map<String, dynamic>> pictures = [];
+    var userID = await MySharedPref.getUserName();
+    final sharedPrefCompanyId = await MySharedPref.getCompanyID();
     for (final path in mediaList.first.images) {
       final file = File(path);
       if (!file.existsSync()) continue; // Skip if file doesn't exist
@@ -484,31 +520,35 @@ class AppointmentController extends GetxController
       final bytes = await file.readAsBytes();
       final base64Image = base64Encode(bytes);
 
-      imageList.add({
-        "ImageName": file.uri.pathSegments.last,
-        "ImageBase64": base64Image,
-        "Description": description,
-        "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now()),
+      pictures.add({
+        "Id":
+            mediaList.first.images.indexOf(path), // Will be generated by server
+        "CompanyID": sharedPrefCompanyId,
+        "CustomerID": customerID,
+        "SiteId": 0, // Add siteId if available
+        "FileName": file.uri.pathSegments.last,
+        "FileContent": base64Image,
+        "UploadDate": mediaList.first.time,
+        "UploadedBy": userID,
+        "AppointmentId": int.tryParse(appointmentID) ?? 0,
+        "Reference": description, // Using tagName as reference
       });
     }
 
-    // Prepare request body
+    // Prepare request body with new structure
     final requestBody = {
-      "requestPeram": {
-        "CustomerId": customerID,
-        "AppointmentId": appointmentID,
-        "CSLId": 0,
-        "CompanyId": companyId,
-        "TagName": tagName,
-        "ImageList": imageList,
-      },
+      "pictures": pictures,
     };
-    log(" body: $requestBody");
+    // ============================================
+
+    log("uploadImages body: ${jsonEncode(requestBody)}");
+
     // Send request
     final response = await DioClient()
         .post(url: ApiUrl.saveImageUrl, body: requestBody)
         .catchError(handleError);
-    log("chill $response");
+
+    log("uploadImages response: $response");
     hideLoading();
 
     if (response == null) {
@@ -520,17 +560,52 @@ class AppointmentController extends GetxController
     getImageList(false);
   }
 
-  final imageList = RxList<ImageListModel>([]);
+  // ============================================
+  // OLD IMAGE LIST DECLARATION (Kept for reference)
+  // ============================================
+  // final imageList = RxList<ImageListModel>([]);
+  // ============================================
+
+  // Image list now stores ImageList objects directly from API array response
+  final imageList = RxList<ImageList>([]);
+
+  // Group images by upload date
+  Map<String, List<ImageList>> get imagesGroupedByDate {
+    final Map<String, List<ImageList>> grouped = {};
+    for (var image in imageList) {
+      final date = image.uploadDate ?? 'Unknown Date';
+      if (!grouped.containsKey(date)) {
+        grouped[date] = [];
+      }
+      grouped[date]!.add(image);
+    }
+    return grouped;
+  }
+
   Future<void> getImageList(bool isFromTab) async {
     showLoading();
-    await Future.delayed(Duration.zero); // <- give UI a chance to render
+    await Future.delayed(Duration.zero);
+    // <- give UI a chance to render
     try {
-      // Prepare request params
+      var companyID = await MySharedPref.getCompanyID();
+      // ============================================
+      // OLD QUERY PARAMETERS (Kept for reference)
+      // ============================================
+      // final queryParams = {
+      //   "CustomerId": customerID,
+      //   "AppointmentId": appointmentID,
+      //   "cSLId": 0,
+      //   "CompanyId": companyId,
+      // };
+      // ============================================
+
+      // Prepare request params with new structure
       final queryParams = {
-        "CustomerId": customerID,
-        "AppointmentId": appointmentID,
-        "cSLId": 0,
-        "CompanyId": companyId,
+        "id": 0,
+        "appointmentID": appointmentID,
+        "siteId": 0,
+        "companyId": companyID,
+        "customerId": customerID,
       };
 
       log("queryParams: ${jsonEncode(queryParams)}");
@@ -548,12 +623,13 @@ class AppointmentController extends GetxController
       if (response == null) {
         MySnackBar.showErrorToast(message: "Failed to load images");
       } else {
-        final List<ImageListModel> fetchedImages =
-            (response as List).map((e) => ImageListModel.fromJson(e)).toList();
+        final List<ImageList> fetchedImages =
+            (response as List).map((e) => ImageList.fromJson(e)).toList();
         imageList.clear();
         imageList.addAll(fetchedImages);
       }
     } catch (e, st) {
+      log("Error fetching images: $e", stackTrace: st);
       // MySnackBar.showErrorToast(message: "Something went wrong!");
     } finally {
       hideLoading(); // ✅ always runs
@@ -573,7 +649,7 @@ class AppointmentController extends GetxController
           selectSingleAppointments(
             sortedAppointments[selectedAptIndex.value],
             selectedAptIndex.value,
-            true,
+            // true,
           );
         }
       }
@@ -853,9 +929,8 @@ class AppointmentController extends GetxController
           "TimeSlot": timeSlot,
           "Note": noteText.value,
           "PromoCode": promoCode,
-          "StatusId":
-              settingController.selectedAppointmentsStatus.value!.statusId,
-          "TicketStatusId": settingController.selectedTicket.value!.statusId,
+          "StatusId": selectedStatusValue.value,
+          "TicketStatusId": selectedTicketStatusValue.value,
           "UserID": userID,
           "CreatedBy": createdBy,
         },

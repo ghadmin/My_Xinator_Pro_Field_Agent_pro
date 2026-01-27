@@ -135,8 +135,6 @@ class MySnackBar {
     final context = _context;
     if (context == null) return;
 
-    final snackBarBehavior = behavior ?? SnackBarBehavior.fixed;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         duration: duration ??
@@ -162,15 +160,7 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? Colors.green,
-        behavior: snackBarBehavior,
-        margin: snackBarBehavior == SnackBarBehavior.floating
-            ? EdgeInsets.only(
-                bottom: 10,
-                left: 18,
-                right: 18,
-              )
-            : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -183,8 +173,6 @@ class MySnackBar {
       SnackBarBehavior? behavior}) {
     final context = _context;
     if (context == null) return;
-
-    final snackBarBehavior = behavior ?? SnackBarBehavior.fixed;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -211,15 +199,7 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? const Color(0xff2E9AFE),
-        behavior: snackBarBehavior,
-        margin: snackBarBehavior == SnackBarBehavior.floating
-            ? EdgeInsets.only(
-                bottom: 10,
-                left: 18,
-                right: 18,
-              )
-            : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -232,8 +212,6 @@ class MySnackBar {
       SnackBarBehavior? behavior}) {
     final context = _context;
     if (context == null) return;
-
-    final snackBarBehavior = behavior ?? SnackBarBehavior.fixed;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -260,15 +238,7 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? Colors.red.withValues(alpha: .9),
-        behavior: snackBarBehavior,
-        margin: snackBarBehavior == SnackBarBehavior.floating
-            ? EdgeInsets.only(
-                bottom: 10,
-                left: 18,
-                right: 18,
-              )
-            : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
@@ -304,8 +274,6 @@ class MySnackBar {
         ),
         backgroundColor: color ?? const Color(0xff2E9AFE),
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(18),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
       ),
     );
   }

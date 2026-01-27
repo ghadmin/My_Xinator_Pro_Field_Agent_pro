@@ -56,8 +56,7 @@ class AuthController extends GetxController with ExceptionHandler {
   }
 
   void _validateForm() {
-    isButtonActive.value =
-        emailLoginTextController.text.isNotEmpty &&
+    isButtonActive.value = emailLoginTextController.text.isNotEmpty &&
         passwordLoginTextController.text.isNotEmpty;
   }
 
@@ -128,12 +127,14 @@ class AuthController extends GetxController with ExceptionHandler {
     final errorString = error.toString();
 
     // Network connectivity issues
-    if (errorString.contains("SocketException") || errorString.contains("NetworkException")) {
+    if (errorString.contains("SocketException") ||
+        errorString.contains("NetworkException")) {
       return "No internet connection. Please check your network and try again.";
     }
 
     // Timeout issues
-    if (errorString.contains("TimeoutException") || errorString.contains("TimeoutException")) {
+    if (errorString.contains("TimeoutException") ||
+        errorString.contains("TimeoutException")) {
       return "Request timed out. Please check your connection and try again.";
     }
 
@@ -153,16 +154,17 @@ class AuthController extends GetxController with ExceptionHandler {
     if (errorString.contains("404")) {
       return "Service not found. Please contact support.";
     }
-    if (errorString.contains("500") || errorString.contains("502") || errorString.contains("503")) {
+    if (errorString.contains("500") ||
+        errorString.contains("502") ||
+        errorString.contains("503")) {
       return "Server error. Please try again later.";
     }
 
     // Connection errors
-    if (errorString.contains("Connection") || errorString.contains("ConnectException")) {
+    if (errorString.contains("Connection") ||
+        errorString.contains("ConnectException")) {
       return "Network error. Please check your internet connection or try again later.";
     }
-
-    
 
     return "Something went wrong. Please try again or contact support.";
   }

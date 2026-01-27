@@ -1,7 +1,6 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/hive/my_hive.dart';
 import '../../../data/local/my_shared_pref.dart';
@@ -19,24 +18,24 @@ class ItemController extends GetxController with ExceptionHandler {
   final TextEditingController sortTextController = TextEditingController();
   final sortedItems = RxList<ItemListModel>();
 
-  getItems() async {
-    showLoading();
+  Future<void> getItems(bool isShowLoading) async {
+    if (isShowLoading) showLoading(debugInfo: "getItems - Start");
     isItemsEmpty.value = false;
     if (await NetworkConnectivity.isNetworkAvailable()) {
-      var companyID = await MySharedPref.getCompanyID();
-      var response = await DioClient()
-          .get(url: ApiUrl.getItems, params: {"CompanyId": companyID})
-          .catchError(handleError);
+      var companyID = MySharedPref.getCompanyID();
+      var response = await DioClient().get(
+          url: ApiUrl.getItems,
+          params: {"CompanyId": companyID}).catchError(handleError);
 
       if (response == null) {
-        hideLoading();
+        if (isShowLoading) hideLoading(debugInfo: "getItems - Response null");
         showEmptyWidget();
         return;
       }
       if (response.isEmpty) {
         items.clear();
         sortedItems.clear();
-        hideLoading();
+        if (isShowLoading) hideLoading(debugInfo: "getItems - Response empty");
         showEmptyWidget();
         return;
       }
@@ -46,7 +45,7 @@ class ItemController extends GetxController with ExceptionHandler {
       );
       sortedItems.addAll(items);
       await MyHive.saveItemList(items);
-      hideLoading();
+      if (isShowLoading) hideLoading(debugInfo: "getItems - Success");
       if (items.isEmpty) {
         showEmptyWidget();
       }
@@ -56,7 +55,7 @@ class ItemController extends GetxController with ExceptionHandler {
       if (savedItems.isNotEmpty) {
         items.assignAll(savedItems);
         sortedItems.addAll(savedItems);
-        hideLoading();
+        hideLoading(debugInfo: "getItems - No network - Using cached");
         MySnackBar.showErrorToast(message: "No network!");
         NetworkConnectivity.connectionChangeCount = 1;
         return;
@@ -65,36 +64,27 @@ class ItemController extends GetxController with ExceptionHandler {
         sortedItems.clear();
         isError.value = true;
         NetworkConnectivity.connectionChangeCount = 1;
-        hideLoading();
+        if (isShowLoading)
+          hideLoading(debugInfo: "getItems - No network - No cached data");
         showEmptyWidget();
       }
     }
   }
 
-  sortItems() {
-    log("ontap  ${items.length}");
+  void sortItems() {
     if (items.isEmpty) return;
 
     if (sortTextController.text.isEmpty) {
       sortedItems.clear();
-      for (var element in items) {
-        log('element ${element.toJson()}');
-      }
-      final alphabetSorted = items.toList()
-        ..sort((a, b) => a.name!.compareTo(b.name!));
-      sortedItems.addAll(alphabetSorted);
+      sortedItems.addAll(items);
     } else {
       final list = items.where((p0) {
         return p0.name!.toLowerCase().contains(
-          sortTextController.text.toLowerCase(),
-        );
-      }).toList()..sort((a, b) => a.name!.compareTo(b.name!));
+              sortTextController.text.toLowerCase(),
+            );
+      }).toList();
       sortedItems.clear();
       sortedItems.addAll(list);
-    }
-
-    for (var element in sortedItems) {
-      print("qbo sorted item ${element.qboId}");
     }
   }
 
@@ -104,7 +94,7 @@ class ItemController extends GetxController with ExceptionHandler {
 
   @override
   void onReady() async {
-    await getItems();
+    await getItems(false);
     super.onReady();
   }
 }

@@ -69,10 +69,8 @@ class NetworkConnectivity {
     }
 
     await 2.delay();
-    MySnackBar.showSnackBar(
-      title: "Connection restored!",
-      message: 'Data loaded from network',
-    );
+    MySnackBar.showToast(
+        message: 'Connection restored! Data loaded from network');
   }
 
   static void _runDisconnectedOperations() async {

@@ -25,6 +25,7 @@ import '../modules/invoice/views/payment_by_cash_view.dart';
 import '../modules/invoice/views/payment_by_check_view.dart';
 import '../modules/invoice/views/payment_method_selection_view.dart';
 import '../modules/invoice/views/payment_web_view.dart';
+import '../modules/invoice/views/xpay_payment_view.dart';
 import '../modules/item/bindings/item_binding.dart';
 import '../modules/item/views/item_view.dart';
 import '../modules/onboarding/bindings/onboarding_binding.dart';
@@ -184,6 +185,11 @@ class AppPages {
       name: Routes.SEEALLFORMS,
       page: () =>
           SeeAllFormsScreen(initialTabIndex: Get.arguments['tabIndex'] ?? 0),
+    ),
+    GetPage(
+      name: _Paths.XPAY_PAYMENT,
+      page: () => const XPayPaymentView(),
+      binding: InvoiceBinding(),
     ),
   ];
 }

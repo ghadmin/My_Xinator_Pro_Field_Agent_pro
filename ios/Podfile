@@ -1,8 +1,4 @@
-# === Add both sources at the top ===
-source 'https://github.com/CocoaPods/Specs.git'
-source 'https://github.com/ios-3ds-sdk/Specs.git'
-
-# Platform version
+# Uncomment this line to define a global platform for your project
 platform :ios, '14.0'
 
 # Disable CocoaPods stats
@@ -39,9 +35,6 @@ target 'Runner' do
 
   # Installs all Flutter plugins
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-
-  # === Netcetera 3DS SDK (correct pod name) ===
-  pod 'ThreeDS_SDK'
 
   # Tests
   target 'RunnerTests' do

@@ -55,7 +55,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   void initState() {
     super.initState();
 
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
     _tabController1 = TabController(length: 2, vsync: this);
     _tabController1.addListener(() {
       if (_tabController1.index == 0) {
@@ -231,7 +231,6 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                   backgroundColor: Colors.blue,
                   heroTag: "assign_forms",
                   onPressed: () async {
-                    log("clicking");
                     await formC.assignFormsToAppointment(
                       controller
                           .selectedAppointment.value!.customer!.customerID!,
@@ -368,10 +367,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               child: CircleAvatar(
                                                 backgroundColor: getStatusColor(
                                                   controller
-                                                      .settingController
-                                                      .selectedAppointmentsStatus
-                                                      .value!
-                                                      .statusName!,
+                                                          .settingController
+                                                          .selectedAppointmentsStatus
+                                                          .value
+                                                          ?.statusName ??
+                                                      "",
                                                 ),
                                               ),
                                             ),
@@ -839,6 +839,18 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 ),
                                 //index 5
                                 TextWidget(
+                                  text: "Files",
+                                  maxLines: 2,
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.visible,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                    fontSize: 10.sp,
+                                  ),
+                                ),
+                                //index 6
+                                TextWidget(
                                   text: "Notes",
                                   maxLines: 2,
                                   textAlign: TextAlign.center,
@@ -1091,52 +1103,52 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 15.0,
                                   ),
-                                  child:
-                                      // Row(
-                                      //   children: [
-                                      //     TextWidget(
-                                      //       text: "Custom Fields: ",
-                                      //       style: theme.textTheme.bodyLarge
-                                      //           ?.copyWith(
-                                      //         color:
-                                      //             LightThemeColors.hintTextColor,
-                                      //         fontSize: 14.sp,
-                                      //         fontWeight: FontWeight.w500,
-                                      //       ),
-                                      //     ),
-                                      //     SizedBox(width: 10),
-                                      //     // Make dropdown take remaining space
-                                      DropdownButton<CustomFieldModel>(
-                                    isExpanded: true,
-                                    iconSize: 20.sp, // important!
-                                    icon: Icon(
-                                      Icons.add,
-                                      color: theme.primaryColor,
-                                    ),
-                                    underline: SizedBox(),
-                                    value: null,
-                                    items: customFieldsController
-                                        .allCustomFields
-                                        .map((field) {
-                                      return DropdownMenuItem<CustomFieldModel>(
-                                        value: field,
-                                        child: Text(
-                                          field.fieldName!,
-                                          softWrap:
-                                              true, // wrap text instead of ellipsis
+                                  child: Row(
+                                    children: [
+                                      TextWidget(
+                                        text: "Custom Fields: ",
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
+                                          color: LightThemeColors.hintTextColor,
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        customFieldsController
-                                            .saveCustomField(value);
-                                      }
-                                    },
+                                      ),
+                                      SizedBox(width: 10),
+                                      //     // Make dropdown take remaining space
+                                      Expanded(
+                                        child: DropdownButton<CustomFieldModel>(
+                                          isExpanded: true,
+                                          iconSize: 20.sp, // important!
+                                          icon: Icon(
+                                            Icons.add,
+                                            color: theme.primaryColor,
+                                          ),
+                                          underline: SizedBox(),
+                                          value: null,
+                                          items: customFieldsController
+                                              .allCustomFields
+                                              .map((field) {
+                                            return DropdownMenuItem<
+                                                CustomFieldModel>(
+                                              value: field,
+                                              child: Text(
+                                                field.fieldName!,
+                                                softWrap:
+                                                    true, // wrap text instead of ellipsis
+                                              ),
+                                            );
+                                          }).toList(),
+                                          onChanged: (value) {
+                                            if (value != null) {
+                                              customFieldsController
+                                                  .saveCustomField(value);
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  // ),
-                                  //   ],
-                                  // ),
                                 ),
                                 MainDivider(),
                                 ListView.builder(
@@ -2212,35 +2224,47 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         onTap: () async {
                                           controller.showLoading();
 
-                                          // Clear previous selection if needed
+                                          // Save backup if we were in "new" mode before switching to "existing"
+                                          if (controller.invoiceController
+                                                  .existingItemType.value ==
+                                              SelectedItemCategory.newOne) {
+                                            controller.invoiceController
+                                                .saveBackup("new");
+                                          }
 
+                                          controller.invoiceController
+                                              .existingItemType(
+                                                  SelectedItemCategory
+                                                      .existingOne);
+
+                                          // Clear previous selection if needed
                                           controller.invoiceController
                                               .selectedItemList
                                               .clear();
-                                          // for (var c in controller
-                                          //     .invoiceController
-                                          //     .editAmountControllers) {
-                                          //   c.dispose();
-                                          // }
-                                          // for (var c in controller
-                                          //     .invoiceController
-                                          //     .editDescriptionControllers) {
-                                          //   c.dispose();
-                                          // }
-                                          // for (var c in controller
-                                          //     .invoiceController
-                                          //     .editQuantityControllers) {
-                                          //   c.dispose();
-                                          // }
-                                          // controller.invoiceController
-                                          //     .editAmountControllers
-                                          //     .clear();
-                                          // controller.invoiceController
-                                          //     .editDescriptionControllers
-                                          //     .clear();
-                                          // controller.invoiceController
-                                          //     .editQuantityControllers
-                                          //     .clear();
+                                          for (var c in controller
+                                              .invoiceController
+                                              .editAmountControllers) {
+                                            c.dispose();
+                                          }
+                                          for (var c in controller
+                                              .invoiceController
+                                              .editDescriptionControllers) {
+                                            c.dispose();
+                                          }
+                                          for (var c in controller
+                                              .invoiceController
+                                              .editQuantityControllers) {
+                                            c.dispose();
+                                          }
+                                          controller.invoiceController
+                                              .editAmountControllers
+                                              .clear();
+                                          controller.invoiceController
+                                              .editDescriptionControllers
+                                              .clear();
+                                          controller.invoiceController
+                                              .editQuantityControllers
+                                              .clear();
                                           controller.invoiceController
                                               .editNoteTextController
                                               .clear();
@@ -2251,6 +2275,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               .initialTaxID.value = "";
 
                                           // Set basic info
+
                                           controller
                                               .invoiceController
                                               .invoiceItemList
@@ -2273,10 +2298,15 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   .customerName =
                                               proposal.fullName ?? "";
                                           controller.invoiceController.address =
-                                              "${proposal.city}";
-                                          controller.invoiceController
-                                                  .depositAmount.value =
-                                              proposal.depositAmount.toString();
+                                              "${proposal.city}, ";
+                                          controller
+                                              .invoiceController
+                                              .depositAmount
+                                              .value = proposal.depositAmount
+                                                  ?.toStringAsFixed(
+                                                2,
+                                              ) ??
+                                              "0.00";
                                           controller.invoiceController.invoiceID
                                                   .value =
                                               proposal.invoiceID.toString();
@@ -2299,15 +2329,84 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           controller.invoiceController.type
                                               .value = proposal.type ?? "";
                                           controller.invoiceController.total
-                                                  .value =
-                                              proposal.total?.toStringAsFixed(
-                                                    2,
-                                                  ) ??
-                                                  "";
-                                          controller.invoiceController.newTotal
-                                                  .value =
-                                              controller.invoiceController.total
-                                                  .value;
+                                              .value = proposal.total
+                                                  ?.toStringAsFixed(2) ??
+                                              "";
+                                          if (proposal.requestedAmountType ==
+                                              2) {
+                                            // type = fixed
+                                            controller
+                                                .invoiceController
+                                                .selectedDepositRequestOption
+                                                .value = "2";
+                                            controller
+                                                .invoiceController
+                                                .requestedDepositAmountEditTextController
+                                                .text = proposal
+                                                    .requestedDepositAmount ??
+                                                "0.00";
+                                            controller
+                                                .invoiceController
+                                                .selectedDepositRequestOptionName
+                                                .value = controller
+                                                    .invoiceController
+                                                    .depositRequestOptions[2]
+                                                ["name"];
+                                          }
+                                          if (proposal.requestedAmountType ==
+                                              1) {
+                                            // type = percentage
+                                            controller
+                                                .invoiceController
+                                                .selectedDepositRequestOption
+                                                .value = "1";
+                                            controller
+                                                .invoiceController
+                                                .requestDepositRateEditTextController
+                                                .text = proposal
+                                                    .requestedDepositPercentage ??
+                                                "0.00";
+                                            controller
+                                                .invoiceController
+                                                .requestedDepositAmountEditTextController
+                                                .text = proposal
+                                                    .requestedDepositAmount ??
+                                                "0.00";
+                                            controller
+                                                .invoiceController
+                                                .selectedDepositRequestOptionName
+                                                .value = controller
+                                                    .invoiceController
+                                                    .depositRequestOptions[1]
+                                                ["name"];
+                                          }
+                                          if (proposal.requestedAmountType ==
+                                              0) {
+                                            // type = null
+                                            controller
+                                                .invoiceController
+                                                .selectedDepositRequestOption
+                                                .value = "0";
+                                            controller
+                                                .invoiceController
+                                                .requestDepositRateEditTextController
+                                                .text = proposal
+                                                    .requestedDepositPercentage ??
+                                                "0.00";
+                                            controller
+                                                .invoiceController
+                                                .requestedDepositAmountEditTextController
+                                                .text = proposal
+                                                    .requestedDepositAmount ??
+                                                "0.00";
+                                            controller
+                                                .invoiceController
+                                                .selectedDepositRequestOptionName
+                                                .value = controller
+                                                    .invoiceController
+                                                    .depositRequestOptions[0]
+                                                ["name"];
+                                          }
                                           controller.invoiceController.notes =
                                               proposal.note ?? "";
                                           controller
@@ -2331,6 +2430,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 .initialTaxID
                                                 .value = proposal.taxType ?? "";
                                           }
+
                                           // Set discount values
                                           controller
                                                   .invoiceController
@@ -2338,43 +2438,31 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   .value =
                                               proposal.discount ?? 0.00;
                                           if (proposal.discountOption == "1") {
-                                            final discount = double.tryParse(
-                                                  proposal.discount
-                                                          ?.toString() ??
-                                                      '0',
-                                                ) ??
-                                                0.0;
-                                            final subtotal = double.tryParse(
-                                                  proposal.subtotal
-                                                          ?.toString() ??
-                                                      '0',
-                                                ) ??
-                                                0.0;
-
-                                            double percentage = 0.0;
-                                            if (subtotal > 0) {
-                                              percentage =
-                                                  (discount * 100) / subtotal;
-                                            }
-
                                             controller
-                                                    .invoiceController
-                                                    .editDiscountTextController
-                                                    .text =
-                                                percentage.toStringAsFixed(2);
+                                                .invoiceController
+                                                .editDiscountTextController
+                                                .text = (((double.parse(
+                                                          proposal.discount
+                                                                  ?.toString() ??
+                                                              "0.00",
+                                                        )) *
+                                                        100) /
+                                                    double.parse(
+                                                      proposal.subtotal
+                                                              ?.toStringAsFixed(
+                                                            2,
+                                                          ) ??
+                                                          "0.00",
+                                                    ))
+                                                .toStringAsFixed(2);
                                           } else {
-                                            final discount = double.tryParse(
-                                                  proposal.discount
-                                                          ?.toString() ??
-                                                      '',
-                                                ) ??
-                                                0.0;
-
                                             controller
-                                                    .invoiceController
-                                                    .editDiscountTextController
-                                                    .text =
-                                                discount.toStringAsFixed(2);
+                                                .invoiceController
+                                                .editDiscountTextController
+                                                .text = double.parse(
+                                              proposal.discount?.toString() ??
+                                                  "0.00",
+                                            ).toStringAsFixed(2);
                                           }
 
                                           // Set tax values
@@ -2395,9 +2483,22 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       ?.rate
                                                       ?.toStringAsFixed(2) ??
                                                   "0.00";
-                                          log(
-                                            "alway proposal ${proposal.items}",
-                                          ); //
+                                          controller.invoiceController
+                                                  .selectedTaxName.value =
+                                              controller.invoiceController.taxes
+                                                      .firstWhereOrNull(
+                                                        (tax) =>
+                                                            tax.id ==
+                                                            int.tryParse(
+                                                              controller
+                                                                  .invoiceController
+                                                                  .initialTaxID
+                                                                  .value,
+                                                            ),
+                                                      )
+                                                      ?.name ??
+                                                  "";
+
                                           // Populate selectedItemList and initialize controllers
                                           if (proposal.items != null &&
                                               proposal.items!.isNotEmpty) {
@@ -2405,62 +2506,87 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               controller.invoiceController
                                                   .selectedItemList
                                                   .add(
-                                                SelectedItemListModel(
-                                                  quantity: double.parse(
-                                                    item.quantity ?? "1.00",
+                                                ItemListModel(
+                                                  id: item.itemId,
+                                                  name: item.name,
+                                                  description: item.description,
+                                                  price: double.tryParse(
+                                                    item.unitPrice ?? "0.00",
                                                   ),
-                                                  selectedItem: ItemListModel(
-                                                    id: item.itemId,
-                                                    name: item.name,
-                                                    description:
-                                                        item.description,
-                                                    price: double.tryParse(
-                                                      item.unitPrice ?? "0.00",
-                                                    ),
-                                                    isTaxable:
-                                                        item.isTaxable == "TAX"
-                                                            ? true
-                                                            : false,
-                                                    // itemTypeId: int.parse(item.itemTyId!),
-                                                  ),
+                                                  isTaxable:
+                                                      item.isTaxable == "TAX"
+                                                          ? true
+                                                          : false,
+                                                  // itemTypeId: int.parse(item.itemTyId!),
                                                 ),
                                               );
 
                                               // Initialize controllers with existing values
-                                              // controller.invoiceController
-                                              //     .editAmountControllers
-                                              //     .add(TextEditingController(
-                                              //         text:
-                                              //             item.unitPrice ??
-                                              //                 "0.00"));
+                                              controller.invoiceController
+                                                  .editAmountControllers
+                                                  .add(
+                                                TextEditingController(
+                                                  text:
+                                                      item.unitPrice ?? "0.00",
+                                                ),
+                                              );
 
-                                              // controller.invoiceController
-                                              //     .editDescriptionControllers
-                                              //     .add(TextEditingController(
-                                              //         text:
-                                              //             item.description ??
-                                              //                 ""));
+                                              controller.invoiceController
+                                                  .editDescriptionControllers
+                                                  .add(
+                                                TextEditingController(
+                                                  text: item.description ?? "",
+                                                ),
+                                              );
 
-                                              // controller.invoiceController
-                                              //     .editQuantityControllers
-                                              //     .add(TextEditingController(
-                                              //         text: item.quantity ??
-                                              //             "1"));
+                                              controller.invoiceController
+                                                  .editQuantityControllers
+                                                  .add(
+                                                TextEditingController(
+                                                  text: item.quantity ?? "1",
+                                                ),
+                                              );
                                             }
                                           }
                                           controller.invoiceController
                                               .createTotalForEdit();
-                                          await 0.5
-                                              .delay(); // Optional small delay before navigation
-                                          controller.hideLoading();
-
+                                          await 0.5.delay();
+                                          controller.invoiceController
+                                              .selectedQboClass(
+                                            controller
+                                                .invoiceController.qboClassList
+                                                .where(
+                                                  (e) =>
+                                                      e.qboClassId.toString() ==
+                                                      proposal.qboClassId,
+                                                )
+                                                .firstOrNull,
+                                          );
+                                          controller.invoiceController
+                                              .selectedQboLocation(
+                                            controller.invoiceController
+                                                .qboLocationList
+                                                .where(
+                                                  (e) =>
+                                                      e.qboLocationId
+                                                          .toString() ==
+                                                      proposal.qboLocationId,
+                                                )
+                                                .firstOrNull,
+                                          );
                                           controller
                                               .invoiceController.removedList
-                                              .clear();
-
-                                          // controller.invoiceController
-                                          //     .isDetailsView(true);
-                                          // controller.invoiceController. createDiscountTextController.text = controller.selectedAppointment.value.invoices.
+                                              .clear(); // Optional small delay before navigation
+                                          controller.hideLoading();
+                                          final x =
+                                              MySharedPref.getCompanyType() ??
+                                                  '';
+                                          controller
+                                              .invoiceController
+                                              .isLocAndClassShow
+                                              .value = x == 'PCS';
+                                          controller.invoiceController
+                                              .selectedInvoice.value = proposal;
                                           Get.toNamed(Routes.INVOICE_DETAILS);
                                         },
                                         child: Card(
@@ -2665,163 +2791,6 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   child: SingleChildScrollView(
                                     child: Column(
                                       children: [
-                                        SizedBox(height: 20.h),
-                                        ListView.separated(
-                                          itemBuilder: (context, index) {
-                                            final item = controller.imageList[
-                                                index]; // 👈 from RxList
-                                            return Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                // Tag section
-                                                Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.label,
-                                                      color: Colors.blueGrey,
-                                                      size: 15.sp,
-                                                    ),
-                                                    SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: TextWidget(
-                                                        text:
-                                                            "${item.tagName ?? 'No Tag'} (${item.imageList!.first.createdAt!.split(" ")[0]})",
-                                                        style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: 15,
-                                                        ),
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-
-                                                SizedBox(height: 6),
-
-                                                // Description section
-                                                Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.description,
-                                                      color: Colors.teal,
-                                                      size: 15.sp,
-                                                    ),
-                                                    SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: TextWidget(
-                                                        maxLines: 5,
-                                                        text: item
-                                                                    .imageList!
-                                                                    .first
-                                                                    .description
-                                                                    ?.trim()
-                                                                    .isNotEmpty ==
-                                                                true
-                                                            ? item
-                                                                .imageList!
-                                                                .first
-                                                                .description!
-                                                            : "N/A",
-                                                        style: const TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.w400,
-                                                          color: Colors.black87,
-                                                        ),
-                                                        overflow: TextOverflow
-                                                            .visible,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-
-                                                SizedBox(height: 10.h),
-
-                                                // Keep your existing horizontal image scroll
-                                                SingleChildScrollView(
-                                                  scrollDirection:
-                                                      Axis.horizontal,
-                                                  child: Row(
-                                                    children: [
-                                                      ...(item.imageList ?? [])
-                                                          .map((
-                                                        img,
-                                                      ) {
-                                                        return GestureDetector(
-                                                          onTap: () {
-                                                            showDialog(
-                                                              context: context,
-                                                              builder: (_) =>
-                                                                  Dialog(
-                                                                child: Image
-                                                                    .memory(
-                                                                  img.bytes!,
-                                                                  fit: BoxFit
-                                                                      .cover,
-                                                                  gaplessPlayback:
-                                                                      true,
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
-                                                          child: Container(
-                                                            height: 150,
-                                                            width: 150,
-                                                            margin:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                              right: 20,
-                                                            ),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                10.r,
-                                                              ),
-                                                              image:
-                                                                  DecorationImage(
-                                                                fit:
-                                                                    BoxFit.fill,
-                                                                image:
-                                                                    MemoryImage(
-                                                                  img.bytes!,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        );
-                                                      }).toList(),
-                                                    ],
-                                                  ),
-                                                ),
-
-                                                SizedBox(height: 10.h),
-                                                Divider(
-                                                  height: 10,
-                                                  thickness: 1,
-                                                  color:
-                                                      Colors.blueGrey.shade200,
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                          separatorBuilder: (_, __) =>
-                                              SizedBox(height: 8.sp),
-                                          itemCount:
-                                              controller.imageList.length,
-                                          shrinkWrap: true,
-                                          physics:
-                                              const NeverScrollableScrollPhysics(),
-                                        ),
-                                        SizedBox(height: 15.sp),
                                         controller.imageList.isEmpty &&
                                                 controller.mediaList.isEmpty
                                             ? Center(
@@ -3082,6 +3051,178 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 physics:
                                                     NeverScrollableScrollPhysics(),
                                               ),
+
+                                        SizedBox(height: 20.h),
+                                        // Display images grouped by upload date
+                                        Obx(() {
+                                          final groupedImages =
+                                              controller.imagesGroupedByDate;
+                                          final sortedDates = groupedImages.keys
+                                              .toList()
+                                            ..sort();
+
+                                          if (sortedDates.isEmpty) {
+                                            return Center(
+                                              child: TextWidget(
+                                                text: "No pictures yet",
+                                              ),
+                                            );
+                                          }
+
+                                          return ListView.separated(
+                                            itemBuilder: (context, index) {
+                                              final date = sortedDates[index];
+                                              final images =
+                                                  groupedImages[date]!;
+
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  // Date header
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                      horizontal: 12.sp,
+                                                      vertical: 8.h,
+                                                    ),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.calendar_today,
+                                                          color:
+                                                              Colors.blueGrey,
+                                                          size: 16.sp,
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        TextWidget(
+                                                          text: date,
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontSize: 16.sp,
+                                                            color:
+                                                                Colors.black87,
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        Container(
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                            horizontal: 8.sp,
+                                                            vertical: 4.h,
+                                                          ),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: theme
+                                                                .primaryColor
+                                                                .withValues(
+                                                                    alpha: 0.1),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                              12.r,
+                                                            ),
+                                                          ),
+                                                          child: TextWidget(
+                                                            text:
+                                                                "${images.length} ${images.length == 1 ? 'image' : 'images'}",
+                                                            style: TextStyle(
+                                                              fontSize: 12.sp,
+                                                              color: theme
+                                                                  .primaryColor,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+
+                                                  SizedBox(height: 10.h),
+
+                                                  // Horizontal scrollable images
+                                                  SingleChildScrollView(
+                                                    scrollDirection:
+                                                        Axis.horizontal,
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                      horizontal: 12.sp,
+                                                    ),
+                                                    child: Row(
+                                                      children: images
+                                                          .map((item) =>
+                                                              GestureDetector(
+                                                                onTap: () {
+                                                                  showDialog(
+                                                                    context:
+                                                                        context,
+                                                                    builder: (_) =>
+                                                                        Dialog(
+                                                                      child: Image
+                                                                          .memory(
+                                                                        item.bytes!,
+                                                                        fit: BoxFit
+                                                                            .cover,
+                                                                        gaplessPlayback:
+                                                                            true,
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                },
+                                                                child:
+                                                                    Container(
+                                                                  height: 150,
+                                                                  width: 150,
+                                                                  margin:
+                                                                      EdgeInsets
+                                                                          .only(
+                                                                    right:
+                                                                        12.sp,
+                                                                  ),
+                                                                  decoration:
+                                                                      BoxDecoration(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .circular(
+                                                                      10.r,
+                                                                    ),
+                                                                    image:
+                                                                        DecorationImage(
+                                                                      fit: BoxFit
+                                                                          .fill,
+                                                                      image:
+                                                                          MemoryImage(
+                                                                        item.bytes!,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ))
+                                                          .toList(),
+                                                    ),
+                                                  ),
+
+                                                  SizedBox(height: 10.h),
+                                                  Divider(
+                                                    height: 10,
+                                                    thickness: 1,
+                                                    color: Colors
+                                                        .blueGrey.shade200,
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                            separatorBuilder: (_, __) =>
+                                                SizedBox(height: 8.sp),
+                                            itemCount: sortedDates.length,
+                                            shrinkWrap: true,
+                                            physics:
+                                                const NeverScrollableScrollPhysics(),
+                                          );
+                                        }),
                                         SizedBox(height: 15.sp),
                                       ],
                                     ),
@@ -3091,7 +3232,485 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             ),
                           ),
 
-                          //********************************* Tab Six  Notes *********************************/
+                          //********************************* Tab Six Files *********************************/
+                          Obx(
+                            () => Column(
+                              children: [
+                                SizedBox(height: 15.sp),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: GestureDetector(
+                                    onTap: controller.mediaList.length == 1
+                                        ? () {}
+                                        : () {
+                                            showMediaBottomSheet(context, -1);
+                                          },
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        right: 8.0,
+                                      ),
+                                      child: DottedBorder(
+                                        options: RectDottedBorderOptions(
+                                          dashPattern: [3, 2],
+                                        ),
+                                        child: Icon(
+                                          Icons.add,
+                                          size: 25.sp,
+                                          color:
+                                              controller.mediaList.length == 1
+                                                  ? Colors.grey
+                                                  : theme.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    child: Column(
+                                      children: [
+                                        controller.imageList.isEmpty &&
+                                                controller.mediaList.isEmpty
+                                            ? Center(
+                                                child: TextWidget(
+                                                  text: "Add Files",
+                                                ),
+                                              )
+                                            : ListView.separated(
+                                                itemBuilder: (context, index) {
+                                                  final item = controller
+                                                      .mediaList[index];
+                                                  return Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      TextWidget(
+                                                        text: item.time,
+                                                      ),
+                                                      SizedBox(height: 10.h),
+
+                                                      // ✅ Description TextField
+                                                      TextField(
+                                                        controller: item
+                                                            .descriptionController, // make sure each item has a controller
+                                                        decoration:
+                                                            InputDecoration(
+                                                          hintText:
+                                                              "Add description...",
+                                                          border:
+                                                              OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                              8.r,
+                                                            ),
+                                                          ),
+                                                          contentPadding:
+                                                              EdgeInsets
+                                                                  .symmetric(
+                                                            horizontal: 12,
+                                                            vertical: 8,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 10.h),
+
+                                                      SingleChildScrollView(
+                                                        scrollDirection:
+                                                            Axis.horizontal,
+                                                        child: Row(
+                                                          children: [
+                                                            ...item.images.map((
+                                                              e,
+                                                            ) {
+                                                              if (_isVideo(e)) {
+                                                                return GestureDetector(
+                                                                  onTap: () =>
+                                                                      showMediaDialog(
+                                                                    context,
+                                                                    e,
+                                                                  ),
+                                                                  child:
+                                                                      Padding(
+                                                                    padding:
+                                                                        const EdgeInsets
+                                                                            .only(
+                                                                      right:
+                                                                          8.0,
+                                                                    ),
+                                                                    child: FutureBuilder<
+                                                                        String?>(
+                                                                      future:
+                                                                          generateVideoThumbnail(
+                                                                        e,
+                                                                      ),
+                                                                      builder: (
+                                                                        context,
+                                                                        snapshot,
+                                                                      ) {
+                                                                        if (snapshot.connectionState ==
+                                                                            ConnectionState.waiting) {
+                                                                          return Container(
+                                                                            height:
+                                                                                150,
+                                                                            width:
+                                                                                150,
+                                                                            alignment:
+                                                                                Alignment.center,
+                                                                            child:
+                                                                                const CircularProgressIndicator(),
+                                                                          );
+                                                                        }
+                                                                        if (snapshot.hasData &&
+                                                                            snapshot.data !=
+                                                                                null) {
+                                                                          return Stack(
+                                                                            children: [
+                                                                              Container(
+                                                                                height: 150,
+                                                                                width: 150,
+                                                                                decoration: BoxDecoration(
+                                                                                  borderRadius: BorderRadius.circular(
+                                                                                    10.r,
+                                                                                  ),
+                                                                                  image: DecorationImage(
+                                                                                    fit: BoxFit.fill,
+                                                                                    image: FileImage(
+                                                                                      File(
+                                                                                        snapshot.data!,
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                              const Positioned.fill(
+                                                                                child: Center(
+                                                                                  child: Icon(
+                                                                                    Icons.play_circle_fill,
+                                                                                    size: 40,
+                                                                                    color: Colors.white,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          );
+                                                                        }
+                                                                        return Container(
+                                                                          height:
+                                                                              150,
+                                                                          width:
+                                                                              150,
+                                                                          color:
+                                                                              Colors.grey[300],
+                                                                          child:
+                                                                              const Icon(
+                                                                            Icons.play_circle_fill,
+                                                                          ),
+                                                                        );
+                                                                      },
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              } else {
+                                                                return GestureDetector(
+                                                                  onTap: () =>
+                                                                      showMediaDialog(
+                                                                    context,
+                                                                    e,
+                                                                  ),
+                                                                  child:
+                                                                      Container(
+                                                                    height: 150,
+                                                                    width: 150,
+                                                                    margin:
+                                                                        EdgeInsets
+                                                                            .only(
+                                                                      right: 20,
+                                                                    ),
+                                                                    decoration:
+                                                                        BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius
+                                                                              .circular(
+                                                                        10.r,
+                                                                      ),
+                                                                      image:
+                                                                          DecorationImage(
+                                                                        fit: BoxFit
+                                                                            .fill,
+                                                                        image:
+                                                                            FileImage(
+                                                                          File(
+                                                                            e,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }
+                                                            }),
+                                                            GestureDetector(
+                                                              onTap: () =>
+                                                                  showMediaBottomSheet(
+                                                                context,
+                                                                index,
+                                                              ),
+                                                              child: Container(
+                                                                height: 150,
+                                                                width: 150,
+                                                                margin:
+                                                                    const EdgeInsets
+                                                                        .only(
+                                                                  right: 8,
+                                                                ),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                          .grey[
+                                                                      200],
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                    10.r,
+                                                                  ),
+                                                                  border: Border
+                                                                      .all(
+                                                                    color: Colors
+                                                                        .grey,
+                                                                  ),
+                                                                ),
+                                                                child:
+                                                                    const Icon(
+                                                                  Icons.add,
+                                                                  size: 40,
+                                                                  color: Colors
+                                                                      .grey,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 10.h),
+
+                                                      SizedBox(
+                                                        width: double.infinity,
+                                                        child: ElevatedButton(
+                                                          onPressed: () async {
+                                                            await controller
+                                                                .uploadImages(
+                                                              tagName: item.time
+                                                                  .split(
+                                                                " ",
+                                                              )[0],
+                                                              description: item
+                                                                  .descriptionController
+                                                                  .text,
+                                                            ); // pass description
+                                                          },
+                                                          child: const Text(
+                                                            "Save",
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                                separatorBuilder: (
+                                                  BuildContext context,
+                                                  int index,
+                                                ) =>
+                                                    SizedBox(height: 8.sp),
+                                                itemCount:
+                                                    controller.mediaList.length,
+                                                shrinkWrap: true,
+                                                physics:
+                                                    NeverScrollableScrollPhysics(),
+                                              ),
+
+                                        SizedBox(height: 20.h),
+                                        // Display images grouped by upload date
+                                        Obx(() {
+                                          final groupedImages =
+                                              controller.imagesGroupedByDate;
+                                          final sortedDates = groupedImages.keys
+                                              .toList()
+                                            ..sort();
+
+                                          if (sortedDates.isEmpty) {
+                                            return Center(
+                                              child: TextWidget(
+                                                text: "No files yet",
+                                              ),
+                                            );
+                                          }
+
+                                          return ListView.separated(
+                                            itemBuilder: (context, index) {
+                                              final date = sortedDates[index];
+                                              final images =
+                                                  groupedImages[date]!;
+
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  // Date header
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                      horizontal: 12.sp,
+                                                      vertical: 8.h,
+                                                    ),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.calendar_today,
+                                                          color:
+                                                              Colors.blueGrey,
+                                                          size: 16.sp,
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        TextWidget(
+                                                          text: date,
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontSize: 16.sp,
+                                                            color:
+                                                                Colors.black87,
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        Container(
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                            horizontal: 8.sp,
+                                                            vertical: 4.h,
+                                                          ),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: theme
+                                                                .primaryColor
+                                                                .withValues(
+                                                                    alpha: 0.1),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                              12.r,
+                                                            ),
+                                                          ),
+                                                          child: TextWidget(
+                                                            text:
+                                                                "${images.length} ${images.length == 1 ? 'image' : 'images'}",
+                                                            style: TextStyle(
+                                                              fontSize: 12.sp,
+                                                              color: theme
+                                                                  .primaryColor,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+
+                                                  SizedBox(height: 10.h),
+
+                                                  // Horizontal scrollable images
+                                                  SingleChildScrollView(
+                                                    scrollDirection:
+                                                        Axis.horizontal,
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                      horizontal: 12.sp,
+                                                    ),
+                                                    child: Row(
+                                                      children: images
+                                                          .map((item) =>
+                                                              GestureDetector(
+                                                                onTap: () {
+                                                                  showDialog(
+                                                                    context:
+                                                                        context,
+                                                                    builder: (_) =>
+                                                                        Dialog(
+                                                                      child: Image
+                                                                          .memory(
+                                                                        item.bytes!,
+                                                                        fit: BoxFit
+                                                                            .cover,
+                                                                        gaplessPlayback:
+                                                                            true,
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                },
+                                                                child:
+                                                                    Container(
+                                                                  height: 150,
+                                                                  width: 150,
+                                                                  margin:
+                                                                      EdgeInsets
+                                                                          .only(
+                                                                    right:
+                                                                        12.sp,
+                                                                  ),
+                                                                  decoration:
+                                                                      BoxDecoration(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .circular(
+                                                                      10.r,
+                                                                    ),
+                                                                    image:
+                                                                        DecorationImage(
+                                                                      fit: BoxFit
+                                                                          .fill,
+                                                                      image:
+                                                                          MemoryImage(
+                                                                        item.bytes!,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ))
+                                                          .toList(),
+                                                    ),
+                                                  ),
+
+                                                  SizedBox(height: 10.h),
+                                                  Divider(
+                                                    height: 10,
+                                                    thickness: 1,
+                                                    color: Colors
+                                                        .blueGrey.shade200,
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                            separatorBuilder: (_, __) =>
+                                                SizedBox(height: 8.sp),
+                                            itemCount: sortedDates.length,
+                                            shrinkWrap: true,
+                                            physics:
+                                                const NeverScrollableScrollPhysics(),
+                                          );
+                                        }),
+                                        SizedBox(height: 15.sp),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          //********************************* Tab Seven Notes *********************************/
                           Padding(
                             padding: EdgeInsets.symmetric(
                               vertical: 8.sp,
@@ -3862,32 +4481,37 @@ void showMediaBottomSheet(BuildContext context, int index) {
       return Padding(
         padding: MediaQuery.of(context).viewInsets,
         child: SizedBox(
-          height: 200,
+          height: 100.h,
           child: Column(
             children: [
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: GestureDetector(
-                  onTap: () async {
-                    appointmentC.getTagList();
-                    Get.toNamed(Routes.TAG_DETAILS);
-                  },
-                  child: AbsorbPointer(
-                    child: TextFormField(
-                      controller: appointmentC.selectedTagController.value,
-                      decoration: InputDecoration(
-                        labelText: 'Select Tag',
-                        suffixIcon: const Icon(Icons.arrow_drop_down),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
+              // ============================================
+              // TAG SYSTEM REMOVED (not needed right now)
+              // ============================================
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 16),
+              //   child: GestureDetector(
+              //     onTap: () async {
+              //       appointmentC.getTagList();
+              //       Get.toNamed(Routes.TAG_DETAILS);
+              //     },
+              //     child: AbsorbPointer(
+              //       child: TextFormField(
+              //         controller: appointmentC.selectedTagController.value,
+              //         decoration: InputDecoration(
+              //           labelText: 'Select Tag',
+              //           suffixIcon: const Icon(Icons.arrow_drop_down),
+              //           border: OutlineInputBorder(
+              //             borderRadius: BorderRadius.circular(8),
+              //           ),
+              //         ),
+              //       ),
+              //     ),
+              //   ),
+              // ),
+              // const SizedBox(height: 16),
+              // ============================================
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -3895,68 +4519,56 @@ void showMediaBottomSheet(BuildContext context, int index) {
                     icon: Icons.photo_library,
                     title: 'Gallery',
                     onTap: () async {
-                      if (appointmentC.selectedTagController.value.text
-                              .trim()
-                              .isEmpty &&
-                          index == -1) {
-                        ScaffoldMessenger.of(context).showMaterialBanner(
-                          MaterialBanner(
-                            content: const Text('Please add a tag first!'),
-                            backgroundColor: Colors.red,
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).hideCurrentMaterialBanner();
-                                },
-                                child: const Text(
-                                  'OK',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                        Future.delayed(const Duration(seconds: 2), () {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).hideCurrentMaterialBanner();
-                        });
-                        return;
-                      }
+                      try {
+                        // Tag validation removed
+                        final List<XFile?> files =
+                            await ImagePicker().pickMultiImage();
+                        if (files.isNotEmpty) {
+                          // Compress images before adding
+                          final newImages = <String>[];
+                          for (var file in files) {
+                            if (file != null) {
+                              try {
+                                final compressedPath = await compressImage(
+                                  file.path,
+                                );
+                                newImages.add(compressedPath);
+                              } catch (e) {
+                                // Skip image if compression fails
+                              }
+                            }
+                          }
 
-                      final List<XFile?> files =
-                          await ImagePicker().pickMultiImage();
-                      if (files.isNotEmpty) {
-                        // Compress images before adding
-                        final newImages = <String>[];
-                        for (var file in files) {
-                          if (file != null) {
-                            final compressedPath = await compressImage(
-                              file.path,
-                            );
-                            newImages.add(compressedPath);
+                          if (newImages.isNotEmpty) {
+                            if (index != -1) {
+                              appointmentC.mediaList[index].images.addAll(
+                                newImages,
+                              );
+                            } else {
+                              appointmentC.mediaList.add(
+                                MediaModel(
+                                  time: DateFormat("MM/dd/yyyy")
+                                      .format(DateTime.now()),
+                                  images: newImages,
+                                ),
+                              );
+                            }
                           }
                         }
 
-                        if (index != -1) {
-                          appointmentC.mediaList[index].images.addAll(
-                            newImages,
-                          );
-                        } else {
-                          appointmentC.mediaList.add(
-                            MediaModel(
-                              time:
-                                  "${appointmentC.selectedTagController.value.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
-                              // tagController.text,
-                              images: newImages,
+                        appointmentC.update();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Error picking images: Unable to access gallery. Please check permissions.',
+                              ),
+                              backgroundColor: Colors.red,
                             ),
                           );
                         }
                       }
-
-                      appointmentC.update();
 
                       Navigator.pop(context);
                     },
@@ -3965,39 +4577,7 @@ void showMediaBottomSheet(BuildContext context, int index) {
                     icon: Icons.camera_alt,
                     title: 'Photo',
                     onTap: () async {
-                      if (appointmentC.selectedTagController.value.text
-                              .trim()
-                              .isEmpty &&
-                          index == -1) {
-                        ScaffoldMessenger.of(context).showMaterialBanner(
-                          MaterialBanner(
-                            content: const Text('Please add a tag first!'),
-                            backgroundColor: Colors.red,
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).hideCurrentMaterialBanner();
-                                },
-                                child: const Text(
-                                  'OK',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        Future.delayed(const Duration(seconds: 2), () {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).hideCurrentMaterialBanner();
-                        });
-
-                        return;
-                      }
-
+                      // Tag validation removed
                       final XFile? file = await ImagePicker().pickImage(
                         source: ImageSource.camera,
                       );
@@ -4013,9 +4593,8 @@ void showMediaBottomSheet(BuildContext context, int index) {
                         } else {
                           appointmentC.mediaList.add(
                             MediaModel(
-                              time:
-                                  // "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
-                                  appointmentC.selectedTagController.value.text,
+                              time: DateFormat("MM/dd/yyyy")
+                                  .format(DateTime.now()),
                               images: [compressedPath],
                             ),
                           );
@@ -4146,6 +4725,7 @@ List<Widget> _buildTicketRows(
                 child: GestureDetector(
                   onTap: () async {
                     controller.settingController.selectedTicket(status);
+                    controller.selectedTicketStatusValue(status.statusId!);
                     await controller.updateAppointment();
                     Get.back();
                   },
@@ -4262,6 +4842,7 @@ Widget buildStatusGrid(
               child: GestureDetector(
                 onTap: () async {
                   controller.selectedAppointmentsStatus(status);
+                  appointmentController.selectedStatusValue(status.statusId!);
                   await appointmentController.updateAppointment();
                   Get.back();
                 },

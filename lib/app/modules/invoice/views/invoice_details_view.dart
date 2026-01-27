@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
@@ -8,12 +11,13 @@ import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
-import '../../../components/global-widgets/splash_container.dart';
+import '../../../components/global-widgets/splash_container.dart'
+    show SplashContainer;
 import '../../../routes/app_pages.dart';
-import '../../../service/helper/network_connectivity.dart'
-    show appointmentController;
-import '../../item/models/item_list_model.dart';
+import '../../appointment/controllers/appointment_controller.dart';
 import '../controllers/invoice_controller.dart';
+import '../models/qbo_class_dropdown_model.dart';
+import '../models/qbo_location_dropdown_model.dart';
 
 class InvoiceDetailsView extends GetView<InvoiceController> {
   const InvoiceDetailsView({super.key});
@@ -22,6 +26,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
     var theme = Theme.of(context);
 
     return WillPopScope(
+      // important! controls hardware back button behavior
       onWillPop: () async {
         if (controller.isDirty.value) {
           final shouldSave = await _showUnsavedChangesDialogAsync(context);
@@ -39,184 +44,292 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
       },
       child: Scaffold(
         appBar: buildPreferredSize(context, theme),
-        body: SafeArea(
-          child: Obx(
-            () => Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
-              child: SingleChildScrollView(
-                physics: BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 14.sp,
-                        vertical: 6.sp,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5.r),
-                        color: controller.type.value == "Invoice"
-                            ? theme.primaryColor
-                            : controller.type.value == "Estimate" &&
-                                    controller.isConverted.value == true
-                                ? Colors.green
-                                : Colors.yellow,
-                      ),
-                      child: Text(
-                        "${controller.type.value}: ${controller.invoiceNumber}",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: controller.type.value == "Estimate" &&
-                                  controller.isConverted.value == false
-                              ? Colors.black
-                              : Colors.white,
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 8.sp),
-                    estimateDetails(theme),
-                    SizedBox(height: 20.sp),
-                    Padding(
-                      padding: EdgeInsets.only(left: 10.0.sp),
-                      child: Text(
-                        "Billable Items",
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18.sp,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 8.sp),
-                    itemsList(theme),
-                    SizedBox(height: 15.sp),
-                    SizedBox(
-                      height: 48.sp,
-                      child: SecondaryButtonWithIcon(
-                        title: "Add Item",
-                        iconData: Icons.add_circle_outline,
-                        onPressed: () {
-                          controller.itemController.sortTextController.clear();
-                          controller.itemController.sortItems();
-                          return _showAddItemDialog(context, theme);
-                        },
-                        inactive: false,
-                      ),
-                    ),
-                    SizedBox(height: 20.sp),
-                    Padding(
-                      padding: EdgeInsets.only(left: 10.0.sp),
-                      child: Text(
-                        "Deposit List",
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18.sp,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 8.sp),
-                    Card(
-                      color: Colors.white,
-                      elevation: 0,
-                      child: SizedBox(
+        body: GestureDetector(
+          onTap: () {
+            FocusScope.of(context).unfocus();
+            controller.invoiceDetailsNoteFocusnode.value.unfocus();
+            controller.invoiceDetailsEmailToFocusnode.value.unfocus();
+            controller.invoiceDetailsEmailBccFocusnode.value.unfocus();
+            controller.invoiceDetailsEmailSubjectFocusnode.value.unfocus();
+            controller.invoiceDetailsEmailBodyFocusnode.value.unfocus();
+            controller.invoiceDetailsSearchFocusnode.value.unfocus();
+            controller.invoiceDetailsEditDiscountFocusnode.value.unfocus();
+            controller.invoiceDetailsDepositRateFocusnode.value.unfocus();
+          },
+          child: SafeArea(
+            child: Obx(
+              () => Padding(
+                padding:
+                    EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
+                child: SingleChildScrollView(
+                  physics: BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
                         width: double.infinity,
-                        child: RawScrollbar(
-                          thumbVisibility: true,
-                          trackVisibility: true,
-                          interactive: true,
-                          thickness: 5.sp,
-                          radius: Radius.circular(100.r),
-                          thumbColor: theme.primaryColor,
-                          trackColor: Colors.grey.shade400,
-                          trackRadius: Radius.circular(8.r),
-                          controller: controller.scrollController,
-                          child: SingleChildScrollView(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 14.sp,
+                          vertical: 6.sp,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.r),
+                          color: controller.type.value == "Invoice"
+                              ? theme.primaryColor
+                              : controller.type.value == "Estimate" &&
+                                      controller.isConverted.value == true
+                                  ? Colors.green
+                                  : Colors.yellow,
+                        ),
+                        child: Text(
+                          "${controller.type.value}: ${controller.invoiceNumber}",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: controller.type.value == "Estimate" &&
+                                    controller.isConverted.value == false
+                                ? Colors.black
+                                : Colors.white,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 8.sp),
+                      estimateDetails(theme),
+                      SizedBox(height: 20.sp),
+                      Padding(
+                        padding: EdgeInsets.only(left: 10.0.sp),
+                        child: Text(
+                          "Billable Items",
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 18.sp,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 8.sp),
+                      itemsList(theme),
+                      SizedBox(height: 15.sp),
+                      SizedBox(
+                        height: 48.sp,
+                        child: SecondaryButtonWithIcon(
+                          title: "Add Item",
+                          iconData: Icons.add_circle_outline,
+                          onPressed: () {
+                            controller.invoiceDetailsNoteFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailToFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailBccFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailSubjectFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailBodyFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsSearchFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEditDiscountFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsDepositRateFocusnode.value
+                                .unfocus();
+                            controller.itemController.sortTextController
+                                .clear();
+                            controller.itemController.sortItems();
+                            return _showAddItemDialog(context, theme);
+                          },
+                          inactive: false,
+                        ),
+                      ),
+                      SizedBox(height: 20.sp),
+                      if (controller.isLocAndClassShow.value)
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            "Location",
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: LightThemeColors.bodyTextSecondaryColor,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                        ),
+                      if (controller.isLocAndClassShow.value)
+                        SizedBox(height: 5.sp),
+                      if (controller.isLocAndClassShow.value)
+                        DropdownButtonFormField<QboLocationModel>(
+                          initialValue: controller.selectedQboLocation.value,
+                          hint: Text("Select Location"),
+                          isExpanded: true,
+                          dropdownColor: Colors.white,
+                          borderRadius: BorderRadius.circular(8.r),
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12.sp,
+                              vertical: 8.sp,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                          items: controller.qboLocationList.map((loc) {
+                            return DropdownMenuItem(
+                              value: loc,
+                              child: Text(loc.name),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            controller.selectedQboLocation(val);
+                          },
+                        ),
+                      if (controller.isLocAndClassShow.value)
+                        if (controller.isLocAndClassShow.value)
+                          SizedBox(height: 5.sp),
+
+                      // Class Dropdown
+                      if (controller.isLocAndClassShow.value)
+                        Align(
+                          alignment: AlignmentGeometry.centerLeft,
+                          child: Text(
+                            "Class",
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: LightThemeColors.bodyTextSecondaryColor,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                        ),
+                      SizedBox(height: 5.sp),
+                      if (controller.isLocAndClassShow.value)
+                        Obx(() {
+                          // This forces Obx to listen to the loading state
+                          final isLoading = controller.isLoadingQboClass.value;
+                          final classList = controller.qboClassList;
+
+                          return DropdownButtonFormField<QboClassModel>(
+                            initialValue: controller.selectedQboClass.value,
+                            hint: const Text("Select Class"),
+                            isExpanded: true,
+                            dropdownColor: Colors.white,
+                            borderRadius: BorderRadius.circular(8.r),
+                            decoration: InputDecoration(
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12.sp,
+                                vertical: 8.sp,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                            ),
+                            items: isLoading
+                                ? [
+                                    const DropdownMenuItem(
+                                      value: null,
+                                      enabled: false,
+                                      child: Text("Loading..."),
+                                    ),
+                                  ]
+                                : classList.isEmpty
+                                    ? [
+                                        const DropdownMenuItem(
+                                          value: null,
+                                          enabled: false,
+                                          child: Text("No data available"),
+                                        ),
+                                      ]
+                                    : classList.map((cls) {
+                                        return DropdownMenuItem(
+                                          value: cls,
+                                          child: Text(cls.name),
+                                        );
+                                      }).toList(),
+                            onChanged: (val) {
+                              controller.selectedQboClass.value = val;
+                            },
+                          );
+                        }),
+                      SizedBox(height: 5.sp),
+                      Padding(
+                        padding: EdgeInsets.only(left: 10.0.sp),
+                        child: Text(
+                          "Deposit List",
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 18.sp,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 8.sp),
+                      Card(
+                        color: Colors.white,
+                        elevation: 0,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: RawScrollbar(
+                            thumbVisibility: true,
+                            trackVisibility: true,
+                            interactive: true,
+                            thickness: 5.sp,
+                            radius: Radius.circular(100.r),
+                            thumbColor: theme.primaryColor,
+                            trackColor: Colors.grey.shade400,
+                            trackRadius: Radius.circular(8.r),
                             controller: controller.scrollController,
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              headingRowHeight: 40.sp,
-                              headingRowColor: WidgetStatePropertyAll(
-                                theme.primaryColor,
-                              ),
-                              headingTextStyle: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              dividerThickness: 2,
-                              columns: const [
-                                DataColumn(label: Text("Date")),
-                                DataColumn(label: Text("Amount")),
-                                DataColumn(label: Text("Type")),
-                                DataColumn(label: Text("Check Name")),
-                                DataColumn(label: Text("Check Number")),
-                                DataColumn(label: Text("Source")),
-                              ],
-                              rows: controller.depositList.isEmpty
-                                  ? [
-                                      const DataRow(
-                                        cells: [
-                                          DataCell.empty,
-                                          DataCell.empty,
-                                          DataCell(
-                                            Center(
-                                              child: Text(
-                                                "No deposit found",
-                                                style: TextStyle(
-                                                  fontStyle: FontStyle.italic,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          DataCell.empty,
-                                          DataCell.empty,
-                                          DataCell.empty,
-                                        ],
+                            child: SingleChildScrollView(
+                              controller: controller.scrollController,
+                              scrollDirection: Axis.horizontal,
+                              child: DataTable(
+                                headingRowHeight: 40.sp,
+                                headingRowColor: WidgetStatePropertyAll(
+                                  theme.primaryColor,
+                                ),
+                                headingTextStyle: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                dividerThickness: 2,
+                                columns: const [
+                                  DataColumn(label: Text("Date")),
+                                  DataColumn(label: Text("Amount")),
+                                  DataColumn(label: Text("Type")),
+                                  DataColumn(label: Text("Check Name")),
+                                  DataColumn(label: Text("Check Number")),
+                                  DataColumn(label: Text("Source")),
+                                ],
+                                rows: controller.depositList.map<DataRow>((
+                                  deposit,
+                                ) {
+                                  return DataRow(
+                                    cells: [
+                                      DataCell(Text(deposit.createdDate ?? "")),
+                                      DataCell(
+                                        Text(
+                                          "\$${deposit.amount?.toStringAsFixed(2) ?? "0.00"}",
+                                        ),
                                       ),
-                                    ]
-                                  : controller.depositList.map<DataRow>((
-                                      deposit,
-                                    ) {
-                                      return DataRow(
-                                        cells: [
-                                          DataCell(
-                                            Text(deposit.createdDate ?? ""),
-                                          ),
-                                          DataCell(
-                                            Text(
-                                              "\$${deposit.amount?.toStringAsFixed(2) ?? "0.00"}",
-                                            ),
-                                          ),
-                                          DataCell(Text(deposit.type ?? "")),
-                                          DataCell(
-                                            Text(deposit.checkName ?? ""),
-                                          ),
-                                          DataCell(
-                                            Text(deposit.checkNumber ?? ""),
-                                          ),
-                                          DataCell(Text(deposit.source ?? "")),
-                                        ],
-                                      );
-                                    }).toList(),
+                                      DataCell(Text(deposit.type ?? "")),
+                                      DataCell(Text(deposit.checkName ?? "")),
+                                      DataCell(Text(deposit.checkNumber ?? "")),
+                                      DataCell(Text(deposit.source ?? "")),
+                                    ],
+                                  );
+                                }).toList(),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 15.sp),
-                    Padding(
-                      padding: EdgeInsets.only(left: 10.0.sp),
-                      child: Text(
-                        "Payments Details",
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 18.sp,
+                      SizedBox(height: 15.sp),
+                      Padding(
+                        padding: EdgeInsets.only(left: 10.0.sp),
+                        child: Text(
+                          "Payments Details",
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 18.sp,
+                          ),
                         ),
                       ),
-                    ),
-                    SizedBox(height: 8.sp),
-                    paymentDetails(theme, context),
-                  ],
+                      SizedBox(height: 8.sp),
+                      paymentDetails(theme, context),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -226,7 +339,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
     );
   }
 
-  buildPreferredSize(BuildContext context, ThemeData theme) {
+  PreferredSizeWidget buildPreferredSize(
+    BuildContext context,
+    ThemeData theme,
+  ) {
     return Get.size.width <= 440
         ? AppBar(
             title: Text('${controller.type.value} Details'),
@@ -235,6 +351,15 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 padding: EdgeInsets.only(right: 15.sp),
                 child: IconButton(
                   onPressed: () async {
+                    FocusScope.of(context).unfocus();
+                    controller.invoiceDetailsNoteFocusnode.value.unfocus();
+                    controller.invoiceDetailsEmailToFocusnode.value.unfocus();
+                    controller.invoiceDetailsEmailBccFocusnode.value.unfocus();
+                    controller.invoiceDetailsEmailSubjectFocusnode.value
+                        .unfocus();
+                    controller.invoiceDetailsEmailBodyFocusnode.value.unfocus();
+                    controller.invoiceDetailsSearchFocusnode.value.unfocus();
+                    await Future.delayed(Duration(milliseconds: 100));
                     await controller.getEmailAutofill(
                       emailType: controller.type.value,
                     );
@@ -255,187 +380,325 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                             padding: EdgeInsets.only(
                               bottom: MediaQuery.of(context).viewInsets.bottom,
                             ),
-                            child: Container(
-                              padding: EdgeInsets.only(
-                                left: 20.sp,
-                                right: 20.sp,
-                                bottom: 20.sp,
-                                top: 5.sp,
-                              ),
-                              child: SingleChildScrollView(
-                                physics: BouncingScrollPhysics(),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      "Send Email",
-                                      style:
-                                          theme.textTheme.bodyLarge?.copyWith(
-                                        fontSize: 18.sp,
-                                        fontWeight: FontWeight.w500,
+                            child: GestureDetector(
+                              onTap: () {
+                                FocusScope.of(context).unfocus();
+                                controller.invoiceDetailsNoteFocusnode.value
+                                    .unfocus();
+                                controller.invoiceDetailsEmailToFocusnode.value
+                                    .unfocus();
+                                controller.invoiceDetailsEmailBccFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsEmailSubjectFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsEmailBodyFocusnode.value
+                                    .unfocus();
+                                controller.invoiceDetailsSearchFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsEditDiscountFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsDepositRateFocusnode.value
+                                    .unfocus();
+                              },
+                              child: Container(
+                                padding: EdgeInsets.only(
+                                  left: 20.sp,
+                                  right: 20.sp,
+                                  bottom: 20.sp,
+                                  top: 5.sp,
+                                ),
+                                child: SingleChildScrollView(
+                                  physics: BouncingScrollPhysics(),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "Send Email",
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
+                                          fontSize: 18.sp,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(height: 15.sp),
-                                    GeneralTextField(
-                                      hint: "To",
-                                      theme: theme,
-                                      textInputType: TextInputType.emailAddress,
-                                      textEditingController:
-                                          controller.toTextController,
-                                    ),
-                                    SizedBox(height: 10.sp),
-                                    GeneralTextField(
-                                      hint: "Bcc",
-                                      theme: theme,
-                                      textInputType: TextInputType.emailAddress,
-                                      textEditingController:
-                                          controller.bccTextController,
-                                    ),
-                                    SizedBox(height: 10.sp),
-                                    GeneralTextField(
-                                      hint: "Subject",
-                                      maxLine: 3,
-                                      theme: theme,
-                                      textEditingController:
-                                          controller.subjectTextController,
-                                    ),
-                                    SizedBox(height: 10.sp),
-                                    GeneralTextField(
-                                      hint: "Email body",
-                                      theme: theme,
-                                      maxLine: 8,
-                                      minLine: 6,
-                                      textInputType: TextInputType.multiline,
-                                      textInputAction: TextInputAction.newline,
-                                      textEditingController:
-                                          controller.emailBodyTextController,
-                                    ),
-                                    SizedBox(height: 10.sp),
-                                    Row(
-                                      children: [
-                                        Obx(
-                                          () => Checkbox(
-                                            activeColor: theme.primaryColor,
-                                            checkColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(4.r),
-                                            ),
-                                            side: BorderSide(
-                                              color:
-                                                  LightThemeColors.primaryColor,
-                                              width: 1.sp,
-                                            ),
-                                            value:
-                                                controller.isSendXPayLink.value,
-                                            onChanged: (value) {
-                                              controller.isSendXPayLink.value =
-                                                  value!;
-                                            },
-                                          ),
-                                        ),
-                                        Text(
-                                          "Send XPayLink",
-                                          style: theme.textTheme.bodyLarge
-                                              ?.copyWith(
-                                            color:
-                                                LightThemeColors.hintTextColor,
-                                            fontSize: 14.sp,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    // Obx(() => SizedBox(
-                                    //       height: controller.selectedFiles.length < 5
-                                    //           ? controller.selectedFiles.length *
-                                    //               50.sp
-                                    //           : 200.sp,
-                                    //       child: ListView.builder(
-                                    //         shrinkWrap: true,
-                                    //         physics:
-                                    //             controller.selectedFiles.length < 4
-                                    //                 ? NeverScrollableScrollPhysics()
-                                    //                 : BouncingScrollPhysics(),
-                                    //         itemCount:
-                                    //             controller.selectedFiles.length,
-                                    //         itemBuilder: (context, index) {
-                                    //           return ListTile(
-                                    //             leading: Icon(
-                                    //               Remix.file_2_line,
-                                    //               color: Colors.green,
-                                    //               size: 16.sp,
-                                    //             ),
-                                    //             title: Text(controller
-                                    //                 .selectedFiles[index].path
-                                    //                 .split('/')
-                                    //                 .last),
-                                    //             trailing: IconButton(
-                                    //               icon: Icon(
-                                    //                 Icons.remove_circle,
-                                    //                 color: Colors.red.shade300,
-                                    //               ),
-                                    //               onPressed: () {
-                                    //                 controller.selectedFiles
-                                    //                     .removeAt(index);
-                                    //                 controller.docFileList =
-                                    //                     RxList.from(controller
-                                    //                         .selectedFiles); // Update docFileList for upload
-                                    //               },
-                                    //             ),
-                                    //           );
-                                    //         },
-                                    //       ),
-                                    //     )),
-                                    // SizedBox(
-                                    //   height: 48.sp,
-                                    //   child: SecondaryButtonWithIcon(
-                                    //       title: "Add Attachment",
-                                    //       onPressed: () async {
-                                    //         await controller.pickFiles();
-                                    //       },
-                                    //       iconData: Remix.attachment_line,
-                                    //       inactive: false),
-                                    // ),
-                                    SizedBox(height: 10.sp),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: SizedBox(
-                                            height: 48.sp,
-                                            child: SecondaryButton(
-                                              title: "Cancel",
-                                              onPressed: () {
-                                                controller.selectedFiles
-                                                    .clear();
-                                                Get.back();
+                                      SizedBox(height: 15.sp),
+                                      GeneralTextField(
+                                        hint: "To",
+                                        theme: theme,
+                                        focusNode: controller
+                                            .invoiceDetailsEmailToFocusnode
+                                            .value,
+                                        textInputType:
+                                            TextInputType.emailAddress,
+                                        textEditingController:
+                                            controller.toTextController,
+                                      ),
+                                      SizedBox(height: 10.sp),
+                                      GeneralTextField(
+                                        hint: "Bcc",
+                                        theme: theme,
+                                        focusNode: controller
+                                            .invoiceDetailsEmailBccFocusnode
+                                            .value,
+                                        textInputType:
+                                            TextInputType.emailAddress,
+                                        textEditingController:
+                                            controller.bccTextController,
+                                      ),
+                                      SizedBox(height: 10.sp),
+                                      GeneralTextField(
+                                        hint: "Subject",
+                                        maxLine: 3,
+                                        theme: theme,
+                                        focusNode: controller
+                                            .invoiceDetailsEmailSubjectFocusnode
+                                            .value,
+                                        textEditingController:
+                                            controller.subjectTextController,
+                                      ),
+                                      SizedBox(height: 10.sp),
+                                      GeneralTextField(
+                                        hint: "Email body",
+                                        theme: theme,
+                                        maxLine: 8,
+                                        minLine: 6,
+                                        focusNode: controller
+                                            .invoiceDetailsEmailBodyFocusnode
+                                            .value,
+                                        textInputType: TextInputType.multiline,
+                                        textInputAction:
+                                            TextInputAction.newline,
+                                        textEditingController:
+                                            controller.emailBodyTextController,
+                                      ),
+                                      SizedBox(height: 10.sp),
+                                      Row(
+                                        children: [
+                                          Obx(
+                                            () => Checkbox(
+                                              activeColor: theme.primaryColor,
+                                              checkColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(4.r),
+                                              ),
+                                              side: BorderSide(
+                                                color: LightThemeColors
+                                                    .primaryColor,
+                                                width: 1.sp,
+                                              ),
+                                              value: controller
+                                                  .isSendXPayLink.value,
+                                              onChanged: (value) {
+                                                controller
+                                                    .invoiceDetailsNoteFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsEmailToFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsEmailBccFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsEmailSubjectFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsEmailBodyFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsSearchFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller.isSendXPayLink
+                                                    .value = value!;
                                               },
-                                              inactive: false,
                                             ),
                                           ),
-                                        ),
-                                        SizedBox(width: 10.sp),
-                                        Expanded(
-                                          child: SizedBox(
-                                            height: 48.sp,
-                                            child: PrimaryButton(
-                                              title: "Send",
-                                              onPressed: () async {
-                                                await controller.sendEmail(
-                                                  pdfType:
-                                                      controller.type.value,
-                                                  emailType:
-                                                      controller.type.value,
+                                          Text(
+                                            "Send XPayLink",
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                              color: LightThemeColors
+                                                  .hintTextColor,
+                                              fontSize: 14.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 5.sp),
+                                      Row(
+                                        children: [
+                                          Obx(
+                                            () => Checkbox(
+                                              activeColor: theme.primaryColor,
+                                              checkColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(4.r),
+                                              ),
+                                              side: BorderSide(
+                                                color: LightThemeColors
+                                                    .primaryColor,
+                                                width: 1.sp,
+                                              ),
+                                              value: controller
+                                                  .isSendTuaPayLink.value,
+                                              onChanged: (value) {
+                                                controller
+                                                    .invoiceDetailsNoteFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsEmailToFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsEmailBccFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsEmailSubjectFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsEmailBodyFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller
+                                                    .invoiceDetailsSearchFocusnode
+                                                    .value
+                                                    .unfocus();
+                                                controller.isSendTuaPayLink
+                                                    .value = value!;
+                                              },
+                                            ),
+                                          ),
+                                          Text(
+                                            "Send TUA PAY Link",
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                              color: LightThemeColors
+                                                  .hintTextColor,
+                                              fontSize: 14.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Obx(() => SizedBox(
+                                            height: controller
+                                                        .selectedFiles.length <
+                                                    5
+                                                ? controller
+                                                        .selectedFiles.length *
+                                                    50.sp
+                                                : 200.sp,
+                                            child: ListView.builder(
+                                              shrinkWrap: true,
+                                              physics: controller.selectedFiles
+                                                          .length <
+                                                      4
+                                                  ? NeverScrollableScrollPhysics()
+                                                  : BouncingScrollPhysics(),
+                                              itemCount: controller
+                                                  .selectedFiles.length,
+                                              itemBuilder: (context, index) {
+                                                return ListTile(
+                                                  leading: Icon(
+                                                    Remix.file_2_line,
+                                                    color: Colors.green,
+                                                    size: 16.sp,
+                                                  ),
+                                                  title: Text(controller
+                                                      .selectedFiles[index].path
+                                                      .split('/')
+                                                      .last),
+                                                  trailing: IconButton(
+                                                    icon: Icon(
+                                                      Icons.remove_circle,
+                                                      color:
+                                                          Colors.red.shade300,
+                                                    ),
+                                                    onPressed: () {
+                                                      controller.selectedFiles
+                                                          .removeAt(index);
+                                                      controller.docFileList =
+                                                          RxList.from(controller
+                                                              .selectedFiles); // Update docFileList for upload
+                                                    },
+                                                  ),
                                                 );
                                               },
-                                              inactive: false,
+                                            ),
+                                          )),
+                                      // SizedBox(
+                                      //   height: 48.sp,
+                                      //   child: SecondaryButtonWithIcon(
+                                      //       title: "Add Attachment",
+                                      //       onPressed: () async {
+                                      //         await controller.pickFiles();
+                                      //       },
+                                      //       iconData: Remix.attachment_line,
+                                      //       inactive: false),
+                                      // ),
+                                      SizedBox(height: 10.sp),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: SizedBox(
+                                              height: 48.sp,
+                                              child: SecondaryButton(
+                                                title: "Cancel",
+                                                onPressed: () {
+                                                  controller.selectedFiles
+                                                      .clear();
+                                                  Get.back();
+                                                },
+                                                inactive: false,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 50.sp),
-                                  ],
+                                          SizedBox(width: 10.sp),
+                                          Expanded(
+                                            child: SizedBox(
+                                              height: 48.sp,
+                                              child: PrimaryButton(
+                                                title: "Send",
+                                                onPressed: () async {
+                                                  // Check if TUA PAY Link is selected
+
+                                                  await controller.sendEmail(
+                                                    pdfType:
+                                                        controller.type.value,
+                                                    emailType:
+                                                        controller.type.value,
+                                                  );
+                                                  if (controller
+                                                      .isSendTuaPayLink.value) {
+                                                    _showTuaPayLinkDialog(
+                                                        context,
+                                                        theme,
+                                                        controller);
+                                                  }
+                                                },
+                                                inactive: false,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 50.sp),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -461,6 +724,23 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     padding: EdgeInsets.only(right: 15.sp),
                     child: IconButton(
                       onPressed: () async {
+                        FocusScope.of(context).unfocus();
+                        controller.invoiceDetailsNoteFocusnode.value.unfocus();
+                        controller.invoiceDetailsEmailToFocusnode.value
+                            .unfocus();
+                        controller.invoiceDetailsEmailBccFocusnode.value
+                            .unfocus();
+                        controller.invoiceDetailsEmailSubjectFocusnode.value
+                            .unfocus();
+                        controller.invoiceDetailsEmailBodyFocusnode.value
+                            .unfocus();
+                        controller.invoiceDetailsSearchFocusnode.value
+                            .unfocus();
+                        controller.invoiceDetailsEditDiscountFocusnode.value
+                            .unfocus();
+                        controller.invoiceDetailsDepositRateFocusnode.value
+                            .unfocus();
+                        await Future.delayed(Duration(milliseconds: 100));
                         await controller.getEmailAutofill(
                           emailType: controller.type.value,
                         );
@@ -483,193 +763,287 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     context,
                                   ).viewInsets.bottom,
                                 ),
-                                child: Container(
-                                  padding: EdgeInsets.only(
-                                    left: 20.sp,
-                                    right: 20.sp,
-                                    bottom: 20.sp,
-                                    top: 5.sp,
-                                  ),
-                                  child: SingleChildScrollView(
-                                    physics: BouncingScrollPhysics(),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          "Send Email",
-                                          style: theme.textTheme.bodyLarge
-                                              ?.copyWith(
-                                            fontSize: 18.sp,
-                                            fontWeight: FontWeight.w500,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    FocusScope.of(context).unfocus();
+                                    controller.invoiceDetailsNoteFocusnode.value
+                                        .unfocus();
+                                    controller
+                                        .invoiceDetailsEmailToFocusnode.value
+                                        .unfocus();
+                                    controller
+                                        .invoiceDetailsEmailBccFocusnode.value
+                                        .unfocus();
+                                    controller
+                                        .invoiceDetailsEmailSubjectFocusnode
+                                        .value
+                                        .unfocus();
+                                    controller
+                                        .invoiceDetailsEmailBodyFocusnode.value
+                                        .unfocus();
+                                    controller
+                                        .invoiceDetailsSearchFocusnode.value
+                                        .unfocus();
+                                    controller
+                                        .invoiceDetailsEditDiscountFocusnode
+                                        .value
+                                        .unfocus();
+                                    controller
+                                        .invoiceDetailsDepositRateFocusnode
+                                        .value
+                                        .unfocus();
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.only(
+                                      left: 20.sp,
+                                      right: 20.sp,
+                                      bottom: 20.sp,
+                                      top: 5.sp,
+                                    ),
+                                    child: SingleChildScrollView(
+                                      physics: BouncingScrollPhysics(),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            "Send Email",
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                              fontSize: 18.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                           ),
-                                        ),
-                                        SizedBox(height: 15.sp),
-                                        GeneralTextField(
-                                          hint: "To",
-                                          theme: theme,
-                                          textInputType:
-                                              TextInputType.emailAddress,
-                                          textEditingController:
-                                              controller.toTextController,
-                                        ),
-                                        SizedBox(height: 10.sp),
-                                        GeneralTextField(
-                                          hint: "Bcc",
-                                          theme: theme,
-                                          textInputType:
-                                              TextInputType.emailAddress,
-                                          textEditingController:
-                                              controller.bccTextController,
-                                        ),
-                                        SizedBox(height: 10.sp),
-                                        GeneralTextField(
-                                          hint: "Subject",
-                                          maxLine: 3,
-                                          theme: theme,
-                                          textEditingController:
-                                              controller.subjectTextController,
-                                        ),
-                                        SizedBox(height: 10.sp),
-                                        GeneralTextField(
-                                          hint: "Email body",
-                                          theme: theme,
-                                          maxLine: 8,
-                                          minLine: 6,
-                                          textInputType:
-                                              TextInputType.multiline,
-                                          textInputAction:
-                                              TextInputAction.newline,
-                                          textEditingController: controller
-                                              .emailBodyTextController,
-                                        ),
-                                        SizedBox(height: 10.sp),
-                                        Row(
-                                          children: [
-                                            Obx(
-                                              () => Checkbox(
-                                                activeColor: theme.primaryColor,
-                                                checkColor: Colors.white,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                    4.r,
+                                          SizedBox(height: 15.sp),
+                                          GeneralTextField(
+                                            hint: "To",
+                                            theme: theme,
+                                            focusNode: controller
+                                                .invoiceDetailsEmailToFocusnode
+                                                .value,
+                                            textInputType:
+                                                TextInputType.emailAddress,
+                                            textEditingController:
+                                                controller.toTextController,
+                                          ),
+                                          SizedBox(height: 10.sp),
+                                          GeneralTextField(
+                                            hint: "Bcc",
+                                            theme: theme,
+                                            focusNode: controller
+                                                .invoiceDetailsEmailBccFocusnode
+                                                .value,
+                                            textInputType:
+                                                TextInputType.emailAddress,
+                                            textEditingController:
+                                                controller.bccTextController,
+                                          ),
+                                          SizedBox(height: 10.sp),
+                                          GeneralTextField(
+                                            hint: "Subject",
+                                            maxLine: 3,
+                                            theme: theme,
+                                            focusNode: controller
+                                                .invoiceDetailsEmailSubjectFocusnode
+                                                .value,
+                                            textEditingController: controller
+                                                .subjectTextController,
+                                          ),
+                                          SizedBox(height: 10.sp),
+                                          GeneralTextField(
+                                            hint: "Email body",
+                                            theme: theme,
+                                            maxLine: 8,
+                                            minLine: 6,
+                                            focusNode: controller
+                                                .invoiceDetailsEmailBodyFocusnode
+                                                .value,
+                                            textInputType:
+                                                TextInputType.multiline,
+                                            textInputAction:
+                                                TextInputAction.newline,
+                                            textEditingController: controller
+                                                .emailBodyTextController,
+                                          ),
+                                          SizedBox(height: 10.sp),
+                                          Row(
+                                            children: [
+                                              Obx(
+                                                () => Checkbox(
+                                                  activeColor:
+                                                      theme.primaryColor,
+                                                  checkColor: Colors.white,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      4.r,
+                                                    ),
+                                                  ),
+                                                  side: BorderSide(
+                                                    color: LightThemeColors
+                                                        .primaryColor,
+                                                    width: 1.sp,
+                                                  ),
+                                                  value: controller
+                                                      .isSendXPayLink.value,
+                                                  onChanged: (value) {
+                                                    controller.isSendXPayLink
+                                                        .value = value!;
+                                                  },
+                                                ),
+                                              ),
+                                              Text(
+                                                "Send XPayLink",
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
+                                                  color: LightThemeColors
+                                                      .hintTextColor,
+                                                  fontSize: 14.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(height: 5.sp),
+                                          Row(
+                                            children: [
+                                              Obx(
+                                                () => Checkbox(
+                                                  activeColor:
+                                                      theme.primaryColor,
+                                                  checkColor: Colors.white,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      4.r,
+                                                    ),
+                                                  ),
+                                                  side: BorderSide(
+                                                    color: LightThemeColors
+                                                        .primaryColor,
+                                                    width: 1.sp,
+                                                  ),
+                                                  value: controller
+                                                      .isSendTuaPayLink.value,
+                                                  onChanged: (value) {
+                                                    controller.isSendTuaPayLink
+                                                        .value = value!;
+                                                  },
+                                                ),
+                                              ),
+                                              Text(
+                                                "Send TUA PAY Link",
+                                                style: theme.textTheme.bodyLarge
+                                                    ?.copyWith(
+                                                  color: LightThemeColors
+                                                      .hintTextColor,
+                                                  fontSize: 14.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          // Obx(() => SizedBox(
+                                          //       height: controller.selectedFiles.length < 5
+                                          //           ? controller.selectedFiles.length *
+                                          //               50.sp
+                                          //           : 200.sp,
+                                          //       child: ListView.builder(
+                                          //         shrinkWrap: true,
+                                          //         physics:
+                                          //             controller.selectedFiles.length < 4
+                                          //                 ? NeverScrollableScrollPhysics()
+                                          //                 : BouncingScrollPhysics(),
+                                          //         itemCount:
+                                          //             controller.selectedFiles.length,
+                                          //         itemBuilder: (context, index) {
+                                          //           return ListTile(
+                                          //             leading: Icon(
+                                          //               Remix.file_2_line,
+                                          //               color: Colors.green,
+                                          //               size: 16.sp,
+                                          //             ),
+                                          //             title: Text(controller
+                                          //                 .selectedFiles[index].path
+                                          //                 .split('/')
+                                          //                 .last),
+                                          //             trailing: IconButton(
+                                          //               icon: Icon(
+                                          //                 Icons.remove_circle,
+                                          //                 color: Colors.red.shade300,
+                                          //               ),
+                                          //               onPressed: () {
+                                          //                 controller.selectedFiles
+                                          //                     .removeAt(index);
+                                          //                 controller.docFileList =
+                                          //                     RxList.from(controller
+                                          //                         .selectedFiles); // Update docFileList for upload
+                                          //               },
+                                          //             ),
+                                          //           );
+                                          //         },
+                                          //       ),
+                                          //     )),
+                                          // SizedBox(
+                                          //   height: 48.sp,
+                                          //   child: SecondaryButtonWithIcon(
+                                          //       title: "Add Attachment",
+                                          //       onPressed: () async {
+                                          //         await controller.pickFiles();
+                                          //       },
+                                          //       iconData: Remix.attachment_line,
+                                          //       inactive: false),
+                                          // ),
+                                          SizedBox(height: 10.sp),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: SizedBox(
+                                                  height: 48.sp,
+                                                  child: SecondaryButton(
+                                                    title: "Cancel",
+                                                    onPressed: () {
+                                                      controller.selectedFiles
+                                                          .clear();
+                                                      Get.back();
+                                                    },
+                                                    inactive: false,
                                                   ),
                                                 ),
-                                                side: BorderSide(
-                                                  color: LightThemeColors
-                                                      .primaryColor,
-                                                  width: 1.sp,
-                                                ),
-                                                value: controller
-                                                    .isSendXPayLink.value,
-                                                onChanged: (value) {
-                                                  controller.isSendXPayLink
-                                                      .value = value!;
-                                                },
                                               ),
-                                            ),
-                                            Text(
-                                              "Send XPayLink",
-                                              style: theme.textTheme.bodyLarge
-                                                  ?.copyWith(
-                                                color: LightThemeColors
-                                                    .hintTextColor,
-                                                fontSize: 14.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        // Obx(() => SizedBox(
-                                        //       height: controller.selectedFiles.length < 5
-                                        //           ? controller.selectedFiles.length *
-                                        //               50.sp
-                                        //           : 200.sp,
-                                        //       child: ListView.builder(
-                                        //         shrinkWrap: true,
-                                        //         physics:
-                                        //             controller.selectedFiles.length < 4
-                                        //                 ? NeverScrollableScrollPhysics()
-                                        //                 : BouncingScrollPhysics(),
-                                        //         itemCount:
-                                        //             controller.selectedFiles.length,
-                                        //         itemBuilder: (context, index) {
-                                        //           return ListTile(
-                                        //             leading: Icon(
-                                        //               Remix.file_2_line,
-                                        //               color: Colors.green,
-                                        //               size: 16.sp,
-                                        //             ),
-                                        //             title: Text(controller
-                                        //                 .selectedFiles[index].path
-                                        //                 .split('/')
-                                        //                 .last),
-                                        //             trailing: IconButton(
-                                        //               icon: Icon(
-                                        //                 Icons.remove_circle,
-                                        //                 color: Colors.red.shade300,
-                                        //               ),
-                                        //               onPressed: () {
-                                        //                 controller.selectedFiles
-                                        //                     .removeAt(index);
-                                        //                 controller.docFileList =
-                                        //                     RxList.from(controller
-                                        //                         .selectedFiles); // Update docFileList for upload
-                                        //               },
-                                        //             ),
-                                        //           );
-                                        //         },
-                                        //       ),
-                                        //     )),
-                                        // SizedBox(
-                                        //   height: 48.sp,
-                                        //   child: SecondaryButtonWithIcon(
-                                        //       title: "Add Attachment",
-                                        //       onPressed: () async {
-                                        //         await controller.pickFiles();
-                                        //       },
-                                        //       iconData: Remix.attachment_line,
-                                        //       inactive: false),
-                                        // ),
-                                        SizedBox(height: 10.sp),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 48.sp,
-                                                child: SecondaryButton(
-                                                  title: "Cancel",
-                                                  onPressed: () {
-                                                    controller.selectedFiles
-                                                        .clear();
-                                                    Get.back();
-                                                  },
-                                                  inactive: false,
+                                              SizedBox(width: 10.sp),
+                                              Expanded(
+                                                child: SizedBox(
+                                                  height: 48.sp,
+                                                  child: PrimaryButton(
+                                                    title: "Send",
+                                                    onPressed: () async {
+                                                      // Check if TUA PAY Link is selected
+                                                      if (controller
+                                                          .isSendTuaPayLink
+                                                          .value) {
+                                                        _showTuaPayLinkDialog(
+                                                            context,
+                                                            theme,
+                                                            controller);
+                                                      } else {
+                                                        await controller
+                                                            .sendEmail(
+                                                          pdfType: controller
+                                                              .type.value,
+                                                          emailType: controller
+                                                              .type.value,
+                                                        );
+                                                      }
+                                                    },
+                                                    inactive: false,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            SizedBox(width: 10.sp),
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 48.sp,
-                                                child: PrimaryButton(
-                                                  title: "Send",
-                                                  onPressed: () async {
-                                                    await controller.sendEmail(
-                                                      pdfType:
-                                                          controller.type.value,
-                                                      emailType:
-                                                          controller.type.value,
-                                                    );
-                                                  },
-                                                  inactive: false,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 50.sp),
-                                      ],
+                                            ],
+                                          ),
+                                          SizedBox(height: 50.sp),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -692,6 +1066,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   }
 
   Card estimateDetails(ThemeData theme) {
+    final apptC = Get.find<AppointmentController>();
     return Card(
       elevation: 0,
       color: Colors.white,
@@ -710,7 +1085,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
               ),
             ),
             trailing: Text(
-              controller.customerName,
+              "${apptC.selectedCustomer.value!.firstName!} ${apptC.selectedCustomer.value!.lastName!}",
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
@@ -719,25 +1094,38 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             ),
           ),
           MainDivider(),
-          ListTile(
-            contentPadding: Get.size.width <= 440
-                ? null
+          Padding(
+            padding: Get.size.width <= 440
+                ? EdgeInsets.symmetric(vertical: 8.sp, horizontal: 16.sp)
                 : EdgeInsets.symmetric(vertical: 8.sp, horizontal: 8.sp),
-            title: Text(
-              "Address",
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: LightThemeColors.hintTextColor,
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            trailing: Text(
-              controller.address,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.end,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Address",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: LightThemeColors.hintTextColor,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(width: 16.sp),
+                Expanded(
+                  child: Text(
+                    apptC.selectedCustomer.value!.address1 != null
+                        ? "${apptC.selectedCustomer.value!.address1!} ${apptC.selectedCustomer.value!.city!}, ${apptC.selectedCustomer.value!.state!} ${apptC.selectedCustomer.value!.zipCode!}"
+                        : "N/A",
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.end,
+                    maxLines: null,
+                    overflow: TextOverflow.visible,
+                  ),
+                ),
+              ],
             ),
           ),
           MainDivider(),
@@ -789,6 +1177,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   }
 
   Widget itemsList(ThemeData theme) {
+    // log("selectedItem list length ${controller.selectedItemList.length}");
     return controller.selectedItemList.isEmpty
         ? SizedBox.shrink()
         : Card(
@@ -822,28 +1211,31 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  item.selectedItem!.name ?? "",
+                                  item.name ?? "",
                                   style: theme.textTheme.bodyLarge,
                                 ),
                                 SizedBox(height: 4.sp),
-                                item.selectedItem!.description!.isEmpty
+                                controller.editDescriptionControllers[index]
+                                        .text.isEmpty
                                     ? SizedBox.shrink()
                                     : Text(
-                                        item.selectedItem!.description ?? "",
+                                        controller
+                                            .editDescriptionControllers[index]
+                                            .text,
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         style: theme.textTheme.bodySmall,
                                       ),
                                 SizedBox(height: 4.sp),
                                 Text(
-                                  "${item.quantity ?? ""} X \$${item.selectedItem!.price}",
+                                  "${controller.editQuantityControllers[index].text.isEmpty ? "1" : controller.editQuantityControllers[index].text} X \$${controller.editAmountControllers[index].text}",
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: theme.primaryColor,
                                   ),
                                 ),
                                 SizedBox(height: 4.sp),
                                 Text(
-                                  "Taxable: ${item.selectedItem!.isTaxable == true ? "Yes" : "No"}",
+                                  "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
                                   style: theme.textTheme.bodySmall,
                                 ),
                               ],
@@ -854,8 +1246,28 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               IconButton(
                                 icon: Icon(Remix.edit_2_line),
                                 onPressed: () {
-                                  appointmentController
-                                      .isSelectSingleNeedToCall(true);
+                                  controller.invoiceDetailsNoteFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailToFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailBccFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailSubjectFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailBodyFocusnode.value
+                                      .unfocus();
+                                  controller.invoiceDetailsSearchFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEditDiscountFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsDepositRateFocusnode.value
+                                      .unfocus();
                                   showAdaptiveDialog(
                                     context: context,
                                     barrierDismissible: false,
@@ -908,17 +1320,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                             theme: theme,
                                                             maxLine: 4,
                                                             textEditingController:
-                                                                TextEditingController(
-                                                              text: item
-                                                                      .selectedItem!
-                                                                      .description ??
-                                                                  "",
-                                                            ),
+                                                                controller
+                                                                        .editDescriptionControllers[
+                                                                    index],
                                                             onChanged: (v) {
                                                               controller
                                                                   .selectedItemList[
                                                                       index]
-                                                                  .selectedItem!
                                                                   .description = v;
                                                               controller
                                                                   .markAsDirty();
@@ -947,29 +1355,20 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                             ),
                                                             theme: theme,
                                                             textEditingController:
-                                                                TextEditingController(
-                                                              text: item
-                                                                  .selectedItem!
-                                                                  .price!
-                                                                  .toStringAsFixed(
-                                                                2,
-                                                              ),
-                                                            ),
+                                                                controller
+                                                                        .editAmountControllers[
+                                                                    index],
                                                             onChanged: (value) {
-                                                              controller
-                                                                  .markAsDirty();
                                                               controller
                                                                   .selectedItemList[
                                                                       index]
-                                                                  .selectedItem!
                                                                   .price = double
                                                                       .tryParse(
-                                                                    value,
-                                                                  ) ??
+                                                                          value) ??
                                                                   0.00;
+
                                                               controller
-                                                                  .selectedItemList
-                                                                  .refresh();
+                                                                  .markAsDirty();
                                                               controller
                                                                   .createTotalForEdit(); // Recalculate total when amount changes
 
@@ -992,32 +1391,21 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                         Expanded(
                                                           child:
                                                               GeneralTextField(
-                                                            isEnabled: true,
                                                             hint: '1',
                                                             textInputType:
                                                                 TextInputType
-                                                                    .number,
+                                                                    .numberWithOptions(
+                                                              decimal: true,
+                                                              signed: false,
+                                                            ),
                                                             theme: theme,
                                                             textEditingController:
-                                                                TextEditingController(
-                                                              text: item
-                                                                  .quantity
-                                                                  .toString(),
-                                                            ),
+                                                                controller
+                                                                        .editQuantityControllers[
+                                                                    index],
                                                             onChanged: (value) {
                                                               controller
                                                                   .markAsDirty();
-                                                              controller
-                                                                  .selectedItemList[
-                                                                      index]
-                                                                  .quantity = double
-                                                                      .tryParse(
-                                                                    value,
-                                                                  ) ??
-                                                                  1;
-                                                              controller
-                                                                  .selectedItemList
-                                                                  .refresh();
                                                               controller
                                                                   .createTotalForEdit();
                                                               controller
@@ -1042,7 +1430,6 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                             value: controller
                                                                     .selectedItemList[
                                                                         index]
-                                                                    .selectedItem!
                                                                     .isTaxable ??
                                                                 true,
                                                             dropdownColor:
@@ -1067,7 +1454,6 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                               controller
                                                                   .selectedItemList[
                                                                       index]
-                                                                  .selectedItem!
                                                                   .isTaxable = value;
 
                                                               controller
@@ -1096,14 +1482,6 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                   child: PrimaryButton(
                                                     title: "Close",
                                                     onPressed: () {
-                                                      appointmentController
-                                                          .isSelectSingleNeedToCall(
-                                                        false,
-                                                      );
-                                                      controller
-                                                          .createTotalForEdit();
-                                                      controller
-                                                          .updateRequestedDepositAmount();
                                                       Get.back();
                                                     },
                                                     inactive: false,
@@ -1124,6 +1502,28 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   color: Colors.red,
                                 ),
                                 onPressed: () {
+                                  controller.invoiceDetailsNoteFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailToFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailBccFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailSubjectFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailBodyFocusnode.value
+                                      .unfocus();
+                                  controller.invoiceDetailsSearchFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEditDiscountFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsDepositRateFocusnode.value
+                                      .unfocus();
                                   showAdaptiveDialog(
                                     context: context,
                                     builder: (context) => AlertDialog(
@@ -1168,7 +1568,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           );
   }
 
-  paymentDetails(ThemeData theme, context) {
+  Obx paymentDetails(ThemeData theme, context) {
     double screenWidth = Get.width;
     return Obx(
       () => Card(
@@ -1190,7 +1590,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 ),
               ),
               trailing: Text(
-                "\$${controller.subTotal.value.toStringAsFixed(2)}",
+                "\$${controller.invoiceSubtotal.value.toStringAsFixed(2)}",
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w500,
@@ -1241,6 +1641,26 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                             }).toList(),
                           ).then((selectedValue) {
                             if (selectedValue != null) {
+                              FocusScope.of(context).unfocus();
+                              controller.invoiceDetailsNoteFocusnode.value
+                                  .unfocus();
+                              controller.invoiceDetailsEmailToFocusnode.value
+                                  .unfocus();
+                              controller.invoiceDetailsEmailBccFocusnode.value
+                                  .unfocus();
+                              controller
+                                  .invoiceDetailsEmailSubjectFocusnode.value
+                                  .unfocus();
+                              controller.invoiceDetailsEmailBodyFocusnode.value
+                                  .unfocus();
+                              controller.invoiceDetailsSearchFocusnode.value
+                                  .unfocus();
+                              controller
+                                  .invoiceDetailsEditDiscountFocusnode.value
+                                  .unfocus();
+                              controller
+                                  .invoiceDetailsDepositRateFocusnode.value
+                                  .unfocus();
                               controller.markAsDirty();
                               final selectedDiscount =
                                   controller.discountOptions.firstWhere(
@@ -1314,27 +1734,22 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           ),
                           theme: theme,
                           textAlignment: TextAlign.end,
+                          focusNode: controller
+                              .invoiceDetailsEditDiscountFocusnode.value,
                           textEditingController:
                               controller.editDiscountTextController,
                           onChanged: (value) {
                             controller.markAsDirty();
-
-                            // Allow only digits and one decimal point
                             final sanitized = value.replaceAll(
                               RegExp(r'[^0-9.]'),
                               '',
                             );
+                            if (sanitized.isEmpty) {
+                              controller.discount = "0.00";
+                            } else {
+                              controller.discount = sanitized;
+                            }
 
-                            // Safely convert to double
-                            final discountValue =
-                                double.tryParse(sanitized) ?? 0.0;
-
-                            // Store a formatted value (avoid NaN)
-                            controller.discount = discountValue.toStringAsFixed(
-                              2,
-                            );
-
-                            // Update totals
                             controller.createTotalForEdit();
                             controller.updateRequestedDepositAmount();
                           },
@@ -1375,7 +1790,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "-\$${(controller.discountAmounts.value).toStringAsFixed(2)}",
+                    "-\$${(controller.invoiceDiscount.value).toStringAsFixed(2)}",
                     style: theme.textTheme.bodyLarge,
                   ),
                 ),
@@ -1397,7 +1812,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "\$${(controller.amountAfterDiscounts.value).toStringAsFixed(2)}",
+                    "\$${(controller.amountAfterDiscount.value).toStringAsFixed(2)}",
                     style: theme.textTheme.bodyLarge,
                   ),
                 ),
@@ -1418,7 +1833,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "\$${controller.taxableTotal.value.toStringAsFixed(2)}",
+                    "\$${(controller.invoiceSubtotal.value - controller.nonTaxableTotalInDetails.value).toStringAsFixed(2)}",
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
@@ -1442,7 +1857,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "\$${(controller.discountedTaxableTotal.value).toStringAsFixed(2)}",
+                    "\$${(controller.discountedTaxableTotalInEdit.value).toStringAsFixed(2)}",
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
@@ -1458,6 +1873,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     color: Colors.white,
                     radius: 8,
                     onPressed: () {
+                      // Dismiss keyboard when opening dropdowns
+
+                      FocusScope.of(context).unfocus();
+
                       RenderBox renderBox =
                           context.findRenderObject() as RenderBox;
                       Offset offset = renderBox.localToGlobal(Offset(0, 32.sp));
@@ -1495,6 +1914,23 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         ],
                       ).then((selectedTaxID) async {
                         if (selectedTaxID != null) {
+                          FocusScope.of(context).unfocus();
+                          controller.invoiceDetailsNoteFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEmailToFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEmailBccFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEmailSubjectFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEmailBodyFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsSearchFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEditDiscountFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsDepositRateFocusnode.value
+                              .unfocus();
                           controller.markAsDirty();
                           if (selectedTaxID == "") {
                             controller.selectedTaxName.value = "NO TAX";
@@ -1609,7 +2045,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "+\$${(controller.taxAmount.value).toStringAsFixed(2)}",
+                    "+\$${(controller.invoiceTax.value).toStringAsFixed(2)}",
                     style: theme.textTheme.bodyLarge,
                   ),
                 ),
@@ -1631,7 +2067,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "\$${controller.amountAfterAddingTax.value.toStringAsFixed(2)}",
+                    "\$${controller.invoiceTotal.value}",
                     style: theme.textTheme.bodyLarge,
                   ),
                 ),
@@ -1677,7 +2113,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   padding: EdgeInsets.only(right: 12.sp),
                   child: controller.type.value == "Invoice"
                       ? Text(
-                          "\$${(controller.amountAfterAddingTax.value - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}",
+                          "\$${(double.parse(controller.total.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}",
                           style: theme.textTheme.bodyLarge,
                         )
                       : Text(
@@ -1725,7 +2161,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "\$ ${(controller.amountAfterAddingTax.value - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}",
+                    "\$ ${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}",
                     style: theme.textTheme.bodyLarge!.copyWith(
                       color: Colors.red,
                     ),
@@ -1751,9 +2187,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.sp),
                     child: GeneralTextField(
-                      maxLine: 4,
                       hint: "Add a note here..",
                       theme: theme,
+                      maxLine: 5,
+                      minLine: 1,
+                      focusNode: controller.invoiceDetailsNoteFocusnode.value,
+                      textInputType: TextInputType.multiline,
+                      textInputAction: TextInputAction.newline,
                       textEditingController: controller.editNoteTextController,
                       onChanged: (_) => controller.markAsDirty(),
                     ),
@@ -1780,6 +2220,26 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               ),
                               value: controller.convertToInvoice.value,
                               onChanged: (value) {
+                                controller.invoiceDetailsNoteFocusnode.value
+                                    .unfocus();
+                                controller.invoiceDetailsEmailToFocusnode.value
+                                    .unfocus();
+                                controller.invoiceDetailsEmailBccFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsEmailSubjectFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsEmailBodyFocusnode.value
+                                    .unfocus();
+                                controller.invoiceDetailsSearchFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsEditDiscountFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsDepositRateFocusnode.value
+                                    .unfocus();
                                 controller.convertToInvoice.value = value!;
                                 controller.markAsDirty();
                               },
@@ -1805,6 +2265,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     color: Colors.white,
                     radius: 8,
                     onPressed: () {
+                      // Dismiss keyboard when opening dropdowns
+
+                      FocusScope.of(context).unfocus();
+
                       RenderBox renderBox =
                           context.findRenderObject() as RenderBox;
                       Offset offset = renderBox.localToGlobal(Offset(0, 36.sp));
@@ -1842,6 +2306,23 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         }).toList(),
                       ).then((selectedValue) {
                         if (selectedValue != null) {
+                          FocusScope.of(context).unfocus();
+                          controller.invoiceDetailsNoteFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEmailToFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEmailBccFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEmailSubjectFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEmailBodyFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsSearchFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsEditDiscountFocusnode.value
+                              .unfocus();
+                          controller.invoiceDetailsDepositRateFocusnode.value
+                              .unfocus();
                           controller.markAsDirty();
                           controller.requestedDepositAmountEditTextController
                               .clear();
@@ -1931,24 +2412,31 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           child: GeneralTextField(
                             hint: "0.00",
                             theme: theme,
+                            focusNode: controller
+                                .invoiceDetailsDepositRateFocusnode.value,
                             textInputType: TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             onChanged: (v) {
                               controller.markAsDirty();
-
                               final rate = double.tryParse(v) ?? 0.0;
-
-                              // Get the current balance due
-                              final balanceDue = controller
-                                      .amountAfterAddingTax.value -
-                                  double.parse(controller.depositAmount.value);
-
-                              // Calculate requested deposit based on balance due
-                              final depositAmount =
-                                  (balanceDue * rate / 100).toStringAsFixed(2);
-
-                              // Update the text field
+                              final total = ((controller.invoiceSubtotal.value -
+                                              controller
+                                                  .invoiceDiscount.value) -
+                                          controller
+                                              .nonTaxableTotalInDetails.value) *
+                                      (double.tryParse(controller.tax.value) ??
+                                          0) /
+                                      100 +
+                                  ((controller.invoiceSubtotal.value) -
+                                      (controller.invoiceDiscount.value));
+                              final depositAmount = ((total -
+                                          double.parse(
+                                            controller.depositAmount.value,
+                                          )) *
+                                      rate /
+                                      100)
+                                  .toStringAsFixed(2);
                               controller
                                   .requestedDepositAmountEditTextController
                                   .text = depositAmount;
@@ -1971,21 +2459,47 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   SizedBox(
                     height: Get.size.width <= 440 ? 35.sp : null,
                     width: 120.sp,
-                    child: GeneralTextField(
-                      hint: "0.00",
-                      textInputType: TextInputType.numberWithOptions(
-                        decimal: true,
+                    child: TextField(
+                      controller:
+                          controller.requestedDepositAmountEditTextController,
+                      decoration: InputDecoration(
+                        hintText: "0.00",
+                        contentPadding: Get.size.width <= 440
+                            ? EdgeInsets.symmetric(horizontal: 15.sp)
+                            : null,
+                        filled: true,
+                        fillColor: LightThemeColors.fillColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                          borderSide: BorderSide(
+                            color: LightThemeColors.buttonBorderColor,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10.r),
+                          borderSide: BorderSide(
+                            color: LightThemeColors.buttonBorderColor,
+                          ),
+                        ),
                       ),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
                       readOnly: controller.selectedDepositRequestOption.value ==
                                   "1" ||
                               controller.selectedDepositRequestOption.value ==
                                   "0"
                           ? true
                           : false,
-                      theme: theme,
+                      style: theme.textTheme.bodyMedium,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,2}'),
+                        ),
+                      ],
                       onChanged: (_) => controller.markAsDirty(),
-                      textEditingController:
-                          controller.requestedDepositAmountEditTextController,
                     ),
                   ),
                 ],
@@ -1999,10 +2513,12 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
               child: PrimaryButton(
                 title: "Save",
                 onPressed: () async {
-                  await controller.editInvoice();
-                  MySnackBar.showToast(
-                    message: "${controller.type.value} updated successfully!",
-                  );
+                  try {
+                    await controller.editInvoice();
+                  } catch (e, s) {
+                    log(" Error in saving invoice: $e");
+                    log(s.toString());
+                  }
                 },
                 inactive: controller.selectedItemList.isEmpty,
               ),
@@ -2016,20 +2532,22 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       title: "Pay Now",
                       onPressed: () {
                         if (controller.isDirty.value) {
-                          controller.total.value =
-                              (double.parse(controller.invoiceTotal.value) -
-                                      double.parse(
-                                        controller.depositAmount.value,
-                                      ))
-                                  .toStringAsFixed(2);
                           _showUnsavedChangesDialog(context, () {
                             // User confirms to proceed
                             controller.depositRequestPay.value = false;
-                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION);
+                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
+                                .then((_) {
+                              // Refresh invoice data when returning from payment
+                              controller.getInvoiceName();
+                            });
                           });
                         } else {
                           controller.depositRequestPay.value = false;
-                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION);
+                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
+                              .then((_) {
+                            // Refresh invoice data when returning from payment
+                            controller.getInvoiceName();
+                          });
                         }
                       },
                       inactive: controller.selectedItemList.isEmpty,
@@ -2048,11 +2566,19 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         if (controller.isDirty.value) {
                           _showUnsavedChangesDialog(context, () {
                             controller.depositRequestPay.value = true;
-                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION);
+                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
+                                .then((_) {
+                              // Refresh invoice data when returning from payment
+                              controller.getInvoiceName();
+                            });
                           });
                         } else {
                           controller.depositRequestPay.value = true;
-                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION);
+                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
+                              .then((_) {
+                            // Refresh invoice data when returning from payment
+                            controller.getInvoiceName();
+                          });
                         }
                       },
                       inactive: false,
@@ -2082,6 +2608,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   height: 40.sp,
                   child: GeneralTextField(
                     hint: "Search item",
+                    focusNode: controller.invoiceDetailsSearchFocusnode.value,
                     suffixIcon: Icon(
                       Icons.search,
                       color: LightThemeColors.bodyTextSecondaryColor,
@@ -2101,7 +2628,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         item,
                       ) {
                         final alreadySelected = controller.selectedItemList.any(
-                          (selected) => selected.selectedItem!.id == item.id,
+                          (selected) => selected.id == item.id,
                         );
                         return CheckboxListTile(
                           activeColor: theme.primaryColor,
@@ -2109,36 +2636,38 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           onChanged: (checked) {
                             controller.markAsDirty();
                             if (checked == true && !alreadySelected) {
-                              controller.selectedItemList.add(
-                                SelectedItemListModel(
-                                  quantity: 1,
-                                  selectedItem: item,
+                              controller.selectedItemList.add(item);
+                              controller.editAmountControllers.add(
+                                TextEditingController(
+                                  text: item.price.toString(),
                                 ),
                               );
-                              // controller.editAmountControllers.add(
-                              //     TextEditingController(
-                              //         text: item.price.toString()));
-                              // controller.editDescriptionControllers.add(
-                              //     TextEditingController(
-                              //         text: item.description ?? ""));
-                              // controller.editQuantityControllers
-                              //     .add(TextEditingController(text: '1'));
+                              controller.editDescriptionControllers.add(
+                                TextEditingController(
+                                  text: item.description ?? "",
+                                ),
+                              );
+                              controller.editQuantityControllers.add(
+                                TextEditingController(text: '1'),
+                              );
                               controller.createTotalForEdit();
                               controller.updateRequestedDepositAmount();
                             } else if (checked == false && alreadySelected) {
                               final index =
                                   controller.selectedItemList.indexWhere(
-                                (selected) =>
-                                    selected.selectedItem!.id == item.id,
+                                (selected) => selected.id == item.id,
                               );
                               if (index != -1) {
                                 controller.selectedItemList.removeAt(index);
-                                // controller.editAmountControllers
-                                //     .removeAt(index);
-                                // controller.editDescriptionControllers
-                                //     .removeAt(index);
-                                // controller.editQuantityControllers
-                                //     .removeAt(index);
+                                controller.editAmountControllers.removeAt(
+                                  index,
+                                );
+                                controller.editDescriptionControllers.removeAt(
+                                  index,
+                                );
+                                controller.editQuantityControllers.removeAt(
+                                  index,
+                                );
                                 controller.createTotalForEdit();
                                 controller.updateRequestedDepositAmount();
                               }
@@ -2287,6 +2816,379 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           TextButton(onPressed: () => Get.back(), child: Text("Cancel")),
         ],
       ),
+    );
+  }
+
+  void _showTuaPayLinkDialog(
+    BuildContext context,
+    ThemeData theme,
+    InvoiceController controller,
+  ) {
+    final apptC = Get.find<AppointmentController>();
+    // Calculate base amount (invoice total after discount but before payments)
+    final payAmount = (double.parse(controller.invoiceTotal.value) -
+            double.parse(controller.depositAmount.value))
+        .toStringAsFixed(2);
+
+    // Pre-fill base amount
+    controller.tuaBaseAmountController.text =
+        double.parse(controller.invoiceTotal.value).toStringAsFixed(2);
+    controller.tuaRemainAmountController.text = payAmount;
+
+    // Pre-fill customer information if available
+    controller.tuaEmailController.text = controller.toTextController.text;
+    controller.tuaFirstNameController.text =
+        apptC.selectedCustomer.value!.firstName ?? "";
+    controller.tuaLastNameController.text =
+        apptC.selectedCustomer.value!.lastName ?? "";
+    // Last name and mobile need to be extracted or left empty
+    controller.tuaAddressController.text =
+        apptC.selectedCustomer.value!.address1 ?? "";
+    controller.tuaMobileController.text =
+        apptC.selectedCustomer.value!.mobile ?? "";
+    controller.tuaCityController.text =
+        apptC.selectedCustomer.value!.city ?? "";
+    controller.tuaZipCodeController.text =
+        apptC.selectedCustomer.value!.zipCode ?? "";
+    controller.tuaStateController.text =
+        apptC.selectedCustomer.value!.state ?? "";
+
+    showAdaptiveDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20.r),
+        ),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: .85.sh,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: EdgeInsets.all(20.sp),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20.r),
+                    topRight: Radius.circular(20.r),
+                  ),
+                ),
+                child: Text(
+                  "TuaPay Link",
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: theme.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18.sp,
+                  ),
+                ),
+              ),
+              SizedBox(height: 4.sp),
+              // Form Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 20.sp),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 16.sp),
+
+                      // Amount Section
+                      _buildSectionTitle("Amount Details", theme),
+                      SizedBox(height: 12.sp),
+                      _buildAmountField(
+                          label: "Base Amount",
+                          prefix: "\$",
+                          controller: controller.tuaBaseAmountController,
+                          readOnly: true,
+                          theme: theme,
+                          invoiceController: controller),
+                      SizedBox(height: 12.sp),
+                      _buildAmountField(
+                        label: "Request Amount",
+                        prefix: "\$",
+                        controller: controller.tuaRemainAmountController,
+                        readOnly: false,
+                        theme: theme,
+                        invoiceController: controller,
+                      ),
+
+                      SizedBox(height: 16.sp),
+                      _buildDivider(),
+
+                      // Customer Information
+                      _buildSectionTitle("Customer Information", theme),
+                      SizedBox(height: 12.sp),
+                      GeneralTextField(
+                        hint: "Email Address *",
+                        theme: theme,
+                        textEditingController: controller.tuaEmailController,
+                        textInputType: TextInputType.emailAddress,
+                      ),
+                      SizedBox(height: 12.sp),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GeneralTextField(
+                              hint: "First Name *",
+                              theme: theme,
+                              textEditingController:
+                                  controller.tuaFirstNameController,
+                            ),
+                          ),
+                          SizedBox(width: 12.sp),
+                          Expanded(
+                            child: GeneralTextField(
+                              hint: "Last Name",
+                              theme: theme,
+                              textEditingController:
+                                  controller.tuaLastNameController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12.sp),
+                      GeneralTextField(
+                        hint: "Mobile Number",
+                        theme: theme,
+                        textEditingController: controller.tuaMobileController,
+                        textInputType: TextInputType.phone,
+                      ),
+                      SizedBox(height: 12.sp),
+                      GeneralTextField(
+                        hint: "Address",
+                        theme: theme,
+                        textEditingController: controller.tuaAddressController,
+                        maxLine: 2,
+                      ),
+                      SizedBox(height: 12.sp),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GeneralTextField(
+                              hint: "City",
+                              theme: theme,
+                              textEditingController:
+                                  controller.tuaCityController,
+                            ),
+                          ),
+                          SizedBox(width: 12.sp),
+                          Expanded(
+                            child: GeneralTextField(
+                              hint: "State",
+                              theme: theme,
+                              textEditingController:
+                                  controller.tuaStateController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12.sp),
+                      GeneralTextField(
+                        hint: "Zip Code *",
+                        theme: theme,
+                        textEditingController: controller.tuaZipCodeController,
+                        textInputType: TextInputType.number,
+                      ),
+
+                      SizedBox(height: 16.sp),
+                      _buildDivider(),
+
+                      // Invoice Details
+                      _buildSectionTitle("Invoice Details", theme),
+                      SizedBox(height: 12.sp),
+                      GeneralTextField(
+                        hint: "Invoice Number",
+                        theme: theme,
+                        textEditingController: TextEditingController(
+                            text: controller.invoiceNumber),
+                        readOnly: true,
+                      ),
+
+                      SizedBox(height: 16.sp),
+                      _buildDivider(),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Action Buttons
+              Container(
+                padding: EdgeInsets.all(20.sp),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color:
+                          LightThemeColors.buttonBorderColor.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48.sp,
+                      child: PrimaryButton(
+                        title: "Submit",
+                        onPressed: () async {
+                          // Validate required fields
+                          if (controller.tuaEmailController.text.isEmpty) {
+                            MySnackBar.showToast(
+                                message: "Please enter email address");
+                            return;
+                          }
+                          if (controller.tuaFirstNameController.text.isEmpty) {
+                            MySnackBar.showToast(
+                                message: "Please enter first name");
+                            return;
+                          }
+                          if (controller.tuaLastNameController.text.isEmpty) {
+                            MySnackBar.showToast(
+                                message: "Please enter last name");
+                            return;
+                          }
+                          if (controller.tuaZipCodeController.text.isEmpty) {
+                            MySnackBar.showToast(
+                                message: "Please enter zip code");
+                            return;
+                          }
+
+                          // Proceed with sending email
+
+                          await controller.generateTuaPaymentLink();
+
+                          // Clear controllers
+                          _clearTuaControllers(controller);
+
+                          // Get.back();
+                          // Get.back();
+                        },
+                        inactive: false,
+                      ),
+                    ),
+                    SizedBox(height: 12.sp),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48.sp,
+                      child: SecondaryButton(
+                        title: "Cancel",
+                        onPressed: () {
+                          _clearTuaControllers(controller);
+                          Get.back();
+                        },
+                        inactive: false,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _clearTuaControllers(InvoiceController controller) {
+    controller.tuaBaseAmountController.clear();
+    controller.tuaCustomPercentageController.clear();
+    controller.tuaRemainAmountController.clear();
+    controller.tuaEmailController.clear();
+    controller.tuaFirstNameController.clear();
+    controller.tuaLastNameController.clear();
+    controller.tuaMobileController.clear();
+    controller.tuaAddressController.clear();
+    controller.tuaCityController.clear();
+    controller.tuaZipCodeController.clear();
+    controller.tuaStateController.clear();
+    controller.tuaSendTextLink.value = false;
+  }
+
+  Widget _buildSectionTitle(String title, ThemeData theme) {
+    return Padding(
+      padding: EdgeInsets.only(left: 4.sp),
+      child: Text(
+        title,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: LightThemeColors.bodyTextSecondaryColor,
+          fontWeight: FontWeight.w600,
+          fontSize: 14.sp,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+      height: 1,
+      color: LightThemeColors.buttonBorderColor.withOpacity(0.3),
+    );
+  }
+
+  Widget _buildAmountField(
+      {required String label,
+      required String prefix,
+      required TextEditingController controller,
+      required bool readOnly,
+      required ThemeData theme,
+      required InvoiceController invoiceController}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: LightThemeColors.bodyTextSecondaryColor,
+            fontSize: 13.sp,
+          ),
+        ),
+        SizedBox(height: 8.sp),
+        Container(
+          decoration: BoxDecoration(
+            color: readOnly
+                ? LightThemeColors.bodyTextSecondaryColor.withOpacity(0.1)
+                : LightThemeColors.fillColor,
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(
+              color: LightThemeColors.buttonBorderColor,
+            ),
+          ),
+          child: Row(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.sp),
+                child: Text(
+                  prefix,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.primaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  readOnly: readOnly,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  style: theme.textTheme.bodyLarge,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: "0.00",
+                    hintStyle: TextStyle(
+                      color: LightThemeColors.bodyTextSecondaryColor,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

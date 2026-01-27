@@ -5,10 +5,8 @@ import '../controllers/custom_fields_controller.dart';
 class CustomFieldsBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<CustomFieldsController>(() {
-      final controller = CustomFieldsController();
-      controller.getCustomFields(); // Automatically call getCustomFields
-      return controller;
-    });
+    Get.put<CustomFieldsController>(
+      CustomFieldsController(),
+    );
   }
 }
