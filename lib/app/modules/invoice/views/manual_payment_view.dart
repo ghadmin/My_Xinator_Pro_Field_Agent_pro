@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../../utils/date_converter.dart';
+import '../../../components/global-widgets/customer_signature_section.dart';
 import '../../../components/global-widgets/my_buttons.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../appointment/controllers/appointment_controller.dart';
@@ -66,7 +67,15 @@ class ManualPaymentView extends GetView<InvoiceController> {
                   ),
                 ),
               ),
-              SizedBox(height: 50.sp),
+              SizedBox(height: 15.sp),
+              // Customer Signature Section
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.sp),
+                child: CustomerSignatureSection(
+                  customerSignature: controller.customerSignature,
+                ),
+              ),
+              SizedBox(height: 30.h),
               _backButton(),
             ],
           ),
@@ -138,6 +147,10 @@ class ManualPaymentView extends GetView<InvoiceController> {
 
           invoiceC.invoiceItemList.value = proposal.items ?? [];
           invoiceC.depositList.value = proposal.paymentList ?? [];
+          await invoiceC.saveSignature(
+              payment: invoiceC.depositList.isNotEmpty
+                  ? invoiceC.depositList.first
+                  : null);
           invoiceC.selectedDiscountOption.value =
               proposal.discountOption ?? "2";
           invoiceC.invoiceNumber = proposal.number ?? "";

@@ -1132,6 +1132,7 @@ import 'package:get/get.dart';
 import 'package:mime/mime.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../utils/date_converter.dart';
+import 'package:intl/intl.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/hive/my_hive.dart';
 import '../../../data/local/my_shared_pref.dart';
@@ -1387,6 +1388,9 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxDouble invoiceSubtotal = 0.00.obs;
   RxDouble discountedTaxableTotalInEdit = 0.00.obs;
   RxDouble discountedTaxableTotalInCreate = 0.00.obs;
+
+  // Customer signature (Base64 encoded string)
+  String customerSignature = "";
 
   RxDouble invoiceTax = 0.00.obs;
   RxString selectedTaxID = "".obs;
@@ -1856,6 +1860,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
           "ModifiedDate": null,
           "ModifiedBy": null,
           "Note": noteTextController.text,
+          "CustomerSignature": customerSignature,
           "CreatedDate": dateTimeConverter(
             inputTime: DateTime.now().toString(),
             outputFormat: "yyyy/MM/dd",
@@ -2217,6 +2222,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     invoiceItemList.value = proposal.items ?? [];
     invoiceController.depositList.value = proposal.paymentList ?? [];
+    await saveSignature(payment: invoiceController.depositList.last);
     invoiceController.selectedDiscountOption.value =
         proposal.discountOption ?? "2";
     invoiceController.invoiceNumber = proposal.number ?? "";
@@ -2436,6 +2442,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     invoiceItemList.value = proposal.items ?? [];
     invoiceController.depositList.value = proposal.paymentList ?? [];
+    await saveSignature(payment: invoiceController.depositList.last);
     invoiceController.selectedDiscountOption.value =
         proposal.discountOption ?? "2";
     invoiceController.invoiceNumber = proposal.number ?? "";
@@ -2614,6 +2621,57 @@ class InvoiceController extends GetxController with ExceptionHandler {
     Get.back();
     Get.back();
     log("Deposit Response: $response");
+  }
+
+  Future<void> saveSignature({
+    Payment? payment,
+  }) async {
+    if (customerSignature == '') return;
+    if (payment == null) return;
+
+    // Check if payment was created today
+    final paymentDate = DateFormat("MM/dd/yyyy").parse(payment.createdDate!);
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    if (!DateFormat("yyyy-MM-dd")
+        .format(paymentDate)
+        .contains(DateFormat("yyyy-MM-dd").format(todayDate))) {
+      return;
+    }
+
+    var companyID = MySharedPref.getCompanyID();
+    var userID = MySharedPref.getUserName();
+    final apptC = Get.find<AppointmentController>();
+    var response = await DioClient().post(
+      url: ApiUrl.saveSignature,
+      body: {
+        "signature": {
+          "appointmentId": apptC.appointmentID,
+          "invoiceId": payment.invocieId,
+          "paymentId": payment.id,
+          "customerId": customerID.value,
+          "companyId": companyID.toString(),
+          "signatureFileName": "signature.png",
+          "signatureFileContent": customerSignature,
+          "userId": userID,
+        },
+      },
+    ).catchError(handleError);
+    log("sign body ${{
+      "signature": {
+        "appointmentId": apptC.appointmentID,
+        "invoiceId": payment.invocieId,
+        "paymentId": payment.id,
+        "customerId": customerID.value,
+        "companyId": companyID,
+        "signatureFileName": "signature.png",
+        "signatureFileContent": customerSignature,
+        "userId": userID,
+      },
+    }}");
+    if (response == null) return;
+    log("Save Signature Response: $response");
   }
 
   final selectedInvoice = Rxn<Invoices>();

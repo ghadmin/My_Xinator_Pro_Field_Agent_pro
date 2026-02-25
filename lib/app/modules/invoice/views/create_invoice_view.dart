@@ -9,6 +9,7 @@ import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/asset_image_box.dart';
+import '../../../components/global-widgets/customer_signature_section.dart';
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_buttons.dart';
@@ -1711,6 +1712,13 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                         onEditingComplete: () {
                           FocusScope.of(context).unfocus();
                         },
+                      ),
+                      MainDivider(),
+                      SizedBox(height: 20.sp),
+
+                      // Customer Signature Section
+                      CustomerSignatureSection(
+                        customerSignature: controller.customerSignature,
                       ),
                       MainDivider(),
                       SizedBox(height: 20.sp),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
+import '../../../components/global-widgets/customer_signature_section.dart';
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
@@ -169,6 +170,11 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                         ),
                       )
                     : SizedBox.shrink(),
+                SizedBox(height: 24),
+                // Customer Signature Section
+                CustomerSignatureSection(
+                  customerSignature: controller.customerSignature,
+                ),
                 SizedBox(height: 32),
                 Row(
                   children: [

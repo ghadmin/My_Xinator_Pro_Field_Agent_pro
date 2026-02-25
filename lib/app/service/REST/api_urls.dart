@@ -1,14 +1,14 @@
 class ApiUrl {
   /// Base URL
-  // static const baseUrl =
-  //  "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
   static const baseUrl =
-      "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
+      "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
+  // static const baseUrl =
+  //   "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
 
+  //static const paymentBaseUrl =
+  //  "https://paymentportal.xceleran.com/webterminal/Clearent/AppCCPayment_CL.aspx";
   static const paymentBaseUrl =
-      "https://paymentportal.xceleran.com/webterminal/Clearent/AppCCPayment_CL.aspx";
-  // static const paymentBaseUrl =
-  //  "https://dev-services.myserviceforce.com/webterminal/Clearent/AppCCPayment_CL.aspx";
+      "https://dev-services.myserviceforce.com/webterminal/Clearent/AppCCPayment_CL.aspx";
 
   static const login = "$baseUrl/VerifyUser";
   static const getAppointment = "$baseUrl/GetAppointmentList";
@@ -26,6 +26,7 @@ class ApiUrl {
   static const editInvoice = "$baseUrl/EditInvoice";
   static const sendEmail = "$baseUrl/SendHtmlFormattedEmail";
   static const makePayment = "$baseUrl/AddPayment";
+  static const saveSignature = "$baseUrl/SaveSignature";
   static const emailAutofill = "$baseUrl/GetAutoFillValuesForEmail";
   static const convertEST = "$baseUrl/ConvertEstimateToInvoice";
   static const getFormTypeUrl = "$baseUrl/GetAllFormTemplates";
