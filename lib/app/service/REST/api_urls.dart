@@ -34,6 +34,8 @@ class ApiUrl {
   static const saveImageUrl = "$baseUrl/SavePictures";
   // static const getImageListUrl = "$baseUrl/GetImageForCSL";
   static const getImageListUrl = "$baseUrl/GetPictures";
+  static const saveFilesUrl = "$baseUrl/SaveFiles";
+  static const getFilesUrl = "$baseUrl/GetFiles";
   static const saveFormUrl = "$baseUrl/SaveFormTemplate";
   static const updateFormUrl = "$baseUrl/UpdateFormTemplate";
   static const assignFormUrl = "$baseUrl/AssignForm";

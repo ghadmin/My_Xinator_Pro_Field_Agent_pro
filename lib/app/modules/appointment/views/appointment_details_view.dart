@@ -87,7 +87,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
         controller.getImageList(true);
       }
-      if (_tabController.index == 5) {
+      if (_tabController.index ==5) {
+        // Pictures tab index
+
+        controller.getFileList(showLoader: true);
+      }    if (_tabController.index ==6) {
         // Pictures tab index
 
         controller.getAllNotes(showLoader: true);
@@ -3022,18 +3026,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                         child: ElevatedButton(
                                                           onPressed: () async {
                                                             await controller
-                                                                .uploadImages(
+                                                                .uploadFiles(
                                                               tagName: item.time
-                                                                  .split(
-                                                                " ",
-                                                              )[0],
+                                                                  .split(" ")[0],
                                                               description: item
                                                                   .descriptionController
                                                                   .text,
-                                                            ); // pass description
+                                                            );
                                                           },
                                                           child: const Text(
-                                                            "Save",
+                                                            "Upload Files",
                                                           ),
                                                         ),
                                                       ),
@@ -3240,11 +3242,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 Align(
                                   alignment: Alignment.centerRight,
                                   child: GestureDetector(
-                                    onTap: controller.mediaList.length == 1
-                                        ? () {}
-                                        : () {
-                                            showMediaBottomSheet(context, -1);
-                                          },
+                                    onTap: () {
+                                      showFilePickerBottomSheet(context);
+                                    },
                                     child: Padding(
                                       padding: const EdgeInsets.only(
                                         right: 8.0,
@@ -3256,10 +3256,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         child: Icon(
                                           Icons.add,
                                           size: 25.sp,
-                                          color:
-                                              controller.mediaList.length == 1
-                                                  ? Colors.grey
-                                                  : theme.primaryColor,
+                                          color: theme.primaryColor,
                                         ),
                                       ),
                                     ),
@@ -3269,17 +3266,17 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   child: SingleChildScrollView(
                                     child: Column(
                                       children: [
-                                        controller.imageList.isEmpty &&
-                                                controller.mediaList.isEmpty
+                                        controller.fileList.isEmpty &&
+                                                controller.fileUploadList.isEmpty
                                             ? Center(
                                                 child: TextWidget(
-                                                  text: "Add Files",
+                                                  text: "No files yet",
                                                 ),
                                               )
                                             : ListView.separated(
                                                 itemBuilder: (context, index) {
                                                   final item = controller
-                                                      .mediaList[index];
+                                                      .fileUploadList[index];
                                                   return Column(
                                                     crossAxisAlignment:
                                                         CrossAxisAlignment
@@ -3321,145 +3318,49 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                             Axis.horizontal,
                                                         child: Row(
                                                           children: [
-                                                            ...item.images.map((
-                                                              e,
-                                                            ) {
-                                                              if (_isVideo(e)) {
-                                                                return GestureDetector(
-                                                                  onTap: () =>
-                                                                      showMediaDialog(
-                                                                    context,
-                                                                    e,
+                                                            ...item.files.map(
+                                                              (file) {
+                                                                final fileName = file.path.split('/').last;
+                                                                final extension = fileName.contains('.') ? fileName.split('.').last.toLowerCase() : '';
+                                                                return Container(
+                                                                  height: 120,
+                                                                  width: 100,
+                                                                  margin: const EdgeInsets.only(right: 10),
+                                                                  decoration: BoxDecoration(
+                                                                    color: Colors.grey[100],
+                                                                    borderRadius: BorderRadius.circular(8),
+                                                                    border: Border.all(color: Colors.grey[300]!),
                                                                   ),
-                                                                  child:
+                                                                  child: Column(
+                                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                                    children: [
+                                                                      Icon(
+                                                                        _getFileIconData(extension) ?? Icons.insert_drive_file,
+                                                                        size: 40,
+                                                                        color: theme.primaryColor,
+                                                                      ),
+                                                                      const SizedBox(height: 5),
                                                                       Padding(
-                                                                    padding:
-                                                                        const EdgeInsets
-                                                                            .only(
-                                                                      right:
-                                                                          8.0,
-                                                                    ),
-                                                                    child: FutureBuilder<
-                                                                        String?>(
-                                                                      future:
-                                                                          generateVideoThumbnail(
-                                                                        e,
-                                                                      ),
-                                                                      builder: (
-                                                                        context,
-                                                                        snapshot,
-                                                                      ) {
-                                                                        if (snapshot.connectionState ==
-                                                                            ConnectionState.waiting) {
-                                                                          return Container(
-                                                                            height:
-                                                                                150,
-                                                                            width:
-                                                                                150,
-                                                                            alignment:
-                                                                                Alignment.center,
-                                                                            child:
-                                                                                const CircularProgressIndicator(),
-                                                                          );
-                                                                        }
-                                                                        if (snapshot.hasData &&
-                                                                            snapshot.data !=
-                                                                                null) {
-                                                                          return Stack(
-                                                                            children: [
-                                                                              Container(
-                                                                                height: 150,
-                                                                                width: 150,
-                                                                                decoration: BoxDecoration(
-                                                                                  borderRadius: BorderRadius.circular(
-                                                                                    10.r,
-                                                                                  ),
-                                                                                  image: DecorationImage(
-                                                                                    fit: BoxFit.fill,
-                                                                                    image: FileImage(
-                                                                                      File(
-                                                                                        snapshot.data!,
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                              const Positioned.fill(
-                                                                                child: Center(
-                                                                                  child: Icon(
-                                                                                    Icons.play_circle_fill,
-                                                                                    size: 40,
-                                                                                    color: Colors.white,
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ],
-                                                                          );
-                                                                        }
-                                                                        return Container(
-                                                                          height:
-                                                                              150,
-                                                                          width:
-                                                                              150,
-                                                                          color:
-                                                                              Colors.grey[300],
-                                                                          child:
-                                                                              const Icon(
-                                                                            Icons.play_circle_fill,
-                                                                          ),
-                                                                        );
-                                                                      },
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                              } else {
-                                                                return GestureDetector(
-                                                                  onTap: () =>
-                                                                      showMediaDialog(
-                                                                    context,
-                                                                    e,
-                                                                  ),
-                                                                  child:
-                                                                      Container(
-                                                                    height: 150,
-                                                                    width: 150,
-                                                                    margin:
-                                                                        EdgeInsets
-                                                                            .only(
-                                                                      right: 20,
-                                                                    ),
-                                                                    decoration:
-                                                                        BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .circular(
-                                                                        10.r,
-                                                                      ),
-                                                                      image:
-                                                                          DecorationImage(
-                                                                        fit: BoxFit
-                                                                            .fill,
-                                                                        image:
-                                                                            FileImage(
-                                                                          File(
-                                                                            e,
-                                                                          ),
+                                                                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                                        child: Text(
+                                                                          fileName,
+                                                                          style: const TextStyle(fontSize: 10),
+                                                                          maxLines: 2,
+                                                                          overflow: TextOverflow.ellipsis,
+                                                                          textAlign: TextAlign.center,
                                                                         ),
                                                                       ),
-                                                                    ),
+                                                                    ],
                                                                   ),
                                                                 );
-                                                              }
-                                                            }),
+                                                              },
+                                                            ),
                                                             GestureDetector(
                                                               onTap: () =>
-                                                                  showMediaBottomSheet(
-                                                                context,
-                                                                index,
-                                                              ),
+                                                                  showFilePickerBottomSheet(context),
                                                               child: Container(
-                                                                height: 150,
-                                                                width: 150,
+                                                                height: 120,
+                                                                width: 100,
                                                                 margin:
                                                                     const EdgeInsets
                                                                         .only(
@@ -3473,7 +3374,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   borderRadius:
                                                                       BorderRadius
                                                                           .circular(
-                                                                    10.r,
+                                                                    8,
                                                                   ),
                                                                   border: Border
                                                                       .all(
@@ -3500,7 +3401,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                         child: ElevatedButton(
                                                           onPressed: () async {
                                                             await controller
-                                                                .uploadImages(
+                                                                .uploadFiles(
                                                               tagName: item.time
                                                                   .split(
                                                                 " ",
@@ -3511,7 +3412,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                             ); // pass description
                                                           },
                                                           child: const Text(
-                                                            "Save",
+                                                            "Upload Files",
                                                           ),
                                                         ),
                                                       ),
@@ -3524,18 +3425,18 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ) =>
                                                     SizedBox(height: 8.sp),
                                                 itemCount:
-                                                    controller.mediaList.length,
+                                                    controller.fileUploadList.length,
                                                 shrinkWrap: true,
                                                 physics:
                                                     NeverScrollableScrollPhysics(),
                                               ),
 
                                         SizedBox(height: 20.h),
-                                        // Display images grouped by upload date
+                                        // Display files grouped by upload date
                                         Obx(() {
-                                          final groupedImages =
-                                              controller.imagesGroupedByDate;
-                                          final sortedDates = groupedImages.keys
+                                          final groupedFiles =
+                                              controller.filesGroupedByDate;
+                                          final sortedDates = groupedFiles.keys
                                               .toList()
                                             ..sort();
 
@@ -3550,8 +3451,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           return ListView.separated(
                                             itemBuilder: (context, index) {
                                               final date = sortedDates[index];
-                                              final images =
-                                                  groupedImages[date]!;
+                                              final files =
+                                                  groupedFiles[date]!;
 
                                               return Column(
                                                 crossAxisAlignment:
@@ -3604,7 +3505,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           ),
                                                           child: TextWidget(
                                                             text:
-                                                                "${images.length} ${images.length == 1 ? 'image' : 'images'}",
+                                                                "${files.length} ${files.length == 1 ? 'file' : 'files'}",
                                                             style: TextStyle(
                                                               fontSize: 12.sp,
                                                               color: theme
@@ -3621,7 +3522,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                                                   SizedBox(height: 10.h),
 
-                                                  // Horizontal scrollable images
+                                                  // Horizontal scrollable files
                                                   SingleChildScrollView(
                                                     scrollDirection:
                                                         Axis.horizontal,
@@ -3630,53 +3531,63 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       horizontal: 12.sp,
                                                     ),
                                                     child: Row(
-                                                      children: images
-                                                          .map((item) =>
-                                                              GestureDetector(
-                                                                onTap: () {
-                                                                  showDialog(
-                                                                    context:
-                                                                        context,
-                                                                    builder: (_) =>
-                                                                        Dialog(
-                                                                      child: Image
-                                                                          .memory(
-                                                                        item.bytes!,
-                                                                        fit: BoxFit
-                                                                            .cover,
-                                                                        gaplessPlayback:
-                                                                            true,
+                                                      children: files
+                                                          .map((file) =>
+                                                              Container(
+                                                                height: 120,
+                                                                width: 100,
+                                                                margin:
+                                                                    EdgeInsets
+                                                                        .only(
+                                                                  right:
+                                                                      12.sp,
+                                                                ),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .grey[100],
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                    8,
+                                                                  ),
+                                                                  border: Border.all(
+                                                                    color: Colors.grey[300]!,
+                                                                  ),
+                                                                ),
+                                                                child: Column(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .center,
+                                                                  children: [
+                                                                    Icon(
+                                                                      _getFileIconData(file.fileExtension) ??
+                                                                          Icons
+                                                                              .insert_drive_file,
+                                                                      size: 40,
+                                                                      color: theme
+                                                                          .primaryColor,
+                                                                    ),
+                                                                    SizedBox(
+                                                                        height: 5),
+                                                                    Padding(
+                                                                      padding: EdgeInsets.symmetric(
+                                                                          horizontal:
+                                                                              4),
+                                                                      child: Text(
+                                                                        file.fileName ??
+                                                                            'Unknown',
+                                                                        style: TextStyle(
+                                                                            fontSize:
+                                                                                10),
+                                                                        maxLines: 2,
+                                                                        overflow:
+                                                                            TextOverflow.ellipsis,
+                                                                        textAlign:
+                                                                            TextAlign.center,
                                                                       ),
                                                                     ),
-                                                                  );
-                                                                },
-                                                                child:
-                                                                    Container(
-                                                                  height: 150,
-                                                                  width: 150,
-                                                                  margin:
-                                                                      EdgeInsets
-                                                                          .only(
-                                                                    right:
-                                                                        12.sp,
-                                                                  ),
-                                                                  decoration:
-                                                                      BoxDecoration(
-                                                                    borderRadius:
-                                                                        BorderRadius
-                                                                            .circular(
-                                                                      10.r,
-                                                                    ),
-                                                                    image:
-                                                                        DecorationImage(
-                                                                      fit: BoxFit
-                                                                          .fill,
-                                                                      image:
-                                                                          MemoryImage(
-                                                                        item.bytes!,
-                                                                      ),
-                                                                    ),
-                                                                  ),
+                                                                  ],
                                                                 ),
                                                               ))
                                                           .toList(),
@@ -6768,5 +6679,67 @@ void showProductDialog(BuildContext context) {
         ),
       );
     },
+  );
+}
+
+/// Get icon data for file type based on extension
+IconData? _getFileIconData(String? extension) {
+  if (extension == null) return null;
+
+  switch (extension.toLowerCase()) {
+    case 'pdf':
+      return Icons.picture_as_pdf;
+    case 'doc':
+    case 'docx':
+      return Icons.description;
+    case 'xls':
+    case 'xlsx':
+      return Icons.table_chart;
+    case 'txt':
+      return Icons.text_snippet;
+    case 'zip':
+    case 'rar':
+      return Icons.archive;
+    default:
+      return Icons.insert_drive_file;
+  }
+}
+
+/// Show file picker bottom sheet to select files
+void showFilePickerBottomSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) => Container(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(Icons.photo_library),
+            title: Text("Pick from Gallery"),
+            onTap: () async {
+              Navigator.pop(context);
+              // TODO: Implement file picker
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.document_scanner),
+            title: Text("Pick Document"),
+            onTap: () async {
+              Navigator.pop(context);
+              // TODO: Implement document picker
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.folder),
+            title: Text("Browse Files"),
+            onTap: () async {
+              Navigator.pop(context);
+              // TODO: Implement file browser
+            },
+          ),
+        ],
+      ),
+    ),
   );
 }

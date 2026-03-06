@@ -1532,7 +1532,16 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     invoiceDiscount.value = discountAmount;
 
-    amountAfterDiscount.value = subTotal - discountAmount;
+    // Calculate surcharge (3% of subtotal if enabled)
+    double surchargeAmount = isApplyingSurcharge.value
+        ? (subTotal * 3 / 100)
+        : 0.0;
+
+    // Update the surcharges string variable for display
+    surcharges = surchargeAmount.toStringAsFixed(2);
+
+    // Amount after discount now includes surcharge
+    amountAfterDiscount.value = subTotal - discountAmount + surchargeAmount;
     double discountRatio = discount / subTotal;
     double discountedTaxableTotal = selectedDiscountOption.value ==
             "1" // Percentage discount
@@ -1545,18 +1554,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
     double taxOnTaxableTotal =
         (discountedTaxableTotalInCreate.value) * (taxPercentage / 100);
 
-    // ============================================
-    // SURCHARGE FEATURE (Commented out for now)
-    // ============================================
-    // // Calculate surcharge (3% of amount after discount if enabled)
-    // double surchargeAmount = isApplyingSurcharge.value
-    //     ? (amountAfterDiscount.value * 3 / 100)
-    //     : 0.0;
-    //
-    // double total = (amountAfterDiscount.value + taxOnTaxableTotal + surchargeAmount);
-    // ============================================
-
-    double total = (amountAfterDiscount.value + taxOnTaxableTotal);
+    // Total = amountAfterDiscount (which now includes surcharge) + tax
+    double total = amountAfterDiscount.value + taxOnTaxableTotal;
 
     // Update observable values
     invoiceTax.value = double.parse((taxOnTaxableTotal).toStringAsFixed(2));
@@ -1589,7 +1588,17 @@ class InvoiceController extends GetxController with ExceptionHandler {
         : discount;
 
     invoiceDiscount.value = discountAmount;
-    amountAfterDiscount.value = subTotal - discountAmount;
+
+    // Calculate surcharge (3% of subtotal if enabled)
+    double surchargeAmount = isApplyingSurcharge.value
+        ? (subTotal * 3 / 100)
+        : 0.0;
+
+    // Update the surcharges string variable for display
+    surcharges = surchargeAmount.toStringAsFixed(2);
+
+    // Amount after discount now includes surcharge
+    amountAfterDiscount.value = subTotal - discountAmount + surchargeAmount;
     double discountRatio = discount / subTotal;
     double discountedTaxableTotal = selectedDiscountOption.value == "1"
         ? ((subTotal - nonTaxableTotalInDetails.value) * (discount / 100))
@@ -1602,18 +1611,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
     double taxOnTaxableTotal =
         (discountedTaxableTotalInEdit.value) * (taxPercentage / 100);
 
-    // ============================================
-    // SURCHARGE FEATURE (Commented out for now)
-    // ============================================
-    // // Calculate surcharge (3% of amount after discount if enabled)
-    // double surchargeAmount = isApplyingSurcharge.value
-    //     ? (amountAfterDiscount.value * 3 / 100)
-    //     : 0.0;
-    //
-    // double total = (amountAfterDiscount.value + taxOnTaxableTotal + surchargeAmount);
-    // ============================================
-
-    double total = (amountAfterDiscount.value + taxOnTaxableTotal);
+    // Total = amountAfterDiscount (which now includes surcharge) + tax
+    double total = amountAfterDiscount.value + taxOnTaxableTotal;
 
     // Update observable values
     invoiceTax.value = double.parse((taxOnTaxableTotal).toStringAsFixed(2));

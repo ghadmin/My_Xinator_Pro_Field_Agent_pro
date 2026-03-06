@@ -1034,57 +1034,52 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                               ),
                             ),
 
-                            // ListTile(
-                            //   title: Text(
-                            //     "Surcharge",
-                            //     style: theme.textTheme.bodyMedium?.copyWith(
-                            //       color: LightThemeColors.bodyTextSecondaryColor,
-                            //       fontSize: 16.sp,
-                            //     ),
-                            //   ),
-                            //   trailing: Text(
-                            //     "3%",
-                            //     style: theme.textTheme.bodyLarge,
-                            //   ),
-                            // ),
-                            // ListTile(
-                            //   title: Row(
-                            //     children: [
-                            //       Text(
-                            //         "Surcharge",
-                            //         style: theme.textTheme.bodyLarge?.copyWith(
-                            //           color: LightThemeColors.hintTextColor,
-                            //           fontSize: 14.sp,
-                            //           fontWeight: FontWeight.w500,
-                            //         ),
-                            //       ),
-                            //       SizedBox(width: 20.sp),
-                            //       Transform.scale(
-                            //         scale: 0.65,
-                            //         child: SizedBox(
-                            //           width: 35.sp,
-                            //           child: CupertinoSwitch(
-                            //             activeTrackColor: theme.primaryColor,
-                            //             inactiveTrackColor: Colors.red,
-                            //             value: controller
-                            //                 .isApplyingSurcharge.value,
-                            //             onChanged: (v) async {
-                            //               controller.toggleBlockStatus(v);
-                            //               controller.createTotal();
-                            //             },
-                            //           ),
-                            //         ),
-                            //       ),
-                            //     ],
-                            //   ),
-                            //   trailing: Text(
-                            //     "\$${double.parse(controller.surcharges).toStringAsFixed(2)}",
-                            //     style: theme.textTheme.bodyLarge?.copyWith(
-                            //       fontSize: 14.sp,
-                            //       fontWeight: FontWeight.w500,
-                            //     ),
-                            //   ),
-                            // ),
+                   
+                            ListTile(
+                              title: Row(
+                                children: [
+                                  Text(
+                                    "Surcharge",
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: LightThemeColors.hintTextColor,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(width: 5.sp),
+                                  Transform.scale(
+                                    scale: 0.65,
+                                    child: SizedBox(
+                                      width: 35.sp,
+                                      child: CupertinoSwitch(
+                                        activeTrackColor: theme.primaryColor,
+                                        inactiveTrackColor: Colors.red,
+                                        value: controller
+                                            .isApplyingSurcharge.value,
+                                        onChanged: (v) async {
+                                          controller.toggleBlockStatus(v);
+                                          controller.createTotal();
+                                        },
+                                      ),
+                                    ),
+                                  ),SizedBox(width: 5.w,),   Text(
+                                    "(3%)",
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: LightThemeColors.hintTextColor,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: Text(
+                                "\$${double.parse(controller.surcharges).toStringAsFixed(2)}",
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
 
                             // ListTile(
                             //   title: Text(

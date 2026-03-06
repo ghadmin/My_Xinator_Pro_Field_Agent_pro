@@ -27,6 +27,7 @@ import '../../settings/controllers/settings_controller.dart';
 import '../../settings/models/appointment_status_setting.dart';
 import '../../settings/models/ticket_status_model.dart';
 import '../models/appointment_model.dart';
+import '../models/file_model.dart';
 import '../models/image_list_model.dart';
 import '../models/note_model.dart';
 import '../models/tag_model.dart';
@@ -38,6 +39,15 @@ class MediaModel {
   TextEditingController descriptionController = TextEditingController();
 
   MediaModel({required this.time, required this.images});
+}
+
+/// Class to represent a file upload item with description
+class FileUploadItem {
+  final String time;
+  final List<File> files;
+  final TextEditingController descriptionController = TextEditingController();
+
+  FileUploadItem({required this.time, required this.files});
 }
 
 class AppointmentController extends GetxController
@@ -656,6 +666,161 @@ class AppointmentController extends GetxController
       // MySnackBar.showErrorToast(message: "Something went wrong!");
     } finally {
       hideLoading(); // ✅ always runs
+    }
+  }
+
+  // ============================================
+  // FILES SECTION
+  // ============================================
+
+  // File list stores FileModel objects directly from API array response
+  final fileList = RxList<FileModel>([]);
+
+  // For managing files being uploaded (similar to mediaList for images)
+  final fileUploadList = RxList<FileUploadItem>([]);
+
+  // Group files by upload date
+  Map<String, List<FileModel>> get filesGroupedByDate {
+    final Map<String, List<FileModel>> grouped = {};
+    for (var file in fileList) {
+      final date = file.uploadDate ?? 'Unknown Date';
+      if (!grouped.containsKey(date)) {
+        grouped[date] = [];
+      }
+      grouped[date]!.add(file);
+    }
+    return grouped;
+  }
+
+  /// Get list of files for the current appointment
+  Future<void> getFileList({bool showLoader = true}) async {
+    if (showLoader) showLoading();
+    await Future.delayed(Duration.zero);
+    try {
+      var companyID = await MySharedPref.getCompanyID();
+
+      // Prepare request params
+      final queryParams = {
+        "appointmentID": appointmentID,
+        "siteId": 0,
+        "companyId": companyID,
+        "customerId": customerID,
+      };
+
+      log("getFileList queryParams: ${jsonEncode(queryParams)}");
+
+      final response = await DioClient()
+          .get(url: ApiUrl.getFilesUrl, params: queryParams)
+          .catchError(handleError);
+
+      log("file res : ${jsonEncode(response)}");
+
+      if (response == null) {
+        if (showLoader) MySnackBar.showErrorToast(message: "Failed to load files");
+      } else {
+        final List<FileModel> fetchedFiles =
+            (response as List).map((e) => FileModel.fromJson(e)).toList();
+        fileList.clear();
+        fileList.addAll(fetchedFiles);
+        log("Loaded ${fetchedFiles.length} files");
+      }
+    } catch (e, st) {
+      log("Error fetching files: $e", stackTrace: st);
+      if (showLoader) MySnackBar.showErrorToast(message: "Failed to load files");
+    } finally {
+      if (showLoader) hideLoading();
+    }
+  }
+
+  /// Upload files to the server
+  Future<void> uploadFiles({
+    required String tagName,
+    required String description,
+  }) async {
+    if (fileUploadList.isEmpty) {
+      MySnackBar.showErrorToast(message: "No files to upload");
+      return;
+    }
+
+    showLoading();
+
+    try {
+      var companyID = await MySharedPref.getCompanyID();
+      var userID = await MySharedPref.getUserName();
+
+      // Process all files from the upload list
+      for (var uploadItem in fileUploadList) {
+        for (var file in uploadItem.files) {
+          // Read file and convert to base64
+          final bytes = await file.readAsBytes();
+          final base64String = base64Encode(bytes);
+
+          // Get file extension
+          final fileType = file.path.split('.').last.toLowerCase();
+
+          // Prepare request body according to API specification
+          final requestBody = {
+            "AppointmentId": int.tryParse(appointmentID) ?? 0,
+            "CompanyId": companyID,
+            "CustomerId": customerID,
+            "SiteId": 0,
+            "Reference": tagName,
+            "FileContent": base64String,
+            "FileName": file.path.split('/').last,
+            "FileType": fileType,
+            "FileSize": bytes.length,
+            "UploadedBy": userID,
+          };
+
+          log("uploadFiles body: ${jsonEncode(requestBody)}");
+
+          final response = await DioClient()
+              .post(url: ApiUrl.saveFilesUrl, body: requestBody)
+              .catchError(handleError);
+
+          log("uploadFiles response: $response");
+
+          if (response == null || response["IsValid"] == false) {
+            hideLoading();
+            MySnackBar.showErrorToast(
+                message: response?["Message"] ?? "Failed to upload file");
+            return;
+          }
+        }
+      }
+
+      hideLoading();
+      MySnackBar.showToast(message: "Files uploaded successfully");
+
+      // Clear the upload list after successful upload
+      fileUploadList.clear();
+
+      // Refresh the file list
+      await getFileList(showLoader: false);
+    } catch (e, st) {
+      hideLoading();
+      log("Error uploading files: $e", stackTrace: st);
+      MySnackBar.showErrorToast(message: "Failed to upload files");
+    }
+  }
+
+  /// Add files to the upload list
+  void addFilesToUploadList(List<File> files) {
+    final now = DateTime.now();
+    final timeString = DateFormat("yyyy-MM-dd HH:mm:ss").format(now);
+
+    final uploadItem = FileUploadItem(
+      time: timeString,
+      files: files,
+    );
+
+    fileUploadList.add(uploadItem);
+  }
+
+  /// Remove a file upload item from the list
+  void removeFileUploadItem(int index) {
+    if (index >= 0 && index < fileUploadList.length) {
+      fileUploadList.removeAt(index);
     }
   }
 
