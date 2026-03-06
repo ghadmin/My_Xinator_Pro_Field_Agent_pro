@@ -2,7 +2,7 @@ name: xinator_fsm_pro
 description: "A new Flutter project."
 
 publish_to: "none"
-version: 1.0.7+17
+version: 1.0.7+16
 
 environment:
   sdk: ^3.6.0
