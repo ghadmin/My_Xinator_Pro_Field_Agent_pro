@@ -15,22 +15,23 @@ class FormModel {
   String? updatedBy;
   String? updatedDateTime;
 
-  FormModel(
-      {this.id,
-      this.companyID,
-      this.templateName,
-      this.description,
-      this.category,
-      this.isAutoAssignEnabled,
-      this.autoAssignServiceTypes,
-      this.formStructure,
-      this.requireSignature,
-      this.requireTip,
-      this.isActive,
-      this.createdBy,
-      this.createdDateTime,
-      this.updatedBy,
-      this.updatedDateTime});
+  FormModel({
+    this.id,
+    this.companyID,
+    this.templateName,
+    this.description,
+    this.category,
+    this.isAutoAssignEnabled,
+    this.autoAssignServiceTypes,
+    this.formStructure,
+    this.requireSignature,
+    this.requireTip,
+    this.isActive,
+    this.createdBy,
+    this.createdDateTime,
+    this.updatedBy,
+    this.updatedDateTime,
+  });
 
   FormModel.fromJson(Map<String, dynamic> json) {
     id = json['Id'];
@@ -46,27 +47,27 @@ class FormModel {
     isActive = json['IsActive'];
     createdBy = json['CreatedBy'];
     createdDateTime = json['CreatedDateTime'];
-    updatedBy = json['UpdatedBy'] ?? null;
+    updatedBy = json['UpdatedBy'];
     updatedDateTime = json['UpdatedDateTime'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['Id'] = this.id;
-    data['CompanyID'] = this.companyID;
-    data['TemplateName'] = this.templateName;
-    data['Description'] = this.description;
-    data['Category'] = this.category;
-    data['IsAutoAssignEnabled'] = this.isAutoAssignEnabled;
-    data['AutoAssignServiceTypes'] = this.autoAssignServiceTypes;
-    data['FormStructure'] = this.formStructure;
-    data['RequireSignature'] = this.requireSignature;
-    data['RequireTip'] = this.requireTip;
-    data['IsActive'] = this.isActive;
-    data['CreatedBy'] = this.createdBy;
-    data['CreatedDateTime'] = this.createdDateTime;
-    data['UpdatedBy'] = this.updatedBy;
-    data['UpdatedDateTime'] = this.updatedDateTime;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['Id'] = id;
+    data['CompanyID'] = companyID;
+    data['TemplateName'] = templateName;
+    data['Description'] = description;
+    data['Category'] = category;
+    data['IsAutoAssignEnabled'] = isAutoAssignEnabled;
+    data['AutoAssignServiceTypes'] = autoAssignServiceTypes;
+    data['FormStructure'] = formStructure;
+    data['RequireSignature'] = requireSignature;
+    data['RequireTip'] = requireTip;
+    data['IsActive'] = isActive;
+    data['CreatedBy'] = createdBy;
+    data['CreatedDateTime'] = createdDateTime;
+    data['UpdatedBy'] = updatedBy;
+    data['UpdatedDateTime'] = updatedDateTime;
     return data;
   }
 }

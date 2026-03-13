@@ -713,6 +713,8 @@ class CustomerDetailsView extends GetView<CustomerController> {
 }
 
 class CreateAppointmentSheet extends StatefulWidget {
+  const CreateAppointmentSheet({super.key});
+
   @override
   State<CreateAppointmentSheet> createState() => _CreateAppointmentSheetState();
 }

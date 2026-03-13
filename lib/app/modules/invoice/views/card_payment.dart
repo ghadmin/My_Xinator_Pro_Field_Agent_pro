@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../clearant_service.dart';
 
 class PaymentScreen extends StatefulWidget {
+  const PaymentScreen({super.key});
+
   @override
   _PaymentScreenState createState() => _PaymentScreenState();
 }

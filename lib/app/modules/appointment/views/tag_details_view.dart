@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import '../controllers/appointment_controller.dart';
 
 class TagSelectionScreen extends GetView<AppointmentController> {
-  TagSelectionScreen({super.key});
+  const TagSelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class TagSelectionScreen extends GetView<AppointmentController> {
                   border: OutlineInputBorder(),
                 ),
                 onChanged: (value) {
-                  controller.filterTags(value);
+                  // controller.filterTags(value);
                 },
               ),
             ),
@@ -124,7 +124,7 @@ class TagSelectionScreen extends GetView<AppointmentController> {
             onPressed: () async {
               if (newTagController.text.trim().isNotEmpty) {
                 Get.back(); // close input dialog
-                await controller.addNewTag(newTagController.text);
+                // await controller.addNewTag(newTagController.text);
                 // Optional: refresh or scroll to the new tag
               }
             },

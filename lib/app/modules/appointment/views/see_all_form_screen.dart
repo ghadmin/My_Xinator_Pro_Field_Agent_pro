@@ -9,8 +9,8 @@ import '../../forms/models/form_model.dart';
 import '../controllers/appointment_controller.dart';
 
 class SeeAllFormsScreen extends StatefulWidget {
-  int initialTabIndex;
-  SeeAllFormsScreen({super.key, required this.initialTabIndex});
+  final int initialTabIndex;
+  const SeeAllFormsScreen({super.key, required this.initialTabIndex});
 
   @override
   State<SeeAllFormsScreen> createState() => _SeeAllFormsScreenState();
@@ -133,7 +133,7 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
                 borderRadius: BorderRadius.circular(8.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -302,7 +302,6 @@ class _SeeAllFormsScreenState extends State<SeeAllFormsScreen> {
     required FormModel data,
     required FormController formC,
   }) {
-    ;
     final descriptionC = TextEditingController(text: data.description);
     final categoryC = TextEditingController(text: data.category);
     final titleC = TextEditingController(text: data.templateName);

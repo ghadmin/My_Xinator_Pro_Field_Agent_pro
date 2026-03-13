@@ -1,11 +1,10 @@
-import 'dart:developer';
+// ignore_for_file: strict_top_level_inference
 
 import 'package:get/get.dart';
-import 'package:logger/logger.dart';
 
 import '../../components/global-widgets/my_snackbar.dart';
 import '../REST/api_exceptions.dart';
-import '../helper/dialog_helper.dart';
+import '../helper/loading_service.dart';
 
 mixin class ExceptionHandler {
   RxBool isError = false.obs;
@@ -13,27 +12,20 @@ mixin class ExceptionHandler {
   /// FOR REST API
   void handleError(error) {
     isError.value = true;
-    hideLoading();
+    hideLoading(debugInfo: "Error occurred: ${error.toString()}");
 
     var errorText = DioExceptions.fromDioError(error).toString();
 
     showErrorDialog("Error", errorText);
-    log(errorText, name: "ExceptionHandler", level: Level.error.index);
-
-    /// for toast view
-    MySnackBar.showErrorToast(message: errorText);
-
-    /// for dialog view
-    // DialogHelper.showErrorDialog("Error", errorText);
   }
 
-  showLoading() {
+  showLoading({String? debugInfo}) {
     isError.value = false;
-    DialogHelper.showLoading();
+    LoadingService.show(debugInfo: debugInfo ?? "ExceptionHandler");
   }
 
-  hideLoading() {
-    DialogHelper.hideLoading();
+  hideLoading({String? debugInfo}) {
+    LoadingService.hide(debugInfo: debugInfo ?? "ExceptionHandler");
   }
 
   showErrorDialog(String title, String message) {

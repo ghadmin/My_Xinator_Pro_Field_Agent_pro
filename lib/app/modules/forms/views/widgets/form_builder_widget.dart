@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class SignatureWidget extends StatelessWidget {
   final VoidCallback onClear;
 
-  SignatureWidget({
-    super.key,
-    required this.onClear,
-  });
+  const SignatureWidget({super.key, required this.onClear});
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +14,7 @@ class SignatureWidget extends StatelessWidget {
       ),
       height: 150,
       width: double.infinity,
-      child: Center(
-        child: Text("Signature Area"),
-      ),
+      child: Center(child: Text("Signature Area")),
     );
   }
 }
@@ -27,10 +22,7 @@ class SignatureWidget extends StatelessWidget {
 class RadioButtonsWidget extends StatefulWidget {
   final ValueChanged<String> onChanged;
 
-  const RadioButtonsWidget({
-    super.key,
-    required this.onChanged,
-  });
+  const RadioButtonsWidget({super.key, required this.onChanged});
 
   @override
   State<RadioButtonsWidget> createState() => _RadioButtonsWidgetState();
@@ -84,10 +76,7 @@ class _RadioButtonsWidgetState extends State<RadioButtonsWidget> {
 class CheckboxWidget extends StatefulWidget {
   final ValueChanged<bool> onChanged;
 
-  CheckboxWidget({
-    super.key,
-    required this.onChanged,
-  });
+  const CheckboxWidget({super.key, required this.onChanged});
 
   @override
   State<CheckboxWidget> createState() => _CheckboxWidgetState();
@@ -119,10 +108,7 @@ class _CheckboxWidgetState extends State<CheckboxWidget> {
 class DropdownWidget extends StatefulWidget {
   final ValueChanged<String> onChanged;
 
-  DropdownWidget({
-    super.key,
-    required this.onChanged,
-  });
+  const DropdownWidget({super.key, required this.onChanged});
 
   @override
   State<DropdownWidget> createState() => _DropdownWidgetState();
@@ -134,7 +120,7 @@ class _DropdownWidgetState extends State<DropdownWidget> {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: selectedValue,
+      initialValue: selectedValue,
       items: [
         DropdownMenuItem(value: "Option 1", child: Text("Option 1")),
         DropdownMenuItem(value: "Option 2", child: Text("Option 2")),
@@ -153,10 +139,7 @@ class _DropdownWidgetState extends State<DropdownWidget> {
 class DateInputWidget extends StatefulWidget {
   final ValueChanged<String?> onChanged;
 
-  DateInputWidget({
-    super.key,
-    required this.onChanged,
-  });
+  const DateInputWidget({super.key, required this.onChanged});
 
   @override
   State<DateInputWidget> createState() => _DateInputWidgetState();
@@ -198,10 +181,7 @@ class _DateInputWidgetState extends State<DateInputWidget> {
               ),
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.calendar_today),
-            onPressed: _selectDate,
-          ),
+          IconButton(icon: Icon(Icons.calendar_today), onPressed: _selectDate),
         ],
       ),
     );
@@ -211,10 +191,7 @@ class _DateInputWidgetState extends State<DateInputWidget> {
 class NumberInputWidget extends StatelessWidget {
   final ValueChanged<String?> onChanged;
 
-  NumberInputWidget({
-    super.key,
-    required this.onChanged,
-  });
+  const NumberInputWidget({super.key, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -290,7 +267,7 @@ class _TextAreaWidgetState extends State<TextAreaWidget> {
 class TextInputWidget extends StatelessWidget {
   final ValueChanged<String?> onChanged;
 
-  TextInputWidget({super.key, required this.onChanged});
+  const TextInputWidget({super.key, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {

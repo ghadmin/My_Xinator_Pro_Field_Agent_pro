@@ -120,7 +120,7 @@ class _CslScreenState extends State<CslScreen> {
                 SizedBox(
                   width: 120.w,
                   child: DropdownButtonFormField<String>(
-                    value: selectedStatus,
+                    initialValue: selectedStatus,
                     items: statusOptions.map((e) {
                       return DropdownMenuItem(value: e, child: Text(e));
                     }).toList(),
@@ -172,7 +172,7 @@ class _CslScreenState extends State<CslScreen> {
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
+                        color: Colors.grey.withValues(alpha: 0.2),
                         blurRadius: 4,
                       ),
                     ],

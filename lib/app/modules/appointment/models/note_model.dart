@@ -5,6 +5,7 @@ class NoteModel {
   final int? cslId;
   final int? customerId;
   final int? appointmentId;
+  final int? siteId;
   final String? companyId;
   final String? userId;
   final int? tagId;
@@ -17,6 +18,7 @@ class NoteModel {
     this.cslId,
     this.customerId,
     this.appointmentId,
+    this.siteId,
     this.companyId,
     this.userId,
     this.tagId,
@@ -31,6 +33,7 @@ class NoteModel {
       cslId: json['CSLId'],
       customerId: json['CustomerId'],
       appointmentId: json['AppointmentId'],
+      siteId: json['SiteID'],
       companyId: json['CompanyId'],
       userId: json['UserId'],
       tagId: json['TagId'],
@@ -45,6 +48,7 @@ class NoteModel {
         "CSLId": cslId,
         "CustomerId": customerId,
         "AppointmentId": appointmentId,
+        "SiteID": siteId,
         "CompanyId": companyId,
         "UserId": userId,
         "TagId": tagId,

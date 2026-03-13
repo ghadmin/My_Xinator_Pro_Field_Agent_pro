@@ -25,9 +25,9 @@ class SplashContainer extends StatelessWidget {
       elevation: 0,
       borderRadius: BorderRadius.circular(radius.r),
       child: InkWell(
-        splashColor: theme.primaryColor.withOpacity(.3),
+        splashColor: theme.primaryColor.withValues(alpha: 0.3),
         splashFactory: InkSplash.splashFactory,
-        highlightColor: theme.primaryColor.withOpacity(.3),
+        highlightColor: theme.primaryColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(radius.r),
         radius: 60.r,
         onTap: onPressed,

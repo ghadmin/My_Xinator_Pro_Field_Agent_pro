@@ -25,6 +25,7 @@ import '../modules/invoice/views/payment_by_cash_view.dart';
 import '../modules/invoice/views/payment_by_check_view.dart';
 import '../modules/invoice/views/payment_method_selection_view.dart';
 import '../modules/invoice/views/payment_web_view.dart';
+import '../modules/invoice/views/xpay_payment_view.dart';
 import '../modules/item/bindings/item_binding.dart';
 import '../modules/item/views/item_view.dart';
 import '../modules/onboarding/bindings/onboarding_binding.dart';
@@ -38,6 +39,8 @@ import '../modules/signature/bindings/signature_binding.dart';
 import '../modules/signature/views/signature_view.dart';
 import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
+import '../modules/twilio_chat/bindings/twilio_chat_binding.dart';
+import '../modules/twilio_chat/views/twilio_chat_view.dart';
 
 // ignore_for_file: constant_identifier_names
 
@@ -184,6 +187,16 @@ class AppPages {
       name: Routes.SEEALLFORMS,
       page: () =>
           SeeAllFormsScreen(initialTabIndex: Get.arguments['tabIndex'] ?? 0),
+    ),
+    GetPage(
+      name: _Paths.XPAY_PAYMENT,
+      page: () => const XPayPaymentView(),
+      binding: InvoiceBinding(),
+    ),
+    GetPage(
+      name: _Paths.TWILIO_CHAT,
+      page: () => const TwilioChatView(),
+      binding: TwilioChatBinding(),
     ),
   ];
 }

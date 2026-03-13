@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dotted_border/dotted_border.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -17,6 +19,7 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/date_converter.dart';
+import '../../../../utils/klog.dart';
 import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/general_text_field.dart';
@@ -27,9 +30,8 @@ import '../../../components/global-widgets/splash_container.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../routes/app_pages.dart';
-import '../../../service/REST/api_urls.dart';
-import '../../../service/REST/dio_client.dart';
 import '../../../service/helper/dialog_helper.dart';
+import '../../../utils/phone_number_formatter.dart';
 import '../../forms/controllers/form_controller.dart';
 import '../../forms/models/form_model.dart';
 import '../../item/models/item_list_model.dart';
@@ -37,7 +39,10 @@ import '../../settings/controllers/settings_controller.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/custom_fields_controller.dart';
 import '../models/custom_field_model.dart';
+import '../models/equipment_model.dart';
+import '../models/file_model.dart';
 import '../models/note_model.dart';
+import 'widgets/equipment_form_modal.dart';
 
 class AppointmentDetailsView extends StatefulWidget {
   const AppointmentDetailsView({super.key});
@@ -50,12 +55,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late TabController _tabController1;
+  int _previousTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
 
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
     _tabController1 = TabController(length: 2, vsync: this);
     _tabController1.addListener(() {
       if (_tabController1.index == 0) {
@@ -66,31 +72,56 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     });
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return; // ignore swipe animation
+      if (_tabController.index == _previousTabIndex) {
+        return; // ignore duplicate calls
+      }
+
+      _previousTabIndex = _tabController.index;
+      kLog("tabController index: ${_tabController.index}");
       // formC.selectedFormsIdList.clear();
+      if (_tabController.index == 0) {
+        // Info tab - Load saved custom fields
+        _loadSavedCustomFields();
+        setState(() {});
+      }
+      if (_tabController.index == 1) {
+        controller.getCustomerSite(showLoader: true);
+        Future.delayed(Duration(seconds: 7));
+        controller.isBasicExpanded(true);
+        setState(() {});
+      }
       if (_tabController.index == 2) {
         // forms  tab index
         formC.formModels.clear();
         formC.fetchTemplates();
+        setState(() {});
 
         formC.selectAttachedForms();
       }
-      if (_tabController.index == 1) {
-        Future.delayed(Duration(seconds: 7));
-        controller.isBasicExpanded(true);
-      }
-      if (_tabController.index == 0) {
-        // Info tab - Load saved custom fields
-        _loadSavedCustomFields();
-      }
+
       if (_tabController.index == 4) {
         // Pictures tab index
 
         controller.getImageList(true);
+        setState(() {});
       }
       if (_tabController.index == 5) {
         // Pictures tab index
 
+        controller.getEquipment(showLoader: true);
+        setState(() {});
+      }
+      if (_tabController.index == 6) {
+        // Pictures tab index
+
+        controller.getFileList(showLoader: true);
+        setState(() {});
+      }
+      if (_tabController.index == 7) {
+        // Pictures tab index
+
         controller.getAllNotes(showLoader: true);
+        setState(() {});
       }
     });
   }
@@ -103,34 +134,21 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
       log("📥 Loading saved custom fields for appointment: $appointmentId");
 
-      // Call API to get saved custom fields
-      var response = await DioClient().get(
-        url: "${ApiUrl.saveCustomFieldUrl}/$appointmentId",
+      // Call the new API to get attached custom fields
+      await customFieldsController.getAttachedCustomFields(
+        appointmentId: appointmentId,
       );
 
-      if (response != null && response is Map) {
-        String fieldsValueJson = response["FeildsValue"] ?? "[]";
-        log("📥 Saved fields JSON: $fieldsValueJson");
-
-        // Parse as array of objects: [{"type": "...", "value1": "...", "value2": "..."}]
-        List<dynamic> savedFieldsArray = jsonDecode(fieldsValueJson);
-
+      // If there are attached fields, populate selectedCustomFields
+      if (customFieldsController.attachedCustomFields.isNotEmpty) {
         // Clear previously selected fields
         customFieldsController.selectedCustomFields.clear();
 
-        // Add fields from saved data
-        for (var fieldData in savedFieldsArray) {
-          if (fieldData is! Map) continue;
-
-          String? fieldType = fieldData["type"];
-          String? value1 = fieldData["value1"];
-          String? value2 = fieldData["value2"];
-
-          if (fieldType == null) continue;
-
+        // Process each attached field
+        for (var attachedField in customFieldsController.attachedCustomFields) {
           // Find matching field definition from allCustomFields
           var fieldDef = customFieldsController.allCustomFields
-              .firstWhereOrNull((f) => f.fieldName == fieldType);
+              .firstWhereOrNull((f) => f.fieldID == attachedField.fieldID);
 
           if (fieldDef != null) {
             // Create a new instance of the field
@@ -143,28 +161,20 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               options: fieldDef.options,
             );
 
-            // Set the value based on field type
+            // Set the value based on field type and attached field value
             switch (fieldDef.fieldType) {
               case 'text':
-                newField.textValue = value1;
+                newField.textValue = attachedField.fieldValue;
                 break;
               case 'number':
-                newField.numberValue = value1;
+                newField.numberValue = attachedField.fieldValue;
                 break;
               case 'dropdown':
-                newField.selectedValue = value1;
+                newField.selectedValue = attachedField.fieldValue;
                 break;
               case 'checklist':
-                // For checklist, value1 contains selected options (comma-separated)
-                // value2 might contain additional options
-                List<String> options = [];
-                if (value1 != null && value1.isNotEmpty) {
-                  options.addAll(value1.split(','));
-                }
-                if (value2 != null && value2.isNotEmpty) {
-                  options.addAll(value2.split(','));
-                }
-                newField.selectedOptions = options;
+                // For checklist, FieldValue is a JSON array string like "[\"option1\",\"option2\"]"
+                newField.selectedOptions = attachedField.getFieldValueAsList();
                 break;
             }
 
@@ -177,6 +187,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
           "✅ Loaded ${customFieldsController.selectedCustomFields.length} saved custom fields",
         );
         setState(() {}); // Refresh UI
+      } else {
+        log(
+          "ℹ️ No attached custom fields found for appointment: $appointmentId",
+        );
       }
     } catch (e) {
       log("❌ Error loading saved custom fields: $e");
@@ -200,28 +214,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     return Obx(
       () => Scaffold(
         floatingActionButton: SizedBox(
-          height: (_tabController.index == 0 &&
-                      customFieldsController.selectedCustomFields.isNotEmpty) ||
-                  (_tabController1.index == 1 &&
-                      formC.selectedFormsIdList.isNotEmpty)
-              ? 120
-              : 56,
+          height:
+              (_tabController1.index == 1 &&
+                  formC.selectedFormsIdList.isNotEmpty)
+              ? 80.h
+              : 70.h,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Info tab Custom Fields Save FAB (tab index 0)
-              if (_tabController.index == 0 &&
-                  customFieldsController.selectedCustomFields.isNotEmpty)
-                FloatingActionButton(
-                  backgroundColor: Colors.green,
-                  heroTag: "save_custom_fields_info",
-                  onPressed: () async {
-                    await _saveCustomFields();
-                  },
-                  child: Icon(Icons.save, color: Colors.white),
-                ),
-              // Forms tab FAB (tab index 2)
+              // Forms tab FAB (tabController1 index 1)
               if (_tabController1.index == 1 &&
                   formC.selectedFormsIdList.isNotEmpty)
                 SizedBox(height: 10),
@@ -231,15 +233,191 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                   backgroundColor: Colors.blue,
                   heroTag: "assign_forms",
                   onPressed: () async {
-                    log("clicking");
                     await formC.assignFormsToAppointment(
                       controller
-                          .selectedAppointment.value!.customer!.customerID!,
+                          .selectedAppointment
+                          .value!
+                          .customer!
+                          .customerID!,
                       controller.selectedAppointment.value!.apptID.toString(),
                     );
                   },
                   child: Icon(Icons.add, color: Colors.white),
                 ),
+
+              SizedBox(height: 10.h),
+              SizedBox(height: 10.sp),
+              FloatingActionButton(
+                heroTag: "send_message",
+                onPressed: () async {
+                  // Unfocus and wait for keyboard to dismiss
+                  FocusScope.of(context).unfocus();
+                  controller.appointmentDetailsNoteFocusnode.value.unfocus();
+                  controller.appointmentDetailsMessageFocusnode.value.unfocus();
+                  await Future.delayed(Duration(milliseconds: 100));
+
+                  showModalBottomSheet(
+                    context: context,
+                    showDragHandle: true,
+                    isScrollControlled: true,
+                    useSafeArea: true,
+                    enableDrag: true,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    builder: (BuildContext context) {
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).viewInsets.bottom,
+                        ),
+                        child: Container(
+                          padding: EdgeInsets.only(
+                            left: 20.sp,
+                            right: 20.sp,
+                            bottom: 20.sp,
+                            top: 5.sp,
+                          ),
+                          child: SingleChildScrollView(
+                            physics: BouncingScrollPhysics(),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Center(
+                                  child: Text(
+                                    "Send Message",
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      fontSize: 18.sp,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 15.sp),
+                                Text("Phone"),
+                                SizedBox(height: 4.sp),
+                                Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 10.sp,
+                                    vertical: 6.sp,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5.r),
+                                    color: Colors.grey.shade50,
+                                  ),
+                                  child: Text(
+                                    controller.phoneNumber.isNotEmpty
+                                        ? PhoneNumberFormatter.formatPhoneNumber(
+                                            controller.phoneNumber,
+                                          )
+                                        : controller.mobileNumber.isNotEmpty
+                                        ? PhoneNumberFormatter.formatPhoneNumber(
+                                            controller.mobileNumber,
+                                          )
+                                        : "No Phone Number",
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: LightThemeColors
+                                          .bodyTextSecondaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 10.sp),
+                                Text('Message'),
+                                SizedBox(height: 4.sp),
+                                GeneralTextField(
+                                  hint: "",
+                                  theme: theme,
+                                  maxLine: 5,
+                                  minLine: 1,
+                                  focusNode: controller
+                                      .appointmentDetailsNoteFocusnode
+                                      .value,
+                                  textInputType: TextInputType.multiline,
+                                  textInputAction: TextInputAction.newline,
+                                  textEditingController:
+                                      controller.smsController,
+                                ),
+                                SizedBox(height: 15.sp),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 1,
+                                      child: SizedBox(
+                                        height: 48.sp,
+                                        child: SecondaryButton(
+                                          title: "Cancel",
+                                          onPressed: () {
+                                            controller.smsController.clear();
+                                            FocusScope.of(context).unfocus();
+                                            controller
+                                                .appointmentDetailsNoteFocusnode
+                                                .value
+                                                .unfocus();
+                                            controller
+                                                .appointmentDetailsMessageFocusnode
+                                                .value
+                                                .unfocus();
+                                            Get.back();
+                                          },
+                                          inactive: false,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 10.sp),
+                                    Expanded(
+                                      flex: 2,
+                                      child: SizedBox(
+                                        height: 48.sp,
+                                        child: PrimaryButton(
+                                          title: "Send",
+                                          onPressed: () async {
+                                            FocusScope.of(context).unfocus();
+                                            controller
+                                                .appointmentDetailsNoteFocusnode
+                                                .value
+                                                .unfocus();
+                                            controller
+                                                .appointmentDetailsMessageFocusnode
+                                                .value
+                                                .unfocus();
+                                            Get.back();
+                                            if (controller
+                                                    .mobileNumber
+                                                    .isEmpty &&
+                                                controller
+                                                    .phoneNumber
+                                                    .isEmpty) {
+                                              MySnackBar.showErrorToast(
+                                                message:
+                                                    "No phone number found for this customer.",
+                                              );
+                                              return;
+                                            }
+                                            await 1.delay();
+                                            await controller.sendSMS();
+                                          },
+                                          inactive: false,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 50.sp),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                backgroundColor: theme.primaryColor,
+                tooltip: 'Chat',
+                child: Icon(Icons.chat, color: Colors.white),
+              ),
             ],
           ),
         ),
@@ -368,10 +546,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               child: CircleAvatar(
                                                 backgroundColor: getStatusColor(
                                                   controller
-                                                      .settingController
-                                                      .selectedAppointmentsStatus
-                                                      .value!
-                                                      .statusName!,
+                                                          .settingController
+                                                          .selectedAppointmentsStatus
+                                                          .value
+                                                          ?.statusName ??
+                                                      "",
                                                 ),
                                               ),
                                             ),
@@ -379,7 +558,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         ),
                                         SizedBox(height: 10.h),
                                         TextWidget(
-                                          text: controller
+                                          text:
+                                              controller
                                                   .settingController
                                                   .selectedAppointmentsStatus
                                                   .value
@@ -417,10 +597,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     child: Padding(
                                                       padding:
                                                           const EdgeInsets.all(
-                                                        6,
-                                                      ), // Reduced padding
+                                                            6,
+                                                          ), // Reduced padding
                                                       child: CircleAvatar(
-                                                        backgroundColor: controller
+                                                        backgroundColor:
+                                                            controller
                                                                     .settingController
                                                                     .selectedTicket
                                                                     .value
@@ -430,60 +611,62 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                     .toLowerCase()
                                                             ? Color(0xffE98862)
                                                             : controller
-                                                                        .settingController
-                                                                        .selectedTicket
-                                                                        .value
-                                                                        ?.statusName!
-                                                                        .toLowerCase() ==
-                                                                    "On Hold"
-                                                                        .toLowerCase()
-                                                                ? Color
-                                                                    .fromARGB(
-                                                                    255,
-                                                                    243,
-                                                                    18,
-                                                                    18,
-                                                                  )
-                                                                : controller
-                                                                            .settingController
-                                                                            .selectedTicket
-                                                                            .value
-                                                                            ?.statusName!
-                                                                            .toLowerCase() ==
-                                                                        "Parts on Order"
-                                                                            .toLowerCase()
-                                                                    ? Color
-                                                                        .fromARGB(
-                                                                        255,
-                                                                        21,
-                                                                        234,
-                                                                        242,
-                                                                      )
-                                                                    : controller.settingController.selectedTicket.value?.statusName!.toLowerCase() ==
-                                                                            "Completed"
-                                                                                .toLowerCase()
-                                                                        ? Color
-                                                                            .fromARGB(
-                                                                            255,
-                                                                            11,
-                                                                            197,
-                                                                            145,
-                                                                          )
-                                                                        : Colors
-                                                                            .red,
+                                                                      .settingController
+                                                                      .selectedTicket
+                                                                      .value
+                                                                      ?.statusName!
+                                                                      .toLowerCase() ==
+                                                                  "On Hold"
+                                                                      .toLowerCase()
+                                                            ? Color.fromARGB(
+                                                                255,
+                                                                243,
+                                                                18,
+                                                                18,
+                                                              )
+                                                            : controller
+                                                                      .settingController
+                                                                      .selectedTicket
+                                                                      .value
+                                                                      ?.statusName!
+                                                                      .toLowerCase() ==
+                                                                  "Parts on Order"
+                                                                      .toLowerCase()
+                                                            ? Color.fromARGB(
+                                                                255,
+                                                                21,
+                                                                234,
+                                                                242,
+                                                              )
+                                                            : controller
+                                                                      .settingController
+                                                                      .selectedTicket
+                                                                      .value
+                                                                      ?.statusName!
+                                                                      .toLowerCase() ==
+                                                                  "Completed"
+                                                                      .toLowerCase()
+                                                            ? Color.fromARGB(
+                                                                255,
+                                                                11,
+                                                                197,
+                                                                145,
+                                                              )
+                                                            : Colors.red,
                                                         foregroundColor:
                                                             LightThemeColors
                                                                 .primaryColor
                                                                 .withValues(
-                                                          alpha: .5,
-                                                        ),
+                                                                  alpha: .5,
+                                                                ),
                                                       ),
                                                     ),
                                                   ),
                                                 ),
                                                 SizedBox(height: 10.h),
                                                 TextWidget(
-                                                  text: (controller
+                                                  text:
+                                                      (controller
                                                                   .settingController
                                                                   .selectedTicket
                                                                   .value
@@ -496,11 +679,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   ?.statusName !=
                                                               "")
                                                       ? controller
-                                                              .settingController
-                                                              .selectedTicket
-                                                              .value
-                                                              ?.statusName ??
-                                                          "N/A"
+                                                                .settingController
+                                                                .selectedTicket
+                                                                .value
+                                                                ?.statusName ??
+                                                            "N/A"
                                                       : "N/A",
                                                   maxLines: 2,
                                                   textAlign: TextAlign.center,
@@ -544,8 +727,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               showDialog(
                                                 barrierDismissible: true,
                                                 context: context,
-                                                builder:
-                                                    (BuildContext context) {
+                                                builder: (BuildContext context) {
                                                   return Dialog(
                                                     // Make dialog full width
                                                     child: Column(
@@ -557,35 +739,31 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                             width: double
                                                                 .infinity, // ← This makes it full width
                                                             padding:
-                                                                const EdgeInsets
-                                                                    .all(
-                                                              20,
-                                                            ),
+                                                                const EdgeInsets.all(
+                                                                  20,
+                                                                ),
                                                             decoration:
                                                                 BoxDecoration(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                15.r,
-                                                              ),
-                                                            ),
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        15.r,
+                                                                      ),
+                                                                ),
                                                             child: Padding(
-                                                              padding: EdgeInsets
-                                                                  .symmetric(
-                                                                horizontal:
-                                                                    12.sp,
-                                                              ),
+                                                              padding:
+                                                                  EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        12.sp,
+                                                                  ),
                                                               child: Obx(
                                                                 () => Stack(
                                                                   children: [
                                                                     ClipRRect(
                                                                       borderRadius:
-                                                                          BorderRadius
-                                                                              .circular(
-                                                                        12.sp,
-                                                                      ),
-                                                                      child:
-                                                                          WebViewWidget(
+                                                                          BorderRadius.circular(
+                                                                            12.sp,
+                                                                          ),
+                                                                      child: WebViewWidget(
                                                                         controller:
                                                                             controller.webController!,
                                                                       ),
@@ -594,8 +772,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                         .isLoading
                                                                         .value)
                                                                       const Center(
-                                                                        child:
-                                                                            CircularProgressIndicator(
+                                                                        child: CircularProgressIndicator(
                                                                           color:
                                                                               Colors.blue,
                                                                         ),
@@ -631,9 +808,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               text: controller.address,
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                fontSize: 12.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                               textAlign: TextAlign.start,
                                               overflow: TextOverflow.visible,
                                               maxLines: 5,
@@ -664,13 +841,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             child: TextWidget(
                                               text:
                                                   controller.mobileNumber == ""
-                                                      ? "N/A"
-                                                      : controller.mobileNumber,
+                                                  ? "N/A"
+                                                  : controller.mobileNumber,
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                fontSize: 12.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                             ),
                                           ),
                                         ],
@@ -701,9 +878,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   : controller.phoneNumber,
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                fontSize: 12.sp,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                             ),
                                           ),
                                         ],
@@ -735,10 +912,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               maxLines: 2,
                                               style: theme.textTheme.bodyLarge
                                                   ?.copyWith(
-                                                fontSize: 12.sp,
-                                                overflow: TextOverflow.visible,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                                    fontSize: 12.sp,
+                                                    overflow:
+                                                        TextOverflow.visible,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                             ),
                                           ),
                                         ],
@@ -838,6 +1016,30 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   ),
                                 ),
                                 //index 5
+                                TextWidget(
+                                  text: "Equipment",
+                                  maxLines: 2,
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.visible,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                    fontSize: 10.sp,
+                                  ),
+                                ),
+                                //index 6
+                                TextWidget(
+                                  text: "Files",
+                                  maxLines: 2,
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.visible,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                    fontSize: 10.sp,
+                                  ),
+                                ),
+                                //index 7
                                 TextWidget(
                                   text: "Notes",
                                   maxLines: 2,
@@ -979,17 +1181,21 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                     children: [
                                       TextWidget(
                                         text: "Notes: ",
-                                        style:
-                                            theme.textTheme.bodyLarge?.copyWith(
-                                          color: LightThemeColors.hintTextColor,
-                                          fontSize: 14.sp,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                              color: LightThemeColors
+                                                  .hintTextColor,
+                                              fontSize: 14.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                       SizedBox(width: 40.w),
                                       Expanded(
                                         child: TextWidget(
-                                          text: controller.noteController.text
+                                          text:
+                                              controller
+                                                  .noteController
+                                                  .text
                                                   .isNotEmpty
                                               ? controller.noteController.text
                                               : "No notes added",
@@ -1023,14 +1229,15 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     TextWidget(
                                                       text: "Notes",
                                                       style: theme
-                                                          .textTheme.bodyLarge
+                                                          .textTheme
+                                                          .bodyLarge
                                                           ?.copyWith(
-                                                        color: LightThemeColors
-                                                            .hintTextColor,
-                                                        fontSize: 10.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
+                                                            color: LightThemeColors
+                                                                .hintTextColor,
+                                                            fontSize: 10.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
                                                     ),
                                                     SizedBox(height: 10.h),
                                                     GeneralTextField(
@@ -1091,59 +1298,63 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 15.0,
                                   ),
-                                  child:
-                                      // Row(
-                                      //   children: [
-                                      //     TextWidget(
-                                      //       text: "Custom Fields: ",
-                                      //       style: theme.textTheme.bodyLarge
-                                      //           ?.copyWith(
-                                      //         color:
-                                      //             LightThemeColors.hintTextColor,
-                                      //         fontSize: 14.sp,
-                                      //         fontWeight: FontWeight.w500,
-                                      //       ),
-                                      //     ),
-                                      //     SizedBox(width: 10),
+                                  child: Row(
+                                    children: [
+                                      TextWidget(
+                                        text: "Custom Fields: ",
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                              color: LightThemeColors
+                                                  .hintTextColor,
+                                              fontSize: 14.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                      SizedBox(width: 10),
                                       //     // Make dropdown take remaining space
-                                      DropdownButton<CustomFieldModel>(
-                                    isExpanded: true,
-                                    iconSize: 20.sp, // important!
-                                    icon: Icon(
-                                      Icons.add,
-                                      color: theme.primaryColor,
-                                    ),
-                                    underline: SizedBox(),
-                                    value: null,
-                                    items: customFieldsController
-                                        .allCustomFields
-                                        .map((field) {
-                                      return DropdownMenuItem<CustomFieldModel>(
-                                        value: field,
-                                        child: Text(
-                                          field.fieldName!,
-                                          softWrap:
-                                              true, // wrap text instead of ellipsis
+                                      Expanded(
+                                        child: DropdownButton<CustomFieldModel>(
+                                          isExpanded: true,
+                                          iconSize: 20.sp, // important!
+                                          icon: Icon(
+                                            Icons.add,
+                                            color: theme.primaryColor,
+                                          ),
+                                          underline: SizedBox(),
+                                          value: null,
+                                          items: customFieldsController
+                                              .allCustomFields
+                                              .map((field) {
+                                                return DropdownMenuItem<
+                                                  CustomFieldModel
+                                                >(
+                                                  value: field,
+                                                  child: Text(
+                                                    field.fieldName!,
+                                                    softWrap:
+                                                        true, // wrap text instead of ellipsis
+                                                  ),
+                                                );
+                                              })
+                                              .toList(),
+                                          onChanged: (value) {
+                                            if (value != null) {
+                                              customFieldsController
+                                                  .saveCustomField(value);
+                                            }
+                                          },
                                         ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        customFieldsController
-                                            .saveCustomField(value);
-                                      }
-                                    },
+                                      ),
+                                    ],
                                   ),
-                                  // ),
-                                  //   ],
-                                  // ),
                                 ),
                                 MainDivider(),
                                 ListView.builder(
                                   shrinkWrap: true,
                                   physics: NeverScrollableScrollPhysics(),
                                   itemCount: customFieldsController
-                                      .selectedCustomFields.length,
+                                      .selectedCustomFields
+                                      .length,
                                   itemBuilder: (context, index) {
                                     final field = customFieldsController
                                         .selectedCustomFields[index];
@@ -1200,7 +1411,33 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                     );
                                   },
                                 ),
-                                SizedBox(height: 40.h),
+                                // Save Custom Fields Button
+                                if (customFieldsController
+                                    .selectedCustomFields
+                                    .isNotEmpty)
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16.w,
+                                    ),
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      height: 48.sp,
+                                      child: PrimaryButton(
+                                        title: "Save Custom Fields",
+                                        onPressed: () async {
+                                          await customFieldsController
+                                              .saveAttachedCustomFields(
+                                                appointmentId: controller
+                                                    .selectedAppointment
+                                                    .value!
+                                                    .apptID,
+                                              );
+                                        },
+                                        inactive: false,
+                                      ),
+                                    ),
+                                  ),
+                                SizedBox(height: 80.h),
                               ],
                             ),
                           ),
@@ -1262,33 +1499,139 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          _buildRow(
-                                            "Customer Name",
-                                            controller
-                                                    .selectedAppointment
-                                                    .value!
-                                                    .customer!
-                                                    .firstName ??
-                                                "${controller.selectedAppointment.value?.customer!.lastName}",
-                                          ),
-                                          _buildRow(
-                                            "Site Contact",
-                                            "📞 Phone: ${controller.selectedAppointment.value?.customer!.phone ?? "N/A"}\n📱 Mobile: ${controller.selectedAppointment.value?.customer!.mobile ?? "N/A"}",
-                                          ),
-                                          _buildRow(
-                                            "Email",
-                                            controller.selectedAppointment.value
-                                                    ?.customer!.email ??
-                                                "N/A",
-                                            valueColor: Colors.blue,
-                                          ),
-                                          _buildRow(
-                                            "Address",
-                                            " ${controller.selectedAppointment.value?.customer!.address1 ?? ""}  ${controller.selectedAppointment.value?.customer!.address2 ?? ""}",
-                                          ),
-                                          // _buildRow("Status", " ${controller.selectedAppointment.value?.customer!. ?? "N/A"}",
-                                          // valueColor: Colors.red),
-                                          // _buildRow("Special Instructions", " ${controller.selectedAppointment.value.ins ?? "N/A"}"),
+                                          // Customer Name / Site Contact Name
+                                          Obx(() {
+                                            final site =
+                                                controller.selectedSite.value;
+                                            final customer = controller
+                                                .selectedAppointment
+                                                .value
+                                                ?.customer;
+
+                                            // Get name from site contact or customer
+                                            String displayName = "";
+                                            if (site?.firstName != null ||
+                                                site?.lastName != null) {
+                                              displayName =
+                                                  "${site?.firstName ?? ""} ${site?.lastName ?? ""}"
+                                                      .trim();
+                                            }
+                                            if (displayName.isEmpty &&
+                                                customer != null) {
+                                              displayName =
+                                                  "${customer.firstName ?? ""} ${customer.lastName ?? ""}"
+                                                      .trim();
+                                            }
+
+                                            return _buildRow(
+                                              "Customer Name",
+                                              displayName.isNotEmpty
+                                                  ? displayName
+                                                  : "N/A",
+                                            );
+                                          }),
+                                          // Site Information
+                                          Obx(() {
+                                            final site =
+                                                controller.selectedSite.value;
+                                            if (site != null) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  if (site.siteName != null &&
+                                                      site.siteName!.isNotEmpty)
+                                                    _buildRow(
+                                                      "Site Name",
+                                                      site.siteName ?? "",
+                                                      icon: Icons.location_on,
+                                                      valueColor:
+                                                          LightThemeColors
+                                                              .primaryColor,
+                                                    ),
+                                                  if (site.address != null &&
+                                                      site.address!.isNotEmpty)
+                                                    _buildRow(
+                                                      "Site Address",
+                                                      "${site.address}${site.state != null ? ", ${site.state}" : ""}${site.zip != null ? " ${site.zip}" : ""}",
+                                                      icon: Icons.place,
+                                                    ),
+                                                  if (site.contact != null &&
+                                                          site
+                                                              .contact!
+                                                              .isNotEmpty ||
+                                                      site.firstName != null ||
+                                                      site.lastName != null)
+                                                    _buildRow(
+                                                      "Site Contact",
+                                                      "${site.contact ?? ""} ${site.firstName ?? ""} ${site.lastName ?? ""}"
+                                                          .trim(),
+                                                      icon: Icons.person,
+                                                    ),
+                                                  if (site.phoneNumber !=
+                                                          null &&
+                                                      site
+                                                          .phoneNumber!
+                                                          .isNotEmpty)
+                                                    _buildRow(
+                                                      "Site Phone",
+                                                      site.phoneNumber ?? "",
+                                                      icon: Icons.phone,
+                                                    ),
+                                                  if (site.email != null &&
+                                                      site.email!.isNotEmpty)
+                                                    _buildRow(
+                                                      "Site Email",
+                                                      site.email ?? "",
+                                                      icon: Icons.email,
+                                                      valueColor: Colors.blue,
+                                                    ),
+                                                  if (site.note != null &&
+                                                      site.note!.isNotEmpty)
+                                                    _buildRow(
+                                                      "Site Note",
+                                                      site.note ?? "",
+                                                      icon: Icons.note,
+                                                      valueColor: Colors.orange,
+                                                    ),
+                                                ],
+                                              );
+                                            }
+                                            return const SizedBox.shrink();
+                                          }),
+                                          // Fallback to customer info if no site
+                                          Obx(() {
+                                            final site =
+                                                controller.selectedSite.value;
+                                            if (site == null) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  _buildRow(
+                                                    "Contact",
+                                                    "Phone: ${controller.selectedAppointment.value?.customer!.phone ?? "N/A"}\nMobile: ${controller.selectedAppointment.value?.customer!.mobile ?? "N/A"}",
+                                                    icon: Icons.phone,
+                                                  ),
+                                                  _buildRow(
+                                                    "Email",
+                                                    controller
+                                                            .selectedAppointment
+                                                            .value
+                                                            ?.customer!
+                                                            .email ??
+                                                        "N/A",
+                                                    valueColor: Colors.blue,
+                                                  ),
+                                                  _buildRow(
+                                                    "Address",
+                                                    " ${controller.selectedAppointment.value?.customer!.address1 ?? ""}  ${controller.selectedAppointment.value?.customer!.address2 ?? ""} ${controller.selectedAppointment.value?.customer!.city ?? ""} ${controller.selectedAppointment.value?.customer!.state ?? ""} ${controller.selectedAppointment.value?.customer!.zipCode ?? ""}",
+                                                  ),
+                                                ],
+                                              );
+                                            }
+                                            return const SizedBox.shrink();
+                                          }),
                                           _buildRow(
                                             "Created On",
                                             " ${controller.selectedAppointment.value?.customer!.createdDateTime ?? "N/A"}",
@@ -1512,14 +1855,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   controller: _tabController1,
                                   children: [
                                     Obx(() {
-                                      formC.filteredTemplates.value =
-                                          formC.formModels
-                                              .where(
-                                                (template) => formC
-                                                    .selectedFormsIdList
-                                                    .contains(template.id),
-                                              )
-                                              .toList();
+                                      formC.filteredTemplates.value = formC
+                                          .formModels
+                                          .where(
+                                            (template) => formC
+                                                .selectedFormsIdList
+                                                .contains(template.id),
+                                          )
+                                          .toList();
                                       log(
                                         "filterd ${formC.formModels.where((template) => formC.selectedFormsIdList.contains(template.id)).toList()}",
                                       );
@@ -1542,7 +1885,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           Expanded(
                                             child: ListView.builder(
                                               itemCount: formC
-                                                  .filteredTemplates.length,
+                                                  .filteredTemplates
+                                                  .length,
                                               itemBuilder: (context, index) {
                                                 final template = formC
                                                     .filteredTemplates[index];
@@ -1555,8 +1899,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                      8.r,
-                                                    ),
+                                                          8.r,
+                                                        ),
                                                   ),
                                                   child: Padding(
                                                     padding: EdgeInsets.all(
@@ -1575,15 +1919,15 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                             /// ✅ Checkbox for selection
                                                             Expanded(
                                                               child: TextWidget(
-                                                                text: template
+                                                                text:
+                                                                    template
                                                                         .templateName ??
                                                                     "",
                                                                 maxLines: 1,
                                                                 overflow:
                                                                     TextOverflow
                                                                         .ellipsis,
-                                                                style:
-                                                                    TextStyle(
+                                                                style: TextStyle(
                                                                   fontSize:
                                                                       18.sp,
                                                                   fontWeight:
@@ -1596,31 +1940,31 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                               width: 5.w,
                                                             ),
                                                             Container(
-                                                              padding: EdgeInsets
-                                                                  .symmetric(
-                                                                horizontal: 8.w,
-                                                                vertical: 4.h,
-                                                              ),
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: template
+                                                              padding:
+                                                                  EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        8.w,
+                                                                    vertical:
+                                                                        4.h,
+                                                                  ),
+                                                              decoration: BoxDecoration(
+                                                                color:
+                                                                    template
                                                                         .isActive!
                                                                     ? Colors
-                                                                        .green
+                                                                          .green
                                                                     : Colors
-                                                                        .orange,
+                                                                          .orange,
                                                                 borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                  12.r,
-                                                                ),
+                                                                    BorderRadius.circular(
+                                                                      12.r,
+                                                                    ),
                                                               ),
                                                               child: Text(
                                                                 template.isActive!
                                                                     ? "Active"
                                                                     : "Inactive",
-                                                                style:
-                                                                    TextStyle(
+                                                                style: TextStyle(
                                                                   color: Colors
                                                                       .white,
                                                                   fontSize:
@@ -1632,7 +1976,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                         ),
                                                         SizedBox(height: 4.h),
                                                         TextWidget(
-                                                          text: template
+                                                          text:
+                                                              template
                                                                   .description ??
                                                               "",
                                                           maxLines: 3,
@@ -1662,8 +2007,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                               children: [
                                                                 Text(
                                                                   "Signature: ",
-                                                                  style:
-                                                                      TextStyle(
+                                                                  style: TextStyle(
                                                                     fontSize:
                                                                         13.sp,
                                                                   ),
@@ -1671,15 +2015,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 Icon(
                                                                   template.requireSignature!
                                                                       ? Icons
-                                                                          .check_circle
+                                                                            .check_circle
                                                                       : Icons
-                                                                          .cancel,
-                                                                  color: template
+                                                                            .cancel,
+                                                                  color:
+                                                                      template
                                                                           .requireSignature!
                                                                       ? Colors
-                                                                          .green
+                                                                            .green
                                                                       : Colors
-                                                                          .red,
+                                                                            .red,
                                                                   size: 18.sp,
                                                                 ),
                                                               ],
@@ -1708,20 +2053,21 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                     Obx(() {
                                       final filteredTemplates =
                                           formC.searchQuery.value.isEmpty
-                                              ? formC.formModels
-                                              : formC.formModels
-                                                  .where(
-                                                    (template) =>
-                                                        template.templateName
-                                                            ?.toLowerCase()
-                                                            .contains(
-                                                              formC.searchQuery
-                                                                  .value
-                                                                  .toLowerCase(),
-                                                            ) ??
-                                                        false,
-                                                  )
-                                                  .toList();
+                                          ? formC.formModels
+                                          : formC.formModels
+                                                .where(
+                                                  (template) =>
+                                                      template.templateName
+                                                          ?.toLowerCase()
+                                                          .contains(
+                                                            formC
+                                                                .searchQuery
+                                                                .value
+                                                                .toLowerCase(),
+                                                          ) ??
+                                                      false,
+                                                )
+                                                .toList();
 
                                       return Column(
                                         children: [
@@ -1738,7 +2084,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 boxShadow: [
                                                   BoxShadow(
                                                     color: Colors.grey
-                                                        .withOpacity(0.1),
+                                                        .withValues(alpha: 0.1),
                                                     blurRadius: 6,
                                                     offset: const Offset(0, 2),
                                                   ),
@@ -1771,9 +2117,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       InputBorder.none,
                                                   contentPadding:
                                                       EdgeInsets.symmetric(
-                                                    horizontal: 16.w,
-                                                    vertical: 14.h,
-                                                  ),
+                                                        horizontal: 16.w,
+                                                        vertical: 14.h,
+                                                      ),
                                                   fillColor: Colors.white,
                                                   filled: true,
                                                 ),
@@ -1811,12 +2157,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       bottom: 12.h,
                                                     ),
                                                     elevation: 2,
-                                                    shape:
-                                                        RoundedRectangleBorder(
+                                                    shape: RoundedRectangleBorder(
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                        8.r,
-                                                      ),
+                                                            8.r,
+                                                          ),
                                                     ),
                                                     child: Padding(
                                                       padding: EdgeInsets.all(
@@ -1841,12 +2186,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   value: formC
                                                                       .selectedFormsIdList
                                                                       .contains(
-                                                                    template.id,
-                                                                  ),
-                                                                  onChanged:
-                                                                      (value) {
-                                                                    formC
-                                                                        .updateSelectedForms(
+                                                                        template
+                                                                            .id,
+                                                                      ),
+                                                                  onChanged: (value) {
+                                                                    formC.updateSelectedForms(
                                                                       template
                                                                           .id!,
                                                                     );
@@ -1854,17 +2198,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 ),
                                                               ),
                                                               Expanded(
-                                                                child:
-                                                                    TextWidget(
-                                                                  text: template
+                                                                child: TextWidget(
+                                                                  text:
+                                                                      template
                                                                           .templateName ??
                                                                       "",
                                                                   maxLines: 1,
                                                                   overflow:
                                                                       TextOverflow
                                                                           .ellipsis,
-                                                                  style:
-                                                                      TextStyle(
+                                                                  style: TextStyle(
                                                                     fontSize:
                                                                         18.sp,
                                                                     fontWeight:
@@ -1877,32 +2220,31 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 width: 5.w,
                                                               ),
                                                               Container(
-                                                                padding: EdgeInsets
-                                                                    .symmetric(
-                                                                  horizontal:
-                                                                      8.w,
-                                                                  vertical: 4.h,
-                                                                ),
-                                                                decoration:
-                                                                    BoxDecoration(
-                                                                  color: template
+                                                                padding:
+                                                                    EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          8.w,
+                                                                      vertical:
+                                                                          4.h,
+                                                                    ),
+                                                                decoration: BoxDecoration(
+                                                                  color:
+                                                                      template
                                                                           .isActive!
                                                                       ? Colors
-                                                                          .green
+                                                                            .green
                                                                       : Colors
-                                                                          .orange,
+                                                                            .orange,
                                                                   borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                    12.r,
-                                                                  ),
+                                                                      BorderRadius.circular(
+                                                                        12.r,
+                                                                      ),
                                                                 ),
                                                                 child: Text(
                                                                   template.isActive!
                                                                       ? "Active"
                                                                       : "Inactive",
-                                                                  style:
-                                                                      TextStyle(
+                                                                  style: TextStyle(
                                                                     color: Colors
                                                                         .white,
                                                                     fontSize:
@@ -1914,7 +2256,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           ),
                                                           SizedBox(height: 4.h),
                                                           TextWidget(
-                                                            text: template
+                                                            text:
+                                                                template
                                                                     .description ??
                                                                 "",
                                                             maxLines: 3,
@@ -1937,9 +2280,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 "Category: ${template.category}",
                                                                 style:
                                                                     TextStyle(
-                                                                  fontSize:
-                                                                      13.sp,
-                                                                ),
+                                                                      fontSize:
+                                                                          13.sp,
+                                                                    ),
                                                               ),
                                                               SizedBox(
                                                                 height: 4.h,
@@ -1948,8 +2291,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 children: [
                                                                   Text(
                                                                     "Signature: ",
-                                                                    style:
-                                                                        TextStyle(
+                                                                    style: TextStyle(
                                                                       fontSize:
                                                                           13.sp,
                                                                     ),
@@ -1957,14 +2299,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   Icon(
                                                                     template.requireSignature!
                                                                         ? Icons
-                                                                            .check_circle
+                                                                              .check_circle
                                                                         : Icons
-                                                                            .cancel,
-                                                                    color: template.requireSignature!
+                                                                              .cancel,
+                                                                    color:
+                                                                        template
+                                                                            .requireSignature!
                                                                         ? Colors
-                                                                            .green
+                                                                              .green
                                                                         : Colors
-                                                                            .red,
+                                                                              .red,
                                                                     size: 18.sp,
                                                                   ),
                                                                 ],
@@ -1976,9 +2320,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 "Auto-Assign: ${template.isAutoAssignEnabled! ? "Yes" : "No"}",
                                                                 style:
                                                                     TextStyle(
-                                                                  fontSize:
-                                                                      13.sp,
-                                                                ),
+                                                                      fontSize:
+                                                                          13.sp,
+                                                                    ),
                                                               ),
                                                             ],
                                                           ),
@@ -2024,9 +2368,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           text: "Estimate/Invoice Details",
                                           style: theme.textTheme.headlineSmall
                                               ?.copyWith(
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 18.sp,
-                                          ),
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: 18.sp,
+                                              ),
                                         ),
                                       ),
                                       SizedBox(height: 10.sp),
@@ -2041,21 +2385,20 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               RenderBox renderBox =
                                                   context.findRenderObject()
                                                       as RenderBox;
-                                              Offset offset =
-                                                  renderBox.localToGlobal(
-                                                Offset(32.sp, 40.sp),
-                                              );
+                                              Offset offset = renderBox
+                                                  .localToGlobal(
+                                                    Offset(32.sp, 40.sp),
+                                                  );
                                               final RenderBox overlay =
-                                                  Overlay.of(context)
-                                                          .context
+                                                  Overlay.of(context).context
                                                           .findRenderObject()
                                                       as RenderBox;
                                               showMenu(
                                                 shape: RoundedRectangleBorder(
                                                   borderRadius:
                                                       BorderRadius.all(
-                                                    Radius.circular(8.r),
-                                                  ),
+                                                        Radius.circular(8.r),
+                                                      ),
                                                 ),
                                                 context: context,
                                                 position: RelativeRect.fromRect(
@@ -2072,54 +2415,66 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     .invoiceController
                                                     .createTypes
                                                     .map((e) {
-                                                  return PopupMenuItem(
-                                                    value: e["name"],
-                                                    child: TextWidget(
-                                                      text: "${e["name"]}",
-                                                    ),
-                                                  );
-                                                }).toList(),
+                                                      return PopupMenuItem(
+                                                        value: e["name"],
+                                                        child: TextWidget(
+                                                          text: "${e["name"]}",
+                                                        ),
+                                                      );
+                                                    })
+                                                    .toList(),
                                               ).then((v) async {
                                                 if (v != null) {
                                                   controller.invoiceController
                                                       .clearAllItems();
                                                   controller
-                                                      .invoiceController
-                                                      .selectedCreateType
-                                                      .value = v;
+                                                          .invoiceController
+                                                          .selectedCreateType
+                                                          .value =
+                                                      v;
 
-                                                  final x = MySharedPref
-                                                          .getCompanyType() ??
+                                                  final x =
+                                                      MySharedPref.getCompanyType() ??
                                                       '';
                                                   controller
-                                                      .invoiceController
-                                                      .isLocAndClassShow
-                                                      .value = x == 'IsPcs';
+                                                          .invoiceController
+                                                          .isLocAndClassShow
+                                                          .value =
+                                                      x == 'IsPcs';
                                                   if (v == "Invoice") {
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .createCustomerName =
                                                         controller.contactName;
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .createCustomerAddress =
                                                         controller.address;
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .createCustomerPhone =
                                                         controller.mobileNumber;
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .createCustomerEmail =
                                                         controller.email;
-                                                    controller.invoiceController
-                                                            .customerID.value =
+                                                    controller
+                                                            .invoiceController
+                                                            .customerID
+                                                            .value =
                                                         controller.customerID;
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .appointmentID =
                                                         controller
                                                             .appointmentID;
                                                     controller
+                                                            .invoiceController
+                                                            .selectedTaxID
+                                                            .value =
+                                                        "";
+                                                    controller
                                                         .invoiceController
-                                                        .selectedTaxID
-                                                        .value = "";
-                                                    controller.invoiceController
                                                         .createDiscountTextController
                                                         .clear();
                                                     await controller
@@ -2129,31 +2484,40 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       Routes.INVOICE_CREATE,
                                                     );
                                                   } else {
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .createCustomerName =
                                                         controller.contactName;
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .createCustomerAddress =
                                                         controller.address;
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .createCustomerPhone =
                                                         controller.mobileNumber;
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .createCustomerEmail =
                                                         controller.email;
-                                                    controller.invoiceController
-                                                            .customerID.value =
+                                                    controller
+                                                            .invoiceController
+                                                            .customerID
+                                                            .value =
                                                         controller.customerID;
 
-                                                    controller.invoiceController
+                                                    controller
+                                                            .invoiceController
                                                             .appointmentID =
                                                         controller
                                                             .appointmentID;
                                                     controller
+                                                            .invoiceController
+                                                            .selectedTaxID
+                                                            .value =
+                                                        "";
+                                                    controller
                                                         .invoiceController
-                                                        .selectedTaxID
-                                                        .value = "";
-                                                    controller.invoiceController
                                                         .createDiscountTextController
                                                         .clear();
                                                     await controller
@@ -2182,13 +2546,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   TextWidget(
                                                     text: "Create New",
                                                     style: theme
-                                                        .textTheme.bodyLarge
+                                                        .textTheme
+                                                        .bodyLarge
                                                         ?.copyWith(
-                                                      color: Colors.white,
-                                                      fontSize: 16.sp,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
+                                                          color: Colors.white,
+                                                          fontSize: 16.sp,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
                                                   ),
                                                 ],
                                               ),
@@ -2204,116 +2569,244 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   () => ListView.separated(
                                     itemBuilder: (context, index) {
                                       final proposal = controller
-                                          .sortedAppointments[
-                                              controller.selectedAptIndex.value]
+                                          .sortedAppointments[controller
+                                              .selectedAptIndex
+                                              .value]
                                           .invoices![index];
 
                                       return GestureDetector(
                                         onTap: () async {
                                           controller.showLoading();
 
+                                          // Save backup if we were in "new" mode before switching to "existing"
+                                          if (controller
+                                                  .invoiceController
+                                                  .existingItemType
+                                                  .value ==
+                                              SelectedItemCategory.newOne) {
+                                            controller.invoiceController
+                                                .saveBackup("new");
+                                          }
+
+                                          controller.invoiceController
+                                              .existingItemType(
+                                                SelectedItemCategory
+                                                    .existingOne,
+                                              );
+
                                           // Clear previous selection if needed
-
-                                          controller.invoiceController
-                                              .selectedItemList
-                                              .clear();
-                                          // for (var c in controller
-                                          //     .invoiceController
-                                          //     .editAmountControllers) {
-                                          //   c.dispose();
-                                          // }
-                                          // for (var c in controller
-                                          //     .invoiceController
-                                          //     .editDescriptionControllers) {
-                                          //   c.dispose();
-                                          // }
-                                          // for (var c in controller
-                                          //     .invoiceController
-                                          //     .editQuantityControllers) {
-                                          //   c.dispose();
-                                          // }
-                                          // controller.invoiceController
-                                          //     .editAmountControllers
-                                          //     .clear();
-                                          // controller.invoiceController
-                                          //     .editDescriptionControllers
-                                          //     .clear();
-                                          // controller.invoiceController
-                                          //     .editQuantityControllers
-                                          //     .clear();
-                                          controller.invoiceController
-                                              .editNoteTextController
-                                              .clear();
-                                          controller.invoiceController
-                                              .editDiscountTextController
-                                              .clear();
-                                          controller.invoiceController
-                                              .initialTaxID.value = "";
-
-                                          // Set basic info
                                           controller
                                               .invoiceController
-                                              .invoiceItemList
-                                              .value = proposal.items ?? [];
-                                          controller.invoiceController
-                                                  .depositList.value =
+                                              .selectedItemList
+                                              .clear();
+                                          for (var c
+                                              in controller
+                                                  .invoiceController
+                                                  .editAmountControllers) {
+                                            c.dispose();
+                                          }
+                                          for (var c
+                                              in controller
+                                                  .invoiceController
+                                                  .editDescriptionControllers) {
+                                            c.dispose();
+                                          }
+                                          for (var c
+                                              in controller
+                                                  .invoiceController
+                                                  .editQuantityControllers) {
+                                            c.dispose();
+                                          }
+                                          controller
+                                              .invoiceController
+                                              .editAmountControllers
+                                              .clear();
+                                          controller
+                                              .invoiceController
+                                              .editDescriptionControllers
+                                              .clear();
+                                          controller
+                                              .invoiceController
+                                              .editQuantityControllers
+                                              .clear();
+                                          controller
+                                              .invoiceController
+                                              .editNoteTextController
+                                              .clear();
+                                          controller
+                                              .invoiceController
+                                              .editDiscountTextController
+                                              .clear();
+                                          controller
+                                                  .invoiceController
+                                                  .initialTaxID
+                                                  .value =
+                                              "";
+
+                                          // Set basic info
+
+                                          controller
+                                                  .invoiceController
+                                                  .invoiceItemList
+                                                  .value =
+                                              proposal.items ?? [];
+                                          controller
+                                                  .invoiceController
+                                                  .depositList
+                                                  .value =
                                               proposal.paymentList ?? [];
                                           controller
                                                   .invoiceController
                                                   .selectedDiscountOption
                                                   .value =
                                               proposal.discountOption ?? "2";
-                                          controller.invoiceController
+                                          controller
+                                                  .invoiceController
                                                   .invoiceNumber =
                                               proposal.number ?? "";
-                                          controller.invoiceController
-                                                  .isConverted.value =
+                                          controller
+                                                  .invoiceController
+                                                  .isConverted
+                                                  .value =
                                               proposal.isConverted ?? false;
-                                          controller.invoiceController
+                                          controller
+                                                  .invoiceController
                                                   .customerName =
                                               proposal.fullName ?? "";
                                           controller.invoiceController.address =
-                                              "${proposal.city}";
-                                          controller.invoiceController
-                                                  .depositAmount.value =
-                                              proposal.depositAmount.toString();
-                                          controller.invoiceController.invoiceID
+                                              "${proposal.city}, ";
+                                          controller
+                                                  .invoiceController
+                                                  .depositAmount
                                                   .value =
-                                              proposal.invoiceID.toString();
+                                              proposal.depositAmount
+                                                  ?.toStringAsFixed(2) ??
+                                              "0.00";
+                                          controller
+                                              .invoiceController
+                                              .invoiceID
+                                              .value = proposal.invoiceID
+                                              .toString();
                                           controller.invoiceController.date =
                                               dateTimeConverter(
-                                            inputFormat: "yyyy/MM/dd",
-                                            inputTime:
-                                                proposal.invoiceDate.toString(),
-                                            outputFormat: "MM/dd/yyyy",
-                                          );
-                                          controller.invoiceController
-                                              .subtotal = proposal.subtotal
+                                                inputFormat: "yyyy/MM/dd",
+                                                inputTime: proposal.invoiceDate
+                                                    .toString(),
+                                                outputFormat: "MM/dd/yyyy",
+                                              );
+                                          controller
+                                                  .invoiceController
+                                                  .subtotal =
+                                              proposal.subtotal
                                                   ?.toStringAsFixed(2) ??
                                               "";
-                                          controller.invoiceController
-                                                  .customerID.value =
+                                          controller
+                                                  .invoiceController
+                                                  .customerID
+                                                  .value =
                                               proposal.customerId ?? "";
                                           controller.invoiceController.status =
                                               proposal.status ?? "";
-                                          controller.invoiceController.type
-                                              .value = proposal.type ?? "";
-                                          controller.invoiceController.total
+                                          controller
+                                                  .invoiceController
+                                                  .type
+                                                  .value =
+                                              proposal.type ?? "";
+                                          controller
+                                                  .invoiceController
+                                                  .total
                                                   .value =
                                               proposal.total?.toStringAsFixed(
-                                                    2,
-                                                  ) ??
-                                                  "";
-                                          controller.invoiceController.newTotal
-                                                  .value =
-                                              controller.invoiceController.total
-                                                  .value;
+                                                2,
+                                              ) ??
+                                              "";
+                                          if (proposal.requestedAmountType ==
+                                              2) {
+                                            // type = fixed
+                                            controller
+                                                    .invoiceController
+                                                    .selectedDepositRequestOption
+                                                    .value =
+                                                "2";
+                                            controller
+                                                    .invoiceController
+                                                    .requestedDepositAmountEditTextController
+                                                    .text =
+                                                proposal
+                                                    .requestedDepositAmount ??
+                                                "0.00";
+                                            controller
+                                                .invoiceController
+                                                .selectedDepositRequestOptionName
+                                                .value = controller
+                                                .invoiceController
+                                                .depositRequestOptions[2]["name"];
+                                          }
+                                          if (proposal.requestedAmountType ==
+                                              1) {
+                                            // type = percentage
+                                            controller
+                                                    .invoiceController
+                                                    .selectedDepositRequestOption
+                                                    .value =
+                                                "1";
+                                            controller
+                                                    .invoiceController
+                                                    .requestDepositRateEditTextController
+                                                    .text =
+                                                proposal
+                                                    .requestedDepositPercentage ??
+                                                "0.00";
+                                            controller
+                                                    .invoiceController
+                                                    .requestedDepositAmountEditTextController
+                                                    .text =
+                                                proposal
+                                                    .requestedDepositAmount ??
+                                                "0.00";
+                                            controller
+                                                .invoiceController
+                                                .selectedDepositRequestOptionName
+                                                .value = controller
+                                                .invoiceController
+                                                .depositRequestOptions[1]["name"];
+                                          }
+                                          if (proposal.requestedAmountType ==
+                                              0) {
+                                            // type = null
+                                            controller
+                                                    .invoiceController
+                                                    .selectedDepositRequestOption
+                                                    .value =
+                                                "0";
+                                            controller
+                                                    .invoiceController
+                                                    .requestDepositRateEditTextController
+                                                    .text =
+                                                proposal
+                                                    .requestedDepositPercentage ??
+                                                "0.00";
+                                            controller
+                                                    .invoiceController
+                                                    .requestedDepositAmountEditTextController
+                                                    .text =
+                                                proposal
+                                                    .requestedDepositAmount ??
+                                                "0.00";
+                                            controller
+                                                .invoiceController
+                                                .selectedDepositRequestOptionName
+                                                .value = controller
+                                                .invoiceController
+                                                .depositRequestOptions[0]["name"];
+                                          }
                                           controller.invoiceController.notes =
                                               proposal.note ?? "";
                                           controller
-                                              .invoiceController
-                                              .editNoteTextController
-                                              .text = proposal.note ?? "";
+                                                  .invoiceController
+                                                  .editNoteTextController
+                                                  .text =
+                                              proposal.note ?? "";
                                           controller.invoiceController.due =
                                               proposal.due ?? "";
                                           controller
@@ -2321,16 +2814,18 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                               .showingDate
                                               .value = dateTimeConverter(
                                             inputFormat: "yyyy/MM/dd hh:mm a",
-                                            inputTime:
-                                                proposal.invoiceDate.toString(),
+                                            inputTime: proposal.invoiceDate
+                                                .toString(),
                                             outputFormat: "MM/dd/yyyy",
                                           );
                                           if (proposal.taxType != "") {
                                             controller
-                                                .invoiceController
-                                                .initialTaxID
-                                                .value = proposal.taxType ?? "";
+                                                    .invoiceController
+                                                    .initialTaxID
+                                                    .value =
+                                                proposal.taxType ?? "";
                                           }
+
                                           // Set discount values
                                           controller
                                                   .invoiceController
@@ -2338,129 +2833,180 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   .value =
                                               proposal.discount ?? 0.00;
                                           if (proposal.discountOption == "1") {
-                                            final discount = double.tryParse(
-                                                  proposal.discount
-                                                          ?.toString() ??
-                                                      '0',
-                                                ) ??
-                                                0.0;
-                                            final subtotal = double.tryParse(
-                                                  proposal.subtotal
-                                                          ?.toString() ??
-                                                      '0',
-                                                ) ??
-                                                0.0;
-
-                                            double percentage = 0.0;
-                                            if (subtotal > 0) {
-                                              percentage =
-                                                  (discount * 100) / subtotal;
-                                            }
-
                                             controller
                                                     .invoiceController
                                                     .editDiscountTextController
                                                     .text =
-                                                percentage.toStringAsFixed(2);
+                                                (((double.parse(
+                                                              proposal.discount
+                                                                      ?.toString() ??
+                                                                  "0.00",
+                                                            )) *
+                                                            100) /
+                                                        double.parse(
+                                                          proposal.subtotal
+                                                                  ?.toStringAsFixed(
+                                                                    2,
+                                                                  ) ??
+                                                              "0.00",
+                                                        ))
+                                                    .toStringAsFixed(2);
                                           } else {
-                                            final discount = double.tryParse(
-                                                  proposal.discount
-                                                          ?.toString() ??
-                                                      '',
-                                                ) ??
-                                                0.0;
-
                                             controller
-                                                    .invoiceController
-                                                    .editDiscountTextController
-                                                    .text =
-                                                discount.toStringAsFixed(2);
+                                                .invoiceController
+                                                .editDiscountTextController
+                                                .text = double.parse(
+                                              proposal.discount?.toString() ??
+                                                  "0.00",
+                                            ).toStringAsFixed(2);
                                           }
 
                                           // Set tax values
 
                                           controller
-                                                  .invoiceController.tax.value =
+                                                  .invoiceController
+                                                  .tax
+                                                  .value =
                                               controller.invoiceController.taxes
-                                                      .firstWhereOrNull(
-                                                        (tax) =>
-                                                            tax.id ==
-                                                            int.tryParse(
-                                                              controller
-                                                                  .invoiceController
-                                                                  .initialTaxID
-                                                                  .value,
-                                                            ),
-                                                      )
-                                                      ?.rate
-                                                      ?.toStringAsFixed(2) ??
-                                                  "0.00";
-                                          log(
-                                            "alway proposal ${proposal.items}",
-                                          ); //
+                                                  .firstWhereOrNull(
+                                                    (tax) =>
+                                                        tax.id ==
+                                                        int.tryParse(
+                                                          controller
+                                                              .invoiceController
+                                                              .initialTaxID
+                                                              .value,
+                                                        ),
+                                                  )
+                                                  ?.rate
+                                                  ?.toStringAsFixed(2) ??
+                                              "0.00";
+                                          controller
+                                                  .invoiceController
+                                                  .selectedTaxName
+                                                  .value =
+                                              controller.invoiceController.taxes
+                                                  .firstWhereOrNull(
+                                                    (tax) =>
+                                                        tax.id ==
+                                                        int.tryParse(
+                                                          controller
+                                                              .invoiceController
+                                                              .initialTaxID
+                                                              .value,
+                                                        ),
+                                                  )
+                                                  ?.name ??
+                                              "";
+
                                           // Populate selectedItemList and initialize controllers
                                           if (proposal.items != null &&
                                               proposal.items!.isNotEmpty) {
                                             for (var item in proposal.items!) {
-                                              controller.invoiceController
+                                              controller
+                                                  .invoiceController
                                                   .selectedItemList
                                                   .add(
-                                                SelectedItemListModel(
-                                                  quantity: double.parse(
-                                                    item.quantity ?? "1.00",
-                                                  ),
-                                                  selectedItem: ItemListModel(
-                                                    id: item.itemId,
-                                                    name: item.name,
-                                                    description:
-                                                        item.description,
-                                                    price: double.tryParse(
-                                                      item.unitPrice ?? "0.00",
+                                                    ItemListModel(
+                                                      id: item.itemId,
+                                                      name: item.name,
+                                                      description:
+                                                          item.description,
+                                                      price: double.tryParse(
+                                                        item.unitPrice ??
+                                                            "0.00",
+                                                      ),
+                                                      isTaxable:
+                                                          item.isTaxable ==
+                                                              "TAX"
+                                                          ? true
+                                                          : false,
+                                                      // itemTypeId: int.parse(item.itemTyId!),
                                                     ),
-                                                    isTaxable:
-                                                        item.isTaxable == "TAX"
-                                                            ? true
-                                                            : false,
-                                                    // itemTypeId: int.parse(item.itemTyId!),
-                                                  ),
-                                                ),
-                                              );
+                                                  );
 
                                               // Initialize controllers with existing values
-                                              // controller.invoiceController
-                                              //     .editAmountControllers
-                                              //     .add(TextEditingController(
-                                              //         text:
-                                              //             item.unitPrice ??
-                                              //                 "0.00"));
+                                              controller
+                                                  .invoiceController
+                                                  .editAmountControllers
+                                                  .add(
+                                                    TextEditingController(
+                                                      text:
+                                                          item.unitPrice ??
+                                                          "0.00",
+                                                    ),
+                                                  );
 
-                                              // controller.invoiceController
-                                              //     .editDescriptionControllers
-                                              //     .add(TextEditingController(
-                                              //         text:
-                                              //             item.description ??
-                                              //                 ""));
+                                              controller
+                                                  .invoiceController
+                                                  .editDescriptionControllers
+                                                  .add(
+                                                    TextEditingController(
+                                                      text:
+                                                          item.description ??
+                                                          "",
+                                                    ),
+                                                  );
 
-                                              // controller.invoiceController
-                                              //     .editQuantityControllers
-                                              //     .add(TextEditingController(
-                                              //         text: item.quantity ??
-                                              //             "1"));
+                                              controller
+                                                  .invoiceController
+                                                  .editQuantityControllers
+                                                  .add(
+                                                    TextEditingController(
+                                                      text:
+                                                          item.quantity ?? "1",
+                                                    ),
+                                                  );
                                             }
                                           }
                                           controller.invoiceController
                                               .createTotalForEdit();
-                                          await 0.5
-                                              .delay(); // Optional small delay before navigation
-                                          controller.hideLoading();
-
+                                          await 0.5.delay();
+                                          controller.invoiceController
+                                              .selectedQboClass(
+                                                controller
+                                                    .invoiceController
+                                                    .qboClassList
+                                                    .where(
+                                                      (e) =>
+                                                          e.qboClassId
+                                                              .toString() ==
+                                                          proposal.qboClassId,
+                                                    )
+                                                    .firstOrNull,
+                                              );
+                                          controller.invoiceController
+                                              .selectedQboLocation(
+                                                controller
+                                                    .invoiceController
+                                                    .qboLocationList
+                                                    .where(
+                                                      (e) =>
+                                                          e.qboLocationId
+                                                              .toString() ==
+                                                          proposal
+                                                              .qboLocationId,
+                                                    )
+                                                    .firstOrNull,
+                                              );
                                           controller
-                                              .invoiceController.removedList
-                                              .clear();
-
-                                          // controller.invoiceController
-                                          //     .isDetailsView(true);
-                                          // controller.invoiceController. createDiscountTextController.text = controller.selectedAppointment.value.invoices.
+                                              .invoiceController
+                                              .removedList
+                                              .clear(); // Optional small delay before navigation
+                                          controller.hideLoading();
+                                          final x =
+                                              MySharedPref.getCompanyType() ??
+                                              '';
+                                          controller
+                                                  .invoiceController
+                                                  .isLocAndClassShow
+                                                  .value =
+                                              x == 'PCS';
+                                          controller
+                                                  .invoiceController
+                                                  .selectedInvoice
+                                                  .value =
+                                              proposal;
                                           Get.toNamed(Routes.INVOICE_DETAILS);
                                         },
                                         child: Card(
@@ -2475,13 +3021,15 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   text:
                                                       "${proposal.type ?? ""} Number",
                                                   style: theme
-                                                      .textTheme.bodyLarge
+                                                      .textTheme
+                                                      .bodyLarge
                                                       ?.copyWith(
-                                                    color: LightThemeColors
-                                                        .hintTextColor,
-                                                    fontSize: 12.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                        color: LightThemeColors
+                                                            .hintTextColor,
+                                                        fontSize: 12.sp,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                 ),
                                                 trailing: Container(
                                                   padding: EdgeInsets.symmetric(
@@ -2491,33 +3039,36 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                      5.r,
-                                                    ),
-                                                    color: proposal.type ==
+                                                          5.r,
+                                                        ),
+                                                    color:
+                                                        proposal.type ==
                                                             "Invoice"
                                                         ? theme.primaryColor
                                                         : proposal.type ==
-                                                                    "Estimate" &&
-                                                                proposal.isConverted ==
-                                                                    true
-                                                            ? Colors.green
-                                                            : Colors.yellow,
+                                                                  "Estimate" &&
+                                                              proposal.isConverted ==
+                                                                  true
+                                                        ? Colors.green
+                                                        : Colors.yellow,
                                                   ),
                                                   child: TextWidget(
                                                     text: proposal.number ?? "",
                                                     style: theme
-                                                        .textTheme.bodyLarge
+                                                        .textTheme
+                                                        .bodyLarge
                                                         ?.copyWith(
-                                                      fontSize: 12.sp,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: proposal.type ==
-                                                                  "Estimate" &&
-                                                              proposal.isConverted ==
-                                                                  false
-                                                          ? Colors.black
-                                                          : Colors.white,
-                                                    ),
+                                                          fontSize: 12.sp,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          color:
+                                                              proposal.type ==
+                                                                      "Estimate" &&
+                                                                  proposal.isConverted ==
+                                                                      false
+                                                              ? Colors.black
+                                                              : Colors.white,
+                                                        ),
                                                   ),
                                                 ),
                                               ),
@@ -2526,17 +3077,18 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 title: TextWidget(
                                                   text: "Date",
                                                   style: theme
-                                                      .textTheme.bodyLarge
+                                                      .textTheme
+                                                      .bodyLarge
                                                       ?.copyWith(
-                                                    color: LightThemeColors
-                                                        .hintTextColor,
-                                                    fontSize: 14.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                        color: LightThemeColors
+                                                            .hintTextColor,
+                                                        fontSize: 14.sp,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                 ),
-                                                trailing: proposal
-                                                            .invoiceDate !=
-                                                        ""
+                                                trailing:
+                                                    proposal.invoiceDate != ""
                                                     ? TextWidget(
                                                         text: dateTimeConverter(
                                                           inputFormat:
@@ -2548,12 +3100,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                               "MM/dd/yyyy",
                                                         ),
                                                         style: theme
-                                                            .textTheme.bodyLarge
+                                                            .textTheme
+                                                            .bodyLarge
                                                             ?.copyWith(
-                                                          fontSize: 14.sp,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
+                                                              fontSize: 14.sp,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
                                                       )
                                                     : TextWidget(text: ""),
                                               ),
@@ -2562,23 +3116,27 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 title: TextWidget(
                                                   text: "Required Amount",
                                                   style: theme
-                                                      .textTheme.bodyLarge
+                                                      .textTheme
+                                                      .bodyLarge
                                                       ?.copyWith(
-                                                    color: LightThemeColors
-                                                        .hintTextColor,
-                                                    fontSize: 14.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                        color: LightThemeColors
+                                                            .hintTextColor,
+                                                        fontSize: 14.sp,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                 ),
                                                 trailing: TextWidget(
                                                   text:
                                                       "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
                                                   style: theme
-                                                      .textTheme.bodyLarge
+                                                      .textTheme
+                                                      .bodyLarge
                                                       ?.copyWith(
-                                                    fontSize: 14.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                        fontSize: 14.sp,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                 ),
                                               ),
                                               MainDivider(),
@@ -2586,23 +3144,27 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 title: TextWidget(
                                                   text: "Amount Received",
                                                   style: theme
-                                                      .textTheme.bodyLarge
+                                                      .textTheme
+                                                      .bodyLarge
                                                       ?.copyWith(
-                                                    color: LightThemeColors
-                                                        .hintTextColor,
-                                                    fontSize: 14.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                        color: LightThemeColors
+                                                            .hintTextColor,
+                                                        fontSize: 14.sp,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                 ),
                                                 trailing: TextWidget(
                                                   text:
                                                       "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
                                                   style: theme
-                                                      .textTheme.bodyLarge
+                                                      .textTheme
+                                                      .bodyLarge
                                                       ?.copyWith(
-                                                    fontSize: 14.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                        fontSize: 14.sp,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
                                                 ),
                                               ),
                                             ],
@@ -2614,8 +3176,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         (BuildContext context, int index) =>
                                             SizedBox(height: 8.sp),
                                     itemCount: controller
-                                        .sortedAppointments[
-                                            controller.selectedAptIndex.value]
+                                        .sortedAppointments[controller
+                                            .selectedAptIndex
+                                            .value]
                                         .invoices!
                                         .length,
                                     shrinkWrap: true,
@@ -2654,8 +3217,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           size: 25.sp,
                                           color:
                                               controller.mediaList.length == 1
-                                                  ? Colors.grey
-                                                  : theme.primaryColor,
+                                              ? Colors.grey
+                                              : theme.primaryColor,
                                         ),
                                       ),
                                     ),
@@ -2665,163 +3228,6 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   child: SingleChildScrollView(
                                     child: Column(
                                       children: [
-                                        SizedBox(height: 20.h),
-                                        ListView.separated(
-                                          itemBuilder: (context, index) {
-                                            final item = controller.imageList[
-                                                index]; // 👈 from RxList
-                                            return Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                // Tag section
-                                                Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.label,
-                                                      color: Colors.blueGrey,
-                                                      size: 15.sp,
-                                                    ),
-                                                    SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: TextWidget(
-                                                        text:
-                                                            "${item.tagName ?? 'No Tag'} (${item.imageList!.first.createdAt!.split(" ")[0]})",
-                                                        style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: 15,
-                                                        ),
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-
-                                                SizedBox(height: 6),
-
-                                                // Description section
-                                                Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.description,
-                                                      color: Colors.teal,
-                                                      size: 15.sp,
-                                                    ),
-                                                    SizedBox(width: 6),
-                                                    Expanded(
-                                                      child: TextWidget(
-                                                        maxLines: 5,
-                                                        text: item
-                                                                    .imageList!
-                                                                    .first
-                                                                    .description
-                                                                    ?.trim()
-                                                                    .isNotEmpty ==
-                                                                true
-                                                            ? item
-                                                                .imageList!
-                                                                .first
-                                                                .description!
-                                                            : "N/A",
-                                                        style: const TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.w400,
-                                                          color: Colors.black87,
-                                                        ),
-                                                        overflow: TextOverflow
-                                                            .visible,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-
-                                                SizedBox(height: 10.h),
-
-                                                // Keep your existing horizontal image scroll
-                                                SingleChildScrollView(
-                                                  scrollDirection:
-                                                      Axis.horizontal,
-                                                  child: Row(
-                                                    children: [
-                                                      ...(item.imageList ?? [])
-                                                          .map((
-                                                        img,
-                                                      ) {
-                                                        return GestureDetector(
-                                                          onTap: () {
-                                                            showDialog(
-                                                              context: context,
-                                                              builder: (_) =>
-                                                                  Dialog(
-                                                                child: Image
-                                                                    .memory(
-                                                                  img.bytes!,
-                                                                  fit: BoxFit
-                                                                      .cover,
-                                                                  gaplessPlayback:
-                                                                      true,
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
-                                                          child: Container(
-                                                            height: 150,
-                                                            width: 150,
-                                                            margin:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                              right: 20,
-                                                            ),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                10.r,
-                                                              ),
-                                                              image:
-                                                                  DecorationImage(
-                                                                fit:
-                                                                    BoxFit.fill,
-                                                                image:
-                                                                    MemoryImage(
-                                                                  img.bytes!,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        );
-                                                      }).toList(),
-                                                    ],
-                                                  ),
-                                                ),
-
-                                                SizedBox(height: 10.h),
-                                                Divider(
-                                                  height: 10,
-                                                  thickness: 1,
-                                                  color:
-                                                      Colors.blueGrey.shade200,
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                          separatorBuilder: (_, __) =>
-                                              SizedBox(height: 8.sp),
-                                          itemCount:
-                                              controller.imageList.length,
-                                          shrinkWrap: true,
-                                          physics:
-                                              const NeverScrollableScrollPhysics(),
-                                        ),
-                                        SizedBox(height: 15.sp),
                                         controller.imageList.isEmpty &&
                                                 controller.mediaList.isEmpty
                                             ? Center(
@@ -2847,24 +3253,20 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       TextField(
                                                         controller: item
                                                             .descriptionController, // make sure each item has a controller
-                                                        decoration:
-                                                            InputDecoration(
+                                                        decoration: InputDecoration(
                                                           hintText:
                                                               "Add description...",
-                                                          border:
-                                                              OutlineInputBorder(
+                                                          border: OutlineInputBorder(
                                                             borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                              8.r,
-                                                            ),
+                                                                BorderRadius.circular(
+                                                                  8.r,
+                                                                ),
                                                           ),
                                                           contentPadding:
-                                                              EdgeInsets
-                                                                  .symmetric(
-                                                            horizontal: 12,
-                                                            vertical: 8,
-                                                          ),
+                                                              EdgeInsets.symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 8,
+                                                              ),
                                                         ),
                                                       ),
                                                       SizedBox(height: 10.h),
@@ -2881,87 +3283,77 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 return GestureDetector(
                                                                   onTap: () =>
                                                                       showMediaDialog(
-                                                                    context,
-                                                                    e,
-                                                                  ),
-                                                                  child:
-                                                                      Padding(
-                                                                    padding:
-                                                                        const EdgeInsets
-                                                                            .only(
-                                                                      right:
-                                                                          8.0,
-                                                                    ),
-                                                                    child: FutureBuilder<
-                                                                        String?>(
-                                                                      future:
-                                                                          generateVideoThumbnail(
+                                                                        context,
                                                                         e,
                                                                       ),
-                                                                      builder: (
-                                                                        context,
-                                                                        snapshot,
-                                                                      ) {
-                                                                        if (snapshot.connectionState ==
-                                                                            ConnectionState.waiting) {
-                                                                          return Container(
-                                                                            height:
-                                                                                150,
-                                                                            width:
-                                                                                150,
-                                                                            alignment:
-                                                                                Alignment.center,
-                                                                            child:
-                                                                                const CircularProgressIndicator(),
-                                                                          );
-                                                                        }
-                                                                        if (snapshot.hasData &&
-                                                                            snapshot.data !=
-                                                                                null) {
-                                                                          return Stack(
-                                                                            children: [
-                                                                              Container(
+                                                                  child: Padding(
+                                                                    padding:
+                                                                        const EdgeInsets.only(
+                                                                          right:
+                                                                              8.0,
+                                                                        ),
+                                                                    child: FutureBuilder<String?>(
+                                                                      future:
+                                                                          generateVideoThumbnail(
+                                                                            e,
+                                                                          ),
+                                                                      builder:
+                                                                          (
+                                                                            context,
+                                                                            snapshot,
+                                                                          ) {
+                                                                            if (snapshot.connectionState ==
+                                                                                ConnectionState.waiting) {
+                                                                              return Container(
                                                                                 height: 150,
                                                                                 width: 150,
-                                                                                decoration: BoxDecoration(
-                                                                                  borderRadius: BorderRadius.circular(
-                                                                                    10.r,
-                                                                                  ),
-                                                                                  image: DecorationImage(
-                                                                                    fit: BoxFit.fill,
-                                                                                    image: FileImage(
-                                                                                      File(
-                                                                                        snapshot.data!,
+                                                                                alignment: Alignment.center,
+                                                                                child: const CircularProgressIndicator(),
+                                                                              );
+                                                                            }
+                                                                            if (snapshot.hasData &&
+                                                                                snapshot.data !=
+                                                                                    null) {
+                                                                              return Stack(
+                                                                                children: [
+                                                                                  Container(
+                                                                                    height: 150,
+                                                                                    width: 150,
+                                                                                    decoration: BoxDecoration(
+                                                                                      borderRadius: BorderRadius.circular(
+                                                                                        10.r,
+                                                                                      ),
+                                                                                      image: DecorationImage(
+                                                                                        fit: BoxFit.fill,
+                                                                                        image: FileImage(
+                                                                                          File(
+                                                                                            snapshot.data!,
+                                                                                          ),
+                                                                                        ),
                                                                                       ),
                                                                                     ),
                                                                                   ),
-                                                                                ),
-                                                                              ),
-                                                                              const Positioned.fill(
-                                                                                child: Center(
-                                                                                  child: Icon(
-                                                                                    Icons.play_circle_fill,
-                                                                                    size: 40,
-                                                                                    color: Colors.white,
+                                                                                  const Positioned.fill(
+                                                                                    child: Center(
+                                                                                      child: Icon(
+                                                                                        Icons.play_circle_fill,
+                                                                                        size: 40,
+                                                                                        color: Colors.white,
+                                                                                      ),
+                                                                                    ),
                                                                                   ),
-                                                                                ),
+                                                                                ],
+                                                                              );
+                                                                            }
+                                                                            return Container(
+                                                                              height: 150,
+                                                                              width: 150,
+                                                                              color: Colors.grey[300],
+                                                                              child: const Icon(
+                                                                                Icons.play_circle_fill,
                                                                               ),
-                                                                            ],
-                                                                          );
-                                                                        }
-                                                                        return Container(
-                                                                          height:
-                                                                              150,
-                                                                          width:
-                                                                              150,
-                                                                          color:
-                                                                              Colors.grey[300],
-                                                                          child:
-                                                                              const Icon(
-                                                                            Icons.play_circle_fill,
-                                                                          ),
-                                                                        );
-                                                                      },
+                                                                            );
+                                                                          },
                                                                     ),
                                                                   ),
                                                                 );
@@ -2969,31 +3361,26 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                 return GestureDetector(
                                                                   onTap: () =>
                                                                       showMediaDialog(
-                                                                    context,
-                                                                    e,
-                                                                  ),
-                                                                  child:
-                                                                      Container(
+                                                                        context,
+                                                                        e,
+                                                                      ),
+                                                                  child: Container(
                                                                     height: 150,
                                                                     width: 150,
                                                                     margin:
-                                                                        EdgeInsets
-                                                                            .only(
-                                                                      right: 20,
-                                                                    ),
-                                                                    decoration:
-                                                                        BoxDecoration(
+                                                                        EdgeInsets.only(
+                                                                          right:
+                                                                              20,
+                                                                        ),
+                                                                    decoration: BoxDecoration(
                                                                       borderRadius:
-                                                                          BorderRadius
-                                                                              .circular(
-                                                                        10.r,
-                                                                      ),
-                                                                      image:
-                                                                          DecorationImage(
+                                                                          BorderRadius.circular(
+                                                                            10.r,
+                                                                          ),
+                                                                      image: DecorationImage(
                                                                         fit: BoxFit
                                                                             .fill,
-                                                                        image:
-                                                                            FileImage(
+                                                                        image: FileImage(
                                                                           File(
                                                                             e,
                                                                           ),
@@ -3007,35 +3394,29 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                             GestureDetector(
                                                               onTap: () =>
                                                                   showMediaBottomSheet(
-                                                                context,
-                                                                index,
-                                                              ),
+                                                                    context,
+                                                                    index,
+                                                                  ),
                                                               child: Container(
                                                                 height: 150,
                                                                 width: 150,
                                                                 margin:
-                                                                    const EdgeInsets
-                                                                        .only(
-                                                                  right: 8,
-                                                                ),
-                                                                decoration:
-                                                                    BoxDecoration(
+                                                                    const EdgeInsets.only(
+                                                                      right: 8,
+                                                                    ),
+                                                                decoration: BoxDecoration(
                                                                   color: Colors
-                                                                          .grey[
-                                                                      200],
+                                                                      .grey[200],
                                                                   borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                    10.r,
-                                                                  ),
-                                                                  border: Border
-                                                                      .all(
+                                                                      BorderRadius.circular(
+                                                                        10.r,
+                                                                      ),
+                                                                  border: Border.all(
                                                                     color: Colors
                                                                         .grey,
                                                                   ),
                                                                 ),
-                                                                child:
-                                                                    const Icon(
+                                                                child: const Icon(
                                                                   Icons.add,
                                                                   size: 40,
                                                                   color: Colors
@@ -3054,34 +3435,203 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           onPressed: () async {
                                                             await controller
                                                                 .uploadImages(
-                                                              tagName: item.time
-                                                                  .split(
-                                                                " ",
-                                                              )[0],
-                                                              description: item
-                                                                  .descriptionController
-                                                                  .text,
-                                                            ); // pass description
+                                                                  tagName: item
+                                                                      .time
+                                                                      .split(
+                                                                        " ",
+                                                                      )[0],
+                                                                  description: item
+                                                                      .descriptionController
+                                                                      .text,
+                                                                );
                                                           },
                                                           child: const Text(
-                                                            "Save",
+                                                            "Upload Images",
                                                           ),
                                                         ),
                                                       ),
                                                     ],
                                                   );
                                                 },
-                                                separatorBuilder: (
-                                                  BuildContext context,
-                                                  int index,
-                                                ) =>
-                                                    SizedBox(height: 8.sp),
+                                                separatorBuilder:
+                                                    (
+                                                      BuildContext context,
+                                                      int index,
+                                                    ) => SizedBox(height: 8.sp),
                                                 itemCount:
                                                     controller.mediaList.length,
                                                 shrinkWrap: true,
                                                 physics:
                                                     NeverScrollableScrollPhysics(),
                                               ),
+
+                                        SizedBox(height: 20.h),
+                                        // Display images grouped by upload date
+                                        Obx(() {
+                                          final groupedImages =
+                                              controller.imagesGroupedByDate;
+                                          final sortedDates =
+                                              groupedImages.keys.toList()
+                                                ..sort();
+
+                                          if (sortedDates.isEmpty) {
+                                            return Center(
+                                              child: TextWidget(
+                                                text: "No pictures yet",
+                                              ),
+                                            );
+                                          }
+
+                                          return ListView.separated(
+                                            itemBuilder: (context, index) {
+                                              final date = sortedDates[index];
+                                              final images =
+                                                  groupedImages[date]!;
+
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  // Date header
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: 12.sp,
+                                                          vertical: 8.h,
+                                                        ),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.calendar_today,
+                                                          color:
+                                                              Colors.blueGrey,
+                                                          size: 16.sp,
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        TextWidget(
+                                                          text: date,
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontSize: 16.sp,
+                                                            color:
+                                                                Colors.black87,
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        Container(
+                                                          padding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal:
+                                                                    8.sp,
+                                                                vertical: 4.h,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color: theme
+                                                                .primaryColor
+                                                                .withValues(
+                                                                  alpha: 0.1,
+                                                                ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12.r,
+                                                                ),
+                                                          ),
+                                                          child: TextWidget(
+                                                            text:
+                                                                "${images.length} ${images.length == 1 ? 'image' : 'images'}",
+                                                            style: TextStyle(
+                                                              fontSize: 12.sp,
+                                                              color: theme
+                                                                  .primaryColor,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+
+                                                  SizedBox(height: 10.h),
+
+                                                  // Horizontal scrollable images
+                                                  SingleChildScrollView(
+                                                    scrollDirection:
+                                                        Axis.horizontal,
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: 12.sp,
+                                                        ),
+                                                    child: Row(
+                                                      children: images
+                                                          .map(
+                                                            (
+                                                              item,
+                                                            ) => GestureDetector(
+                                                              onTap: () {
+                                                                showDialog(
+                                                                  context:
+                                                                      context,
+                                                                  builder: (_) => Dialog(
+                                                                    child: Image.memory(
+                                                                      item.bytes!,
+                                                                      fit: BoxFit
+                                                                          .cover,
+                                                                      gaplessPlayback:
+                                                                          true,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                              child: Container(
+                                                                height: 150,
+                                                                width: 150,
+                                                                margin:
+                                                                    EdgeInsets.only(
+                                                                      right:
+                                                                          12.sp,
+                                                                    ),
+                                                                decoration: BoxDecoration(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        10.r,
+                                                                      ),
+                                                                  image: DecorationImage(
+                                                                    fit: BoxFit
+                                                                        .fill,
+                                                                    image: MemoryImage(
+                                                                      item.bytes!,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          )
+                                                          .toList(),
+                                                    ),
+                                                  ),
+
+                                                  SizedBox(height: 10.h),
+                                                  Divider(
+                                                    height: 10,
+                                                    thickness: 1,
+                                                    color: Colors
+                                                        .blueGrey
+                                                        .shade200,
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                            separatorBuilder: (_, __) =>
+                                                SizedBox(height: 8.sp),
+                                            itemCount: sortedDates.length,
+                                            shrinkWrap: true,
+                                            physics:
+                                                const NeverScrollableScrollPhysics(),
+                                          );
+                                        }),
                                         SizedBox(height: 15.sp),
                                       ],
                                     ),
@@ -3091,7 +3641,545 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             ),
                           ),
 
-                          //********************************* Tab Six  Notes *********************************/
+                          //********************************* Tab Six Equipment *********************************/
+                          Obx(
+                            () => Column(
+                              children: [
+                                SizedBox(height: 15.sp),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      await EquipmentFormModal.show(
+                                        context: context,
+                                      );
+                                      // Equipment is added via getEquipment called in saveEquipment
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        right: 8.0,
+                                      ),
+                                      child: DottedBorder(
+                                        options: RectDottedBorderOptions(
+                                          dashPattern: [3, 2],
+                                        ),
+                                        child: Icon(
+                                          Icons.add,
+                                          size: 25.sp,
+                                          color: theme.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: controller.equipmentList.isEmpty
+                                      ? Center(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons
+                                                    .precision_manufacturing_outlined,
+                                                size: 64.sp,
+                                                color: Colors.grey[300],
+                                              ),
+                                              SizedBox(height: 16.h),
+                                              TextWidget(
+                                                text: "No equipment yet",
+                                                style: TextStyle(
+                                                  fontSize: 16.sp,
+                                                  color: Colors.grey[500],
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              SizedBox(height: 8.h),
+                                              TextWidget(
+                                                text: "Tap + to add equipment",
+                                                style: TextStyle(
+                                                  fontSize: 14.sp,
+                                                  color: Colors.grey[400],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : SingleChildScrollView(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 16.w,
+                                            vertical: 8.h,
+                                          ),
+                                          child: Column(
+                                            children: [
+                                              ...controller.equipmentList
+                                                  .map(
+                                                    (
+                                                      equipment,
+                                                    ) => EquipmentCard(
+                                                      equipment: equipment,
+                                                      onTap: () async {
+                                                        await EquipmentFormModal.show(
+                                                          context: context,
+                                                          equipment: equipment,
+                                                        );
+                                                        // Equipment list is updated via getEquipment called in saveEquipment
+                                                      },
+                                                      onDelete: () {
+                                                        _showDeleteEquipmentDialog(
+                                                          context,
+                                                          equipment,
+                                                        );
+                                                      },
+                                                    ),
+                                                  )
+                                                  .toList(),
+                                            ],
+                                          ),
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          //********************************* Tab Seven Files *********************************/
+                          Obx(
+                            () => Column(
+                              children: [
+                                SizedBox(height: 15.sp),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      showSingleFilePickerBottomSheet(context);
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        right: 8.0,
+                                      ),
+                                      child: DottedBorder(
+                                        options: RectDottedBorderOptions(
+                                          dashPattern: [3, 2],
+                                        ),
+                                        child: Icon(
+                                          Icons.add,
+                                          size: 25.sp,
+                                          color: theme.primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    child: Column(
+                                      children: [
+                                        controller.fileList.isEmpty &&
+                                                controller
+                                                    .fileUploadList
+                                                    .isEmpty
+                                            ? Center(
+                                                child: TextWidget(
+                                                  text:
+                                                      "No files selected for upload",
+                                                ),
+                                              )
+                                            : ListView.separated(
+                                                itemBuilder: (context, index) {
+                                                  final item = controller
+                                                      .fileUploadList[index];
+                                                  return Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      TextWidget(
+                                                        text: item.time,
+                                                      ),
+                                                      SizedBox(height: 10.h),
+
+                                                      // ✅ Description TextField
+                                                      TextField(
+                                                        controller: item
+                                                            .descriptionController, // make sure each item has a controller
+                                                        decoration: InputDecoration(
+                                                          hintText:
+                                                              "Add description...",
+                                                          border: OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  8.r,
+                                                                ),
+                                                          ),
+                                                          contentPadding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal: 12,
+                                                                vertical: 8,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 10.h),
+
+                                                      SingleChildScrollView(
+                                                        scrollDirection:
+                                                            Axis.horizontal,
+                                                        child: Row(
+                                                          children: [
+                                                            ...item.files.map((
+                                                              file,
+                                                            ) {
+                                                              final fileName =
+                                                                  file.path
+                                                                      .split(
+                                                                        '/',
+                                                                      )
+                                                                      .last;
+                                                              final extension =
+                                                                  fileName
+                                                                      .contains(
+                                                                        '.',
+                                                                      )
+                                                                  ? fileName
+                                                                        .split(
+                                                                          '.',
+                                                                        )
+                                                                        .last
+                                                                        .toLowerCase()
+                                                                  : '';
+                                                              return Container(
+                                                                height: 120,
+                                                                width: 100,
+                                                                margin:
+                                                                    const EdgeInsets.only(
+                                                                      right: 10,
+                                                                    ),
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors
+                                                                      .grey[100],
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        8,
+                                                                      ),
+                                                                  border: Border.all(
+                                                                    color: Colors
+                                                                        .grey[300]!,
+                                                                  ),
+                                                                ),
+                                                                child: Column(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .center,
+                                                                  children: [
+                                                                    Icon(
+                                                                      _getFileIconData(
+                                                                            extension,
+                                                                          ) ??
+                                                                          Icons
+                                                                              .insert_drive_file,
+                                                                      size: 40,
+                                                                      color: theme
+                                                                          .primaryColor,
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height: 5,
+                                                                    ),
+                                                                    Padding(
+                                                                      padding: const EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            4,
+                                                                      ),
+                                                                      child: Text(
+                                                                        fileName,
+                                                                        style: const TextStyle(
+                                                                          fontSize:
+                                                                              10,
+                                                                        ),
+                                                                        maxLines:
+                                                                            2,
+                                                                        overflow:
+                                                                            TextOverflow.ellipsis,
+                                                                        textAlign:
+                                                                            TextAlign.center,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              );
+                                                            }),
+
+                                                            // GestureDetector(
+                                                            //   onTap: () =>
+                                                            //       showFilePickerBottomSheet(
+                                                            //         context,
+                                                            //       ),
+                                                            //   child: Container(
+                                                            //     height: 120,
+                                                            //     width: 100,
+                                                            //     margin:
+                                                            //         const EdgeInsets.only(
+                                                            //           right: 8,
+                                                            //         ),
+                                                            //     decoration: BoxDecoration(
+                                                            //       color: Colors
+                                                            //           .grey[200],
+                                                            //       borderRadius:
+                                                            //           BorderRadius.circular(
+                                                            //             8,
+                                                            //           ),
+                                                            //       border: Border.all(
+                                                            //         color: Colors
+                                                            //             .grey,
+                                                            //       ),
+                                                            //     ),
+                                                            //     child: const Icon(
+                                                            //       Icons.add,
+                                                            //       size: 40,
+                                                            //       color: Colors
+                                                            //           .grey,
+                                                            //     ),
+                                                            //   ),
+                                                            // ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 10.h),
+
+                                                      SizedBox(
+                                                        width: double.infinity,
+                                                        child: ElevatedButton(
+                                                          onPressed: () async {
+                                                            await controller.uploadFiles(
+                                                              tagName: item.time
+                                                                  .split(
+                                                                    " ",
+                                                                  )[0],
+                                                              description: item
+                                                                  .descriptionController
+                                                                  .text,
+                                                            ); // pass description
+                                                          },
+                                                          child: const Text(
+                                                            "Upload Files",
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                                separatorBuilder:
+                                                    (
+                                                      BuildContext context,
+                                                      int index,
+                                                    ) => SizedBox(height: 8.sp),
+                                                itemCount: controller
+                                                    .fileUploadList
+                                                    .length,
+                                                shrinkWrap: true,
+                                                physics:
+                                                    NeverScrollableScrollPhysics(),
+                                              ),
+
+                                        SizedBox(height: 20.h),
+                                        // Display files grouped by upload date
+                                        Obx(() {
+                                          final groupedFiles =
+                                              controller.filesGroupedByDate;
+                                          final sortedDates =
+                                              groupedFiles.keys.toList()
+                                                ..sort();
+
+                                          if (sortedDates.isEmpty) {
+                                            return const SizedBox.shrink();
+                                          }
+
+                                          return ListView.separated(
+                                            itemBuilder: (context, index) {
+                                              final date = sortedDates[index];
+                                              final files = groupedFiles[date]!;
+
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  // Date header
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: 12.sp,
+                                                          vertical: 8.h,
+                                                        ),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.calendar_today,
+                                                          color:
+                                                              Colors.blueGrey,
+                                                          size: 16.sp,
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        TextWidget(
+                                                          text: date,
+                                                          style: TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            fontSize: 16.sp,
+                                                            color:
+                                                                Colors.black87,
+                                                          ),
+                                                        ),
+                                                        SizedBox(width: 8),
+                                                        Container(
+                                                          padding:
+                                                              EdgeInsets.symmetric(
+                                                                horizontal:
+                                                                    8.sp,
+                                                                vertical: 4.h,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color: theme
+                                                                .primaryColor
+                                                                .withValues(
+                                                                  alpha: 0.1,
+                                                                ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  12.r,
+                                                                ),
+                                                          ),
+                                                          child: TextWidget(
+                                                            text:
+                                                                "${files.length} ${files.length == 1 ? 'file' : 'files'}",
+                                                            style: TextStyle(
+                                                              fontSize: 12.sp,
+                                                              color: theme
+                                                                  .primaryColor,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+
+                                                  SizedBox(height: 10.h),
+
+                                                  // Horizontal scrollable files
+                                                  SingleChildScrollView(
+                                                    scrollDirection:
+                                                        Axis.horizontal,
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: 12.sp,
+                                                        ),
+                                                    child: Row(
+                                                      children: files
+                                                          .map(
+                                                            (
+                                                              file,
+                                                            ) => GestureDetector(
+                                                              onTap: () =>
+                                                                  _downloadFile(
+                                                                    file,
+                                                                  ),
+                                                              child: Container(
+                                                                height: 120,
+                                                                width: 100,
+                                                                margin:
+                                                                    EdgeInsets.only(
+                                                                      right:
+                                                                          12.sp,
+                                                                    ),
+                                                                decoration: BoxDecoration(
+                                                                  color: Colors
+                                                                      .grey[100],
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        8,
+                                                                      ),
+                                                                  border: Border.all(
+                                                                    color: Colors
+                                                                        .grey[300]!,
+                                                                    width: 1,
+                                                                  ),
+                                                                ),
+                                                                child: Column(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .center,
+                                                                  children: [
+                                                                    Icon(
+                                                                      _getFileIconData(
+                                                                            file.fileExtension,
+                                                                          ) ??
+                                                                          Icons
+                                                                              .insert_drive_file,
+                                                                      size: 40,
+                                                                      color: theme
+                                                                          .primaryColor,
+                                                                    ),
+                                                                    SizedBox(
+                                                                      height: 5,
+                                                                    ),
+                                                                    Padding(
+                                                                      padding: EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            4,
+                                                                      ),
+                                                                      child: Text(
+                                                                        file.fileName ??
+                                                                            'Unknown',
+                                                                        style: TextStyle(
+                                                                          fontSize:
+                                                                              10,
+                                                                        ),
+                                                                        maxLines:
+                                                                            2,
+                                                                        overflow:
+                                                                            TextOverflow.ellipsis,
+                                                                        textAlign:
+                                                                            TextAlign.center,
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          )
+                                                          .toList(),
+                                                    ),
+                                                  ),
+
+                                                  SizedBox(height: 10.h),
+                                                  Divider(
+                                                    height: 10,
+                                                    thickness: 1,
+                                                    color: Colors
+                                                        .blueGrey
+                                                        .shade200,
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                            separatorBuilder: (_, __) =>
+                                                SizedBox(height: 8.sp),
+                                            itemCount: sortedDates.length,
+                                            shrinkWrap: true,
+                                            physics:
+                                                const NeverScrollableScrollPhysics(),
+                                          );
+                                        }),
+                                        SizedBox(height: 15.sp),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          //********************************* Tab Eight Notes *********************************/
                           Padding(
                             padding: EdgeInsets.symmetric(
                               vertical: 8.sp,
@@ -3106,13 +4194,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                     onTap: () async {
                                       DialogHelper.showLoading();
 
-                                      await controller.getTagList();
+                                      // await controller.getTagList(); // COMMENTED
 
                                       DialogHelper.hideLoading();
-                                      controller.selectedTagId(-1);
+                                      // controller.selectedTagId(-1); // COMMENTED
                                       controller.note1Controller.clear();
-                                      controller.selectedTagController.value
-                                          .clear();
+                                      // controller.selectedTagController.value.clear(); // COMMENTED
                                       controller.noteId(-1);
                                       showNotesDialog(
                                         context,
@@ -3132,8 +4219,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           size: 25.sp,
                                           color:
                                               controller.mediaList.length == 1
-                                                  ? Colors.grey
-                                                  : theme.primaryColor,
+                                              ? Colors.grey
+                                              : theme.primaryColor,
                                         ),
                                       ),
                                     ),
@@ -3141,16 +4228,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                   SizedBox(height: 20.h),
 
                                   // Notes list
-                                  Obx(
-                                    () => controller.noteList
-                                            .where((e) {
-                                              //     log("selected apptId ${controller.selectedAppointment.value!.apptID} and note appt id ${e.appointmentId}");
-                                              return e.appointmentId ==
-                                                  controller.selectedAppointment
-                                                      .value!.apptID;
-                                            })
-                                            .toList()
-                                            .isEmpty
+                                  Obx(() {
+                                    return controller.noteList.isEmpty
                                         ? Center(
                                             child: TextWidget(
                                               text: "No Notes Found",
@@ -3160,56 +4239,37 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             shrinkWrap: true,
                                             physics:
                                                 const NeverScrollableScrollPhysics(),
-                                            itemCount: controller.noteList
-                                                .where(
-                                                  (e) =>
-                                                      e.appointmentId ==
-                                                      controller
-                                                          .selectedAppointment
-                                                          .value!
-                                                          .apptID,
-                                                )
-                                                .toList()
-                                                .length,
+                                            itemCount:
+                                                controller.noteList.length,
                                             itemBuilder: (context, index) {
                                               final note = controller.noteList
-                                                  .where(
-                                                    (e) =>
-                                                        e.appointmentId ==
-                                                        controller
-                                                            .selectedAppointment
-                                                            .value!
-                                                            .apptID,
-                                                  )
                                                   .toList()[index];
 
                                               return GestureDetector(
-                                                onTap: note.userId!.trim() ==
+                                                onTap:
+                                                    note.userId!.trim() ==
                                                         controller.userId
                                                             .toString()
                                                             .trim()
                                                     ? () {
-                                                        controller
-                                                            .selectedTagId(
-                                                          note.tagId,
-                                                        );
+                                                        // controller.selectedTagId(note.tagId); // COMMENTED
                                                         controller
                                                                 .note1Controller
                                                                 .text =
                                                             note.description!;
-                                                        controller
-                                                                .selectedTagController
-                                                                .value
-                                                                .text =
-                                                            controller
-                                                                .allTagList
-                                                                .where(
-                                                                  (e) =>
-                                                                      e.id ==
-                                                                      note.tagId,
-                                                                )
-                                                                .first
-                                                                .name;
+                                                        // COMMENTED: selectedTagController
+                                                        // controller
+                                                        //     .selectedTagController
+                                                        //     .value
+                                                        //     .text = controller
+                                                        //         .allTagList
+                                                        //         .where(
+                                                        //           (e) =>
+                                                        //               e.id ==
+                                                        //               note.tagId,
+                                                        //         )
+                                                        //         .first
+                                                        //         .name;
                                                         controller.noteId(
                                                           note.id,
                                                         );
@@ -3225,14 +4285,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           context,
                                                           note,
                                                           theme,
-                                                          controller.allTagList
-                                                              .where(
-                                                                (e) =>
-                                                                    e.id ==
-                                                                    note.tagId,
-                                                              )
-                                                              .first
-                                                              .name,
+                                                          '', // COMMENTED: controller.allTagList.where((e) => e.id == note.tagId).first.name
                                                         );
                                                       },
                                                 child: Padding(
@@ -3244,8 +4297,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                       12.sp,
                                                     ),
                                                     decoration: BoxDecoration(
-                                                      color: note.userId!
-                                                                  .trim() ==
+                                                      color:
+                                                          note.userId!.trim() ==
                                                               controller.userId
                                                                   .toString()
                                                                   .trim()
@@ -3253,8 +4306,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                           : Colors.grey[100],
                                                       borderRadius:
                                                           BorderRadius.circular(
-                                                        8.sp,
-                                                      ),
+                                                            8.sp,
+                                                          ),
                                                     ),
                                                     child: Column(
                                                       crossAxisAlignment:
@@ -3273,8 +4326,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   Icons.person,
                                                                   size: 14.sp,
                                                                   color: Colors
-                                                                          .grey[
-                                                                      600],
+                                                                      .grey[600],
                                                                 ),
                                                                 SizedBox(
                                                                   width: 6.w,
@@ -3286,10 +4338,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                       .textTheme
                                                                       .bodySmall
                                                                       ?.copyWith(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                  ),
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                      ),
                                                                 ),
                                                               ],
                                                             ),
@@ -3305,72 +4356,71 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   .textTheme
                                                                   .bodySmall
                                                                   ?.copyWith(
-                                                                color: Colors
-                                                                    .grey[600],
-                                                              ),
+                                                                    color: Colors
+                                                                        .grey[600],
+                                                                  ),
                                                             ),
                                                           ],
                                                         ),
                                                         SizedBox(height: 8.h),
 
                                                         // Tag as a chip
-                                                        Container(
-                                                          padding: EdgeInsets
-                                                              .symmetric(
-                                                            horizontal: 8.w,
-                                                            vertical: 4.h,
-                                                          ),
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: Colors.blue
-                                                                .withValues(
-                                                              alpha: 0.1,
-                                                            ),
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                              12.sp,
-                                                            ),
-                                                          ),
-                                                          child: Text(
-                                                            controller
-                                                                    .allTagList
-                                                                    .where(
-                                                                      (e) =>
-                                                                          e.id ==
-                                                                          note.tagId,
-                                                                    )
-                                                                    .isNotEmpty
-                                                                ? controller
-                                                                    .allTagList
-                                                                    .where(
-                                                                      (e) =>
-                                                                          e.id ==
-                                                                          note.tagId,
-                                                                    )
-                                                                    .first
-                                                                    .name
-                                                                : "N/A",
-                                                            style: theme
-                                                                .textTheme
-                                                                .bodySmall
-                                                                ?.copyWith(
-                                                              color:
-                                                                  Colors.blue,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                            ),
-                                                          ),
-                                                        ),
+                                                        // Container(
+                                                        //   padding:
+                                                        //       EdgeInsets.symmetric(
+                                                        //         horizontal: 8.w,
+                                                        //         vertical: 4.h,
+                                                        //       ),
+                                                        //   decoration: BoxDecoration(
+                                                        //     color: Colors.blue
+                                                        //         .withValues(
+                                                        //           alpha: 0.1,
+                                                        //         ),
+                                                        //     borderRadius:
+                                                        //         BorderRadius.circular(
+                                                        //           12.sp,
+                                                        //         ),
+                                                        //   ),
+                                                        //   child: Text(
+                                                        //     controller
+                                                        //             .allTagList
+                                                        //             .where(
+                                                        //               (e) =>
+                                                        //                   e.id ==
+                                                        //                   note.tagId,
+                                                        //             )
+                                                        //             .isNotEmpty
+                                                        //         ? controller
+                                                        //               .allTagList
+                                                        //               .where(
+                                                        //                 (e) =>
+                                                        //                     e.id ==
+                                                        //                     note.tagId,
+                                                        //               )
+                                                        //               .first
+                                                        //               .name
+                                                        //         : "N/A",
+                                                        //     style: theme
+                                                        //         .textTheme
+                                                        //         .bodySmall
+                                                        //         ?.copyWith(
+                                                        //           color: Colors
+                                                        //               .blue,
+                                                        //           fontWeight:
+                                                        //               FontWeight
+                                                        //                   .w500,
+                                                        //         ),
+                                                        //   ),
+                                                        // ),
                                                         SizedBox(height: 8.h),
 
                                                         // Note Content
                                                         TextWidget(
                                                           text:
-                                                              note.description! ??
-                                                                  "N/A",
-                                                          style: theme.textTheme
+                                                              note.description ??
+                                                              "N/A",
+                                                          style: theme
+                                                              .textTheme
                                                               .bodyMedium,
                                                         ),
                                                       ],
@@ -3379,8 +4429,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 ),
                                               );
                                             },
-                                          ),
-                                  ),
+                                          );
+                                  }),
                                 ],
                               ),
                             ),
@@ -3477,57 +4527,176 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   }
 
   /// Save all custom fields to the server
-  Future<void> _saveCustomFields() async {
-    try {
-      // Get the appointment ID
-      final appointmentId = controller.selectedAppointment.value?.apptID;
-      if (appointmentId == null) {
-        MySnackBar.showErrorToast(
-          message: "Appointment ID not found",
-        );
-        return;
-      }
+  // Future<void> _saveCustomFields() async {
+  //   try {
+  //     // Get the appointment ID
+  //     final appointmentId = controller.selectedAppointment.value?.apptID;
+  //     if (appointmentId == null) {
+  //       MySnackBar.showErrorToast(
+  //         message: "Appointment ID not found",
+  //       );
+  //       return;
+  //     }
 
-      // Collect all custom field values as array of objects
-      // Format: [{"type": "FieldName", "value1": "...", "value2": "..."}]
-      final List<Map<String, dynamic>> fieldsArray = [];
-      for (var field in customFieldsController.selectedCustomFields) {
-        final value = field.getFieldValue();
-        if (value != null && value.isNotEmpty) {
-          fieldsArray.add({
-            "type": field.fieldName,
-            "value1": value,
-            "value2": "", // Can be used for additional values if needed
-          });
+  //     // Collect all custom field values as array of objects
+  //     // Format: [{"type": "FieldName", "value1": "...", "value2": "..."}]
+  //     final List<Map<String, dynamic>> fieldsArray = [];
+  //     for (var field in customFieldsController.selectedCustomFields) {
+  //       final value = field.getFieldValue();
+  //       if (value != null && value.isNotEmpty) {
+  //         fieldsArray.add({
+  //           "type": field.fieldName,
+  //           "value1": value,
+  //           "value2": "", // Can be used for additional values if needed
+  //         });
+  //       }
+  //     }
+
+  //     // Check if there are any fields to save
+  //     if (fieldsArray.isEmpty) {
+  //       MySnackBar.showInfoToast(
+  //         message: "Please fill in at least one custom field",
+  //       );
+  //       return;
+  //     }
+
+  //     // Convert to JSON string
+  //     final fieldsValue = jsonEncode(fieldsArray);
+
+  //     log("📤 Saving custom fields for appointment: $appointmentId");
+  //     log("📤 Fields: $fieldsValue");
+
+  //     // Call the API
+  //     await customFieldsController.saveCustomFieldToServer(
+  //       appointmentId: appointmentId,
+  //       fieldsValue: fieldsValue,
+  //     );
+
+  //     // Success is handled by the controller (shows toast)
+  //   } catch (e) {
+  //     log("❌ Error saving custom fields: $e");
+  //     MySnackBar.showErrorToast(
+  //       message: "Failed to save custom fields",
+  //     );
+  //   }
+  // }
+
+  /// Show delete confirmation dialog for equipment
+  void _showDeleteEquipmentDialog(
+    BuildContext context,
+    EquipmentModel equipment,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Equipment'),
+        content: Text(
+          'Are you sure you want to delete ${equipment.displayTitle}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              controller.equipmentList.removeWhere((e) => e.id == equipment.id);
+              Navigator.pop(dialogContext);
+              MySnackBar.showToast(message: 'Equipment deleted successfully');
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Download/Open file to local storage (Downloads folder)
+  Future<void> _downloadFile(FileModel file) async {
+    // Show loading indicator
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) =>
+          const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // Get file bytes - handle base64 conversion if needed
+      Uint8List? fileBytes = file.bytes;
+
+      // If bytes are null but fileContent exists, decode base64
+      if (fileBytes == null &&
+          file.fileContent != null &&
+          file.fileContent!.isNotEmpty) {
+        try {
+          fileBytes = base64Decode(file.fileContent!);
+        } catch (e) {
+          // if (mounted) Navigator.pop(context);
+          MySnackBar.showErrorToast(message: 'Failed to decode file content');
+          return;
         }
       }
 
-      // Check if there are any fields to save
-      if (fieldsArray.isEmpty) {
-        MySnackBar.showInfoToast(
-          message: "Please fill in at least one custom field",
-        );
+      // Check if we have valid bytes
+      if (fileBytes == null) {
+        if (mounted) Navigator.pop(context);
+        MySnackBar.showErrorToast(message: 'File content not available');
         return;
       }
 
-      // Convert to JSON string
-      final fieldsValue = jsonEncode(fieldsArray);
+      // Create file path
+      final fileName =
+          file.fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
 
-      log("📤 Saving custom fields for appointment: $appointmentId");
-      log("📤 Fields: $fieldsValue");
+      // Add file extension if missing
+      String finalFileName = fileName;
+      if (file.fileExtension != null &&
+          !fileName.endsWith('.${file.fileExtension}')) {
+        finalFileName = '$fileName.${file.fileExtension}';
+      }
 
-      // Call the API
-      await customFieldsController.saveCustomFieldToServer(
-        appointmentId: appointmentId,
-        fieldsValue: fieldsValue,
-      );
+      // Get the correct Downloads directory based on platform
+      Directory downloadDir;
 
-      // Success is handled by the controller (shows toast)
-    } catch (e) {
-      log("❌ Error saving custom fields: $e");
-      MySnackBar.showErrorToast(
-        message: "Failed to save custom fields",
-      );
+      if (Platform.isAndroid) {
+        // Android: Save directly to /storage/emulated/0/Download/
+        // This is the public Downloads folder accessible from file manager
+        downloadDir = Directory('/storage/emulated/0/Download');
+      } else if (Platform.isIOS) {
+        // iOS: Create a Downloads subdirectory in the app's document folder
+        final appDocDir = await getApplicationDocumentsDirectory();
+        downloadDir = Directory('${appDocDir.path}/Downloads');
+      } else {
+        // Fallback for other platforms
+        final appDocDir = await getApplicationDocumentsDirectory();
+        downloadDir = Directory('${appDocDir.path}/Downloads');
+      }
+
+      // Create directory if it doesn't exist
+      if (!await downloadDir.exists()) {
+        await downloadDir.create(recursive: true);
+      }
+
+      final filePath = '${downloadDir.path}/$finalFileName';
+      final savedFile = File(filePath);
+
+      // Write file content
+      await savedFile.writeAsBytes(fileBytes, flush: true);
+      kLog("File saved to: $filePath");
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show success message with path info
+      MySnackBar.showToast(message: 'File saved to Downloads');
+    } catch (e, s) {
+      kLog("Error saving file: $e");
+      kLog(s);
+      // Close loading dialog if still open
+      if (mounted) Navigator.pop(context);
+      MySnackBar.showErrorToast(message: 'Failed to download file: $e');
     }
   }
 }
@@ -3629,120 +4798,118 @@ void showNotesDialog(
         child: Padding(
           padding: EdgeInsets.all(16.sp),
           child: SingleChildScrollView(
-            child: Obx(
-              () => Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  TextWidget(
-                    text: "Add / Update Notes",
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.sp,
-                    ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                TextWidget(
+                  text: "Add / Update Notes",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.sp,
                   ),
-                  SizedBox(height: 16.h),
-                  // notes tag..
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: GestureDetector(
-                      onTap: () async {
-                        controller.getTagList();
-                        controller.selectedTagController.value.clear();
-                        controller.selectedTagId(-1);
-                        Get.toNamed(Routes.TAG_DETAILS);
-                      },
-                      child: AbsorbPointer(
-                        child: TextFormField(
-                          controller: controller.selectedTagController.value,
-                          decoration: InputDecoration(
-                            labelText: 'Select Tag',
-                            suffixIcon: const Icon(Icons.arrow_drop_down),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
+                ),
+                SizedBox(height: 16.h),
+                // notes tag.. COMMENTED
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 16),
+                //   child: GestureDetector(
+                //     onTap: () async {
+                //       controller.getTagList();
+                //       controller.selectedTagController.value.clear();
+                //       controller.selectedTagId(-1);
+                //       Get.toNamed(Routes.TAG_DETAILS);
+                //     },
+                //     child: AbsorbPointer(
+                //       child: TextFormField(
+                //         controller: controller.selectedTagController.value,
+                //         decoration: InputDecoration(
+                //           labelText: 'Select Tag',
+                //           suffixIcon: const Icon(Icons.arrow_drop_down),
+                //           border: OutlineInputBorder(
+                //             borderRadius: BorderRadius.circular(8),
+                //           ),
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // ),
+                // SizedBox(height: 16.h),
+
+                // Notes input
+                TextWidget(
+                  text: "Notes",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: LightThemeColors.hintTextColor,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GeneralTextField(
+                    maxLine: 4,
+                    minLine: 1,
+                    textInputType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    hint: "Add a note here..",
+                    theme: theme,
+                    isEnabled: true,
+                    textEditingController: controller.note1Controller,
+                    onChanged: (v) {
+                      controller.isTyping(true);
+                      controller.noteText(v);
+                    },
+                    onEditingComplete: () {
+                      controller.isTyping(false);
+                    },
+                  ),
+                ),
+
+                SizedBox(height: 20.h),
+
+                // Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Cancel
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.sp,
+                        child: PrimaryButton(
+                          backgroundColor: Colors.redAccent,
+                          title: "Cancel",
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          inactive: false,
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 16.h),
-
-                  // Notes input
-                  TextWidget(
-                    text: "Notes",
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: LightThemeColors.hintTextColor,
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.start,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: GeneralTextField(
-                      maxLine: 4,
-                      minLine: 1,
-                      textInputType: TextInputType.multiline,
-                      textInputAction: TextInputAction.newline,
-                      hint: "Add a note here..",
-                      theme: theme,
-                      isEnabled: true,
-                      textEditingController: controller.note1Controller,
-                      onChanged: (v) {
-                        controller.isTyping(true);
-                        controller.noteText(v);
-                      },
-                      onEditingComplete: () {
-                        controller.isTyping(false);
-                      },
-                    ),
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  // Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Cancel
-                      Expanded(
-                        child: SizedBox(
-                          height: 48.sp,
-                          child: PrimaryButton(
-                            backgroundColor: Colors.redAccent,
-                            title: "Cancel",
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            inactive: false,
-                          ),
+                    SizedBox(width: 12.w),
+                    // Update
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.sp,
+                        child: PrimaryButton(
+                          backgroundColor: LightThemeColors.primaryColor,
+                          // COMMENTED: controller.selectedTagId.value != -1
+                          //     ? LightThemeColors.primaryColor
+                          //     : LightThemeColors.buttonDisabledColor,
+                          title: isOld ? "Update" : "Save",
+                          onPressed: () async {
+                            await controller.saveNote(isOld);
+                            // Navigator.pop(context);
+                          },
+                          inactive: false,
                         ),
                       ),
-                      SizedBox(width: 12.w),
-                      // Update
-                      Expanded(
-                        child: SizedBox(
-                          height: 48.sp,
-                          child: PrimaryButton(
-                            backgroundColor:
-                                controller.selectedTagId.value != -1
-                                    ? LightThemeColors.primaryColor
-                                    : LightThemeColors.buttonDisabledColor,
-                            title: isOld ? "Update" : "Save",
-                            onPressed: () async {
-                              await controller.saveNote(isOld);
-                              // Navigator.pop(context);
-                            },
-                            inactive: false,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -3791,7 +4958,7 @@ Future<void> openMapWithRoute(String destinationAddress) async {
       }
     }
   } catch (e) {
-    print('Error launching map: $e');
+    debugPrint('Error launching map: $e');
   }
 }
 
@@ -3862,32 +5029,37 @@ void showMediaBottomSheet(BuildContext context, int index) {
       return Padding(
         padding: MediaQuery.of(context).viewInsets,
         child: SizedBox(
-          height: 200,
+          height: 100.h,
           child: Column(
             children: [
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: GestureDetector(
-                  onTap: () async {
-                    appointmentC.getTagList();
-                    Get.toNamed(Routes.TAG_DETAILS);
-                  },
-                  child: AbsorbPointer(
-                    child: TextFormField(
-                      controller: appointmentC.selectedTagController.value,
-                      decoration: InputDecoration(
-                        labelText: 'Select Tag',
-                        suffixIcon: const Icon(Icons.arrow_drop_down),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
+
+              // ============================================
+              // TAG SYSTEM REMOVED (not needed right now)
+              // ============================================
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 16),
+              //   child: GestureDetector(
+              //     onTap: () async {
+              //       appointmentC.getTagList();
+              //       Get.toNamed(Routes.TAG_DETAILS);
+              //     },
+              //     child: AbsorbPointer(
+              //       child: TextFormField(
+              //         controller: appointmentC.selectedTagController.value,
+              //         decoration: InputDecoration(
+              //           labelText: 'Select Tag',
+              //           suffixIcon: const Icon(Icons.arrow_drop_down),
+              //           border: OutlineInputBorder(
+              //             borderRadius: BorderRadius.circular(8),
+              //           ),
+              //         ),
+              //       ),
+              //     ),
+              //   ),
+              // ),
+              // const SizedBox(height: 16),
+              // ============================================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -3895,68 +5067,57 @@ void showMediaBottomSheet(BuildContext context, int index) {
                     icon: Icons.photo_library,
                     title: 'Gallery',
                     onTap: () async {
-                      if (appointmentC.selectedTagController.value.text
-                              .trim()
-                              .isEmpty &&
-                          index == -1) {
-                        ScaffoldMessenger.of(context).showMaterialBanner(
-                          MaterialBanner(
-                            content: const Text('Please add a tag first!'),
-                            backgroundColor: Colors.red,
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).hideCurrentMaterialBanner();
-                                },
-                                child: const Text(
-                                  'OK',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                        Future.delayed(const Duration(seconds: 2), () {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).hideCurrentMaterialBanner();
-                        });
-                        return;
-                      }
+                      try {
+                        // Tag validation removed
+                        final List<XFile?> files = await ImagePicker()
+                            .pickMultiImage();
+                        if (files.isNotEmpty) {
+                          // Compress images before adding
+                          final newImages = <String>[];
+                          for (var file in files) {
+                            if (file != null) {
+                              try {
+                                final compressedPath = await compressImage(
+                                  file.path,
+                                );
+                                newImages.add(compressedPath);
+                              } catch (e) {
+                                // Skip image if compression fails
+                              }
+                            }
+                          }
 
-                      final List<XFile?> files =
-                          await ImagePicker().pickMultiImage();
-                      if (files.isNotEmpty) {
-                        // Compress images before adding
-                        final newImages = <String>[];
-                        for (var file in files) {
-                          if (file != null) {
-                            final compressedPath = await compressImage(
-                              file.path,
-                            );
-                            newImages.add(compressedPath);
+                          if (newImages.isNotEmpty) {
+                            if (index != -1) {
+                              appointmentC.mediaList[index].images.addAll(
+                                newImages,
+                              );
+                            } else {
+                              appointmentC.mediaList.add(
+                                MediaModel(
+                                  time: DateFormat(
+                                    "MM/dd/yyyy",
+                                  ).format(DateTime.now()),
+                                  images: newImages,
+                                ),
+                              );
+                            }
                           }
                         }
 
-                        if (index != -1) {
-                          appointmentC.mediaList[index].images.addAll(
-                            newImages,
-                          );
-                        } else {
-                          appointmentC.mediaList.add(
-                            MediaModel(
-                              time:
-                                  "${appointmentC.selectedTagController.value.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
-                              // tagController.text,
-                              images: newImages,
+                        appointmentC.update();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Error picking images: Unable to access gallery. Please check permissions.',
+                              ),
+                              backgroundColor: Colors.red,
                             ),
                           );
                         }
                       }
-
-                      appointmentC.update();
 
                       Navigator.pop(context);
                     },
@@ -3965,39 +5126,7 @@ void showMediaBottomSheet(BuildContext context, int index) {
                     icon: Icons.camera_alt,
                     title: 'Photo',
                     onTap: () async {
-                      if (appointmentC.selectedTagController.value.text
-                              .trim()
-                              .isEmpty &&
-                          index == -1) {
-                        ScaffoldMessenger.of(context).showMaterialBanner(
-                          MaterialBanner(
-                            content: const Text('Please add a tag first!'),
-                            backgroundColor: Colors.red,
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).hideCurrentMaterialBanner();
-                                },
-                                child: const Text(
-                                  'OK',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        Future.delayed(const Duration(seconds: 2), () {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).hideCurrentMaterialBanner();
-                        });
-
-                        return;
-                      }
-
+                      // Tag validation removed
                       final XFile? file = await ImagePicker().pickImage(
                         source: ImageSource.camera,
                       );
@@ -4013,9 +5142,9 @@ void showMediaBottomSheet(BuildContext context, int index) {
                         } else {
                           appointmentC.mediaList.add(
                             MediaModel(
-                              time:
-                                  // "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
-                                  appointmentC.selectedTagController.value.text,
+                              time: DateFormat(
+                                "MM/dd/yyyy",
+                              ).format(DateTime.now()),
                               images: [compressedPath],
                             ),
                           );
@@ -4146,6 +5275,7 @@ List<Widget> _buildTicketRows(
                 child: GestureDetector(
                   onTap: () async {
                     controller.settingController.selectedTicket(status);
+                    controller.selectedTicketStatusValue(status.statusId!);
                     await controller.updateAppointment();
                     Get.back();
                   },
@@ -4262,6 +5392,7 @@ Widget buildStatusGrid(
               child: GestureDetector(
                 onTap: () async {
                   controller.selectedAppointmentsStatus(status);
+                  appointmentController.selectedStatusValue(status.statusId!);
                   await appointmentController.updateAppointment();
                   Get.back();
                 },
@@ -4311,7 +5442,6 @@ void showDetailsForms({
   required FormModel data,
   required FormController formC,
 }) {
-  ;
   final descriptionC = TextEditingController(text: data.description);
   final categoryC = TextEditingController(text: data.category);
   final titleC = TextEditingController(text: data.templateName);
@@ -4532,7 +5662,7 @@ Widget _buildRow(
       borderRadius: BorderRadius.circular(12.r),
       boxShadow: [
         BoxShadow(
-          color: Colors.grey.withOpacity(0.15),
+          color: Colors.grey.withValues(alpha: 0.15),
           blurRadius: 6,
           offset: Offset(0, 3),
         ),
@@ -4547,7 +5677,7 @@ Widget _buildRow(
           Container(
             padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Icon(icon, size: 20.sp, color: Colors.blue),
@@ -4576,6 +5706,9 @@ Widget _buildRow(
                   fontWeight: FontWeight.w400,
                   color: valueColor ?? Colors.black,
                 ),
+                maxLines: null,
+                softWrap: true,
+                overflow: TextOverflow.visible,
               ),
             ],
           ),
@@ -4638,6 +5771,41 @@ Future<String> compressImage(String filePath) async {
   ).writeAsBytes(compressedFile);
 
   return tempFile.path;
+}
+
+/// Validate and filter files by size (max 10MB per file)
+/// Returns only valid files and shows warnings for skipped ones
+Future<List<File>> _validateAndFilterFiles(
+  List<File> files,
+  BuildContext context,
+) async {
+  const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+  final validFiles = <File>[];
+  final skippedFiles = <String>[];
+
+  for (var file in files) {
+    try {
+      final fileSize = await file.length();
+      if (fileSize <= maxSizeInBytes) {
+        validFiles.add(file);
+      } else {
+        final sizeInMB = (fileSize / (1024 * 1024)).toStringAsFixed(1);
+        skippedFiles.add('${file.uri.pathSegments.last} ($sizeInMB MB)');
+      }
+    } catch (e) {
+      skippedFiles.add('${file.uri.pathSegments.last} (Error: $e)');
+    }
+  }
+
+  // Show warning if any files were skipped
+  if (skippedFiles.isNotEmpty && context.mounted) {
+    MySnackBar.showErrorToast(
+      message:
+          'Skipped ${skippedFiles.length} file(s) over 10MB limit:\n${skippedFiles.take(3).join("\n")}${skippedFiles.length > 3 ? "\n..." : ""}',
+    );
+  }
+
+  return validFiles;
 }
 
 // import 'package:dropdown_button2/dropdown_button2.dart';
@@ -5920,19 +7088,21 @@ class ResourceItem {
   RxBool selected;
 
   ResourceItem({required this.title, bool selected = false})
-      : selected = selected.obs;
+    : selected = selected.obs;
 }
 
 final List<String> productList = ["Computer", "Plumbing", "Tailoring", "AC"];
 
 void openGoogleMaps(String query) async {
   final encodedQuery = Uri.encodeComponent("$query shop near me");
-  final url = "https://www.google.com/maps/search/?api=1&query=$encodedQuery";
+  final url = Uri.parse(
+    "https://www.google.com/maps/search/?api=1&query=$encodedQuery",
+  );
 
-  if (await canLaunch(url)) {
-    await launch(url);
+  if (await canLaunchUrl(url)) {
+    await launchUrl(url, mode: LaunchMode.externalApplication);
   } else {
-    print("Could not launch $url");
+    debugPrint("Could not launch $url");
   }
 }
 
@@ -6009,24 +7179,24 @@ void showNoteDetailsDialog(
                   ),
                   SizedBox(height: 8.h),
 
-                  // Tag chip
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 8.w,
-                      vertical: 4.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12.sp),
-                    ),
-                    child: TextWidget(
-                      text: tagName,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+                  // Tag chip - COMMENTED
+                  // Container(
+                  //   padding: EdgeInsets.symmetric(
+                  //     horizontal: 8.w,
+                  //     vertical: 4.h,
+                  //   ),
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.blue.withValues(alpha: 0.1),
+                  //     borderRadius: BorderRadius.circular(12.sp),
+                  //   ),
+                  //   child: TextWidget(
+                  //     text: tagName,
+                  //     style: theme.textTheme.bodySmall?.copyWith(
+                  //       color: Colors.blue,
+                  //       fontWeight: FontWeight.w500,
+                  //     ),
+                  //   ),
+                  // ),
                   SizedBox(height: 12.h),
 
                   // Description
@@ -6065,57 +7235,76 @@ void showNoteDetailsDialog(
 }
 
 Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
+  final apptC = Get.find<AppointmentController>();
   switch (field.fieldType) {
     // ---------------- DROPDOWN ----------------
     case 'dropdown':
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(field.fieldName!, style: Theme.of(context).textTheme.bodyLarge),
-          SizedBox(height: 10.h),
-          DropdownButton<String>(
-            isExpanded: true,
-            value: field.selectedValue,
-            hint: Text("Select ${field.fieldName}"),
-            items: field.options?.map((option) {
-              return DropdownMenuItem<String>(
-                value: option,
-                child: Text(option),
-              );
-            }).toList(),
-            onChanged: (value) {
-              if (value != null) field.selectedValue = value;
-            },
-          ),
-        ],
+      return Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              field.fieldName!,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            SizedBox(height: 10.h),
+            DropdownButton<String>(
+              isExpanded: true,
+              value: apptC.customFieldDropdownValue.value != ''
+                  ? apptC.customFieldDropdownValue.value
+                  : null,
+              hint: Text("Select ${field.fieldName}"),
+              items: field.options?.map((option) {
+                return DropdownMenuItem<String>(
+                  value: option,
+                  child: Text(option),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  apptC.customFieldDropdownValue.value = value;
+                  field.selectedValue = value;
+                }
+              },
+            ),
+          ],
+        ),
       );
 
     // ---------------- CHECKLIST ----------------
     case 'checklist':
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(field.fieldName!, style: Theme.of(context).textTheme.bodyLarge),
-          SizedBox(height: 10.h),
-          ...field.options!.map((option) {
-            return CheckboxListTile(
-              checkColor: Colors.white,
-              activeColor: Colors.blue,
-              tileColor: field.selectedOptions!.contains(option)
-                  ? Colors.blue.withValues(alpha: 0.2)
-                  : Colors.grey.withValues(alpha: 0.2),
-              title: Text(option),
-              value: field.selectedOptions!.contains(option),
-              onChanged: (isChecked) {
-                if (isChecked == true) {
-                  field.selectedOptions!.add(option);
-                } else {
-                  field.selectedOptions!.remove(option);
-                }
-              },
-            );
-          }),
-        ],
+      return Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              field.fieldName!,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            SizedBox(height: 10.h),
+            ...field.options!.map((option) {
+              return CheckboxListTile(
+                checkColor: Colors.white,
+                activeColor: Colors.blue,
+                tileColor: apptC.customFieldChecklistValues.contains(option)
+                    ? Colors.blue.withValues(alpha: 0.2)
+                    : Colors.grey.withValues(alpha: 0.2),
+                title: Text(option),
+                value: apptC.customFieldChecklistValues.contains(option),
+                onChanged: (isChecked) {
+                  if (isChecked == true) {
+                    apptC.customFieldChecklistValues.add(option);
+                    field.selectedOptions!.add(option);
+                  } else {
+                    apptC.customFieldChecklistValues.remove(option);
+                    field.selectedOptions!.remove(option);
+                  }
+                  apptC.update();
+                },
+              );
+            }),
+          ],
+        ),
       );
 
     // ---------------- TEXT FIELD ----------------
@@ -6126,6 +7315,7 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
           Text(field.fieldName!, style: Theme.of(context).textTheme.bodyLarge),
           SizedBox(height: 10.h),
           TextField(
+            controller: apptC.customFieldTextController.value,
             decoration: InputDecoration(
               border: OutlineInputBorder(),
               hintText: "Enter ${field.fieldName}",
@@ -6187,5 +7377,169 @@ void showProductDialog(BuildContext context) {
         ),
       );
     },
+  );
+}
+
+/// Get icon data for file type based on extension
+IconData? _getFileIconData(String? extension) {
+  if (extension == null) return null;
+
+  switch (extension.toLowerCase()) {
+    case 'pdf':
+      return Icons.picture_as_pdf;
+    case 'doc':
+    case 'docx':
+      return Icons.description;
+    case 'xls':
+    case 'xlsx':
+      return Icons.table_chart;
+    case 'txt':
+      return Icons.text_snippet;
+    case 'zip':
+    case 'rar':
+      return Icons.archive;
+    default:
+      return Icons.insert_drive_file;
+  }
+}
+
+/// Show file picker bottom sheet to select files
+void showFilePickerBottomSheet(BuildContext context) {
+  final controller = Get.find<AppointmentController>();
+
+  showModalBottomSheet(
+    context: context,
+    builder: (sheetContext) => Container(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(Icons.photo_library),
+            title: Text("Pick from Gallery"),
+            onTap: () async {
+              Navigator.pop(sheetContext);
+              final picker = ImagePicker();
+              final List<XFile> images = await picker.pickMultiImage();
+              if (images.isNotEmpty && context.mounted) {
+                // Compress images before adding
+                final compressedFiles = <File>[];
+                for (var image in images) {
+                  final compressed = await compressImage(image.path);
+                  compressedFiles.add(File(compressed));
+                }
+                controller.addFilesToUploadList(compressedFiles);
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.document_scanner),
+            title: Text("Pick Document"),
+            onTap: () async {
+              Navigator.pop(sheetContext);
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.custom,
+                allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
+                allowMultiple: true,
+              );
+              if (result != null &&
+                  result.files.isNotEmpty &&
+                  context.mounted) {
+                final validFiles = await _validateAndFilterFiles(
+                  result.files.map((f) => File(f.path!)).toList(),
+                  context,
+                );
+                if (validFiles.isNotEmpty) {
+                  controller.addFilesToUploadList(validFiles);
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.folder),
+            title: Text("Browse Files"),
+            onTap: () async {
+              Navigator.pop(sheetContext);
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.any,
+                allowMultiple: true,
+              );
+              if (result != null &&
+                  result.files.isNotEmpty &&
+                  context.mounted) {
+                final validFiles = await _validateAndFilterFiles(
+                  result.files.map((f) => File(f.path!)).toList(),
+                  context,
+                );
+                if (validFiles.isNotEmpty) {
+                  controller.addFilesToUploadList(validFiles);
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Show file picker bottom sheet to select a SINGLE file
+/// Used for document uploads where only one file is allowed at a time
+void showSingleFilePickerBottomSheet(BuildContext context) {
+  final controller = Get.find<AppointmentController>();
+
+  showModalBottomSheet(
+    context: context,
+    builder: (sheetContext) => Container(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(Icons.document_scanner),
+            title: Text("Pick Document"),
+            onTap: () async {
+              Navigator.pop(sheetContext);
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.custom,
+                allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
+                allowMultiple: false,
+              );
+              if (result != null &&
+                  result.files.isNotEmpty &&
+                  context.mounted) {
+                final validFiles = await _validateAndFilterFiles([
+                  File(result.files.single.path!),
+                ], context);
+                if (validFiles.isNotEmpty) {
+                  controller.addFilesToUploadList(validFiles);
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.folder),
+            title: Text("Browse Files"),
+            onTap: () async {
+              Navigator.pop(sheetContext);
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.any,
+                allowMultiple: false,
+              );
+              if (result != null &&
+                  result.files.isNotEmpty &&
+                  context.mounted) {
+                final validFiles = await _validateAndFilterFiles([
+                  File(result.files.single.path!),
+                ], context);
+                if (validFiles.isNotEmpty) {
+                  controller.addFilesToUploadList(validFiles);
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    ),
   );
 }

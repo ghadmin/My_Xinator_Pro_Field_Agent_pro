@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
+
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
@@ -52,9 +54,9 @@ class FormController extends GetxController with ExceptionHandler {
                   p0.apptId ==
                   appointmentController.selectedAppointment.value!.apptID,
             )
-            .first
-            .formIds
-            .isNotEmpty;
+            .firstOrNull
+            ?.formIds
+            .isNotEmpty ?? false;
 
     if (ifOrNot) {
       final tempAttachedFormIds = formList
@@ -63,19 +65,19 @@ class FormController extends GetxController with ExceptionHandler {
                 p0.apptId ==
                 appointmentController.selectedAppointment.value!.apptID,
           )
-          .first
-          .formIds;
+          .firstOrNull
+          ?.formIds ?? [];
 
-      // Create a Set to remove duplicates, then convert back to List
-      selectedFormsIdList.assignAll(
-        <int>{
-          ...selectedFormsIdList.toSet(),
-          ...tempAttachedFormIds.toSet(),
-        }.toList(),
-      );
-      update();
-    } else {
-      selectedFormsIdList.clear();
+      if (tempAttachedFormIds.isNotEmpty) {
+        // Create a Set to remove duplicates, then convert back to List
+        selectedFormsIdList.assignAll(
+          <int>{
+            ...selectedFormsIdList.toSet(),
+            ...tempAttachedFormIds.toSet(),
+          }.toList(),
+        );
+        update();
+      }
     }
   }
 
@@ -101,7 +103,7 @@ class FormController extends GetxController with ExceptionHandler {
         var response = await DioClient().get(
           url: ApiUrl.getAttachedForms,
           params: {
-            "appointmentTypeStatus": 2,
+            "appointmentTypeStatus": 1,
             "appointmentDate": dateTimeConverter(
               inputTime: currentDateTime.toString(),
               outputFormat: "yyyy/MM/dd",
@@ -304,7 +306,7 @@ class FormController extends GetxController with ExceptionHandler {
           name: "FormController",
         );
       } else {
-        print("Failed to fetch templates: ${response?.statusMessage}");
+        debugPrint("Failed to fetch templates: ${response?.statusMessage}");
       }
 
       // // TODO: Confirm the XML structure
@@ -316,8 +318,8 @@ class FormController extends GetxController with ExceptionHandler {
       hideLoading();
     } catch (e, s) {
       hideLoading();
-      print("Error fetching templates: $e");
-      print("Error fetching templates: $s");
+      debugPrint("Error fetching templates: $e");
+      debugPrint("Error fetching templates: $s");
     }
   }
 }

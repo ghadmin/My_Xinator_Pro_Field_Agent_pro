@@ -3,14 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../utils/constants.dart';
-import '../model/on_boarding_model.dart';
-
 class OnboardingController extends GetxController {
   RxInt selectedPage = 0.obs;
   final pageController = PageController();
-  final autoScrollDuration =
-      const Duration(seconds: 4); // Adjust the duration as needed
+  final autoScrollDuration = const Duration(
+    seconds: 4,
+  ); // Adjust the duration as needed
   Timer? autoScrollTimer;
 
   /// Next

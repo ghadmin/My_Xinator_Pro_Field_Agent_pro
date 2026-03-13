@@ -2,7 +2,7 @@ name: myxinator_pro_field_agent_pro
 description: "A new Flutter project."
 
 publish_to: "none"
-version: 1.0.1+2
+version: 1.0.1+8
 
 environment:
   sdk: ^3.9.2
@@ -65,6 +65,7 @@ dependencies:
   google_maps_flutter: ^2.14.0
   geocoding: ^4.0.0
   permission_handler: ^12.0.1
+  flutter_inappwebview: ^6.1.5
 
 dev_dependencies:
   flutter_test:

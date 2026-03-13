@@ -3,11 +3,18 @@ class ApiUrl {
   static const baseUrl =
       "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
   // static const baseUrl =
-  //     "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
+  //   "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
+
+  //static const paymentBaseUrl =
+  //  "https://paymentportal.xceleran.com/webterminal/Clearent/AppCCPayment_CL.aspx";
+  static const paymentBaseUrl =
+      "https://dev-services.myserviceforce.com/webterminal/Clearent/AppCCPayment_CL.aspx";
+
   static const login = "$baseUrl/VerifyUser";
   static const getAppointment = "$baseUrl/GetAppointmentList";
   static const getAttachedForms = "$baseUrl/GetAppointmentListWithForms";
   static const updateAppointment = "$baseUrl/UpdateAppointment";
+  static const sendCustomerSMS = "$baseUrl/SendCustomerSMS";
   static const getCustomer = "$baseUrl/GetCustomerList";
   static const getInvoices = "$baseUrl/GetInvoiceList";
   static const getTicketStatusList = "$baseUrl/GetTicketStatusList";
@@ -20,11 +27,16 @@ class ApiUrl {
   static const editInvoice = "$baseUrl/EditInvoice";
   static const sendEmail = "$baseUrl/SendHtmlFormattedEmail";
   static const makePayment = "$baseUrl/AddPayment";
+  static const saveSignature = "$baseUrl/SaveSignature";
   static const emailAutofill = "$baseUrl/GetAutoFillValuesForEmail";
   static const convertEST = "$baseUrl/ConvertEstimateToInvoice";
   static const getFormTypeUrl = "$baseUrl/GetAllFormTemplates";
-  static const saveImageUrl = "$baseUrl/SaveImageForCSL";
-  static const getImageListUrl = "$baseUrl/GetImageForCSL";
+  // static const saveImageUrl = "$baseUrl/SaveImageForCSL";
+  static const saveImageUrl = "$baseUrl/SavePictures";
+  // static const getImageListUrl = "$baseUrl/GetImageForCSL";
+  static const getImageListUrl = "$baseUrl/GetPictures";
+  static const saveFilesUrl = "$baseUrl/SaveFiles";
+  static const getFilesUrl = "$baseUrl/GetFiles";
   static const saveFormUrl = "$baseUrl/SaveFormTemplate";
   static const updateFormUrl = "$baseUrl/UpdateFormTemplate";
   static const assignFormUrl = "$baseUrl/AssignForm";
@@ -34,8 +46,17 @@ class ApiUrl {
   static const saveNoteUrl = "$baseUrl/SaveNote";
   static const updateNoteUrl = "$baseUrl/UpdateNote";
   static const getAllNotesUrl = "$baseUrl/GetAllNote";
+  static const saveEquipmentUrl = "$baseUrl/SaveEquipment";
+  static const updateEquipmentUrl = "$baseUrl/UpdateEquipment";
+  static const getEquipmentUrl = "$baseUrl/GetEquipment";
   static const getQBOLocationsUrl = "$baseUrl/GetQBOLocations";
   static const getQBOClassesUrl = "$baseUrl/GetQBOClasses";
   static const getCustomFieldsUrl = "$baseUrl/GetAllCustomFields";
   static const saveCustomFieldUrl = "$baseUrl/SaveCustomFeild";
+  static const getAttachedCustomFieldsUrl =
+      "$baseUrl/GetAllAppointmentCustomFields";
+  static const saveAttachedCustomFieldsUrl =
+      "$baseUrl/SaveAppointmentCustomFields";
+  static const generateTuaPaymentLink = "$baseUrl/GenerateTuaPaymentLink";
+  static const getCustomerSitesUrl = "$baseUrl/GetCustomerSites";
 }

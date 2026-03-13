@@ -82,6 +82,8 @@ class ItemListModel extends HiveObject {
   }
 }
 
+enum SelectedItemCategory { newOne, existingOne }
+
 class SelectedItemListModel {
   ItemListModel? selectedItem;
   double? quantity;

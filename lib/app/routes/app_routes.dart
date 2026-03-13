@@ -35,6 +35,8 @@ abstract class Routes {
   static const SEEALLFORMS = _Paths.SEEALLFORMS;
   static const FORMS_CREATE_DRAGG_DROP = _Paths.FORMS_CREATE_DRAGG_DROP;
   static const TAG_DETAILS = _Paths.TAG_DETAILS;
+  static const XPAY_PAYMENT = _Paths.XPAY_PAYMENT;
+  static const TWILIO_CHAT = _Paths.TWILIO_CHAT;
 }
 
 abstract class _Paths {
@@ -68,4 +70,6 @@ abstract class _Paths {
   static const CSLVIEW = '/cslview';
   static const SEEALLFORMS = '/seeallforms';
   static const TAG_DETAILS = '/tagDetails';
+  static const XPAY_PAYMENT = '/x-pay-payment';
+  static const TWILIO_CHAT = '/twilio-chat';
 }

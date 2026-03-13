@@ -22,9 +22,8 @@ class ItemView extends GetView<ItemController> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: Platform.isAndroid
-            ? kToolbarHeight
-            : kToolbarHeight + 60,
+        toolbarHeight:
+            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
         title: const TextWidget(text: 'Items'),
         actions: [
           InkWell(
@@ -57,7 +56,7 @@ class ItemView extends GetView<ItemController> {
           child: controller.isItemsEmpty.value
               ? EmptyWidget(
                   onPressed: () async {
-                    await controller.getItems();
+                    await controller.getItems(true);
                   },
                 )
               : Column(
@@ -146,7 +145,7 @@ class ItemView extends GetView<ItemController> {
                     Expanded(
                       child: RefreshIndicator(
                         color: theme.primaryColor,
-                        onRefresh: () async => await controller.getItems(),
+                        onRefresh: () async => await controller.getItems(true),
                         child: ListView.separated(
                           padding: EdgeInsets.zero,
                           physics: const BouncingScrollPhysics(),
@@ -175,11 +174,10 @@ class ItemView extends GetView<ItemController> {
                                             TextWidget(
                                               text: item.name ?? "",
                                               style: theme
-                                                  .textTheme
-                                                  .headlineSmall
+                                                  .textTheme.headlineSmall
                                                   ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -193,8 +191,8 @@ class ItemView extends GetView<ItemController> {
                                                 bottom: 2.sp,
                                               ),
                                               child: TextWidget(
-                                                text:
-                                                    item.description != null &&
+                                                text: item.description !=
+                                                            null &&
                                                         item.description != ''
                                                     ? item.description!
                                                     : "N/A",
@@ -222,13 +220,12 @@ class ItemView extends GetView<ItemController> {
                                           children: [
                                             TextWidget(
                                               text:
-                                                  "\$${item.price!.toStringAsFixed(2) ?? ""}",
+                                                  "\$${item.price?.toStringAsFixed(2) ?? ""}",
                                               style: theme
-                                                  .textTheme
-                                                  .headlineSmall
+                                                  .textTheme.headlineSmall
                                                   ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),

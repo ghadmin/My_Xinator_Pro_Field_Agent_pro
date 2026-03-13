@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:get/get.dart';
 
 import '../../../components/global-widgets/my_snackbar.dart';
@@ -24,7 +26,7 @@ class SettingsController extends GetxController with ExceptionHandler {
           "CompanyId": companyID,
         },
       ).catchError(handleError);
-
+      log("ticket status response: $response");
       if (response == null) return;
 
       tickets.assignAll((response as List)

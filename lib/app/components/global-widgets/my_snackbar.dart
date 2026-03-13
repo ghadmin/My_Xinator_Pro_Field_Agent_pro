@@ -12,8 +12,11 @@ class MySnackBar {
   /// SnackBar ///
 
   // 1. success snackbar
-  static void showSnackBar(
-      {required String title, required String message, Duration? duration}) {
+  static void showSnackBar({
+    required String title,
+    required String message,
+    Duration? duration,
+  }) {
     final context = _context;
     if (context == null) return;
 
@@ -44,10 +47,7 @@ class MySnackBar {
                   const SizedBox(height: 4),
                   Text(
                     message,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ],
               ),
@@ -55,7 +55,7 @@ class MySnackBar {
           ],
         ),
         backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
         margin: EdgeInsets.only(
           top: MediaQuery.of(context).padding.top + 10,
           left: 10,
@@ -67,11 +67,12 @@ class MySnackBar {
   }
 
   // 2. error snackbar
-  static void showErrorSnackBar(
-      {required String title,
-      required String message,
-      Color? color,
-      Duration? duration}) {
+  static void showErrorSnackBar({
+    required String title,
+    required String message,
+    Color? color,
+    Duration? duration,
+  }) {
     final context = _context;
     if (context == null) return;
 
@@ -102,10 +103,7 @@ class MySnackBar {
                   const SizedBox(height: 4),
                   Text(
                     message,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ],
               ),
@@ -113,7 +111,7 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
         margin: EdgeInsets.only(
           top: MediaQuery.of(context).padding.top + 10,
           left: 10,
@@ -127,19 +125,19 @@ class MySnackBar {
   /// Toast ///
 
   // 1. success toast
-  static void showToast(
-      {required String message,
-      Color? color,
-      Duration? duration,
-      SnackBarBehavior? behavior}) {
+  static void showToast({
+    required String message,
+    Color? color,
+    Duration? duration,
+    SnackBarBehavior? behavior,
+  }) {
     final context = _context;
     if (context == null) return;
 
-    final snackBarBehavior = behavior ?? SnackBarBehavior.fixed;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        duration: duration ??
+        duration:
+            duration ??
             Duration(seconds: SnackBarDurations.kMySnackBarDuration),
         content: Row(
           children: [
@@ -162,33 +160,25 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? Colors.green,
-        behavior: snackBarBehavior,
-        margin: snackBarBehavior == SnackBarBehavior.floating
-            ? EdgeInsets.only(
-                bottom: 10,
-                left: 18,
-                right: 18,
-              )
-            : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        behavior: SnackBarBehavior.fixed,
       ),
     );
   }
 
   // 2. info toast
-  static void showInfoToast(
-      {required String message,
-      Color? color,
-      Duration? duration,
-      SnackBarBehavior? behavior}) {
+  static void showInfoToast({
+    required String message,
+    Color? color,
+    Duration? duration,
+    SnackBarBehavior? behavior,
+  }) {
     final context = _context;
     if (context == null) return;
 
-    final snackBarBehavior = behavior ?? SnackBarBehavior.fixed;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        duration: duration ??
+        duration:
+            duration ??
             Duration(seconds: SnackBarDurations.kMySnackBarDuration),
         content: Row(
           children: [
@@ -211,33 +201,25 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? const Color(0xff2E9AFE),
-        behavior: snackBarBehavior,
-        margin: snackBarBehavior == SnackBarBehavior.floating
-            ? EdgeInsets.only(
-                bottom: 10,
-                left: 18,
-                right: 18,
-              )
-            : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        behavior: SnackBarBehavior.fixed,
       ),
     );
   }
 
   // 3. error toast
-  static void showErrorToast(
-      {required String message,
-      Color? color,
-      Duration? duration,
-      SnackBarBehavior? behavior}) {
+  static void showErrorToast({
+    required String message,
+    Color? color,
+    Duration? duration,
+    SnackBarBehavior? behavior,
+  }) {
     final context = _context;
     if (context == null) return;
 
-    final snackBarBehavior = behavior ?? SnackBarBehavior.fixed;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        duration: duration ??
+        duration:
+            duration ??
             Duration(seconds: SnackBarDurations.kMySnackBarDuration),
         content: Row(
           children: [
@@ -260,27 +242,23 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? Colors.red.withValues(alpha: .9),
-        behavior: snackBarBehavior,
-        margin: snackBarBehavior == SnackBarBehavior.floating
-            ? EdgeInsets.only(
-                bottom: 10,
-                left: 18,
-                right: 18,
-              )
-            : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        behavior: SnackBarBehavior.fixed,
       ),
     );
   }
 
-  static void showBottomToast(
-      {required String message, Color? color, Duration? duration}) {
+  static void showBottomToast({
+    required String message,
+    Color? color,
+    Duration? duration,
+  }) {
     final context = _context;
     if (context == null) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        duration: duration ??
+        duration:
+            duration ??
             Duration(seconds: SnackBarDurations.kMySnackBarDuration),
         content: Row(
           children: [
@@ -303,9 +281,7 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? const Color(0xff2E9AFE),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(18),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+        behavior: SnackBarBehavior.fixed,
       ),
     );
   }

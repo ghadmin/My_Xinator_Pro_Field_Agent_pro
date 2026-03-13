@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -186,17 +184,19 @@ class AppointmentView extends GetView<AppointmentController> {
                             return SplashContainer(
                               radius: 8,
                               color: Colors.white,
-                              onPressed: () {
+                              onPressed: () async {
                                 controller.isTyping(false);
-                                controller.selectSingleAppointments(
+                                controller.selectedAptIndex.value = index;
+
+                                await controller.selectSingleAppointments(
                                   appointment,
                                   controller.sortedAppointments.indexWhere(
                                     (element) =>
                                         element.apptID == appointment.apptID,
                                   ),
-                                  false,
+                                  // false,
                                 );
-                                controller.getTagList();
+                                // controller.getTagList();
                                 controller.getCurrentUserId();
                                 // var createdDateTime = dateTimeConverter(
                                 //     inputFormat: "yyyy/MM/dd hh:mm a",
@@ -264,11 +264,13 @@ class AppointmentView extends GetView<AppointmentController> {
                                 // controller.resource =
                                 //     appointment.resource?.name ?? "";
 
-                                // controller.notes = appointment.note ?? "";hjkgkjhkjhkjhkjh
+                                // controller.notes = appointment.note ?? "";
                                 // controller.noteTextController.text =
                                 //     appointment.note ?? "";
                                 // controller.selectedAptIndex.value = index;
-
+                                controller.selectedCustomer(
+                                  appointment.customer,
+                                );
                                 Get.toNamed(Routes.APPOINTMENT_DETAILS);
                               },
                               child: Padding(
@@ -411,6 +413,23 @@ class AppointmentView extends GetView<AppointmentController> {
                     ),
                   ],
                 ),
+        ),
+      ),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(bottom: 20.sp),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            FloatingActionButton(
+              heroTag: "twilio_support",
+              backgroundColor: Colors.blue,
+              onPressed: () {
+                Get.toNamed(Routes.TWILIO_CHAT);
+              },
+              child: Icon(Icons.support_agent, color: Colors.white),
+            ),
+          ],
         ),
       ),
     );

@@ -274,4 +274,63 @@ class DialogHelper {
       ),
     );
   }
+
+  ///show upload progress dialog
+  static RxString uploadProgressMessage = "".obs;
+
+  static Future<void> showUploadProgressDialog() async {
+    uploadProgressMessage.value = "Preparing upload...";
+    Get.dialog(
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      Center(
+        child: Container(
+          padding: EdgeInsets.all(24.sp),
+          margin: EdgeInsets.symmetric(horizontal: 20.sp),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 50.sp,
+                height: 50.sp,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    LightThemeColors.primaryColor,
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Obx(() => Text(
+                uploadProgressMessage.value,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w500,
+                  color: LightThemeColors.bodyTextColor,
+                  decoration: TextDecoration.none,
+                  decorationColor: Colors.transparent,
+                ),
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static void updateUploadProgress(String message) {
+    uploadProgressMessage.value = message;
+  }
 }

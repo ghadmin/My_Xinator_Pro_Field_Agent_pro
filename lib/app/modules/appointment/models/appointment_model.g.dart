@@ -36,6 +36,9 @@ class AppointmentsAdapter extends TypeAdapter<Appointments> {
       .._promoCode = fields[16] as String?
       .._createdBy = fields[17] as String?
       .._userID = fields[18] as String?
+      .._customFieldId = fields[25] as dynamic
+      .._customFeilds = (fields[26] as List?)?.cast<dynamic>()
+      .._siteID = fields[27] as String?
       .._resource = fields[19] as Resource?
       .._customer = fields[20] as Customer?
       .._status = fields[21] as Status?
@@ -47,7 +50,7 @@ class AppointmentsAdapter extends TypeAdapter<Appointments> {
   @override
   void write(BinaryWriter writer, Appointments obj) {
     writer
-      ..writeByte(25)
+      ..writeByte(28)
       ..writeByte(0)
       ..write(obj._companyID)
       ..writeByte(1)
@@ -86,6 +89,12 @@ class AppointmentsAdapter extends TypeAdapter<Appointments> {
       ..write(obj._createdBy)
       ..writeByte(18)
       ..write(obj._userID)
+      ..writeByte(25)
+      ..write(obj._customFieldId)
+      ..writeByte(26)
+      ..write(obj._customFeilds)
+      ..writeByte(27)
+      ..write(obj._siteID)
       ..writeByte(19)
       ..write(obj._resource)
       ..writeByte(20)
@@ -147,13 +156,18 @@ class InvoicesAdapter extends TypeAdapter<Invoices> {
       .._items = (fields[22] as List?)?.cast<Items>()
       .._discountOption = fields[23] as String?
       .._taxType = fields[24] as String?
-      .._paymentList = (fields[25] as List?)?.cast<Payment>();
+      .._requestedDepositAmount = fields[25] as String?
+      .._requestedDepositPercentage = fields[26] as String?
+      .._requestedAmountType = fields[27] as dynamic
+      .._paymentList = (fields[28] as List?)?.cast<Payment>()
+      .._qboClassId = fields[29] as String?
+      .._qboLocationId = fields[30] as String?;
   }
 
   @override
   void write(BinaryWriter writer, Invoices obj) {
     writer
-      ..writeByte(26)
+      ..writeByte(31)
       ..writeByte(0)
       ..write(obj._invoiceID)
       ..writeByte(1)
@@ -205,7 +219,17 @@ class InvoicesAdapter extends TypeAdapter<Invoices> {
       ..writeByte(24)
       ..write(obj._taxType)
       ..writeByte(25)
-      ..write(obj._paymentList);
+      ..write(obj._requestedDepositAmount)
+      ..writeByte(26)
+      ..write(obj._requestedDepositPercentage)
+      ..writeByte(27)
+      ..write(obj._requestedAmountType)
+      ..writeByte(28)
+      ..write(obj._paymentList)
+      ..writeByte(29)
+      ..write(obj._qboClassId)
+      ..writeByte(30)
+      ..write(obj._qboLocationId);
   }
 
   @override

@@ -39,7 +39,7 @@ class EmptyWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: 18.sp,
               fontWeight: FontWeight.w500,
-              color: theme.hintColor.withOpacity(.5),
+              color: theme.hintColor.withValues(alpha: 0.5),
             ),
           ),
         ),
@@ -58,7 +58,7 @@ class EmptyWidget extends StatelessWidget {
               child: Icon(
                 Ionicons.refresh,
                 size: 24,
-                color: theme.primaryColor.withOpacity(.7),
+                color: theme.primaryColor.withValues(alpha: 0.7),
               ),
             ),
           ),

@@ -188,7 +188,7 @@ class _DateViewTab extends StatelessWidget {
         labelText: label,
         border: const OutlineInputBorder(),
       ),
-      value: items.first,
+      initialValue: items.first,
       onChanged: (value) {},
       items: items
           .map(

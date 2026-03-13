@@ -111,7 +111,7 @@ class MapViewTab extends StatelessWidget {
               fillColor: Colors.white,
               border: OutlineInputBorder(),
             ),
-            value: "All Statuses",
+            initialValue: "All Statuses",
             items: const [
               DropdownMenuItem(
                 value: "All Statuses",

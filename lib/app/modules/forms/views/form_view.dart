@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
@@ -115,7 +114,7 @@ class FormView extends GetView<FormController> {
                           borderRadius: BorderRadius.circular(8.r),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
+                              color: Colors.grey.withValues(alpha: 0.1),
                               blurRadius: 6,
                               offset: Offset(0, 2),
                             ),
@@ -422,7 +421,7 @@ class FormView extends GetView<FormController> {
 
                     // Category
                     DropdownButtonFormField<String>(
-                      value: data.category,
+                      initialValue: data.category,
                       decoration: InputDecoration(
                         labelText: "Category",
                         border: OutlineInputBorder(
@@ -643,7 +642,7 @@ class FormView extends GetView<FormController> {
                                   Get.back();
                                 }
                               : () {
-                                  print("calling 1 ");
+                                  // Form validation incomplete - button disabled
                                 },
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
