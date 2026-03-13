@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -24,6 +26,70 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>testsite.myserviceforce.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>
+	This app needs local network access to communicate with servers and services.
+	</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>
+	This app uses your location only while the app is open to display navigation routes to your destination.
+	</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>
+	This app uses your current location to show the route from your position to the selected destination while you are using the app.
+	</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>
+	This app needs permission to save images to your photo library.
+	</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>
+	This app needs access to your photo library to select and upload images when required.
+	</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -41,59 +107,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-
-	<!-- 📍 Location Access -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>
-	This app uses your current location to show the route from your position to the selected destination while you are using the app.
-	</string>
-
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>
-	This app uses your location only while the app is open to display navigation routes to your destination.
-	</string>
-
-	<!-- 📷 Photo Library Access -->
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>
-	This app needs access to your photo library to select and upload images when required.
-	</string>
-
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>
-	This app needs permission to save images to your photo library.
-	</string>
-
-	<!-- 📡 Local Network Access -->
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>
-	This app needs local network access to communicate with servers and services.
-	</string>
-
-	<!-- 🌐 App Transport Security (ATS) -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<!-- Allow arbitrary loads for development/testing - REMOVE IN PRODUCTION -->
-		<key>NSAllowsArbitraryLoads</key>
-		<false/>
-		<!-- Allow specific domain if needed -->
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>testsite.myserviceforce.com</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.0</string>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-			</dict>
-		</dict>
-	</dict>
-
 </dict>
 </plist>
