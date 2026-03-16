@@ -4,8 +4,10 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../config/theme/light_theme_colors.dart';
+import '../../../../components/global-widgets/my_snackbar.dart';
 import '../../controllers/appointment_controller.dart';
 import '../../models/equipment_model.dart';
+import '../../models/equipment_type_model.dart';
 
 /// Reusable Equipment Form Modal/Bottom Sheet
 /// Displays a form for creating or editing equipment
@@ -36,9 +38,11 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
+  // Get controller
+  final _controller = Get.find<AppointmentController>();
+
   // Text editing controllers
   late final TextEditingController _serialNumberController;
-  late final TextEditingController _typeController;
   late final TextEditingController _makeController;
   late final TextEditingController _modelController;
   late final TextEditingController _skuController;
@@ -46,11 +50,13 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
 
   // Focus nodes
   late final FocusNode _serialNumberFocusNode;
-  late final FocusNode _typeFocusNode;
   late final FocusNode _makeFocusNode;
   late final FocusNode _modelFocusNode;
   late final FocusNode _skuFocusNode;
   late final FocusNode _notesFocusNode;
+
+  // Selected equipment type
+  EquipmentTypeModel? _selectedEquipmentType;
 
   // Date values
   DateTime? _warrantyStart;
@@ -64,6 +70,15 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
     super.initState();
     _initializeControllers();
     _initializeFocusNodes();
+    // If in edit mode, find matching type from controller's list
+    if (widget.equipment != null && widget.equipment!.type.isNotEmpty) {
+      for (final type in _controller.equipmentTypeList) {
+        if (type.equipmentTypeDesc == widget.equipment!.type) {
+          _selectedEquipmentType = type;
+          break;
+        }
+      }
+    }
   }
 
   void _initializeControllers() {
@@ -71,7 +86,6 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
       // Edit mode - prefill with existing data
       final eq = widget.equipment!;
       _serialNumberController = TextEditingController(text: eq.serialNumber);
-      _typeController = TextEditingController(text: eq.type);
       _makeController = TextEditingController(text: eq.make ?? '');
       _modelController = TextEditingController(text: eq.model ?? '');
       _skuController = TextEditingController(text: eq.sku ?? '');
@@ -85,7 +99,6 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
     } else {
       // Create mode - empty controllers
       _serialNumberController = TextEditingController();
-      _typeController = TextEditingController();
       _makeController = TextEditingController();
       _modelController = TextEditingController();
       _skuController = TextEditingController();
@@ -115,7 +128,6 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
 
   void _initializeFocusNodes() {
     _serialNumberFocusNode = FocusNode();
-    _typeFocusNode = FocusNode();
     _makeFocusNode = FocusNode();
     _modelFocusNode = FocusNode();
     _skuFocusNode = FocusNode();
@@ -124,7 +136,6 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
 
   void _unfocusAllFields() {
     _serialNumberFocusNode.unfocus();
-    _typeFocusNode.unfocus();
     _makeFocusNode.unfocus();
     _modelFocusNode.unfocus();
     _skuFocusNode.unfocus();
@@ -134,13 +145,11 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
   @override
   void dispose() {
     _serialNumberController.dispose();
-    _typeController.dispose();
     _makeController.dispose();
     _modelController.dispose();
     _skuController.dispose();
     _notesController.dispose();
     _serialNumberFocusNode.dispose();
-    _typeFocusNode.dispose();
     _makeFocusNode.dispose();
     _modelFocusNode.dispose();
     _skuFocusNode.dispose();
@@ -186,6 +195,12 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
       return;
     }
 
+    // Validate equipment type is selected
+    if (_selectedEquipmentType == null) {
+      MySnackBar.showToast(message: 'Please select an equipment type');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -194,7 +209,7 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
     final equipment = EquipmentModel(
       id: widget.equipment?.id,
       serialNumber: _serialNumberController.text.trim(),
-      type: _typeController.text.trim(),
+      type: _selectedEquipmentType!.equipmentTypeDesc,
       make: _makeController.text.trim().isEmpty
           ? null
           : _makeController.text.trim(),
@@ -320,20 +335,9 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
                         ),
                         SizedBox(height: 16.h),
 
-                        // Type (Required)
+                        // Type (Required) - Dropdown
                         _buildSectionTitle('Type *'),
-                        _buildTextFormField(
-                          controller: _typeController,
-                          focusNode: _typeFocusNode,
-                          hintText: 'Enter equipment type',
-                          prefixIcon: Icons.category,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Type is required';
-                            }
-                            return null;
-                          },
-                        ),
+                        _buildEquipmentTypeDropdown(),
                         SizedBox(height: 16.h),
 
                         // Make
@@ -645,6 +649,172 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
       ),
     );
   }
+
+  Widget _buildEquipmentTypeDropdown() {
+    return InkWell(
+      onTap: _showEquipmentTypeBottomSheet,
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: _selectedEquipmentType == null
+                ? Colors.transparent
+                : LightThemeColors.primaryColor,
+            width: _selectedEquipmentType == null ? 0 : 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.category, size: 20.sp, color: Colors.grey[600]),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Equipment Type',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    _selectedEquipmentType?.equipmentTypeDesc ?? 'Select Type',
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      color: _selectedEquipmentType != null
+                          ? Colors.black87
+                          : Colors.grey[400],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, size: 24.sp, color: Colors.grey[600]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEquipmentTypeBottomSheet() {
+    Get.bottomSheet(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: EdgeInsets.symmetric(vertical: 12.h),
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Select Equipment Type',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Get.back(),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1.h, color: Colors.grey[200]),
+            // Equipment Type List
+            Obx(
+              () => _controller.equipmentTypeList.isEmpty
+                  ? Padding(
+                      padding: EdgeInsets.all(32.h),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.category_outlined,
+                            size: 48.sp,
+                            color: Colors.grey[400],
+                          ),
+                          SizedBox(height: 16.h),
+                          Text(
+                            'No equipment types available',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: Get.height * 0.5),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _controller.equipmentTypeList.length,
+                        itemBuilder: (context, index) {
+                          final type = _controller.equipmentTypeList[index];
+                          final isSelected =
+                              _selectedEquipmentType?.equipmentTypeId ==
+                              type.equipmentTypeId;
+                          return ListTile(
+                            title: Text(
+                              type.equipmentTypeDesc,
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? LightThemeColors.primaryColor
+                                    : Colors.black87,
+                              ),
+                            ),
+                            trailing: isSelected
+                                ? Icon(
+                                    Icons.check_circle,
+                                    color: LightThemeColors.primaryColor,
+                                  )
+                                : null,
+                            onTap: () {
+                              setState(() {
+                                _selectedEquipmentType = type;
+                              });
+                              Get.back();
+                            },
+                          );
+                        },
+                      ),
+                    ),
+            ),
+            SizedBox(height: 8.h),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
 }
 
 /// Equipment Card Widget for displaying equipment in a list
@@ -714,6 +884,8 @@ class EquipmentCard extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           SizedBox(height: 2.h),
                           Text(
@@ -722,6 +894,8 @@ class EquipmentCard extends StatelessWidget {
                               fontSize: 13.sp,
                               color: Colors.grey[600],
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),

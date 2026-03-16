@@ -49,6 +49,7 @@ class ApiUrl {
   static const saveEquipmentUrl = "$baseUrl/SaveEquipment";
   static const updateEquipmentUrl = "$baseUrl/UpdateEquipment";
   static const getEquipmentUrl = "$baseUrl/GetEquipment";
+  static const getEquipmentTypeUrl = "$baseUrl/GetEquipmentTypes";
   static const getQBOLocationsUrl = "$baseUrl/GetQBOLocations";
   static const getQBOClassesUrl = "$baseUrl/GetQBOClasses";
   static const getCustomFieldsUrl = "$baseUrl/GetAllCustomFields";

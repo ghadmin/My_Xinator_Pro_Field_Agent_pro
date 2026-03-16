@@ -30,6 +30,7 @@ import '../../item/models/item_list_model.dart';
 import '../../settings/controllers/settings_controller.dart';
 import '../models/appointment_model.dart';
 import '../models/equipment_model.dart';
+import '../models/equipment_type_model.dart';
 import '../models/file_model.dart';
 import '../models/image_list_model.dart';
 import '../models/note_model.dart';
@@ -134,6 +135,8 @@ class AppointmentController extends GetxController
   RxString selectedTabOption = "Appointment".obs;
   final noteList = RxList<NoteModel>([]);
   final equipmentList = RxList<EquipmentModel>([]);
+  final equipmentTypeList = RxList<EquipmentTypeModel>([]);
+  final selectedEquipmentTypeList = RxList<EquipmentTypeModel>([]);
 
   /// API ///
   final appointments = RxList<Appointments>();
@@ -142,12 +145,6 @@ class AppointmentController extends GetxController
   final isBasicExpanded = RxBool(false);
   final isEquipmentExpanded = RxBool(false);
 
-  List<String> historyNotes = <String>[
-    "History note one ",
-    "History note two ",
-    "History note three ",
-    "History note four ",
-  ];
   final selectedAppointment = Rx<Appointments?>(null);
   final isTyping = RxBool(false);
   final selectedEstimateOrInvoiceIndex = RxInt(0);
@@ -158,7 +155,6 @@ class AppointmentController extends GetxController
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
         var companyID = await MySharedPref.getCompanyID();
-        final appointment = selectedAppointment.value;
 
         var response = await DioClient()
             .get(
@@ -168,7 +164,7 @@ class AppointmentController extends GetxController
                 "cslId": 0,
                 "customerId": 0,
                 "appointmentId": 0,
-                "siteId": appointment?.siteID ?? 0,
+                "siteId": 0,
               },
             )
             .catchError(!showLoader ? handleError : () {});
@@ -1463,30 +1459,6 @@ class AppointmentController extends GetxController
 
     var companyID = await MySharedPref.getCompanyID();
 
-    // Format dates as MM/dd/yyyy (input is ISO string)
-    String formatDate(String? dateStr) {
-      if (dateStr == null || dateStr.isEmpty) return '';
-      try {
-        final date = DateTime.parse(dateStr);
-        return DateFormat('MM/dd/yyyy').format(date);
-      } catch (e) {
-        return '';
-      }
-    }
-
-    // Format created datetime as MM/dd/yyyy HH:mm:ss
-    String formatCreatedDateTime(String? dateStr) {
-      if (dateStr == null || dateStr.isEmpty) {
-        return DateFormat('MM/dd/yyyy HH:mm:ss').format(DateTime.now());
-      }
-      try {
-        final date = DateTime.parse(dateStr);
-        return DateFormat('MM/dd/yyyy HH:mm:ss').format(date);
-      } catch (e) {
-        return DateFormat('MM/dd/yyyy HH:mm:ss').format(DateTime.now());
-      }
-    }
-
     var response = await DioClient()
         .post(
           url: ApiUrl.updateEquipmentUrl,
@@ -1494,26 +1466,26 @@ class AppointmentController extends GetxController
             "equipments": [
               {
                 "Id": int.parse(equipment.id ?? "0"), // Include ID for update
-                "CompanyID": companyID,
-                "CustomerID": int.parse(customerID),
-                "CustomerGuid": selectedSite.value != null
-                    ? selectedSite.value!.customerGuid
-                    : "",
-                "SiteId": selectedSite.value != null
-                    ? selectedSite.value!.id
-                    : 0,
-                "Model": equipment.model ?? "",
-                "Make": equipment.make ?? "",
-                "SerialNumber": equipment.serialNumber,
-                "Barcode": equipment.sku ?? "",
-                "EquipmentType": equipment.type,
-                "Notes": equipment.notes ?? "",
-                "WarrantyStart": formatDate(equipment.warrantyStart),
-                "WarrantyEnd": formatDate(equipment.warrantyEnd),
-                "LaborWarrantyStart": formatDate(equipment.laborWarrantyStart),
-                "LaborWarrantyEnd": formatDate(equipment.laborWarrantyEnd),
-                "InstallDate": formatDate(equipment.installDate),
-                "CreatedDateTime": formatCreatedDateTime(equipment.createdAt),
+                // "CompanyID": companyID,
+                // "CustomerID": int.parse(customerID),
+                // "CustomerGuid": selectedSite.value != null
+                //     ? selectedSite.value!.customerGuid
+                //     : "",
+                // "SiteId": selectedSite.value != null
+                //     ? selectedSite.value!.id
+                //     : 0,
+                // "Model": equipment.model ?? "",
+                // "Make": equipment.make ?? "",
+                // "SerialNumber": equipment.serialNumber,
+                // "Barcode": equipment.sku ?? "",
+                // "EquipmentType": equipment.type,
+                // "Notes": equipment.notes ?? "",
+                // "WarrantyStart": formatDate(equipment.warrantyStart),
+                // "WarrantyEnd": formatDate(equipment.warrantyEnd),
+                // "LaborWarrantyStart": formatDate(equipment.laborWarrantyStart),
+                // "LaborWarrantyEnd": formatDate(equipment.laborWarrantyEnd),
+                // "InstallDate": formatDate(equipment.installDate),
+                // "CreatedDateTime": formatCreatedDateTime(equipment.createdAt),
               },
             ],
           },
@@ -1579,6 +1551,46 @@ class AppointmentController extends GetxController
 
   void showEmptyWidget() {
     isAppointmentEmpty.value = true;
+  }
+
+  /// Get equipment type list from server
+  Future<void> getEquipmentTypes({bool showLoader = true}) async {
+    try {
+      if (showLoader) showLoading();
+
+      if (await NetworkConnectivity.isNetworkAvailable()) {
+        var companyID = await MySharedPref.getCompanyID();
+
+        var response = await DioClient()
+            .get(
+              url: ApiUrl.getEquipmentTypeUrl,
+              params: {"companyId": companyID},
+            )
+            .catchError(showLoader ? handleError : (e) => null);
+
+        if (response == null) {
+          if (showLoader) hideLoading();
+          return;
+        }
+
+        log("getEquipmentType response: $response");
+
+        // Parse response - API returns an array
+        if (response is List && response.isNotEmpty) {
+          equipmentTypeList.assignAll(
+            response.map((e) => EquipmentTypeModel.fromJson(e)).toList(),
+          );
+        } else {
+          equipmentTypeList.clear();
+        }
+
+        if (showLoader) hideLoading();
+      }
+    } catch (e, s) {
+      kLog(e.toString());
+      kLog(s.toString());
+      if (showLoader) hideLoading();
+    }
   }
 
   @override

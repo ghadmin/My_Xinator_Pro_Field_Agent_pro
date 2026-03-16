@@ -106,9 +106,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         setState(() {});
       }
       if (_tabController.index == 5) {
-        // Pictures tab index
+        // Equipment tab index
 
-        controller.getEquipment(showLoader: true);
+        // controller.getEquipment(showLoader: true);
+        controller.getEquipmentTypes(showLoader: true);
         setState(() {});
       }
       if (_tabController.index == 6) {
@@ -3646,95 +3647,313 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             () => Column(
                               children: [
                                 SizedBox(height: 15.sp),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      await EquipmentFormModal.show(
-                                        context: context,
-                                      );
-                                      // Equipment is added via getEquipment called in saveEquipment
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        right: 8.0,
-                                      ),
-                                      child: DottedBorder(
-                                        options: RectDottedBorderOptions(
-                                          dashPattern: [3, 2],
-                                        ),
-                                        child: Icon(
-                                          Icons.add,
-                                          size: 25.sp,
-                                          color: theme.primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
+
+                                // Add button and equipment list
                                 Expanded(
-                                  child: controller.equipmentList.isEmpty
-                                      ? Center(
+                                  child: controller.equipmentTypeList.isNotEmpty
+                                      ? Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 16.w,
+                                          ),
                                           child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Icon(
-                                                Icons
-                                                    .precision_manufacturing_outlined,
-                                                size: 64.sp,
-                                                color: Colors.grey[300],
-                                              ),
-                                              SizedBox(height: 16.h),
-                                              TextWidget(
-                                                text: "No equipment yet",
-                                                style: TextStyle(
-                                                  fontSize: 16.sp,
-                                                  color: Colors.grey[500],
-                                                  fontWeight: FontWeight.w500,
+                                              // Filter dropdown
+                                              InkWell(
+                                                onTap:
+                                                    _showEquipmentTypeFilterBottomSheet,
+                                                borderRadius:
+                                                    BorderRadius.circular(12.r),
+                                                child: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 16.w,
+                                                    vertical: 12.h,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey[100],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12.r,
+                                                        ),
+                                                    border: Border.all(
+                                                      color:
+                                                          controller
+                                                              .selectedEquipmentTypeList
+                                                              .isNotEmpty
+                                                          ? theme.primaryColor
+                                                          : Colors.transparent,
+                                                      width:
+                                                          controller
+                                                              .selectedEquipmentTypeList
+                                                              .isNotEmpty
+                                                          ? 2
+                                                          : 0,
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Text(
+                                                        controller
+                                                                .selectedEquipmentTypeList
+                                                                .isNotEmpty
+                                                            ? '${controller.selectedEquipmentTypeList.length} Item${controller.selectedEquipmentTypeList.length > 1 ? 's' : ''} selected'
+                                                            : 'Select Equipment',
+                                                        style: TextStyle(
+                                                          fontSize: 15.sp,
+                                                          color:
+                                                              controller
+                                                                  .selectedEquipmentTypeList
+                                                                  .isNotEmpty
+                                                              ? Colors.black87
+                                                              : Colors
+                                                                    .grey[600],
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      Spacer(),
+                                                      Icon(
+                                                        Icons.arrow_drop_down,
+                                                        size: 24.sp,
+                                                        color: Colors.grey[600],
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
-                                              SizedBox(height: 8.h),
-                                              TextWidget(
-                                                text: "Tap + to add equipment",
-                                                style: TextStyle(
-                                                  fontSize: 14.sp,
-                                                  color: Colors.grey[400],
+
+                                              // Selected type cards
+                                              if (controller
+                                                  .selectedEquipmentTypeList
+                                                  .isNotEmpty) ...[
+                                                SizedBox(height: 12.h),
+                                                ...controller
+                                                    .selectedEquipmentTypeList
+                                                    .map(
+                                                      (type) => Card(
+                                                        margin: EdgeInsets.only(
+                                                          bottom: 8.h,
+                                                        ),
+                                                        elevation: 2,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12.r,
+                                                              ),
+                                                          side: BorderSide(
+                                                            color: theme
+                                                                .primaryColor
+                                                                .withValues(
+                                                                  alpha: 0.3,
+                                                                ),
+                                                            width: 1,
+                                                          ),
+                                                        ),
+                                                        color: theme
+                                                            .primaryColor
+                                                            .withValues(
+                                                              alpha: 0.05,
+                                                            ),
+                                                        child: Padding(
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                12.w,
+                                                              ),
+                                                          child: Row(
+                                                            children: [
+                                                              Container(
+                                                                width: 40.w,
+                                                                height: 40.w,
+                                                                decoration: BoxDecoration(
+                                                                  color: theme
+                                                                      .primaryColor
+                                                                      .withValues(
+                                                                        alpha:
+                                                                            0.15,
+                                                                      ),
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        8.r,
+                                                                      ),
+                                                                ),
+                                                                child: Icon(
+                                                                  Icons
+                                                                      .category,
+                                                                  color: theme
+                                                                      .primaryColor,
+                                                                  size: 20.sp,
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                width: 12.w,
+                                                              ),
+                                                              Expanded(
+                                                                child: Column(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
+                                                                  children: [
+                                                                    Text(
+                                                                      type.equipmentTypeDesc,
+                                                                      style: TextStyle(
+                                                                        fontSize:
+                                                                            14.sp,
+                                                                        fontWeight:
+                                                                            FontWeight.w600,
+                                                                        color: theme
+                                                                            .primaryColor,
+                                                                      ),
+                                                                    ),
+                                                                    Text(
+                                                                      'ID: ${type.equipmentTypeId}',
+                                                                      style: TextStyle(
+                                                                        fontSize:
+                                                                            11.sp,
+                                                                        color: Colors
+                                                                            .grey[600],
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                              GestureDetector(
+                                                                onTap: () {
+                                                                  controller
+                                                                      .selectedEquipmentTypeList
+                                                                      .remove(
+                                                                        type,
+                                                                      );
+                                                                },
+                                                                child: Container(
+                                                                  padding:
+                                                                      EdgeInsets.all(
+                                                                        6.w,
+                                                                      ),
+                                                                  decoration: BoxDecoration(
+                                                                    color: Colors
+                                                                        .red[50],
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          6.r,
+                                                                        ),
+                                                                  ),
+                                                                  child: Icon(
+                                                                    Icons.close,
+                                                                    size: 18.sp,
+                                                                    color: Colors
+                                                                        .red,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    )
+                                                    .toList(),
+                                              ],
+
+                                              SizedBox(height: 12.h),
+
+                                              if (controller
+                                                  .selectedEquipmentTypeList
+                                                  .isNotEmpty)
+                                                SizedBox(
+                                                  height: 30.h,
+                                                  width: double.infinity,
+                                                  child: ElevatedButton(
+                                                    onPressed: () {},
+                                                    style: ElevatedButton.styleFrom(
+                                                      foregroundColor:
+                                                          LightThemeColors
+                                                              .primaryColor,
+                                                      backgroundColor:
+                                                          LightThemeColors
+                                                              .primaryColor,
+                                                      splashFactory: NoSplash
+                                                          .splashFactory,
+                                                      shadowColor: Colors.white,
+                                                      shape: RoundedRectangleBorder(
+                                                        side: const BorderSide(
+                                                          width: 1,
+                                                          color:
+                                                              LightThemeColors
+                                                                  .primaryColor,
+                                                        ),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              10.r,
+                                                            ),
+                                                      ),
+
+                                                      elevation: 0,
+                                                    ),
+                                                    child: TextWidget(
+                                                      text: "SAVE",
+                                                      style: TextStyle(
+                                                        fontSize: 10.sp,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
                                             ],
                                           ),
                                         )
-                                      : SingleChildScrollView(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 16.w,
-                                            vertical: 8.h,
-                                          ),
-                                          child: Column(
-                                            children: [
-                                              ...controller.equipmentList
-                                                  .map(
-                                                    (
-                                                      equipment,
-                                                    ) => EquipmentCard(
-                                                      equipment: equipment,
-                                                      onTap: () async {
-                                                        await EquipmentFormModal.show(
-                                                          context: context,
-                                                          equipment: equipment,
-                                                        );
-                                                        // Equipment list is updated via getEquipment called in saveEquipment
-                                                      },
-                                                      onDelete: () {
-                                                        _showDeleteEquipmentDialog(
-                                                          context,
-                                                          equipment,
-                                                        );
-                                                      },
-                                                    ),
-                                                  )
-                                                  .toList(),
-                                            ],
+                                      : Expanded(
+                                          child: Center(
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  controller
+                                                          .selectedEquipmentTypeList
+                                                          .isNotEmpty
+                                                      ? Icons.filter_list_off
+                                                      : Icons
+                                                            .precision_manufacturing_outlined,
+                                                  size: 64.sp,
+                                                  color: Colors.grey[300],
+                                                ),
+                                                SizedBox(height: 16.h),
+                                                TextWidget(
+                                                  text:
+                                                      controller
+                                                          .selectedEquipmentTypeList
+                                                          .isNotEmpty
+                                                      ? 'No equipment of selected types'
+                                                      : "No equipment yet",
+                                                  style: TextStyle(
+                                                    fontSize: 16.sp,
+                                                    color: Colors.grey[500],
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 8.h),
+                                                TextWidget(
+                                                  text:
+                                                      controller
+                                                          .selectedEquipmentTypeList
+                                                          .isNotEmpty
+                                                      ? 'Try different filters'
+                                                      : "Tap + to add equipment",
+                                                  style: TextStyle(
+                                                    fontSize: 14.sp,
+                                                    color: Colors.grey[400],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                 ),
@@ -4609,6 +4828,178 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
           ),
         ],
       ),
+    );
+  }
+
+  /// Show equipment type filter bottom sheet
+  void _showEquipmentTypeFilterBottomSheet() {
+    final theme = Theme.of(context);
+    Get.bottomSheet(
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: EdgeInsets.symmetric(vertical: 12.h),
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Select Equipment Types',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Get.back(),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1.h, color: Colors.grey[200]),
+            // Equipment Type List
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: Get.height * 0.4),
+              child: Obx(
+                () => ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: controller.equipmentTypeList.length,
+                  itemBuilder: (context, index) {
+                    final type = controller.equipmentTypeList[index];
+                    // Check if this type is already selected
+                    final isSelected = controller.selectedEquipmentTypeList.any(
+                      (e) => e.equipmentTypeId == type.equipmentTypeId,
+                    );
+                    return Card(
+                      margin: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 6.h,
+                      ),
+                      elevation: isSelected ? 4 : 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(
+                          color: isSelected
+                              ? theme.primaryColor
+                              : Colors.grey[200]!,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      color: isSelected
+                          ? theme.primaryColor.withValues(alpha: 0.05)
+                          : Colors.white,
+                      child: InkWell(
+                        onTap: () {
+                          // Toggle: add if not selected, remove if already selected
+                          if (isSelected) {
+                            controller.selectedEquipmentTypeList.removeWhere(
+                              (e) => e.equipmentTypeId == type.equipmentTypeId,
+                            );
+                          } else {
+                            // Add to selected list (no duplicates due to removeWhere check)
+                            controller.selectedEquipmentTypeList.add(type);
+                          }
+                          // Don't close - allow multiple selections
+                        },
+                        borderRadius: BorderRadius.circular(12.r),
+                        child: Padding(
+                          padding: EdgeInsets.all(16.w),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48.w,
+                                height: 48.w,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? theme.primaryColor.withValues(
+                                          alpha: 0.15,
+                                        )
+                                      : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                                child: Icon(
+                                  isSelected
+                                      ? Icons.check_circle
+                                      : Icons.category_outlined,
+                                  color: isSelected
+                                      ? theme.primaryColor
+                                      : Colors.grey[600],
+                                  size: 24.sp,
+                                ),
+                              ),
+                              SizedBox(width: 16.w),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      type.equipmentTypeDesc,
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.w600,
+                                        color: isSelected
+                                            ? theme.primaryColor
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Text(
+                                        'Selected',
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          color: theme.primaryColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (isSelected)
+                                Icon(
+                                  Icons.check_circle,
+                                  color: theme.primaryColor,
+                                  size: 28.sp,
+                                )
+                              else
+                                Icon(
+                                  Icons.circle_outlined,
+                                  color: Colors.grey[300],
+                                  size: 28.sp,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            SizedBox(height: 8.h),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
   }
 
