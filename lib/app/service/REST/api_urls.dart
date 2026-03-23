@@ -12,6 +12,7 @@ class ApiUrl {
 
   static const login = "$baseUrl/VerifyUser";
   static const getAppointment = "$baseUrl/GetAppointmentList";
+  static const getInvoiceList = "$baseUrl/GetAppointmentListCustomerSiteWise";
   static const getAttachedForms = "$baseUrl/GetAppointmentListWithForms";
   static const updateAppointment = "$baseUrl/UpdateAppointment";
   static const sendCustomerSMS = "$baseUrl/SendCustomerSMS";

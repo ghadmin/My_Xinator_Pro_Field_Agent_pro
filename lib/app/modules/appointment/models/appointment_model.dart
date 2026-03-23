@@ -401,7 +401,7 @@
 //     _total = json['Total'];
 //     _tax = json['Tax'];
 //     _status = json['Status'];
-//     _type = json['Type'];
+//     _type = json['Type'] == "Proposal" ? "Estimate" : json['Type'];
 //     _note = json['Note'];
 //     _due = json['Due'];
 //     _isConverted = json['IsConverted'];
@@ -1426,7 +1426,7 @@
 //     _amount = json['Amount'];
 //     _checkName = json['CheckName'];
 //     _checkNumber = json['CheckNumber'];
-//     _type = json['Type'];
+//     _type = json['Type'] == "Proposal" ? "Estimate" : json['Type'];
 //     _isDeposit = json['IsDeposit'];
 //     _source = json['Source'];
 //     _createdDate = json['CreatedDate'];
@@ -1951,7 +1951,7 @@ class Invoices {
     _status = json['Status'];
     _qboClassId = json['QboClassId']?.toString();
     _qboLocationId = json['QboLocationId']?.toString();
-    _type = json['Type'];
+    _type = json['Type'] == "Proposal" ? "Estimate" : json['Type'];
     _note = json['Note'];
     _due = json['Due'];
     _isConverted = json['IsConverted'];
@@ -3001,7 +3001,7 @@ class Payment {
     _amount = json['Amount'];
     _checkName = json['CheckName'];
     _checkNumber = json['CheckNumber'];
-    _type = json['Type'];
+    _type = json['Type'] == "Proposal" ? "Estimate" : json['Type'];
     _isDeposit = json['IsDeposit'];
     _source = json['Source'];
     _createdDate = json['CreatedDate'];

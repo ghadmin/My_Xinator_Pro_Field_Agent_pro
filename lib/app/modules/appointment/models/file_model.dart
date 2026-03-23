@@ -12,6 +12,7 @@ class FileModel {
   String? fileType;
   int? fileSize;
   String? fileContent;
+  String? fileURL; // Network URL for files from API (FileURL)
   String? uploadDate;
   String? uploadedBy;
   int? appointmentId;
@@ -25,8 +26,10 @@ class FileModel {
     this.fileType,
     this.fileSize,
     this.fileContent,
+    this.fileURL,
     this.localFile,
   }) {
+    // Only decode base64 if we have fileContent (for locally uploaded files)
     if (fileContent != null && fileContent!.isNotEmpty) {
       try {
         bytes = base64Decode(fileContent!);
@@ -45,11 +48,13 @@ class FileModel {
     fileType = json['fileType'] ?? json['FileType'];
     fileSize = json['fileSize'] ?? json['FileSize'];
     fileContent = json['fileContent'] ?? json['FileContent'];
+    fileURL = json['fileURL'] ?? json['FileURL'];
     uploadDate = json['uploadDate'] ?? json['UploadDate'];
     uploadedBy = json['uploadedBy'] ?? json['UploadedBy'];
     appointmentId = json['appointmentId'] ?? json['AppointmentId'];
     reference = json['reference'] ?? json['Reference'];
 
+    // Only decode base64 if we have fileContent (for locally uploaded files)
     if (fileContent != null && fileContent!.isNotEmpty) {
       try {
         bytes = base64Decode(fileContent!);
@@ -69,6 +74,7 @@ class FileModel {
     data['fileType'] = fileType;
     data['fileSize'] = fileSize;
     data['fileContent'] = fileContent;
+    data['fileURL'] = fileURL;
     data['uploadDate'] = uploadDate;
     data['uploadedBy'] = uploadedBy;
     data['appointmentId'] = appointmentId;

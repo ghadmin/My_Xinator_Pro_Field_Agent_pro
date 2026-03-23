@@ -3,6 +3,8 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -40,9 +43,9 @@ import '../controllers/appointment_controller.dart';
 import '../controllers/custom_fields_controller.dart';
 import '../models/custom_field_model.dart';
 import '../models/equipment_model.dart';
+import 'widgets/equipment_form_modal.dart';
 import '../models/file_model.dart';
 import '../models/note_model.dart';
-import 'widgets/equipment_form_modal.dart';
 
 class AppointmentDetailsView extends StatefulWidget {
   const AppointmentDetailsView({super.key});
@@ -105,10 +108,16 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         controller.getImageList(true);
         setState(() {});
       }
+      if (_tabController.index == 3) {
+        // Pictures tab index
+
+        controller.getInvoiceList(showLoader: true);
+        setState(() {});
+      }
       if (_tabController.index == 5) {
         // Equipment tab index
-
-        // controller.getEquipment(showLoader: true);
+        controller.getCustomerSite(showLoader: true);
+        controller.getEquipment(showLoader: true);
         controller.getEquipmentTypes(showLoader: true);
         setState(() {});
       }
@@ -212,6 +221,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
+
     return Obx(
       () => Scaffold(
         floatingActionButton: SizedBox(
@@ -2567,624 +2577,1414 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 ),
                                 SizedBox(height: 15.sp),
                                 Obx(
-                                  () => ListView.separated(
-                                    itemBuilder: (context, index) {
-                                      final proposal = controller
-                                          .sortedAppointments[controller
-                                              .selectedAptIndex
-                                              .value]
-                                          .invoices![index];
+                                  () => Column(
+                                    children: [
+                                      ListView.separated(
+                                        itemBuilder: (context, index) {
+                                          final proposal = controller
+                                              .sortedAppointments[controller
+                                                  .selectedAptIndex
+                                                  .value]
+                                              .invoices![index];
 
-                                      return GestureDetector(
-                                        onTap: () async {
-                                          controller.showLoading();
+                                          return GestureDetector(
+                                            onTap: () async {
+                                              controller.showLoading();
+                                              controller
+                                                      .invoiceController
+                                                      .isExternalInvoice
+                                                      .value =
+                                                  false;
+                                              // Save backup if we were in "new" mode before switching to "existing"
+                                              if (controller
+                                                      .invoiceController
+                                                      .existingItemType
+                                                      .value ==
+                                                  SelectedItemCategory.newOne) {
+                                                controller.invoiceController
+                                                    .saveBackup("new");
+                                              }
 
-                                          // Save backup if we were in "new" mode before switching to "existing"
-                                          if (controller
-                                                  .invoiceController
-                                                  .existingItemType
-                                                  .value ==
-                                              SelectedItemCategory.newOne) {
-                                            controller.invoiceController
-                                                .saveBackup("new");
-                                          }
+                                              controller.invoiceController
+                                                  .existingItemType(
+                                                    SelectedItemCategory
+                                                        .existingOne,
+                                                  );
 
-                                          controller.invoiceController
-                                              .existingItemType(
-                                                SelectedItemCategory
-                                                    .existingOne,
-                                              );
+                                              // Clear previous selection if needed
+                                              controller
+                                                  .invoiceController
+                                                  .selectedItemList
+                                                  .clear();
+                                              for (var c
+                                                  in controller
+                                                      .invoiceController
+                                                      .editAmountControllers) {
+                                                c.dispose();
+                                              }
+                                              for (var c
+                                                  in controller
+                                                      .invoiceController
+                                                      .editDescriptionControllers) {
+                                                c.dispose();
+                                              }
+                                              for (var c
+                                                  in controller
+                                                      .invoiceController
+                                                      .editQuantityControllers) {
+                                                c.dispose();
+                                              }
+                                              controller
+                                                  .invoiceController
+                                                  .editAmountControllers
+                                                  .clear();
+                                              controller
+                                                  .invoiceController
+                                                  .editDescriptionControllers
+                                                  .clear();
+                                              controller
+                                                  .invoiceController
+                                                  .editQuantityControllers
+                                                  .clear();
+                                              controller
+                                                  .invoiceController
+                                                  .editNoteTextController
+                                                  .clear();
+                                              controller
+                                                  .invoiceController
+                                                  .editDiscountTextController
+                                                  .clear();
+                                              controller
+                                                      .invoiceController
+                                                      .initialTaxID
+                                                      .value =
+                                                  "";
 
-                                          // Clear previous selection if needed
-                                          controller
-                                              .invoiceController
-                                              .selectedItemList
-                                              .clear();
-                                          for (var c
-                                              in controller
-                                                  .invoiceController
-                                                  .editAmountControllers) {
-                                            c.dispose();
-                                          }
-                                          for (var c
-                                              in controller
-                                                  .invoiceController
-                                                  .editDescriptionControllers) {
-                                            c.dispose();
-                                          }
-                                          for (var c
-                                              in controller
-                                                  .invoiceController
-                                                  .editQuantityControllers) {
-                                            c.dispose();
-                                          }
-                                          controller
-                                              .invoiceController
-                                              .editAmountControllers
-                                              .clear();
-                                          controller
-                                              .invoiceController
-                                              .editDescriptionControllers
-                                              .clear();
-                                          controller
-                                              .invoiceController
-                                              .editQuantityControllers
-                                              .clear();
-                                          controller
-                                              .invoiceController
-                                              .editNoteTextController
-                                              .clear();
-                                          controller
-                                              .invoiceController
-                                              .editDiscountTextController
-                                              .clear();
-                                          controller
-                                                  .invoiceController
-                                                  .initialTaxID
-                                                  .value =
-                                              "";
+                                              // Set basic info
 
-                                          // Set basic info
-
-                                          controller
+                                              controller
+                                                      .invoiceController
+                                                      .invoiceItemList
+                                                      .value =
+                                                  proposal.items ?? [];
+                                              controller
+                                                      .invoiceController
+                                                      .depositList
+                                                      .value =
+                                                  proposal.paymentList ?? [];
+                                              controller
+                                                      .invoiceController
+                                                      .selectedDiscountOption
+                                                      .value =
+                                                  proposal.discountOption ??
+                                                  "2";
+                                              controller
+                                                      .invoiceController
+                                                      .invoiceNumber =
+                                                  proposal.number ?? "";
+                                              controller
+                                                      .invoiceController
+                                                      .isConverted
+                                                      .value =
+                                                  proposal.isConverted ?? false;
+                                              controller
+                                                      .invoiceController
+                                                      .customerName =
+                                                  proposal.fullName ?? "";
+                                              controller
+                                                      .invoiceController
+                                                      .address =
+                                                  "${proposal.city}, ";
+                                              controller
+                                                      .invoiceController
+                                                      .depositAmount
+                                                      .value =
+                                                  proposal.depositAmount
+                                                      ?.toStringAsFixed(2) ??
+                                                  "0.00";
+                                              controller
                                                   .invoiceController
-                                                  .invoiceItemList
-                                                  .value =
-                                              proposal.items ?? [];
-                                          controller
+                                                  .invoiceID
+                                                  .value = proposal.invoiceID
+                                                  .toString();
+                                              controller
                                                   .invoiceController
-                                                  .depositList
-                                                  .value =
-                                              proposal.paymentList ?? [];
-                                          controller
-                                                  .invoiceController
-                                                  .selectedDiscountOption
-                                                  .value =
-                                              proposal.discountOption ?? "2";
-                                          controller
-                                                  .invoiceController
-                                                  .invoiceNumber =
-                                              proposal.number ?? "";
-                                          controller
-                                                  .invoiceController
-                                                  .isConverted
-                                                  .value =
-                                              proposal.isConverted ?? false;
-                                          controller
-                                                  .invoiceController
-                                                  .customerName =
-                                              proposal.fullName ?? "";
-                                          controller.invoiceController.address =
-                                              "${proposal.city}, ";
-                                          controller
-                                                  .invoiceController
-                                                  .depositAmount
-                                                  .value =
-                                              proposal.depositAmount
-                                                  ?.toStringAsFixed(2) ??
-                                              "0.00";
-                                          controller
-                                              .invoiceController
-                                              .invoiceID
-                                              .value = proposal.invoiceID
-                                              .toString();
-                                          controller.invoiceController.date =
-                                              dateTimeConverter(
+                                                  .date = dateTimeConverter(
                                                 inputFormat: "yyyy/MM/dd",
                                                 inputTime: proposal.invoiceDate
                                                     .toString(),
                                                 outputFormat: "MM/dd/yyyy",
                                               );
-                                          controller
+                                              controller
+                                                      .invoiceController
+                                                      .subtotal =
+                                                  proposal.subtotal
+                                                      ?.toStringAsFixed(2) ??
+                                                  "";
+                                              controller
+                                                      .invoiceController
+                                                      .customerID
+                                                      .value =
+                                                  proposal.customerId ?? "";
+                                              controller
+                                                      .invoiceController
+                                                      .status =
+                                                  proposal.status ?? "";
+                                              controller
+                                                      .invoiceController
+                                                      .type
+                                                      .value =
+                                                  proposal.type ?? "";
+                                              controller
+                                                      .invoiceController
+                                                      .total
+                                                      .value =
+                                                  proposal.total
+                                                      ?.toStringAsFixed(2) ??
+                                                  "";
+                                              if (proposal
+                                                      .requestedAmountType ==
+                                                  2) {
+                                                // type = fixed
+                                                controller
+                                                        .invoiceController
+                                                        .selectedDepositRequestOption
+                                                        .value =
+                                                    "2";
+                                                controller
+                                                        .invoiceController
+                                                        .requestedDepositAmountEditTextController
+                                                        .text =
+                                                    proposal
+                                                        .requestedDepositAmount ??
+                                                    "0.00";
+                                                controller
+                                                    .invoiceController
+                                                    .selectedDepositRequestOptionName
+                                                    .value = controller
+                                                    .invoiceController
+                                                    .depositRequestOptions[2]["name"];
+                                              }
+                                              if (proposal
+                                                      .requestedAmountType ==
+                                                  1) {
+                                                // type = percentage
+                                                controller
+                                                        .invoiceController
+                                                        .selectedDepositRequestOption
+                                                        .value =
+                                                    "1";
+                                                controller
+                                                        .invoiceController
+                                                        .requestDepositRateEditTextController
+                                                        .text =
+                                                    proposal
+                                                        .requestedDepositPercentage ??
+                                                    "0.00";
+                                                controller
+                                                        .invoiceController
+                                                        .requestedDepositAmountEditTextController
+                                                        .text =
+                                                    proposal
+                                                        .requestedDepositAmount ??
+                                                    "0.00";
+                                                controller
+                                                    .invoiceController
+                                                    .selectedDepositRequestOptionName
+                                                    .value = controller
+                                                    .invoiceController
+                                                    .depositRequestOptions[1]["name"];
+                                              }
+                                              if (proposal
+                                                      .requestedAmountType ==
+                                                  0) {
+                                                // type = null
+                                                controller
+                                                        .invoiceController
+                                                        .selectedDepositRequestOption
+                                                        .value =
+                                                    "0";
+                                                controller
+                                                        .invoiceController
+                                                        .requestDepositRateEditTextController
+                                                        .text =
+                                                    proposal
+                                                        .requestedDepositPercentage ??
+                                                    "0.00";
+                                                controller
+                                                        .invoiceController
+                                                        .requestedDepositAmountEditTextController
+                                                        .text =
+                                                    proposal
+                                                        .requestedDepositAmount ??
+                                                    "0.00";
+                                                controller
+                                                    .invoiceController
+                                                    .selectedDepositRequestOptionName
+                                                    .value = controller
+                                                    .invoiceController
+                                                    .depositRequestOptions[0]["name"];
+                                              }
+                                              controller
+                                                      .invoiceController
+                                                      .notes =
+                                                  proposal.note ?? "";
+                                              controller
+                                                      .invoiceController
+                                                      .editNoteTextController
+                                                      .text =
+                                                  proposal.note ?? "";
+                                              controller.invoiceController.due =
+                                                  proposal.due ?? "";
+                                              controller
                                                   .invoiceController
-                                                  .subtotal =
-                                              proposal.subtotal
-                                                  ?.toStringAsFixed(2) ??
-                                              "";
-                                          controller
-                                                  .invoiceController
-                                                  .customerID
-                                                  .value =
-                                              proposal.customerId ?? "";
-                                          controller.invoiceController.status =
-                                              proposal.status ?? "";
-                                          controller
-                                                  .invoiceController
-                                                  .type
-                                                  .value =
-                                              proposal.type ?? "";
-                                          controller
-                                                  .invoiceController
-                                                  .total
-                                                  .value =
-                                              proposal.total?.toStringAsFixed(
-                                                2,
-                                              ) ??
-                                              "";
-                                          if (proposal.requestedAmountType ==
-                                              2) {
-                                            // type = fixed
-                                            controller
-                                                    .invoiceController
-                                                    .selectedDepositRequestOption
-                                                    .value =
-                                                "2";
-                                            controller
-                                                    .invoiceController
-                                                    .requestedDepositAmountEditTextController
-                                                    .text =
-                                                proposal
-                                                    .requestedDepositAmount ??
-                                                "0.00";
-                                            controller
-                                                .invoiceController
-                                                .selectedDepositRequestOptionName
-                                                .value = controller
-                                                .invoiceController
-                                                .depositRequestOptions[2]["name"];
-                                          }
-                                          if (proposal.requestedAmountType ==
-                                              1) {
-                                            // type = percentage
-                                            controller
-                                                    .invoiceController
-                                                    .selectedDepositRequestOption
-                                                    .value =
-                                                "1";
-                                            controller
-                                                    .invoiceController
-                                                    .requestDepositRateEditTextController
-                                                    .text =
-                                                proposal
-                                                    .requestedDepositPercentage ??
-                                                "0.00";
-                                            controller
-                                                    .invoiceController
-                                                    .requestedDepositAmountEditTextController
-                                                    .text =
-                                                proposal
-                                                    .requestedDepositAmount ??
-                                                "0.00";
-                                            controller
-                                                .invoiceController
-                                                .selectedDepositRequestOptionName
-                                                .value = controller
-                                                .invoiceController
-                                                .depositRequestOptions[1]["name"];
-                                          }
-                                          if (proposal.requestedAmountType ==
-                                              0) {
-                                            // type = null
-                                            controller
-                                                    .invoiceController
-                                                    .selectedDepositRequestOption
-                                                    .value =
-                                                "0";
-                                            controller
-                                                    .invoiceController
-                                                    .requestDepositRateEditTextController
-                                                    .text =
-                                                proposal
-                                                    .requestedDepositPercentage ??
-                                                "0.00";
-                                            controller
-                                                    .invoiceController
-                                                    .requestedDepositAmountEditTextController
-                                                    .text =
-                                                proposal
-                                                    .requestedDepositAmount ??
-                                                "0.00";
-                                            controller
-                                                .invoiceController
-                                                .selectedDepositRequestOptionName
-                                                .value = controller
-                                                .invoiceController
-                                                .depositRequestOptions[0]["name"];
-                                          }
-                                          controller.invoiceController.notes =
-                                              proposal.note ?? "";
-                                          controller
-                                                  .invoiceController
-                                                  .editNoteTextController
-                                                  .text =
-                                              proposal.note ?? "";
-                                          controller.invoiceController.due =
-                                              proposal.due ?? "";
-                                          controller
-                                              .invoiceController
-                                              .showingDate
-                                              .value = dateTimeConverter(
-                                            inputFormat: "yyyy/MM/dd hh:mm a",
-                                            inputTime: proposal.invoiceDate
-                                                .toString(),
-                                            outputFormat: "MM/dd/yyyy",
-                                          );
-                                          if (proposal.taxType != "") {
-                                            controller
-                                                    .invoiceController
-                                                    .initialTaxID
-                                                    .value =
-                                                proposal.taxType ?? "";
-                                          }
+                                                  .showingDate
+                                                  .value = dateTimeConverter(
+                                                inputFormat:
+                                                    "yyyy/MM/dd hh:mm a",
+                                                inputTime: proposal.invoiceDate
+                                                    .toString(),
+                                                outputFormat: "MM/dd/yyyy",
+                                              );
+                                              if (proposal.taxType != "") {
+                                                controller
+                                                        .invoiceController
+                                                        .initialTaxID
+                                                        .value =
+                                                    proposal.taxType ?? "";
+                                              }
 
-                                          // Set discount values
-                                          controller
-                                                  .invoiceController
-                                                  .invoiceDiscountDetails
-                                                  .value =
-                                              proposal.discount ?? 0.00;
-                                          if (proposal.discountOption == "1") {
-                                            controller
+                                              // Set discount values
+                                              controller
+                                                      .invoiceController
+                                                      .invoiceDiscountDetails
+                                                      .value =
+                                                  proposal.discount ?? 0.00;
+                                              if (proposal.discountOption ==
+                                                  "1") {
+                                                controller
+                                                        .invoiceController
+                                                        .editDiscountTextController
+                                                        .text =
+                                                    (((double.parse(
+                                                                  proposal.discount
+                                                                          ?.toString() ??
+                                                                      "0.00",
+                                                                )) *
+                                                                100) /
+                                                            double.parse(
+                                                              proposal.subtotal
+                                                                      ?.toStringAsFixed(
+                                                                        2,
+                                                                      ) ??
+                                                                  "0.00",
+                                                            ))
+                                                        .toStringAsFixed(2);
+                                              } else {
+                                                controller
                                                     .invoiceController
                                                     .editDiscountTextController
-                                                    .text =
-                                                (((double.parse(
-                                                              proposal.discount
-                                                                      ?.toString() ??
-                                                                  "0.00",
-                                                            )) *
-                                                            100) /
-                                                        double.parse(
-                                                          proposal.subtotal
-                                                                  ?.toStringAsFixed(
-                                                                    2,
-                                                                  ) ??
+                                                    .text = double.parse(
+                                                  proposal.discount
+                                                          ?.toString() ??
+                                                      "0.00",
+                                                ).toStringAsFixed(2);
+                                              }
+
+                                              // Set tax values
+
+                                              controller
+                                                      .invoiceController
+                                                      .tax
+                                                      .value =
+                                                  controller
+                                                      .invoiceController
+                                                      .taxes
+                                                      .firstWhereOrNull(
+                                                        (tax) =>
+                                                            tax.id ==
+                                                            int.tryParse(
+                                                              controller
+                                                                  .invoiceController
+                                                                  .initialTaxID
+                                                                  .value,
+                                                            ),
+                                                      )
+                                                      ?.rate
+                                                      ?.toStringAsFixed(2) ??
+                                                  "0.00";
+                                              controller
+                                                      .invoiceController
+                                                      .selectedTaxName
+                                                      .value =
+                                                  controller
+                                                      .invoiceController
+                                                      .taxes
+                                                      .firstWhereOrNull(
+                                                        (tax) =>
+                                                            tax.id ==
+                                                            int.tryParse(
+                                                              controller
+                                                                  .invoiceController
+                                                                  .initialTaxID
+                                                                  .value,
+                                                            ),
+                                                      )
+                                                      ?.name ??
+                                                  "";
+
+                                              // Populate selectedItemList and initialize controllers
+                                              if (proposal.items != null &&
+                                                  proposal.items!.isNotEmpty) {
+                                                for (var item
+                                                    in proposal.items!) {
+                                                  controller
+                                                      .invoiceController
+                                                      .selectedItemList
+                                                      .add(
+                                                        ItemListModel(
+                                                          id: item.itemId,
+                                                          name: item.name,
+                                                          description:
+                                                              item.description,
+                                                          price: double.tryParse(
+                                                            item.unitPrice ??
+                                                                "0.00",
+                                                          ),
+                                                          isTaxable:
+                                                              item.isTaxable ==
+                                                                  "TAX"
+                                                              ? true
+                                                              : false,
+                                                          // itemTypeId: int.parse(item.itemTyId!),
+                                                        ),
+                                                      );
+
+                                                  // Initialize controllers with existing values
+                                                  controller
+                                                      .invoiceController
+                                                      .editAmountControllers
+                                                      .add(
+                                                        TextEditingController(
+                                                          text:
+                                                              item.unitPrice ??
                                                               "0.00",
-                                                        ))
-                                                    .toStringAsFixed(2);
-                                          } else {
-                                            controller
-                                                .invoiceController
-                                                .editDiscountTextController
-                                                .text = double.parse(
-                                              proposal.discount?.toString() ??
-                                                  "0.00",
-                                            ).toStringAsFixed(2);
-                                          }
-
-                                          // Set tax values
-
-                                          controller
-                                                  .invoiceController
-                                                  .tax
-                                                  .value =
-                                              controller.invoiceController.taxes
-                                                  .firstWhereOrNull(
-                                                    (tax) =>
-                                                        tax.id ==
-                                                        int.tryParse(
-                                                          controller
-                                                              .invoiceController
-                                                              .initialTaxID
-                                                              .value,
                                                         ),
-                                                  )
-                                                  ?.rate
-                                                  ?.toStringAsFixed(2) ??
-                                              "0.00";
-                                          controller
-                                                  .invoiceController
-                                                  .selectedTaxName
-                                                  .value =
-                                              controller.invoiceController.taxes
-                                                  .firstWhereOrNull(
-                                                    (tax) =>
-                                                        tax.id ==
-                                                        int.tryParse(
-                                                          controller
-                                                              .invoiceController
-                                                              .initialTaxID
-                                                              .value,
+                                                      );
+
+                                                  controller
+                                                      .invoiceController
+                                                      .editDescriptionControllers
+                                                      .add(
+                                                        TextEditingController(
+                                                          text:
+                                                              item.description ??
+                                                              "",
                                                         ),
-                                                  )
-                                                  ?.name ??
-                                              "";
+                                                      );
 
-                                          // Populate selectedItemList and initialize controllers
-                                          if (proposal.items != null &&
-                                              proposal.items!.isNotEmpty) {
-                                            for (var item in proposal.items!) {
+                                                  controller
+                                                      .invoiceController
+                                                      .editQuantityControllers
+                                                      .add(
+                                                        TextEditingController(
+                                                          text:
+                                                              item.quantity ??
+                                                              "1",
+                                                        ),
+                                                      );
+                                                }
+                                              }
+                                              controller.invoiceController
+                                                  .createTotalForEdit();
+                                              await 0.5.delay();
+                                              controller.invoiceController
+                                                  .selectedQboClass(
+                                                    controller
+                                                        .invoiceController
+                                                        .qboClassList
+                                                        .where(
+                                                          (e) =>
+                                                              e.qboClassId
+                                                                  .toString() ==
+                                                              proposal
+                                                                  .qboClassId,
+                                                        )
+                                                        .firstOrNull,
+                                                  );
+                                              controller.invoiceController
+                                                  .selectedQboLocation(
+                                                    controller
+                                                        .invoiceController
+                                                        .qboLocationList
+                                                        .where(
+                                                          (e) =>
+                                                              e.qboLocationId
+                                                                  .toString() ==
+                                                              proposal
+                                                                  .qboLocationId,
+                                                        )
+                                                        .firstOrNull,
+                                                  );
                                               controller
                                                   .invoiceController
-                                                  .selectedItemList
-                                                  .add(
-                                                    ItemListModel(
-                                                      id: item.itemId,
-                                                      name: item.name,
-                                                      description:
-                                                          item.description,
-                                                      price: double.tryParse(
-                                                        item.unitPrice ??
-                                                            "0.00",
-                                                      ),
-                                                      isTaxable:
-                                                          item.isTaxable ==
-                                                              "TAX"
-                                                          ? true
-                                                          : false,
-                                                      // itemTypeId: int.parse(item.itemTyId!),
-                                                    ),
-                                                  );
-
-                                              // Initialize controllers with existing values
+                                                  .removedList
+                                                  .clear(); // Optional small delay before navigation
+                                              controller.hideLoading();
+                                              final x =
+                                                  MySharedPref.getCompanyType() ??
+                                                  '';
                                               controller
-                                                  .invoiceController
-                                                  .editAmountControllers
-                                                  .add(
-                                                    TextEditingController(
-                                                      text:
-                                                          item.unitPrice ??
-                                                          "0.00",
-                                                    ),
-                                                  );
-
+                                                      .invoiceController
+                                                      .isLocAndClassShow
+                                                      .value =
+                                                  x == 'PCS';
                                               controller
-                                                  .invoiceController
-                                                  .editDescriptionControllers
-                                                  .add(
-                                                    TextEditingController(
-                                                      text:
-                                                          item.description ??
-                                                          "",
-                                                    ),
-                                                  );
-
-                                              controller
-                                                  .invoiceController
-                                                  .editQuantityControllers
-                                                  .add(
-                                                    TextEditingController(
-                                                      text:
-                                                          item.quantity ?? "1",
-                                                    ),
-                                                  );
-                                            }
-                                          }
-                                          controller.invoiceController
-                                              .createTotalForEdit();
-                                          await 0.5.delay();
-                                          controller.invoiceController
-                                              .selectedQboClass(
-                                                controller
-                                                    .invoiceController
-                                                    .qboClassList
-                                                    .where(
-                                                      (e) =>
-                                                          e.qboClassId
-                                                              .toString() ==
-                                                          proposal.qboClassId,
-                                                    )
-                                                    .firstOrNull,
+                                                      .invoiceController
+                                                      .selectedInvoice
+                                                      .value =
+                                                  proposal;
+                                              Get.toNamed(
+                                                Routes.INVOICE_DETAILS,
                                               );
-                                          controller.invoiceController
-                                              .selectedQboLocation(
-                                                controller
-                                                    .invoiceController
-                                                    .qboLocationList
-                                                    .where(
-                                                      (e) =>
-                                                          e.qboLocationId
-                                                              .toString() ==
-                                                          proposal
-                                                              .qboLocationId,
-                                                    )
-                                                    .firstOrNull,
-                                              );
-                                          controller
-                                              .invoiceController
-                                              .removedList
-                                              .clear(); // Optional small delay before navigation
-                                          controller.hideLoading();
-                                          final x =
-                                              MySharedPref.getCompanyType() ??
-                                              '';
-                                          controller
-                                                  .invoiceController
-                                                  .isLocAndClassShow
-                                                  .value =
-                                              x == 'PCS';
-                                          controller
-                                                  .invoiceController
-                                                  .selectedInvoice
-                                                  .value =
-                                              proposal;
-                                          Get.toNamed(Routes.INVOICE_DETAILS);
-                                        },
-                                        child: Card(
-                                          elevation: 0,
-                                          color: Colors.white,
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              ListTile(
-                                                title: TextWidget(
-                                                  text:
-                                                      "${proposal.type ?? ""} Number",
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.copyWith(
-                                                        color: LightThemeColors
-                                                            .hintTextColor,
-                                                        fontSize: 12.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                ),
-                                                trailing: Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 8.sp,
-                                                    vertical: 2.sp,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          5.r,
-                                                        ),
-                                                    color:
-                                                        proposal.type ==
-                                                            "Invoice"
-                                                        ? theme.primaryColor
-                                                        : proposal.type ==
-                                                                  "Estimate" &&
-                                                              proposal.isConverted ==
-                                                                  true
-                                                        ? Colors.green
-                                                        : Colors.yellow,
-                                                  ),
-                                                  child: TextWidget(
-                                                    text: proposal.number ?? "",
-                                                    style: theme
-                                                        .textTheme
-                                                        .bodyLarge
-                                                        ?.copyWith(
-                                                          fontSize: 12.sp,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color:
-                                                              proposal.type ==
+                                            },
+                                            child: Card(
+                                              elevation: 0,
+                                              color: Colors.white,
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  ListTile(
+                                                    title: TextWidget(
+                                                      text:
+                                                          "${proposal.type ?? ""} Number",
+                                                      style: theme
+                                                          .textTheme
+                                                          .bodyLarge
+                                                          ?.copyWith(
+                                                            color: LightThemeColors
+                                                                .hintTextColor,
+                                                            fontSize: 12.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                    ),
+                                                    trailing: Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                            horizontal: 8.sp,
+                                                            vertical: 2.sp,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              5.r,
+                                                            ),
+                                                        color:
+                                                            proposal.type ==
+                                                                "Invoice"
+                                                            ? theme.primaryColor
+                                                            : proposal.type ==
                                                                       "Estimate" &&
                                                                   proposal.isConverted ==
-                                                                      false
-                                                              ? Colors.black
-                                                              : Colors.white,
-                                                        ),
-                                                  ),
-                                                ),
-                                              ),
-                                              MainDivider(),
-                                              ListTile(
-                                                title: TextWidget(
-                                                  text: "Date",
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.copyWith(
-                                                        color: LightThemeColors
-                                                            .hintTextColor,
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
+                                                                      true
+                                                            ? Colors.green
+                                                            : Colors.yellow,
                                                       ),
-                                                ),
-                                                trailing:
-                                                    proposal.invoiceDate != ""
-                                                    ? TextWidget(
-                                                        text: dateTimeConverter(
-                                                          inputFormat:
-                                                              "yyyy/MM/dd hh:mm a",
-                                                          inputTime: proposal
-                                                              .invoiceDate
-                                                              .toString(),
-                                                          outputFormat:
-                                                              "MM/dd/yyyy",
-                                                        ),
+                                                      child: TextWidget(
+                                                        text:
+                                                            proposal.number ??
+                                                            "",
                                                         style: theme
                                                             .textTheme
                                                             .bodyLarge
                                                             ?.copyWith(
-                                                              fontSize: 14.sp,
+                                                              fontSize: 12.sp,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .w500,
+                                                              color:
+                                                                  proposal.type ==
+                                                                          "Estimate" &&
+                                                                      proposal.isConverted ==
+                                                                          false
+                                                                  ? Colors.black
+                                                                  : Colors
+                                                                        .white,
                                                             ),
-                                                      )
-                                                    : TextWidget(text: ""),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  MainDivider(),
+                                                  ListTile(
+                                                    title: TextWidget(
+                                                      text: "Date",
+                                                      style: theme
+                                                          .textTheme
+                                                          .bodyLarge
+                                                          ?.copyWith(
+                                                            color: LightThemeColors
+                                                                .hintTextColor,
+                                                            fontSize: 14.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                    ),
+                                                    trailing:
+                                                        proposal.invoiceDate !=
+                                                            ""
+                                                        ? TextWidget(
+                                                            text: dateTimeConverter(
+                                                              inputFormat:
+                                                                  "yyyy/MM/dd hh:mm a",
+                                                              inputTime: proposal
+                                                                  .invoiceDate
+                                                                  .toString(),
+                                                              outputFormat:
+                                                                  "MM/dd/yyyy",
+                                                            ),
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodyLarge
+                                                                ?.copyWith(
+                                                                  fontSize:
+                                                                      14.sp,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
+                                                                ),
+                                                          )
+                                                        : TextWidget(text: ""),
+                                                  ),
+                                                  MainDivider(),
+                                                  ListTile(
+                                                    title: TextWidget(
+                                                      text: "Required Amount",
+                                                      style: theme
+                                                          .textTheme
+                                                          .bodyLarge
+                                                          ?.copyWith(
+                                                            color: LightThemeColors
+                                                                .hintTextColor,
+                                                            fontSize: 14.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                    ),
+                                                    trailing: TextWidget(
+                                                      text:
+                                                          "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
+                                                      style: theme
+                                                          .textTheme
+                                                          .bodyLarge
+                                                          ?.copyWith(
+                                                            fontSize: 14.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  MainDivider(),
+                                                  ListTile(
+                                                    title: TextWidget(
+                                                      text: "Amount Received",
+                                                      style: theme
+                                                          .textTheme
+                                                          .bodyLarge
+                                                          ?.copyWith(
+                                                            color: LightThemeColors
+                                                                .hintTextColor,
+                                                            fontSize: 14.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                    ),
+                                                    trailing: TextWidget(
+                                                      text:
+                                                          "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
+                                                      style: theme
+                                                          .textTheme
+                                                          .bodyLarge
+                                                          ?.copyWith(
+                                                            fontSize: 14.sp,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                              MainDivider(),
-                                              ListTile(
-                                                title: TextWidget(
-                                                  text: "Required Amount",
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.copyWith(
-                                                        color: LightThemeColors
-                                                            .hintTextColor,
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                ),
-                                                trailing: TextWidget(
-                                                  text:
-                                                      "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.copyWith(
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                ),
-                                              ),
-                                              MainDivider(),
-                                              ListTile(
-                                                title: TextWidget(
-                                                  text: "Amount Received",
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.copyWith(
-                                                        color: LightThemeColors
-                                                            .hintTextColor,
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                ),
-                                                trailing: TextWidget(
-                                                  text:
-                                                      "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodyLarge
-                                                      ?.copyWith(
-                                                        fontSize: 14.sp,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    separatorBuilder:
-                                        (BuildContext context, int index) =>
-                                            SizedBox(height: 8.sp),
-                                    itemCount: controller
-                                        .sortedAppointments[controller
-                                            .selectedAptIndex
-                                            .value]
-                                        .invoices!
-                                        .length,
-                                    shrinkWrap: true,
-                                    reverse: true,
-                                    physics: NeverScrollableScrollPhysics(),
+                                            ),
+                                          );
+                                        },
+                                        separatorBuilder:
+                                            (BuildContext context, int index) =>
+                                                SizedBox(height: 8.sp),
+                                        itemCount: controller
+                                            .sortedAppointments[controller
+                                                .selectedAptIndex
+                                                .value]
+                                            .invoices!
+                                            .length,
+                                        shrinkWrap: true,
+                                        reverse: true,
+                                        physics: NeverScrollableScrollPhysics(),
+                                      ),
+
+                                      Divider(
+                                        thickness: 5,
+                                        color: LightThemeColors
+                                            .buttonDisabledColor,
+                                      ),
+                                      SizedBox(height: 10.sp),
+                                      // Text("Other Invoices for this Site"),
+                                      // SizedBox(height: 10.sp),
+                                      controller.extendedAppointments.isEmpty
+                                          ? SizedBox.shrink()
+                                          : ListView.separated(
+                                              itemBuilder: (context, i) {
+                                                final extendedAppt = controller
+                                                    .extendedAppointments[i];
+                                                return Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      "Appointment ID: ${extendedAppt.appoinmentUId}",
+                                                    ),
+                                                    SizedBox(height: 5.sp),
+                                                    ListView.builder(
+                                                      itemBuilder: (context, index) {
+                                                        final extendedProposal =
+                                                            extendedAppt
+                                                                .invoices![index];
+                                                        return GestureDetector(
+                                                          onTap: () async {
+                                                            controller
+                                                                .showLoading();
+                                                            controller
+                                                                    .invoiceController
+                                                                    .isExternalInvoice
+                                                                    .value =
+                                                                true;
+                                                            controller
+                                                                    .appointmentID =
+                                                                "${extendedAppt.apptID ?? ""}";
+
+                                                            // Save backup if we were in "new" mode before switching to "existing"
+                                                            if (controller
+                                                                    .invoiceController
+                                                                    .existingItemType
+                                                                    .value ==
+                                                                SelectedItemCategory
+                                                                    .newOne) {
+                                                              controller
+                                                                  .invoiceController
+                                                                  .saveBackup(
+                                                                    "new",
+                                                                  );
+                                                            }
+
+                                                            controller
+                                                                .invoiceController
+                                                                .existingItemType(
+                                                                  SelectedItemCategory
+                                                                      .existingOne,
+                                                                );
+
+                                                            // Clear previous selection if needed
+                                                            controller
+                                                                .invoiceController
+                                                                .selectedItemList
+                                                                .clear();
+                                                            for (var c
+                                                                in controller
+                                                                    .invoiceController
+                                                                    .editAmountControllers) {
+                                                              c.dispose();
+                                                            }
+                                                            for (var c
+                                                                in controller
+                                                                    .invoiceController
+                                                                    .editDescriptionControllers) {
+                                                              c.dispose();
+                                                            }
+                                                            for (var c
+                                                                in controller
+                                                                    .invoiceController
+                                                                    .editQuantityControllers) {
+                                                              c.dispose();
+                                                            }
+                                                            controller
+                                                                .invoiceController
+                                                                .editAmountControllers
+                                                                .clear();
+                                                            controller
+                                                                .invoiceController
+                                                                .editDescriptionControllers
+                                                                .clear();
+                                                            controller
+                                                                .invoiceController
+                                                                .editQuantityControllers
+                                                                .clear();
+                                                            controller
+                                                                .invoiceController
+                                                                .editNoteTextController
+                                                                .clear();
+                                                            controller
+                                                                .invoiceController
+                                                                .editDiscountTextController
+                                                                .clear();
+                                                            controller
+                                                                    .invoiceController
+                                                                    .initialTaxID
+                                                                    .value =
+                                                                "";
+
+                                                            // Set basic info
+
+                                                            controller
+                                                                    .invoiceController
+                                                                    .invoiceItemList
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .items ??
+                                                                [];
+                                                            controller
+                                                                    .invoiceController
+                                                                    .depositList
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .paymentList ??
+                                                                [];
+                                                            controller
+                                                                    .invoiceController
+                                                                    .selectedDiscountOption
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .discountOption ??
+                                                                "2";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .invoiceNumber =
+                                                                extendedProposal
+                                                                    .number ??
+                                                                "";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .isConverted
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .isConverted ??
+                                                                false;
+                                                            controller
+                                                                    .invoiceController
+                                                                    .customerName =
+                                                                extendedProposal
+                                                                    .fullName ??
+                                                                "";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .address =
+                                                                "${extendedProposal.city}, ";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .depositAmount
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .depositAmount
+                                                                    ?.toStringAsFixed(
+                                                                      2,
+                                                                    ) ??
+                                                                "0.00";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .invoiceID
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .invoiceID
+                                                                    .toString();
+                                                            controller
+                                                                .invoiceController
+                                                                .date = dateTimeConverter(
+                                                              inputFormat:
+                                                                  "yyyy/MM/dd",
+                                                              inputTime:
+                                                                  extendedProposal
+                                                                      .invoiceDate
+                                                                      .toString(),
+                                                              outputFormat:
+                                                                  "MM/dd/yyyy",
+                                                            );
+                                                            controller
+                                                                    .invoiceController
+                                                                    .subtotal =
+                                                                extendedProposal
+                                                                    .subtotal
+                                                                    ?.toStringAsFixed(
+                                                                      2,
+                                                                    ) ??
+                                                                "";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .customerID
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .customerId ??
+                                                                "";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .status =
+                                                                extendedProposal
+                                                                    .status ??
+                                                                "";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .type
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .type ??
+                                                                "";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .total
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .total
+                                                                    ?.toStringAsFixed(
+                                                                      2,
+                                                                    ) ??
+                                                                "";
+                                                            if (extendedProposal
+                                                                    .requestedAmountType ==
+                                                                2) {
+                                                              // type = fixed
+                                                              controller
+                                                                      .invoiceController
+                                                                      .selectedDepositRequestOption
+                                                                      .value =
+                                                                  "2";
+                                                              controller
+                                                                      .invoiceController
+                                                                      .requestedDepositAmountEditTextController
+                                                                      .text =
+                                                                  extendedProposal
+                                                                      .requestedDepositAmount ??
+                                                                  "0.00";
+                                                              controller
+                                                                  .invoiceController
+                                                                  .selectedDepositRequestOptionName
+                                                                  .value = controller
+                                                                  .invoiceController
+                                                                  .depositRequestOptions[2]["name"];
+                                                            }
+                                                            if (extendedProposal
+                                                                    .requestedAmountType ==
+                                                                1) {
+                                                              // type = percentage
+                                                              controller
+                                                                      .invoiceController
+                                                                      .selectedDepositRequestOption
+                                                                      .value =
+                                                                  "1";
+                                                              controller
+                                                                      .invoiceController
+                                                                      .requestDepositRateEditTextController
+                                                                      .text =
+                                                                  extendedProposal
+                                                                      .requestedDepositPercentage ??
+                                                                  "0.00";
+                                                              controller
+                                                                      .invoiceController
+                                                                      .requestedDepositAmountEditTextController
+                                                                      .text =
+                                                                  extendedProposal
+                                                                      .requestedDepositAmount ??
+                                                                  "0.00";
+                                                              controller
+                                                                  .invoiceController
+                                                                  .selectedDepositRequestOptionName
+                                                                  .value = controller
+                                                                  .invoiceController
+                                                                  .depositRequestOptions[1]["name"];
+                                                            }
+                                                            if (extendedProposal
+                                                                    .requestedAmountType ==
+                                                                0) {
+                                                              // type = null
+                                                              controller
+                                                                      .invoiceController
+                                                                      .selectedDepositRequestOption
+                                                                      .value =
+                                                                  "0";
+                                                              controller
+                                                                      .invoiceController
+                                                                      .requestDepositRateEditTextController
+                                                                      .text =
+                                                                  extendedProposal
+                                                                      .requestedDepositPercentage ??
+                                                                  "0.00";
+                                                              controller
+                                                                      .invoiceController
+                                                                      .requestedDepositAmountEditTextController
+                                                                      .text =
+                                                                  extendedProposal
+                                                                      .requestedDepositAmount ??
+                                                                  "0.00";
+                                                              controller
+                                                                  .invoiceController
+                                                                  .selectedDepositRequestOptionName
+                                                                  .value = controller
+                                                                  .invoiceController
+                                                                  .depositRequestOptions[0]["name"];
+                                                            }
+                                                            controller
+                                                                    .invoiceController
+                                                                    .notes =
+                                                                extendedProposal
+                                                                    .note ??
+                                                                "";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .editNoteTextController
+                                                                    .text =
+                                                                extendedProposal
+                                                                    .note ??
+                                                                "";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .due =
+                                                                extendedProposal
+                                                                    .due ??
+                                                                "";
+                                                            controller
+                                                                .invoiceController
+                                                                .showingDate
+                                                                .value = dateTimeConverter(
+                                                              inputFormat:
+                                                                  "yyyy/MM/dd hh:mm a",
+                                                              inputTime:
+                                                                  extendedProposal
+                                                                      .invoiceDate
+                                                                      .toString(),
+                                                              outputFormat:
+                                                                  "MM/dd/yyyy",
+                                                            );
+                                                            if (extendedProposal
+                                                                    .taxType !=
+                                                                "") {
+                                                              controller
+                                                                      .invoiceController
+                                                                      .initialTaxID
+                                                                      .value =
+                                                                  extendedProposal
+                                                                      .taxType ??
+                                                                  "";
+                                                            }
+
+                                                            // Set discount values
+                                                            controller
+                                                                    .invoiceController
+                                                                    .invoiceDiscountDetails
+                                                                    .value =
+                                                                extendedProposal
+                                                                    .discount ??
+                                                                0.00;
+                                                            if (extendedProposal
+                                                                    .discountOption ==
+                                                                "1") {
+                                                              controller
+                                                                      .invoiceController
+                                                                      .editDiscountTextController
+                                                                      .text =
+                                                                  (((double.parse(
+                                                                                extendedProposal.discount?.toString() ??
+                                                                                    "0.00",
+                                                                              )) *
+                                                                              100) /
+                                                                          double.parse(
+                                                                            extendedProposal.subtotal?.toStringAsFixed(2) ??
+                                                                                "0.00",
+                                                                          ))
+                                                                      .toStringAsFixed(
+                                                                        2,
+                                                                      );
+                                                            } else {
+                                                              controller
+                                                                  .invoiceController
+                                                                  .editDiscountTextController
+                                                                  .text = double.parse(
+                                                                extendedProposal
+                                                                        .discount
+                                                                        ?.toString() ??
+                                                                    "0.00",
+                                                              ).toStringAsFixed(2);
+                                                            }
+
+                                                            // Set tax values
+
+                                                            controller
+                                                                    .invoiceController
+                                                                    .tax
+                                                                    .value =
+                                                                controller
+                                                                    .invoiceController
+                                                                    .taxes
+                                                                    .firstWhereOrNull(
+                                                                      (tax) =>
+                                                                          tax.id ==
+                                                                          int.tryParse(
+                                                                            controller.invoiceController.initialTaxID.value,
+                                                                          ),
+                                                                    )
+                                                                    ?.rate
+                                                                    ?.toStringAsFixed(
+                                                                      2,
+                                                                    ) ??
+                                                                "0.00";
+                                                            controller
+                                                                    .invoiceController
+                                                                    .selectedTaxName
+                                                                    .value =
+                                                                controller
+                                                                    .invoiceController
+                                                                    .taxes
+                                                                    .firstWhereOrNull(
+                                                                      (tax) =>
+                                                                          tax.id ==
+                                                                          int.tryParse(
+                                                                            controller.invoiceController.initialTaxID.value,
+                                                                          ),
+                                                                    )
+                                                                    ?.name ??
+                                                                "";
+
+                                                            // Populate selectedItemList and initialize controllers
+                                                            if (extendedProposal
+                                                                        .items !=
+                                                                    null &&
+                                                                extendedProposal
+                                                                    .items!
+                                                                    .isNotEmpty) {
+                                                              for (var item
+                                                                  in extendedProposal
+                                                                      .items!) {
+                                                                controller.invoiceController.selectedItemList.add(
+                                                                  ItemListModel(
+                                                                    id: item
+                                                                        .itemId,
+                                                                    name: item
+                                                                        .name,
+                                                                    description:
+                                                                        item.description,
+                                                                    price: double.tryParse(
+                                                                      item.unitPrice ??
+                                                                          "0.00",
+                                                                    ),
+                                                                    isTaxable:
+                                                                        item.isTaxable ==
+                                                                            "TAX"
+                                                                        ? true
+                                                                        : false,
+                                                                    // itemTypeId: int.parse(item.itemTyId!),
+                                                                  ),
+                                                                );
+
+                                                                // Initialize controllers with existing values
+                                                                controller
+                                                                    .invoiceController
+                                                                    .editAmountControllers
+                                                                    .add(
+                                                                      TextEditingController(
+                                                                        text:
+                                                                            item.unitPrice ??
+                                                                            "0.00",
+                                                                      ),
+                                                                    );
+
+                                                                controller
+                                                                    .invoiceController
+                                                                    .editDescriptionControllers
+                                                                    .add(
+                                                                      TextEditingController(
+                                                                        text:
+                                                                            item.description ??
+                                                                            "",
+                                                                      ),
+                                                                    );
+
+                                                                controller
+                                                                    .invoiceController
+                                                                    .editQuantityControllers
+                                                                    .add(
+                                                                      TextEditingController(
+                                                                        text:
+                                                                            item.quantity ??
+                                                                            "1",
+                                                                      ),
+                                                                    );
+                                                              }
+                                                            }
+                                                            controller
+                                                                .invoiceController
+                                                                .createTotalForEdit();
+                                                            await 0.5.delay();
+                                                            controller.invoiceController.selectedQboClass(
+                                                              controller
+                                                                  .invoiceController
+                                                                  .qboClassList
+                                                                  .where(
+                                                                    (e) =>
+                                                                        e.qboClassId
+                                                                            .toString() ==
+                                                                        extendedProposal
+                                                                            .qboClassId,
+                                                                  )
+                                                                  .firstOrNull,
+                                                            );
+                                                            controller.invoiceController.selectedQboLocation(
+                                                              controller
+                                                                  .invoiceController
+                                                                  .qboLocationList
+                                                                  .where(
+                                                                    (e) =>
+                                                                        e.qboLocationId
+                                                                            .toString() ==
+                                                                        extendedProposal
+                                                                            .qboLocationId,
+                                                                  )
+                                                                  .firstOrNull,
+                                                            );
+                                                            controller
+                                                                .invoiceController
+                                                                .removedList
+                                                                .clear(); // Optional small delay before navigation
+                                                            controller
+                                                                .hideLoading();
+                                                            final x =
+                                                                MySharedPref.getCompanyType() ??
+                                                                '';
+                                                            controller
+                                                                    .invoiceController
+                                                                    .isLocAndClassShow
+                                                                    .value =
+                                                                x == 'PCS';
+                                                            controller
+                                                                    .invoiceController
+                                                                    .selectedInvoice
+                                                                    .value =
+                                                                extendedProposal;
+                                                            Get.toNamed(
+                                                              Routes
+                                                                  .INVOICE_DETAILS,
+                                                            );
+                                                          },
+                                                          child: Card(
+                                                            elevation: 0,
+                                                            color: Colors.white,
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                ListTile(
+                                                                  title: TextWidget(
+                                                                    text:
+                                                                        "${extendedProposal.type ?? ""} Number",
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge
+                                                                        ?.copyWith(
+                                                                          color:
+                                                                              LightThemeColors.hintTextColor,
+                                                                          fontSize:
+                                                                              12.sp,
+                                                                          fontWeight:
+                                                                              FontWeight.w500,
+                                                                        ),
+                                                                  ),
+                                                                  trailing: Container(
+                                                                    padding: EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          8.sp,
+                                                                      vertical:
+                                                                          2.sp,
+                                                                    ),
+                                                                    decoration: BoxDecoration(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            5.r,
+                                                                          ),
+                                                                      color:
+                                                                          extendedProposal.type ==
+                                                                              "Invoice"
+                                                                          ? theme.primaryColor
+                                                                          : extendedProposal.type ==
+                                                                                    "Estimate" &&
+                                                                                extendedProposal.isConverted ==
+                                                                                    true
+                                                                          ? Colors.green
+                                                                          : Colors.yellow,
+                                                                    ),
+                                                                    child: TextWidget(
+                                                                      text:
+                                                                          extendedProposal
+                                                                              .number ??
+                                                                          "",
+                                                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                                                        fontSize:
+                                                                            12.sp,
+                                                                        fontWeight:
+                                                                            FontWeight.w500,
+                                                                        color:
+                                                                            extendedProposal.type ==
+                                                                                    "Estimate" &&
+                                                                                extendedProposal.isConverted ==
+                                                                                    false
+                                                                            ? Colors.black
+                                                                            : Colors.white,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                MainDivider(),
+                                                                ListTile(
+                                                                  title: TextWidget(
+                                                                    text:
+                                                                        "Date",
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge
+                                                                        ?.copyWith(
+                                                                          color:
+                                                                              LightThemeColors.hintTextColor,
+                                                                          fontSize:
+                                                                              14.sp,
+                                                                          fontWeight:
+                                                                              FontWeight.w500,
+                                                                        ),
+                                                                  ),
+                                                                  trailing:
+                                                                      extendedProposal
+                                                                              .invoiceDate !=
+                                                                          ""
+                                                                      ? TextWidget(
+                                                                          text: dateTimeConverter(
+                                                                            inputFormat:
+                                                                                "yyyy/MM/dd hh:mm a",
+                                                                            inputTime:
+                                                                                extendedProposal.invoiceDate.toString(),
+                                                                            outputFormat:
+                                                                                "MM/dd/yyyy",
+                                                                          ),
+                                                                          style: theme.textTheme.bodyLarge?.copyWith(
+                                                                            fontSize:
+                                                                                14.sp,
+                                                                            fontWeight:
+                                                                                FontWeight.w500,
+                                                                          ),
+                                                                        )
+                                                                      : TextWidget(
+                                                                          text:
+                                                                              "",
+                                                                        ),
+                                                                ),
+                                                                MainDivider(),
+                                                                ListTile(
+                                                                  title: TextWidget(
+                                                                    text:
+                                                                        "Required Amount",
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge
+                                                                        ?.copyWith(
+                                                                          color:
+                                                                              LightThemeColors.hintTextColor,
+                                                                          fontSize:
+                                                                              14.sp,
+                                                                          fontWeight:
+                                                                              FontWeight.w500,
+                                                                        ),
+                                                                  ),
+                                                                  trailing: TextWidget(
+                                                                    text:
+                                                                        "\$${extendedProposal.total?.toStringAsFixed(2) ?? ""}",
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge
+                                                                        ?.copyWith(
+                                                                          fontSize:
+                                                                              14.sp,
+                                                                          fontWeight:
+                                                                              FontWeight.w500,
+                                                                        ),
+                                                                  ),
+                                                                ),
+                                                                MainDivider(),
+                                                                ListTile(
+                                                                  title: TextWidget(
+                                                                    text:
+                                                                        "Amount Received",
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge
+                                                                        ?.copyWith(
+                                                                          color:
+                                                                              LightThemeColors.hintTextColor,
+                                                                          fontSize:
+                                                                              14.sp,
+                                                                          fontWeight:
+                                                                              FontWeight.w500,
+                                                                        ),
+                                                                  ),
+                                                                  trailing: TextWidget(
+                                                                    text:
+                                                                        "\$${extendedProposal.depositAmount?.toStringAsFixed(2) ?? ""}",
+                                                                    style: theme
+                                                                        .textTheme
+                                                                        .bodyLarge
+                                                                        ?.copyWith(
+                                                                          fontSize:
+                                                                              14.sp,
+                                                                          fontWeight:
+                                                                              FontWeight.w500,
+                                                                        ),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                      itemCount: extendedAppt
+                                                          .invoices!
+                                                          .length,
+                                                      shrinkWrap: true,
+                                                      physics:
+                                                          NeverScrollableScrollPhysics(),
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                              separatorBuilder:
+                                                  (
+                                                    BuildContext context,
+                                                    int index,
+                                                  ) => SizedBox(height: 8.sp),
+                                              itemCount: controller
+                                                  .extendedAppointments
+                                                  .length,
+                                              shrinkWrap: true,
+                                              reverse: true,
+                                              physics:
+                                                  NeverScrollableScrollPhysics(),
+                                            ),
+                                    ],
                                   ),
                                 ),
                                 SizedBox(height: 15.sp),
@@ -3576,13 +4376,41 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                   context:
                                                                       context,
                                                                   builder: (_) => Dialog(
-                                                                    child: Image.memory(
-                                                                      item.bytes!,
-                                                                      fit: BoxFit
-                                                                          .cover,
-                                                                      gaplessPlayback:
-                                                                          true,
-                                                                    ),
+                                                                    child:
+                                                                        item.pictureURL !=
+                                                                            null
+                                                                        ? CachedNetworkImage(
+                                                                            imageUrl:
+                                                                                item.pictureURL!,
+                                                                            fit:
+                                                                                BoxFit.cover,
+                                                                            placeholder:
+                                                                                (
+                                                                                  _,
+                                                                                  __,
+                                                                                ) => const Center(
+                                                                                  child: CircularProgressIndicator(),
+                                                                                ),
+                                                                            errorWidget:
+                                                                                (
+                                                                                  context,
+                                                                                  error,
+                                                                                  stackTrace,
+                                                                                ) {
+                                                                                  return const Center(
+                                                                                    child: Icon(
+                                                                                      Icons.error,
+                                                                                    ),
+                                                                                  );
+                                                                                },
+                                                                          )
+                                                                        : Image.memory(
+                                                                            item.bytes!,
+                                                                            fit:
+                                                                                BoxFit.cover,
+                                                                            gaplessPlayback:
+                                                                                true,
+                                                                          ),
                                                                   ),
                                                                 );
                                                               },
@@ -3599,13 +4427,44 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                                       BorderRadius.circular(
                                                                         10.r,
                                                                       ),
-                                                                  image: DecorationImage(
-                                                                    fit: BoxFit
-                                                                        .fill,
-                                                                    image: MemoryImage(
-                                                                      item.bytes!,
-                                                                    ),
-                                                                  ),
+                                                                ),
+                                                                child: ClipRRect(
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        10.r,
+                                                                      ),
+                                                                  child:
+                                                                      item.pictureURL !=
+                                                                          null
+                                                                      ? CachedNetworkImage(
+                                                                          imageUrl:
+                                                                              item.pictureURL!,
+                                                                          fit: BoxFit
+                                                                              .fill,
+                                                                          placeholder: (_, __) => Container(
+                                                                            color:
+                                                                                Colors.grey[200],
+                                                                            child: const Center(
+                                                                              child: CircularProgressIndicator(),
+                                                                            ),
+                                                                          ),
+                                                                          errorWidget:
+                                                                              (
+                                                                                _,
+                                                                                __,
+                                                                                ___,
+                                                                              ) => Container(
+                                                                                color: Colors.grey[300],
+                                                                                child: const Icon(
+                                                                                  Icons.error,
+                                                                                ),
+                                                                              ),
+                                                                        )
+                                                                      : Image.memory(
+                                                                          item.bytes!,
+                                                                          fit: BoxFit
+                                                                              .fill,
+                                                                        ),
                                                                 ),
                                                               ),
                                                             ),
@@ -3649,18 +4508,19 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 SizedBox(height: 15.sp),
 
                                 // Add button and equipment list
-                                Expanded(
-                                  child: controller.equipmentTypeList.isNotEmpty
-                                      ? Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 16.w,
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              // Filter dropdown
-                                              InkWell(
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16.w,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      // Filter dropdown
+                                      Expanded(
+                                        child:
+                                            controller
+                                                .equipmentTypeList
+                                                .isNotEmpty
+                                            ? InkWell(
                                                 onTap:
                                                     _showEquipmentTypeFilterBottomSheet,
                                                 borderRadius:
@@ -3692,33 +4552,39 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     ),
                                                   ),
                                                   child: Row(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .center,
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
                                                     children: [
-                                                      Text(
-                                                        controller
+                                                      Icon(
+                                                        Icons.filter_list,
+                                                        size: 20.sp,
+                                                        color:
+                                                            controller
                                                                 .selectedEquipmentTypeList
                                                                 .isNotEmpty
-                                                            ? '${controller.selectedEquipmentTypeList.length} Item${controller.selectedEquipmentTypeList.length > 1 ? 's' : ''} selected'
-                                                            : 'Select Equipment',
-                                                        style: TextStyle(
-                                                          fontSize: 15.sp,
-                                                          color:
-                                                              controller
+                                                            ? theme.primaryColor
+                                                            : Colors.grey[600],
+                                                      ),
+                                                      SizedBox(width: 12.w),
+                                                      Expanded(
+                                                        child: Text(
+                                                          controller
                                                                   .selectedEquipmentTypeList
                                                                   .isNotEmpty
-                                                              ? Colors.black87
-                                                              : Colors
-                                                                    .grey[600],
-                                                          fontWeight:
-                                                              FontWeight.w500,
+                                                              ? '${controller.selectedEquipmentTypeList.length} Item${controller.selectedEquipmentTypeList.length > 1 ? 's' : ''} selected'
+                                                              : 'Select Equipment',
+                                                          style: TextStyle(
+                                                            fontSize: 15.sp,
+                                                            color:
+                                                                controller
+                                                                    .selectedEquipmentTypeList
+                                                                    .isNotEmpty
+                                                                ? Colors.black87
+                                                                : Colors
+                                                                      .grey[600],
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
                                                         ),
                                                       ),
-                                                      Spacer(),
                                                       Icon(
                                                         Icons.arrow_drop_down,
                                                         size: 24.sp,
@@ -3727,8 +4593,62 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     ],
                                                   ),
                                                 ),
+                                              )
+                                            : Container(
+                                                alignment: Alignment.center,
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 16.w,
+                                                  vertical: 12.h,
+                                                ),
+                                                child: TextWidget(
+                                                  text:
+                                                      'No equipment types available',
+                                                  style: TextStyle(
+                                                    fontSize: 14.sp,
+                                                    color: Colors.grey[500],
+                                                  ),
+                                                ),
                                               ),
-
+                                      ),
+                                      // SizedBox(width: 12.w),
+                                      // // Add button
+                                      // GestureDetector(
+                                      //   onTap: () =>
+                                      //       _showAddEquipmentBottomSheet(),
+                                      //   child: Container(
+                                      //     padding: EdgeInsets.all(10.w),
+                                      //     decoration: BoxDecoration(
+                                      //       color: theme.primaryColor
+                                      //           .withValues(alpha: 0.1),
+                                      //       borderRadius: BorderRadius.circular(
+                                      //         10.r,
+                                      //       ),
+                                      //       border: Border.all(
+                                      //         color: theme.primaryColor,
+                                      //         width: 1.5,
+                                      //       ),
+                                      //     ),
+                                      //     child: Icon(
+                                      //       Icons.add,
+                                      //       size: 24.sp,
+                                      //       color: theme.primaryColor,
+                                      //     ),
+                                      //   ),
+                                      // ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 12.h),
+                                Expanded(
+                                  child: controller.equipmentTypeList.isNotEmpty
+                                      ? Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 16.w,
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
                                               // Selected type cards
                                               if (controller
                                                   .selectedEquipmentTypeList
@@ -3869,7 +4789,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                   height: 30.h,
                                                   width: double.infinity,
                                                   child: ElevatedButton(
-                                                    onPressed: () {},
+                                                    onPressed: () async {
+                                                      await controller
+                                                          .saveEquipment();
+                                                    },
                                                     style: ElevatedButton.styleFrom(
                                                       foregroundColor:
                                                           LightThemeColors
@@ -3906,54 +4829,213 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                     ),
                                                   ),
                                                 ),
+
+                                              // Equipment list display
+                                              Expanded(
+                                                child:
+                                                    !controller.equipmentList.any((
+                                                      e,
+                                                    ) {
+                                                      kLog(
+                                                        "site Id from equipment list: ${e.siteId} and siteidfrom appt: ${controller.selectedAppointment.value!.siteID} customer id from equipment list: ${e.customerId} and customer id from appt: ${controller.selectedAppointment.value!.customerID} and return logic ${controller.selectedAppointment.value!.customerID.toString() == e.customerId.toString() && controller.selectedAppointment.value!.siteID == e.siteId.toString()}",
+                                                      );
+                                                      return controller
+                                                                  .selectedAppointment
+                                                                  .value!
+                                                                  .customerID
+                                                                  .toString() ==
+                                                              e.customerId
+                                                                  .toString() &&
+                                                          controller
+                                                                  .selectedAppointment
+                                                                  .value!
+                                                                  .siteID ==
+                                                              e.siteId
+                                                                  .toString();
+                                                    })
+                                                    ? Center(
+                                                        child: Column(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Icon(
+                                                              Icons
+                                                                  .precision_manufacturing_outlined,
+                                                              size: 64.sp,
+                                                              color: Colors
+                                                                  .grey[300],
+                                                            ),
+                                                            SizedBox(
+                                                              height: 16.h,
+                                                            ),
+                                                            TextWidget(
+                                                              text:
+                                                                  "No equipment yet",
+                                                              style: TextStyle(
+                                                                fontSize: 16.sp,
+                                                                color: Colors
+                                                                    .grey[500],
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                              height: 8.h,
+                                                            ),
+                                                            TextWidget(
+                                                              text:
+                                                                  "Add new equipment",
+                                                              style: TextStyle(
+                                                                fontSize: 14.sp,
+                                                                color: Colors
+                                                                    .grey[400],
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      )
+                                                    : SingleChildScrollView(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                              top: 12.h,
+                                                            ),
+                                                        child: Column(
+                                                          children: [
+                                                            // Filter equipment based on selected types
+                                                            ...controller
+                                                                .equipmentList
+                                                                .where((e) {
+                                                                  kLog(
+                                                                    "site Id from equipment list: ${e.siteId} and siteidfrom appt: ${controller.selectedAppointment.value!.siteID} customer id from equipment list: ${e.customerId} and customer id from appt: ${controller.selectedAppointment.value!.customerID} and return logic ${controller.selectedAppointment.value!.customerID.toString() == e.customerId.toString() && controller.selectedAppointment.value!.siteID == e.siteId.toString()}",
+                                                                  );
+                                                                  return controller
+                                                                              .selectedAppointment
+                                                                              .value!
+                                                                              .customerID
+                                                                              .toString() ==
+                                                                          e.customerId
+                                                                              .toString() &&
+                                                                      controller
+                                                                              .selectedAppointment
+                                                                              .value!
+                                                                              .siteID ==
+                                                                          e.siteId
+                                                                              .toString();
+                                                                })
+                                                                .toList()
+                                                                .map(
+                                                                  (
+                                                                    equipment,
+                                                                  ) => Padding(
+                                                                    padding:
+                                                                        EdgeInsets.only(
+                                                                          bottom:
+                                                                              12.h,
+                                                                        ),
+                                                                    child: EquipmentCard(
+                                                                      equipment:
+                                                                          equipment,
+                                                                      onTap: () {
+                                                                        _showEditEquipmentBottomSheet(
+                                                                          equipment,
+                                                                        );
+                                                                      },
+                                                                    ),
+                                                                  ),
+                                                                )
+                                                                .toList(),
+
+                                                            // Show message if filter has no matches
+                                                            if (controller
+                                                                    .selectedEquipmentTypeList
+                                                                    .isNotEmpty &&
+                                                                controller
+                                                                    .equipmentList
+                                                                    .where(
+                                                                      (
+                                                                        equipment,
+                                                                      ) => controller.selectedEquipmentTypeList.any(
+                                                                        (
+                                                                          type,
+                                                                        ) =>
+                                                                            type.equipmentTypeId ==
+                                                                            equipment.type,
+                                                                      ),
+                                                                    )
+                                                                    .isEmpty)
+                                                              Padding(
+                                                                padding:
+                                                                    EdgeInsets.symmetric(
+                                                                      vertical:
+                                                                          32.h,
+                                                                    ),
+                                                                child: Column(
+                                                                  children: [
+                                                                    Icon(
+                                                                      Icons
+                                                                          .filter_list_off,
+                                                                      size:
+                                                                          48.sp,
+                                                                      color: Colors
+                                                                          .grey[300],
+                                                                    ),
+                                                                    SizedBox(
+                                                                      height:
+                                                                          16.h,
+                                                                    ),
+                                                                    TextWidget(
+                                                                      text:
+                                                                          "No equipment of selected types",
+                                                                      style: TextStyle(
+                                                                        fontSize:
+                                                                            16.sp,
+                                                                        color: Colors
+                                                                            .grey[500],
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                              ),
                                             ],
                                           ),
                                         )
-                                      : Expanded(
-                                          child: Center(
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  controller
-                                                          .selectedEquipmentTypeList
-                                                          .isNotEmpty
-                                                      ? Icons.filter_list_off
-                                                      : Icons
-                                                            .precision_manufacturing_outlined,
-                                                  size: 64.sp,
-                                                  color: Colors.grey[300],
+                                      : Center(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                controller
+                                                        .selectedEquipmentTypeList
+                                                        .isNotEmpty
+                                                    ? Icons.filter_list_off
+                                                    : Icons
+                                                          .precision_manufacturing_outlined,
+                                                size: 64.sp,
+                                                color: Colors.grey[300],
+                                              ),
+                                              SizedBox(height: 16.h),
+                                              TextWidget(
+                                                text:
+                                                    controller
+                                                        .selectedEquipmentTypeList
+                                                        .isNotEmpty
+                                                    ? 'No equipment of selected types'
+                                                    : "No equipment yet",
+                                                style: TextStyle(
+                                                  fontSize: 16.sp,
+                                                  color: Colors.grey[500],
+                                                  fontWeight: FontWeight.w500,
                                                 ),
-                                                SizedBox(height: 16.h),
-                                                TextWidget(
-                                                  text:
-                                                      controller
-                                                          .selectedEquipmentTypeList
-                                                          .isNotEmpty
-                                                      ? 'No equipment of selected types'
-                                                      : "No equipment yet",
-                                                  style: TextStyle(
-                                                    fontSize: 16.sp,
-                                                    color: Colors.grey[500],
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 8.h),
-                                                TextWidget(
-                                                  text:
-                                                      controller
-                                                          .selectedEquipmentTypeList
-                                                          .isNotEmpty
-                                                      ? 'Try different filters'
-                                                      : "Tap + to add equipment",
-                                                  style: TextStyle(
-                                                    fontSize: 14.sp,
-                                                    color: Colors.grey[400],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                              ),
+                                              SizedBox(height: 8.h),
+                                            ],
                                           ),
                                         ),
                                 ),
@@ -4448,7 +5530,21 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
 
                                   // Notes list
                                   Obx(() {
-                                    return controller.noteList.isEmpty
+                                    final filteredNoteList = controller.noteList
+                                        .where((note) {
+                                          return note.siteId.toString() ==
+                                                  controller
+                                                      .selectedAppointment
+                                                      .value
+                                                      ?.siteID &&
+                                              note.customerId ==
+                                                  controller
+                                                      .selectedAppointment
+                                                      .value
+                                                      ?.customerID;
+                                        })
+                                        .toList();
+                                    return filteredNoteList.isEmpty
                                         ? Center(
                                             child: TextWidget(
                                               text: "No Notes Found",
@@ -4458,10 +5554,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                             shrinkWrap: true,
                                             physics:
                                                 const NeverScrollableScrollPhysics(),
-                                            itemCount:
-                                                controller.noteList.length,
+                                            itemCount: filteredNoteList.length,
                                             itemBuilder: (context, index) {
-                                              final note = controller.noteList
+                                              final note = filteredNoteList
                                                   .toList()[index];
 
                                               return GestureDetector(
@@ -4800,37 +5895,6 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   //   }
   // }
 
-  /// Show delete confirmation dialog for equipment
-  void _showDeleteEquipmentDialog(
-    BuildContext context,
-    EquipmentModel equipment,
-  ) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Equipment'),
-        content: Text(
-          'Are you sure you want to delete ${equipment.displayTitle}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              controller.equipmentList.removeWhere((e) => e.id == equipment.id);
-              Navigator.pop(dialogContext);
-              MySnackBar.showToast(message: 'Equipment deleted successfully');
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Show equipment type filter bottom sheet
   void _showEquipmentTypeFilterBottomSheet() {
     final theme = Theme.of(context);
@@ -5003,9 +6067,62 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     );
   }
 
+  /// Show add equipment bottom sheet
+
+  /// Show edit equipment bottom sheet
+  void _showEditEquipmentBottomSheet(EquipmentModel equipment) {
+    Get.bottomSheet(
+      EquipmentFormModal(
+        equipment: equipment,
+        equipmentTypes: controller.equipmentTypeList,
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
   /// Download/Open file to local storage (Downloads folder)
   Future<void> _downloadFile(FileModel file) async {
-    // Show loading indicator
+    // Create file name
+    final fileName =
+        file.fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
+
+    // Add file extension if missing
+    String finalFileName = fileName;
+    if (file.fileExtension != null &&
+        !fileName.endsWith('.${file.fileExtension}')) {
+      finalFileName = '$fileName.${file.fileExtension}';
+    }
+
+    // Get the correct Downloads directory based on platform
+    Directory downloadDir;
+
+    if (Platform.isAndroid) {
+      downloadDir = Directory('/storage/emulated/0/Download');
+    } else if (Platform.isIOS) {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      downloadDir = Directory('${appDocDir.path}/Downloads');
+    } else {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      downloadDir = Directory('${appDocDir.path}/Downloads');
+    }
+
+    // Create directory if it doesn't exist
+    if (!await downloadDir.exists()) {
+      await downloadDir.create(recursive: true);
+    }
+
+    final filePath = '${downloadDir.path}/$finalFileName';
+    final savedFile = File(filePath);
+
+    // Check if file already exists locally
+    if (await savedFile.exists()) {
+      // File already downloaded, open directly
+      await _openFile(filePath, file);
+      return;
+    }
+
+    // File not downloaded yet, show loading and download
     if (!mounted) return;
     showDialog(
       context: context,
@@ -5015,19 +6132,38 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     );
 
     try {
-      // Get file bytes - handle base64 conversion if needed
-      Uint8List? fileBytes = file.bytes;
+      Uint8List? fileBytes;
 
-      // If bytes are null but fileContent exists, decode base64
-      if (fileBytes == null &&
-          file.fileContent != null &&
-          file.fileContent!.isNotEmpty) {
+      // If fileURL exists (network URL), download from URL
+      if (file.fileURL != null && file.fileURL!.isNotEmpty) {
         try {
-          fileBytes = base64Decode(file.fileContent!);
+          final response = await Dio().get(
+            file.fileURL!,
+            options: Options(responseType: ResponseType.bytes),
+          );
+          fileBytes = response.data as Uint8List;
         } catch (e) {
-          // if (mounted) Navigator.pop(context);
-          MySnackBar.showErrorToast(message: 'Failed to decode file content');
+          if (mounted) Navigator.pop(context);
+          MySnackBar.showErrorToast(
+            message: 'Failed to download file from server',
+          );
           return;
+        }
+      } else {
+        // Otherwise, use base64 conversion
+        fileBytes = file.bytes;
+
+        // If bytes are null but fileContent exists, decode base64
+        if (fileBytes == null &&
+            file.fileContent != null &&
+            file.fileContent!.isNotEmpty) {
+          try {
+            fileBytes = base64Decode(file.fileContent!);
+          } catch (e) {
+            if (mounted) Navigator.pop(context);
+            MySnackBar.showErrorToast(message: 'Failed to decode file content');
+            return;
+          }
         }
       }
 
@@ -5038,56 +6174,75 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         return;
       }
 
-      // Create file path
-      final fileName =
-          file.fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
-
-      // Add file extension if missing
-      String finalFileName = fileName;
-      if (file.fileExtension != null &&
-          !fileName.endsWith('.${file.fileExtension}')) {
-        finalFileName = '$fileName.${file.fileExtension}';
-      }
-
-      // Get the correct Downloads directory based on platform
-      Directory downloadDir;
-
-      if (Platform.isAndroid) {
-        // Android: Save directly to /storage/emulated/0/Download/
-        // This is the public Downloads folder accessible from file manager
-        downloadDir = Directory('/storage/emulated/0/Download');
-      } else if (Platform.isIOS) {
-        // iOS: Create a Downloads subdirectory in the app's document folder
-        final appDocDir = await getApplicationDocumentsDirectory();
-        downloadDir = Directory('${appDocDir.path}/Downloads');
-      } else {
-        // Fallback for other platforms
-        final appDocDir = await getApplicationDocumentsDirectory();
-        downloadDir = Directory('${appDocDir.path}/Downloads');
-      }
-
-      // Create directory if it doesn't exist
-      if (!await downloadDir.exists()) {
-        await downloadDir.create(recursive: true);
-      }
-
-      final filePath = '${downloadDir.path}/$finalFileName';
-      final savedFile = File(filePath);
-
       // Write file content
       await savedFile.writeAsBytes(fileBytes, flush: true);
       kLog("File saved to: $filePath");
+
       // Close loading dialog
       if (mounted) Navigator.pop(context);
 
-      // Show success message with path info
-      MySnackBar.showToast(message: 'File saved to Downloads');
+      // Open the file after download
+      await _openFile(filePath, file);
     } catch (e, s) {
       kLog("Error saving file: $e");
       kLog(s);
       // Close loading dialog if still open
       if (mounted) Navigator.pop(context);
       MySnackBar.showErrorToast(message: 'Failed to download file: $e');
+    }
+  }
+
+  /// Open file based on its type
+  Future<void> _openFile(String filePath, FileModel file) async {
+    final ext = file.fileExtension?.toLowerCase();
+
+    // For images, show in dialog
+    if (file.isImage) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => Dialog(
+            child: Stack(
+              children: [
+                InteractiveViewer(
+                  child: Image.file(File(filePath), fit: BoxFit.contain),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black54,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    // For videos
+    if (ext == 'mp4' || ext == 'mov' || ext == 'avi' || ext == 'mkv') {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => _VideoDialog(videoPath: filePath),
+        );
+      }
+      return;
+    }
+
+    // For PDFs and other files, use open_filex
+    final result = await OpenFilex.open(filePath);
+    if (result.type != ResultType.done) {
+      MySnackBar.showErrorToast(
+        message: 'Could not open file: ${result.message}',
+      );
     }
   }
 }

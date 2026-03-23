@@ -64,6 +64,7 @@ class ImageList {
   int? siteId;
   String? fileName;
   String? fileContent;
+  String? pictureURL; // Network URL for images from API
   String? uploadDate;
   String? uploadedBy;
   int? appointmentId;
@@ -71,9 +72,10 @@ class ImageList {
 
   Uint8List? bytes; // Cached decoded bytes
 
-  ImageList({this.fileName, this.fileContent}) {
-    if (fileContent != null) {
-      bytes = base64Decode(fileContent!); // decode once here
+  ImageList({this.fileName, this.fileContent, this.pictureURL}) {
+    // Only decode base64 if we have fileContent (for locally uploaded images)
+    if (fileContent != null && fileContent!.isNotEmpty) {
+      bytes = base64Decode(fileContent!);
     }
   }
 
@@ -98,12 +100,14 @@ class ImageList {
     siteId = json['siteId'] ?? json['SiteId'];
     fileName = json['fileName'] ?? json['FileName'];
     fileContent = json['fileContent'] ?? json['FileContent'];
+    pictureURL = json['pictureURL'] ?? json['PictureURL'];
     uploadDate = json['uploadDate'] ?? json['UploadDate'];
     uploadedBy = json['uploadedBy'] ?? json['UploadedBy'];
     appointmentId = json['appointmentId'] ?? json['AppointmentId'];
     reference = json['reference'] ?? json['Reference'];
-    if (fileContent != null) {
-      bytes = base64Decode(fileContent!); // decode once when parsing
+    // Only decode base64 if we have fileContent (for locally uploaded images)
+    if (fileContent != null && fileContent!.isNotEmpty) {
+      bytes = base64Decode(fileContent!);
     }
   }
 
@@ -128,6 +132,7 @@ class ImageList {
     data['siteId'] = siteId;
     data['fileName'] = fileName;
     data['fileContent'] = fileContent;
+    data['pictureURL'] = pictureURL;
     data['uploadDate'] = uploadDate;
     data['uploadedBy'] = uploadedBy;
     data['appointmentId'] = appointmentId;

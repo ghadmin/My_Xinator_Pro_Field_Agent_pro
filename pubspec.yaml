@@ -2,7 +2,7 @@ name: myxinator_pro_field_agent_pro
 description: "A new Flutter project."
 
 publish_to: "none"
-version: 1.0.1+8
+version: 1.0.1+11
 
 environment:
   sdk: ^3.9.2
@@ -51,6 +51,7 @@ dependencies:
   url_launcher: ^6.3.1
   dropdown_button2: ^2.3.9
   mime: ^2.0.0
+  open_filex: ^4.5.1
   webview_flutter: ^4.11.0
   flutter_map: ^8.1.1
   latlong2: ^0.9.1

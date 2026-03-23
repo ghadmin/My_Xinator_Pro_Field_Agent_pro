@@ -136,21 +136,35 @@ class ManualPaymentView extends GetView<InvoiceController> {
           final apptC = Get.find<AppointmentController>();
           final invoiceC = Get.find<InvoiceController>();
           await apptC.getAppointments();
+          await apptC.getInvoiceList();
           invoiceC.selectedItemList.clear();
-          final appt = apptC.sortedAppointments
-              .where((element) =>
-                  element.apptID.toString() == apptC.appointmentID.toString())
-              .first;
+          final appt = !invoiceC.isExternalInvoice.value
+              ? apptC.sortedAppointments
+                    .where(
+                      (element) =>
+                          element.apptID.toString() ==
+                          apptC.appointmentID.toString(),
+                    )
+                    .first
+              : apptC.extendedAppointments
+                    .where(
+                      (element) =>
+                          element.apptID.toString() ==
+                          apptC.appointmentID.toString(),
+                    )
+                    .first;
 
           final proposal = appt.invoices!.firstWhere(
-              (element) => element.invoiceID.toString() == invoiceId);
+            (element) => element.invoiceID.toString() == invoiceId,
+          );
 
           invoiceC.invoiceItemList.value = proposal.items ?? [];
           invoiceC.depositList.value = proposal.paymentList ?? [];
           await invoiceC.saveSignature(
-              payment: invoiceC.depositList.isNotEmpty
-                  ? invoiceC.depositList.first
-                  : null);
+            payment: invoiceC.depositList.isNotEmpty
+                ? invoiceC.depositList.first
+                : null,
+          );
           invoiceC.selectedDiscountOption.value =
               proposal.discountOption ?? "2";
           invoiceC.invoiceNumber = proposal.number ?? "";
@@ -158,10 +172,7 @@ class ManualPaymentView extends GetView<InvoiceController> {
           invoiceC.customerName = proposal.fullName ?? "";
           invoiceC.address = "${proposal.city}, ";
           invoiceC.depositAmount.value =
-              proposal.depositAmount?.toStringAsFixed(
-                    2,
-                  ) ??
-                  "0.00";
+              proposal.depositAmount?.toStringAsFixed(2) ?? "0.00";
           invoiceC.invoiceID.value = proposal.invoiceID.toString();
           invoiceC.date = dateTimeConverter(
             inputFormat: "yyyy/MM/dd",
@@ -216,17 +227,13 @@ class ManualPaymentView extends GetView<InvoiceController> {
           // Set discount values
           invoiceC.invoiceDiscountDetails.value = proposal.discount ?? 0.00;
           if (proposal.discountOption == "1") {
-            invoiceC.editDiscountTextController.text = (((double.parse(
-                          proposal.discount?.toString() ?? "0.00",
-                        )) *
-                        100) /
-                    double.parse(
-                      proposal.subtotal?.toStringAsFixed(
-                            2,
-                          ) ??
-                          "0.00",
-                    ))
-                .toStringAsFixed(2);
+            invoiceC.editDiscountTextController.text =
+                (((double.parse(proposal.discount?.toString() ?? "0.00")) *
+                            100) /
+                        double.parse(
+                          proposal.subtotal?.toStringAsFixed(2) ?? "0.00",
+                        ))
+                    .toStringAsFixed(2);
           } else {
             invoiceC.editDiscountTextController.text = double.parse(
               proposal.discount?.toString() ?? "0.00",
@@ -235,24 +242,20 @@ class ManualPaymentView extends GetView<InvoiceController> {
 
           // Set tax values
 
-          invoiceC.tax.value = invoiceC.taxes
+          invoiceC.tax.value =
+              invoiceC.taxes
                   .firstWhereOrNull(
                     (tax) =>
-                        tax.id ==
-                        int.tryParse(
-                          invoiceC.initialTaxID.value,
-                        ),
+                        tax.id == int.tryParse(invoiceC.initialTaxID.value),
                   )
                   ?.rate
                   ?.toStringAsFixed(2) ??
               "0.00";
-          invoiceC.selectedTaxName.value = invoiceC.taxes
+          invoiceC.selectedTaxName.value =
+              invoiceC.taxes
                   .firstWhereOrNull(
                     (tax) =>
-                        tax.id ==
-                        int.tryParse(
-                          invoiceC.initialTaxID.value,
-                        ),
+                        tax.id == int.tryParse(invoiceC.initialTaxID.value),
                   )
                   ?.name ??
               "";
@@ -265,9 +268,7 @@ class ManualPaymentView extends GetView<InvoiceController> {
                   id: item.itemId,
                   name: item.name,
                   description: item.description,
-                  price: double.tryParse(
-                    item.unitPrice ?? "0.00",
-                  ),
+                  price: double.tryParse(item.unitPrice ?? "0.00"),
                   isTaxable: item.isTaxable == "TAX" ? true : false,
                   // itemTypeId: int.parse(item.itemTyId!),
                 ),
@@ -275,21 +276,15 @@ class ManualPaymentView extends GetView<InvoiceController> {
 
               // Initialize controllers with existing values
               invoiceC.editAmountControllers.add(
-                TextEditingController(
-                  text: item.unitPrice ?? "0.00",
-                ),
+                TextEditingController(text: item.unitPrice ?? "0.00"),
               );
 
               invoiceC.editDescriptionControllers.add(
-                TextEditingController(
-                  text: item.description ?? "",
-                ),
+                TextEditingController(text: item.description ?? ""),
               );
 
               invoiceC.editQuantityControllers.add(
-                TextEditingController(
-                  text: item.quantity ?? "1",
-                ),
+                TextEditingController(text: item.quantity ?? "1"),
               );
             }
           }
@@ -297,9 +292,7 @@ class ManualPaymentView extends GetView<InvoiceController> {
           await 0.5.delay();
           invoiceC.selectedQboClass(
             invoiceC.qboClassList
-                .where(
-                  (e) => e.qboClassId.toString() == proposal.qboClassId,
-                )
+                .where((e) => e.qboClassId.toString() == proposal.qboClassId)
                 .firstOrNull,
           );
           invoiceC.selectedQboLocation(
@@ -320,7 +313,8 @@ class ManualPaymentView extends GetView<InvoiceController> {
           invoiceC.editNoteTextController.clear();
 
           await controller.hideLoading(
-              debugInfo: "ManualPayment - Back button - Data loaded");
+            debugInfo: "ManualPayment - Back button - Data loaded",
+          );
           Get.back();
           Get.back();
         },

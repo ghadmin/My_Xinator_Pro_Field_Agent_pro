@@ -16,10 +16,7 @@ class PaymentByCheckView extends GetView<InvoiceController> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: Get.size.width <= 440
-          ? AppBar(
-              title: Text('Payment by Check'),
-              centerTitle: false,
-            )
+          ? AppBar(title: Text('Payment by Check'), centerTitle: false)
           : PreferredSize(
               preferredSize: Size.fromHeight(40.sp),
               child: Padding(
@@ -103,9 +100,7 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                         children: [
                           Text('Due Amount'),
                           Spacer(),
-                          Text(
-                            "\$ ${controller.finalCollectionAmount.value}",
-                          ),
+                          Text("\$ ${controller.finalCollectionAmount.value}"),
                         ],
                       )
                     : Row(
@@ -123,7 +118,8 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                                   hint: '',
                                   textInputType:
                                       TextInputType.numberWithOptions(
-                                          decimal: true),
+                                        decimal: true,
+                                      ),
                                   theme: theme,
                                   textAlignment: TextAlign.end,
                                   textEditingController:
@@ -145,7 +141,9 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                         height: 40.sp,
                         decoration: BoxDecoration(
                           border: Border.all(
-                              color: theme.primaryColor, width: 1.sp),
+                            color: theme.primaryColor,
+                            width: 1.sp,
+                          ),
                           borderRadius: BorderRadius.circular(8.sp),
                         ),
                         child: Center(
@@ -159,7 +157,7 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                                 ),
                               ),
                               Text(
-                                "\$${controller.requestedDepositAmountEditTextController.text.isEmpty ? "0.00" : controller.requestedDepositAmountEditTextController.text}",
+                                "\$${controller.requestedDepositAmountEditTextController.text.isEmpty ? "0.00" : double.parse(controller.requestedDepositAmountEditTextController.text).toStringAsFixed(2)}",
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   color: theme.primaryColor,
                                   fontSize: 18.sp,
@@ -201,35 +199,41 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                                 foregroundColor: Colors.white,
                                 onPressed: () async {
                                   if (controller
-                                      .checkNameTextController.text.isEmpty) {
+                                      .checkNameTextController
+                                      .text
+                                      .isEmpty) {
                                     MySnackBar.showErrorToast(
                                       message: "Please enter check name",
                                     );
                                     return;
                                   } else if (controller
-                                      .checkNumberTextController.text.isEmpty) {
+                                      .checkNumberTextController
+                                      .text
+                                      .isEmpty) {
                                     MySnackBar.showErrorToast(
                                       message: "Please enter check number",
                                     );
                                     return;
                                   }
-                                  bool confirmed = await showDialog<bool>(
+                                  bool confirmed =
+                                      await showDialog<bool>(
                                         context: context,
                                         builder: (context) => AlertDialog(
                                           title: Text('Confirm Payment'),
                                           content: Text(
-                                              'Are you sure you want to proceed with the payment?'),
+                                            'Are you sure you want to proceed with the payment?',
+                                          ),
                                           actions: [
                                             TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context)
-                                                      .pop(false),
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(false),
                                               child: Text('Cancel'),
                                             ),
                                             TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context)
-                                                      .pop(true),
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(true),
                                               child: Text('Confirm'),
                                             ),
                                           ],
@@ -239,10 +243,11 @@ class PaymentByCheckView extends GetView<InvoiceController> {
 
                                   if (confirmed) {
                                     await controller.makeDepositPay(
-                                        controller
-                                            .requestedDepositAmountEditTextController
-                                            .text,
-                                        "CHECK");
+                                      controller
+                                          .requestedDepositAmountEditTextController
+                                          .text,
+                                      "CHECK",
+                                    );
 
                                     controller.depositRequestPay.value = false;
                                   }
@@ -261,48 +266,59 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                               child: PrimaryButton(
                                 onPressed: () async {
                                   if (controller
-                                      .checkNameTextController.text.isEmpty) {
+                                      .checkNameTextController
+                                      .text
+                                      .isEmpty) {
                                     MySnackBar.showErrorToast(
                                       message: "Please enter check name",
                                     );
                                     return;
                                   } else if (controller
-                                      .checkNumberTextController.text.isEmpty) {
+                                      .checkNumberTextController
+                                      .text
+                                      .isEmpty) {
                                     MySnackBar.showErrorToast(
                                       message: "Please enter check number",
                                     );
                                     return;
                                   } else if (controller
-                                      .checkAmtTextController.text.isEmpty) {
+                                      .checkAmtTextController
+                                      .text
+                                      .isEmpty) {
                                     MySnackBar.showErrorToast(
-                                      message: 'Please enter the amount to pay.',
+                                      message:
+                                          'Please enter the amount to pay.',
                                     );
                                     return;
-                                  } else if (double.parse(controller
-                                          .checkAmtTextController.text) <=
+                                  } else if (double.parse(
+                                        controller.checkAmtTextController.text,
+                                      ) <=
                                       0) {
                                     MySnackBar.showErrorToast(
-                                      message: 'Amount must be greater than zero.',
+                                      message:
+                                          'Amount must be greater than zero.',
                                     );
                                     return;
                                   }
-                                  bool confirmed = await showDialog<bool>(
+                                  bool confirmed =
+                                      await showDialog<bool>(
                                         context: context,
                                         builder: (context) => AlertDialog(
                                           title: Text('Confirm Payment'),
                                           content: Text(
-                                              'Are you sure you want to proceed with the payment?'),
+                                            'Are you sure you want to proceed with the payment?',
+                                          ),
                                           actions: [
                                             TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context)
-                                                      .pop(false),
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(false),
                                               child: Text('Cancel'),
                                             ),
                                             TextButton(
-                                              onPressed: () =>
-                                                  Navigator.of(context)
-                                                      .pop(true),
+                                              onPressed: () => Navigator.of(
+                                                context,
+                                              ).pop(true),
                                               child: Text('Confirm'),
                                             ),
                                           ],
@@ -347,19 +363,11 @@ class PaymentByCheckView extends GetView<InvoiceController> {
             ),
             SizedBox(height: 8),
             Row(
-              children: [
-                Text('Address'),
-                Spacer(),
-                Text(controller.address),
-              ],
+              children: [Text('Address'), Spacer(), Text(controller.address)],
             ),
             SizedBox(height: 8),
             Row(
-              children: [
-                Text('Type'),
-                Spacer(),
-                Text(controller.type.value),
-              ],
+              children: [Text('Type'), Spacer(), Text(controller.type.value)],
             ),
             SizedBox(height: 8),
             Row(
@@ -367,7 +375,8 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                 Text('Total Amount'),
                 Spacer(),
                 Text(
-                    '\$${double.parse(controller.total.value).toStringAsFixed(2)}'),
+                  '\$${double.parse(controller.total.value).toStringAsFixed(2)}',
+                ),
               ],
             ),
             SizedBox(height: 8),

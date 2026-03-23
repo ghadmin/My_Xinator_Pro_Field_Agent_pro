@@ -168,8 +168,9 @@ class AppointmentView extends GetView<AppointmentController> {
                     Expanded(
                       child: RefreshIndicator(
                         color: theme.primaryColor,
-                        onRefresh: () async =>
-                            await controller.getAppointments(),
+                        onRefresh: () async {
+                          await controller.getAppointments();
+                        },
                         child: ListView.separated(
                           padding: EdgeInsets.zero,
                           itemCount: controller.sortedAppointments

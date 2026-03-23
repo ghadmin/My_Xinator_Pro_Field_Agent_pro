@@ -1130,6 +1130,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mime/mime.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../utils/date_converter.dart';
 import 'package:intl/intl.dart';
@@ -1163,7 +1164,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
   // TUA Pay Link variables
   final TextEditingController tuaBaseAmountController = TextEditingController();
-// Default or Custom
+  // Default or Custom
   final TextEditingController tuaCustomPercentageController =
       TextEditingController(text: "5");
   final RxDouble tuaDefaultPercentage = 5.0.obs;
@@ -1453,16 +1454,17 @@ class InvoiceController extends GetxController with ExceptionHandler {
     try {
       var companyID = MySharedPref.getCompanyID();
 
-      var response = await DioClient().get(
-          url: ApiUrl.getQBOLocationsUrl,
-          params: {"companyId": companyID}).catchError(handleError);
+      var response = await DioClient()
+          .get(url: ApiUrl.getQBOLocationsUrl, params: {"companyId": companyID})
+          .catchError(handleError);
       if (response == null) return;
 
       log("qbo locations response: $response");
       // Ensure the response is a list
       if (response is List && response.isNotEmpty) {
-        qboLocationList.value =
-            response.map((e) => QboLocationModel.fromJson(e)).toList();
+        qboLocationList.value = response
+            .map((e) => QboLocationModel.fromJson(e))
+            .toList();
       } else {
         qboLocationList.value = [];
         // Get.showSnackbar(GetSnackBar(
@@ -1482,15 +1484,16 @@ class InvoiceController extends GetxController with ExceptionHandler {
     try {
       var companyID = MySharedPref.getCompanyID();
 
-      var response = await DioClient().get(
-          url: ApiUrl.getQBOClassesUrl,
-          params: {"companyId": companyID}).catchError(handleError);
+      var response = await DioClient()
+          .get(url: ApiUrl.getQBOClassesUrl, params: {"companyId": companyID})
+          .catchError(handleError);
       if (response == null) return;
       log("qbo class response: $response");
       // Ensure the response is a list
       if (response is List && response.isNotEmpty) {
-        qboClassList.value =
-            response.map((e) => QboClassModel.fromJson(e)).toList();
+        qboClassList.value = response
+            .map((e) => QboClassModel.fromJson(e))
+            .toList();
       } else {
         qboClassList.value = [];
         // Get.showSnackbar(GetSnackBar(
@@ -1510,7 +1513,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
     double subTotal = 0.00;
     // Calculate subtotal based on selected items
     for (int i = 0; i < selectedItemList.length; i++) {
-      double price = double.tryParse(amountControllers[i].text) ??
+      double price =
+          double.tryParse(amountControllers[i].text) ??
           selectedItemList[i].price ??
           0.00;
       double quantity = double.tryParse(quantityControllers[i].text) ?? 1.0;
@@ -1543,7 +1547,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
     // Amount after discount now includes surcharge
     amountAfterDiscount.value = subTotal - discountAmount + surchargeAmount;
     double discountRatio = discount / subTotal;
-    double discountedTaxableTotal = selectedDiscountOption.value ==
+    double discountedTaxableTotal =
+        selectedDiscountOption.value ==
             "1" // Percentage discount
         ? ((subTotal - nonTaxableItemTotalInCreate.value) * (discount / 100))
         : (subTotal - nonTaxableItemTotalInCreate.value) * discountRatio;
@@ -1567,7 +1572,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     // Calculate subtotal based on selected items
     for (int i = 0; i < selectedItemList.length; i++) {
-      double price = double.tryParse(editAmountControllers[i].text) ??
+      double price =
+          double.tryParse(editAmountControllers[i].text) ??
           selectedItemList[i].price ??
           0.00;
       double quantity = double.tryParse(editQuantityControllers[i].text) ?? 1.0;
@@ -1777,9 +1783,9 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final taxes = RxList<TaxModel>();
   Future<void> getTax() async {
     var companyID = MySharedPref.getCompanyID();
-    var response = await DioClient().get(
-        url: ApiUrl.getTax,
-        params: {"CompanyId": companyID}).catchError(handleError);
+    var response = await DioClient()
+        .get(url: ApiUrl.getTax, params: {"CompanyId": companyID})
+        .catchError(handleError);
 
     if (response == null) return;
 
@@ -1794,13 +1800,15 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxString invoiceName = "".obs;
   Future<void> getInvoiceName() async {
     var companyID = MySharedPref.getCompanyID();
-    var response = await DioClient().get(
-      url: ApiUrl.getInvoiceName,
-      params: {
-        "CompanyId": companyID,
-        "IsInvoice": selectedCreateType.value == "Invoice" ? true : false,
-      },
-    ).catchError(handleError);
+    var response = await DioClient()
+        .get(
+          url: ApiUrl.getInvoiceName,
+          params: {
+            "CompanyId": companyID,
+            "IsInvoice": selectedCreateType.value == "Invoice" ? true : false,
+          },
+        )
+        .catchError(handleError);
 
     if (response == null) return;
 
@@ -1811,8 +1819,9 @@ class InvoiceController extends GetxController with ExceptionHandler {
     isInvoiceEmpty.value = true;
   }
 
-  final existingItemType =
-      Rx<SelectedItemCategory>(SelectedItemCategory.newOne);
+  final existingItemType = Rx<SelectedItemCategory>(
+    SelectedItemCategory.newOne,
+  );
   final RxList<ItemListModel> selectedItemList = <ItemListModel>[].obs;
 
   // Backup models for Invoice and Estimate drafts
@@ -1834,86 +1843,88 @@ class InvoiceController extends GetxController with ExceptionHandler {
     isInvoiceSaved.value = false;
     var companyID = MySharedPref.getCompanyID();
     var userID = MySharedPref.getUserName();
-    var response = await DioClient().post(
-      url: ApiUrl.createInvoice,
-      body: {
-        "invoice": {
-          "Number": invoiceName.value,
-          "CompanyID": "",
-          "CompnyID": companyID,
-          "DisplayNumber": null,
-          "CustomerId": customerID.value,
-          "UserId": userID,
-          "Subtotal": invoiceSubtotal.value,
-          "Discount": invoiceDiscount.value,
-          "QboClassId": selectedQboClass.value?.qboClassId ?? 0,
-          "QboLocationId": selectedQboLocation.value?.qboLocationId ?? 0,
+    var response = await DioClient()
+        .post(
+          url: ApiUrl.createInvoice,
+          body: {
+            "invoice": {
+              "Number": invoiceName.value,
+              "CompanyID": "",
+              "CompnyID": companyID,
+              "DisplayNumber": null,
+              "CustomerId": customerID.value,
+              "UserId": userID,
+              "Subtotal": invoiceSubtotal.value,
+              "Discount": invoiceDiscount.value,
+              "QboClassId": selectedQboClass.value?.qboClassId ?? 0,
+              "QboLocationId": selectedQboLocation.value?.qboLocationId ?? 0,
 
-          "Tax": double.parse(
-            invoiceTax.value.toStringAsFixed(2),
-          ).toStringAsFixed(2),
+              "Tax": double.parse(
+                invoiceTax.value.toStringAsFixed(2),
+              ).toStringAsFixed(2),
 
-          "Total": double.parse(invoiceTotal.value).toStringAsFixed(2),
-          "Status": 1,
-          "InvoiceType": null,
-          "ModifiedDate": null,
-          "ModifiedBy": null,
-          "Note": noteTextController.text,
-          "CustomerSignature": customerSignature,
-          "CreatedDate": dateTimeConverter(
-            inputTime: DateTime.now().toString(),
-            outputFormat: "yyyy/MM/dd",
-          ),
-          "CreatedBy": userID,
-          "InvoiceDate": dateTimeConverter(
-            inputTime: DateTime.now().toString(),
-            outputFormat: "yyyy/MM/dd",
-          ),
-          "AmountCollect": 0.00,
-          "TaxType": selectedTaxID.value,
-          "AppointmentId": appointmentID,
-          "Type": selectedCreateType.value,
-          "QboId": 0,
-          "RequestedDepositAmount": "0.00",
-          "RequestedDepositPercentage": "0.00",
-          "RequestedAmtType": 0,
-          "DiscountRate": createDiscountTextController.text,
-          "DiscountOption": selectedDiscountOption.value,
-          "QboEstimateId": 0,
-          "ExpirationDate": null,
-          "SyncToken": "0",
-          "QboPaymentID": "0",
-          "DepositAmount": 0.00,
-          "LoanStatus": null,
-          "IsConverted": false,
-          "ConvertedInvocieID": "",
-          "ConvertedInvocieNumber": null,
-          "items": selectedItemList.map((item) {
-            return {
-              ...item.toJson(),
-              "IsTaxable": item.isTaxable == true ? "TAX" : "NON",
-              "Quantity":
-                  quantityControllers[selectedItemList.indexOf(item)].text,
-              "UnitPrice": item.price?.toStringAsFixed(2) ?? "0.00",
-              "TotalPrice": (item.price != null
-                  ? (item.price! *
-                          (double.tryParse(
-                                quantityControllers[
-                                        selectedItemList.indexOf(item)]
-                                    .text,
-                              ) ??
-                              1.0))
-                      .toStringAsFixed(2)
-                  : "0.00"),
-              // "ItemTyId": item.itemTypeId ?? "",
-              "ItemId": item.id ?? "",
-            };
-          }).toList(),
+              "Total": double.parse(invoiceTotal.value).toStringAsFixed(2),
+              "Status": 1,
+              "InvoiceType": null,
+              "ModifiedDate": null,
+              "ModifiedBy": null,
+              "Note": noteTextController.text,
+              "CustomerSignature": customerSignature,
+              "CreatedDate": dateTimeConverter(
+                inputTime: DateTime.now().toString(),
+                outputFormat: "yyyy/MM/dd",
+              ),
+              "CreatedBy": userID,
+              "InvoiceDate": dateTimeConverter(
+                inputTime: DateTime.now().toString(),
+                outputFormat: "yyyy/MM/dd",
+              ),
+              "AmountCollect": 0.00,
+              "TaxType": selectedTaxID.value,
+              "AppointmentId": appointmentID,
+              "Type": selectedCreateType.value,
+              "QboId": 0,
+              "RequestedDepositAmount": "0.00",
+              "RequestedDepositPercentage": "0.00",
+              "RequestedAmtType": 0,
+              "DiscountRate": createDiscountTextController.text,
+              "DiscountOption": selectedDiscountOption.value,
+              "QboEstimateId": 0,
+              "ExpirationDate": null,
+              "SyncToken": "0",
+              "QboPaymentID": "0",
+              "DepositAmount": 0.00,
+              "LoanStatus": null,
+              "IsConverted": false,
+              "ConvertedInvocieID": "",
+              "ConvertedInvocieNumber": null,
+              "items": selectedItemList.map((item) {
+                return {
+                  ...item.toJson(),
+                  "IsTaxable": item.isTaxable == true ? "TAX" : "NON",
+                  "Quantity":
+                      quantityControllers[selectedItemList.indexOf(item)].text,
+                  "UnitPrice": item.price?.toStringAsFixed(2) ?? "0.00",
+                  "TotalPrice": (item.price != null
+                      ? (item.price! *
+                                (double.tryParse(
+                                      quantityControllers[selectedItemList
+                                              .indexOf(item)]
+                                          .text,
+                                    ) ??
+                                    1.0))
+                            .toStringAsFixed(2)
+                      : "0.00"),
+                  // "ItemTyId": item.itemTypeId ?? "",
+                  "ItemId": item.id ?? "",
+                };
+              }).toList(),
 
-          /// There will be item
-        },
-      },
-    ).catchError(handleError);
+              /// There will be item
+            },
+          },
+        )
+        .catchError(handleError);
 
     if (response == null) return;
 
@@ -1970,111 +1981,117 @@ class InvoiceController extends GetxController with ExceptionHandler {
     var companyID = MySharedPref.getCompanyID();
     var userID = MySharedPref.getUserName();
 
-    var response = await DioClient().post(
-      url: ApiUrl.editInvoice,
-      body: {
-        "invoice": {
-          "InvoiceID": invoiceID.value,
-          "Number": invoiceNumber,
-          "ConvertedInvocieID": "",
-          "CompanyID": "",
-          "CompnyID": companyID,
-          "DisplayNumber": null,
-          "CustomerId": customerID.value,
-          "UserId": userID,
-          "Subtotal": invoiceSubtotal.value,
-          "Discount": invoiceDiscount.value,
-          "Tax": double.parse(invoiceTax.value.toStringAsFixed(2)),
-          "Total": double.parse(invoiceTotal.value).toStringAsFixed(2),
-          "Status": 1,
-          "InvoiceType": null,
-          "ModifiedBy": null,
-          "QboClassId": selectedQboClass.value?.qboClassId ?? 0,
-          "QboLocationId": selectedQboLocation.value?.qboLocationId ?? 0,
-          "Note": editNoteTextController.text,
-          "CreatedBy": userID,
-          "InvoiceDate": dateTimeConverter(
-            inputTime: date,
-            inputFormat: "MM/dd/yyyy",
-            outputFormat: "yyyy/MM/dd",
-          ),
-          "ModifiedDate": dateTimeConverter(
-            inputTime: DateTime.now().toString(),
-            outputFormat: "yyyy/MM/dd",
-          ),
-          "RequestedDepositAmount":
-              requestedDepositAmountEditTextController.text,
-          "RequestedDepositPercentage":
-              selectedDepositRequestOption.value == "2"
+    var response = await DioClient()
+        .post(
+          url: ApiUrl.editInvoice,
+          body: {
+            "invoice": {
+              "InvoiceID": invoiceID.value,
+              "Number": invoiceNumber,
+              "ConvertedInvocieID": "",
+              "CompanyID": "",
+              "CompnyID": companyID,
+              "DisplayNumber": null,
+              "CustomerId": customerID.value,
+              "UserId": userID,
+              "Subtotal": invoiceSubtotal.value,
+              "Discount": invoiceDiscount.value,
+              "Tax": double.parse(invoiceTax.value.toStringAsFixed(2)),
+              "Total": double.parse(invoiceTotal.value).toStringAsFixed(2),
+              "Status": 1,
+              "InvoiceType": null,
+              "ModifiedBy": null,
+              "QboClassId": selectedQboClass.value?.qboClassId ?? 0,
+              "QboLocationId": selectedQboLocation.value?.qboLocationId ?? 0,
+              "Note": editNoteTextController.text,
+              "CreatedBy": userID,
+              "InvoiceDate": dateTimeConverter(
+                inputTime: date,
+                inputFormat: "MM/dd/yyyy",
+                outputFormat: "yyyy/MM/dd",
+              ),
+              "ModifiedDate": dateTimeConverter(
+                inputTime: DateTime.now().toString(),
+                outputFormat: "yyyy/MM/dd",
+              ),
+              "RequestedDepositAmount":
+                  requestedDepositAmountEditTextController.text,
+              "RequestedDepositPercentage":
+                  selectedDepositRequestOption.value == "2"
                   ? "0.00"
                   : requestDepositRateEditTextController.text,
-          "RequestedAmtType": int.parse(selectedDepositRequestOption.value),
-          "TaxType": initialTaxID.value,
-          "AppointmentId": appointmentID,
-          "Type": type.value,
-          "QboId": 0,
-          "DiscountRate": editDiscountTextController.text,
-          "DiscountOption": selectedDiscountOption.value,
-          "QboEstimateId": 0,
-          "ExpirationDate": null,
-          "SyncToken": "",
-          "QboPaymentID": "",
-          "AmountCollect": double.parse(
-            depositAmount.value,
-          ).toStringAsFixed(2),
-          "DepositAmount": double.parse(
-            depositAmount.value,
-          ).toStringAsFixed(2),
-          "LoanStatus": null,
-          "IsConverted": false,
-          "items": selectedItemList.map((item) {
-            return {
-              ...item.toJson(),
-              "IsTaxable": item.isTaxable == true ? "TAX" : "NON",
-              "Quantity":
-                  editQuantityControllers[selectedItemList.indexOf(item)].text,
-              "UnitPrice": editAmountControllers[selectedItemList.indexOf(item)]
-                          .text !=
-                      ''
-                  ? editAmountControllers[selectedItemList.indexOf(item)].text
-                  : item.price != null
+              "RequestedAmtType": int.parse(selectedDepositRequestOption.value),
+              "TaxType": initialTaxID.value,
+              "AppointmentId": appointmentID,
+              "Type": type.value,
+              "QboId": 0,
+              "DiscountRate": editDiscountTextController.text,
+              "DiscountOption": selectedDiscountOption.value,
+              "QboEstimateId": 0,
+              "ExpirationDate": null,
+              "SyncToken": "",
+              "QboPaymentID": "",
+              "AmountCollect": double.parse(
+                depositAmount.value,
+              ).toStringAsFixed(2),
+              "DepositAmount": double.parse(
+                depositAmount.value,
+              ).toStringAsFixed(2),
+              "LoanStatus": null,
+              "IsConverted": false,
+              "items": selectedItemList.map((item) {
+                return {
+                  ...item.toJson(),
+                  "IsTaxable": item.isTaxable == true ? "TAX" : "NON",
+                  "Quantity":
+                      editQuantityControllers[selectedItemList.indexOf(item)]
+                          .text,
+                  "UnitPrice":
+                      editAmountControllers[selectedItemList.indexOf(item)]
+                              .text !=
+                          ''
+                      ? editAmountControllers[selectedItemList.indexOf(item)]
+                            .text
+                      : item.price != null
                       ? item.price!.toStringAsFixed(2)
                       : "0.00",
 
-              "TotalPrice":
-                  editAmountControllers[selectedItemList.indexOf(item)].text !=
+                  "TotalPrice":
+                      editAmountControllers[selectedItemList.indexOf(item)]
+                              .text !=
                           ''
-                      ? (double.parse(editAmountControllers[
-                                      selectedItemList.indexOf(item)]
-                                  .text) *
-                              (double.tryParse(
-                                    editQuantityControllers[
-                                            selectedItemList.indexOf(item)]
-                                        .text,
-                                  ) ??
-                                  1.0))
-                          .toStringAsFixed(2)
+                      ? (double.parse(
+                                  editAmountControllers[selectedItemList
+                                          .indexOf(item)]
+                                      .text,
+                                ) *
+                                (double.tryParse(
+                                      editQuantityControllers[selectedItemList
+                                              .indexOf(item)]
+                                          .text,
+                                    ) ??
+                                    1.0))
+                            .toStringAsFixed(2)
                       : item.price != null
-                          ? (item.price! *
-                                  double.parse(
-                                    editQuantityControllers[
-                                            selectedItemList.indexOf(item)]
-                                        .text,
-                                  ))
-                              .toStringAsFixed(2)
-                          : "0.00",
-              // "ItemTyId": item.itemTypeId ?? "",
-              "ItemId": item.id ?? "",
-            };
-          }).toList(),
-        },
-      },
-    ).catchError(handleError);
+                      ? (item.price! *
+                                double.parse(
+                                  editQuantityControllers[selectedItemList
+                                          .indexOf(item)]
+                                      .text,
+                                ))
+                            .toStringAsFixed(2)
+                      : "0.00",
+                  // "ItemTyId": item.itemTypeId ?? "",
+                  "ItemId": item.id ?? "",
+                };
+              }).toList(),
+            },
+          },
+        )
+        .catchError(handleError);
 
     if (response == null) return;
-    MySnackBar.showToast(
-      message: "${type.value} updated successfully!",
-    );
+    MySnackBar.showToast(message: "${type.value} updated successfully!");
     if (convertToInvoice.value) {
       await convertEstimate();
       convertToInvoice.value = false;
@@ -2082,20 +2099,23 @@ class InvoiceController extends GetxController with ExceptionHandler {
     }
     isDirty.value = false;
     hideLoading(debugInfo: "editInvoice - Success");
-    Get.find<AppointmentController>().getAppointments(showLoader: false);
+    appointmentController.getAppointments(showLoader: false);
+    appointmentController.getInvoiceList(showLoader: false);
   }
 
   Future<void> convertEstimate() async {
     var companyID = MySharedPref.getCompanyID();
     var userID = MySharedPref.getUserName();
-    var response = await DioClient().post(
-      url: ApiUrl.convertEST,
-      body: {
-        "invoiceId": invoiceID.value,
-        "modifiedBy": userID,
-        "companyId": companyID,
-      },
-    ).catchError(handleError);
+    var response = await DioClient()
+        .post(
+          url: ApiUrl.convertEST,
+          body: {
+            "invoiceId": invoiceID.value,
+            "modifiedBy": userID,
+            "companyId": companyID,
+          },
+        )
+        .catchError(handleError);
     if (response == null) return;
   }
 
@@ -2105,10 +2125,12 @@ class InvoiceController extends GetxController with ExceptionHandler {
     showLoading(debugInfo: "getEmailAutofill - Start");
     var companyID = MySharedPref.getCompanyID();
     var companyName = MySharedPref.getCompanyName();
-    var response = await DioClient().get(
-      url: ApiUrl.emailAutofill,
-      params: {"companyId": companyID, "type": emailType},
-    ).catchError(handleError);
+    var response = await DioClient()
+        .get(
+          url: ApiUrl.emailAutofill,
+          params: {"companyId": companyID, "type": emailType},
+        )
+        .catchError(handleError);
     if (response == null) return;
     bccTextController.text = response["EmailBCC"] ?? "";
     subjectTextController.text = emailType == "Invoice"
@@ -2116,11 +2138,11 @@ class InvoiceController extends GetxController with ExceptionHandler {
         : response['ProposalMailSubject'];
     emailBodyTextController.text = emailType == "Invoice"
         ? (response['InvoiceMailBody'] as String)
-            .replaceAll('[First Name]', customerFirstName.value)
-            .replaceAll('[Company Name]', companyName!)
+              .replaceAll('[First Name]', customerFirstName.value)
+              .replaceAll('[Company Name]', companyName!)
         : (response['ProposalMailBody'] as String)
-            .replaceAll('[First Name]', customerFirstName.value)
-            .replaceAll('[Company Name]', companyName!);
+              .replaceAll('[First Name]', customerFirstName.value)
+              .replaceAll('[Company Name]', companyName!);
 
     hideLoading(debugInfo: "getEmailAutofill - Success");
   }
@@ -2149,24 +2171,26 @@ class InvoiceController extends GetxController with ExceptionHandler {
       });
     }
 
-    var response = await DioClient().post(
-      url: ApiUrl.sendEmail,
-      body: {
-        "companyID": companyID,
-        "customerID": customerID.value,
-        "emailType": "$emailType Email",
-        "subject": subjectTextController.text,
-        "body": emailBodyTextController.text,
-        "recepientToEmail": toTextController.text,
-        "recepientCCEmail": "",
-        "recepientBCCEmail": bccTextController.text,
-        "emailContents": selectedFiles.isEmpty ? [] : emailContents,
-        "userId": userID,
-        "currentPdfType": pdfType,
-        "invoiceNo": invoiceID.value,
-        "isSendPaymentLink": isSendXPayLink.value,
-      },
-    ).catchError(handleError);
+    var response = await DioClient()
+        .post(
+          url: ApiUrl.sendEmail,
+          body: {
+            "companyID": companyID,
+            "customerID": customerID.value,
+            "emailType": "$emailType Email",
+            "subject": subjectTextController.text,
+            "body": emailBodyTextController.text,
+            "recepientToEmail": toTextController.text,
+            "recepientCCEmail": "",
+            "recepientBCCEmail": bccTextController.text,
+            "emailContents": selectedFiles.isEmpty ? [] : emailContents,
+            "userId": userID,
+            "currentPdfType": pdfType,
+            "invoiceNo": invoiceID.value,
+            "isSendPaymentLink": isSendXPayLink.value,
+          },
+        )
+        .catchError(handleError);
 
     if (response == null) return;
 
@@ -2188,22 +2212,24 @@ class InvoiceController extends GetxController with ExceptionHandler {
   Future<void> makePayment(String type) async {
     var companyID = MySharedPref.getCompanyID();
 
-    var response = await DioClient().post(
-      url: ApiUrl.makePayment,
-      body: {
-        "payment": {
-          "CompanyID": companyID,
-          "InvocieId": invoiceID.value,
-          "Amount": double.parse(finalCollectionAmount.value)
-              .abs()
-              .toStringAsFixed(2),
-          "Type": type,
-          "Source": "Xinator BMS",
-          "CheckName": checkNameTextController.text,
-          "CheckNumber": checkNumberTextController.text,
-        },
-      },
-    ).catchError(handleError);
+    var response = await DioClient()
+        .post(
+          url: ApiUrl.makePayment,
+          body: {
+            "payment": {
+              "CompanyID": companyID,
+              "InvocieId": invoiceID.value,
+              "Amount": double.parse(
+                finalCollectionAmount.value,
+              ).abs().toStringAsFixed(2),
+              "Type": type,
+              "Source": "Xinator BMS",
+              "CheckName": checkNameTextController.text,
+              "CheckNumber": checkNumberTextController.text,
+            },
+          },
+        )
+        .catchError(handleError);
 
     if (response == null) return;
 
@@ -2211,13 +2237,24 @@ class InvoiceController extends GetxController with ExceptionHandler {
     checkNameTextController.clear();
     final apptC = Get.find<AppointmentController>();
     await apptC.getAppointments();
+    await appointmentController.getInvoiceList();
     invoiceController.selectedItemList.clear();
-    final appt = appointmentController.sortedAppointments
-        .where((element) =>
-            element.apptID.toString() == apptC.appointmentID.toString())
-        .first;
+    final appt = !isExternalInvoice.value
+        ? appointmentController.sortedAppointments
+              .where(
+                (element) =>
+                    element.apptID.toString() == apptC.appointmentID.toString(),
+              )
+              .first
+        : appointmentController.extendedAppointments
+              .where(
+                (element) =>
+                    element.apptID.toString() == apptC.appointmentID.toString(),
+              )
+              .first;
     final proposal = appt.invoices!.firstWhere(
-        (element) => element.invoiceID.toString() == invoiceID.value);
+      (element) => element.invoiceID.toString() == invoiceID.value,
+    );
 
     invoiceItemList.value = proposal.items ?? [];
     invoiceController.depositList.value = proposal.paymentList ?? [];
@@ -2229,10 +2266,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     invoiceController.customerName = proposal.fullName ?? "";
     address = "${proposal.city}, ";
     invoiceController.depositAmount.value =
-        proposal.depositAmount?.toStringAsFixed(
-              2,
-            ) ??
-            "0.00";
+        proposal.depositAmount?.toStringAsFixed(2) ?? "0.00";
     invoiceID.value = proposal.invoiceID.toString();
     date = dateTimeConverter(
       inputFormat: "yyyy/MM/dd",
@@ -2287,17 +2321,10 @@ class InvoiceController extends GetxController with ExceptionHandler {
     // Set discount values
     invoiceController.invoiceDiscountDetails.value = proposal.discount ?? 0.00;
     if (proposal.discountOption == "1") {
-      invoiceController.editDiscountTextController.text = (((double.parse(
-                    proposal.discount?.toString() ?? "0.00",
-                  )) *
-                  100) /
-              double.parse(
-                proposal.subtotal?.toStringAsFixed(
-                      2,
-                    ) ??
-                    "0.00",
-              ))
-          .toStringAsFixed(2);
+      invoiceController.editDiscountTextController.text =
+          (((double.parse(proposal.discount?.toString() ?? "0.00")) * 100) /
+                  double.parse(proposal.subtotal?.toStringAsFixed(2) ?? "0.00"))
+              .toStringAsFixed(2);
     } else {
       invoiceController.editDiscountTextController.text = double.parse(
         proposal.discount?.toString() ?? "0.00",
@@ -2306,24 +2333,20 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     // Set tax values
 
-    tax.value = taxes
+    tax.value =
+        taxes
             .firstWhereOrNull(
               (tax) =>
-                  tax.id ==
-                  int.tryParse(
-                    invoiceController.initialTaxID.value,
-                  ),
+                  tax.id == int.tryParse(invoiceController.initialTaxID.value),
             )
             ?.rate
             ?.toStringAsFixed(2) ??
         "0.00";
-    invoiceController.selectedTaxName.value = taxes
+    invoiceController.selectedTaxName.value =
+        taxes
             .firstWhereOrNull(
               (tax) =>
-                  tax.id ==
-                  int.tryParse(
-                    invoiceController.initialTaxID.value,
-                  ),
+                  tax.id == int.tryParse(invoiceController.initialTaxID.value),
             )
             ?.name ??
         "";
@@ -2336,9 +2359,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
             id: item.itemId,
             name: item.name,
             description: item.description,
-            price: double.tryParse(
-              item.unitPrice ?? "0.00",
-            ),
+            price: double.tryParse(item.unitPrice ?? "0.00"),
             isTaxable: item.isTaxable == "TAX" ? true : false,
             // itemTypeId: int.parse(item.itemTyId!),
           ),
@@ -2346,21 +2367,15 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
         // Initialize controllers with existing values
         invoiceController.editAmountControllers.add(
-          TextEditingController(
-            text: item.unitPrice ?? "0.00",
-          ),
+          TextEditingController(text: item.unitPrice ?? "0.00"),
         );
 
         invoiceController.editDescriptionControllers.add(
-          TextEditingController(
-            text: item.description ?? "",
-          ),
+          TextEditingController(text: item.description ?? ""),
         );
 
         invoiceController.editQuantityControllers.add(
-          TextEditingController(
-            text: item.quantity ?? "1",
-          ),
+          TextEditingController(text: item.quantity ?? "1"),
         );
       }
     }
@@ -2368,16 +2383,12 @@ class InvoiceController extends GetxController with ExceptionHandler {
     await 0.5.delay();
     invoiceController.selectedQboClass(
       qboClassList
-          .where(
-            (e) => e.qboClassId.toString() == proposal.qboClassId,
-          )
+          .where((e) => e.qboClassId.toString() == proposal.qboClassId)
           .firstOrNull,
     );
     invoiceController.selectedQboLocation(
       invoiceController.qboLocationList
-          .where(
-            (e) => e.qboLocationId.toString() == proposal.qboLocationId,
-          )
+          .where((e) => e.qboLocationId.toString() == proposal.qboLocationId)
           .firstOrNull,
     );
     removedList.clear(); // Optional small delay before navigation
@@ -2392,9 +2403,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     // Show success toast if payment was successful
     if (response['IsValid'] == true && response['Message'] != null) {
-      MySnackBar.showToast(
-        message: response['Message'],
-      );
+      MySnackBar.showToast(message: response['Message']);
     }
 
     // Get.back();
@@ -2402,24 +2411,27 @@ class InvoiceController extends GetxController with ExceptionHandler {
     Get.back();
   }
 
+  final isExternalInvoice = RxBool(false);
   Future<void> makeDepositPay(String amount, String type) async {
     showLoading(debugInfo: "makeDepositPay - Start");
     var companyID = MySharedPref.getCompanyID();
 
-    var response = await DioClient().post(
-      url: ApiUrl.makePayment,
-      body: {
-        "payment": {
-          "CompanyID": companyID,
-          "InvocieId": invoiceID.value,
-          "Amount": amount.isEmpty ? "0.00" : amount,
-          "Type": type,
-          "Source": "Xinator BMS",
-          "CheckName": checkNameTextController.text,
-          "CheckNumber": checkNumberTextController.text,
-        },
-      },
-    ).catchError(handleError);
+    var response = await DioClient()
+        .post(
+          url: ApiUrl.makePayment,
+          body: {
+            "payment": {
+              "CompanyID": companyID,
+              "InvocieId": invoiceID.value,
+              "Amount": amount.isEmpty ? "0.00" : amount,
+              "Type": type,
+              "Source": "Xinator BMS",
+              "CheckName": checkNameTextController.text,
+              "CheckNumber": checkNumberTextController.text,
+            },
+          },
+        )
+        .catchError(handleError);
 
     if (response == null) {
       hideLoading(debugInfo: "makeDepositPay - Response null");
@@ -2429,15 +2441,30 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     // Refresh appointments to show updated payment data
     await apptC.getAppointments(showLoader: false);
-    log("appt Id ${apptC.appointmentID}");
-    log("appt Id $appointmentID");
+    await apptC.getInvoiceList(showLoader: false).then((_) {
+      hideLoading(debugInfo: "makeDepositPay - Success");
+    });
+    await Future.delayed(const Duration(milliseconds: 500));
     invoiceController.selectedItemList.clear();
-    final appt = appointmentController.sortedAppointments
-        .where((element) =>
-            element.apptID.toString() == apptC.appointmentID.toString())
-        .first;
+
+    log("Looking for Appointment ID: ${apptC.appointmentID}");
+    final appt = !isExternalInvoice.value
+        ? appointmentController.sortedAppointments
+              .where(
+                (element) =>
+                    element.apptID.toString() == apptC.appointmentID.toString(),
+              )
+              .first
+        : appointmentController.extendedAppointments
+              .where(
+                (element) =>
+                    element.apptID.toString() == apptC.appointmentID.toString(),
+              )
+              .first;
+
     final proposal = appt.invoices!.firstWhere(
-        (element) => element.invoiceID.toString() == invoiceID.value);
+      (element) => element.invoiceID.toString() == invoiceID.value,
+    );
 
     invoiceItemList.value = proposal.items ?? [];
     invoiceController.depositList.value = proposal.paymentList ?? [];
@@ -2449,10 +2476,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     invoiceController.customerName = proposal.fullName ?? "";
     address = "${proposal.city}, ";
     invoiceController.depositAmount.value =
-        proposal.depositAmount?.toStringAsFixed(
-              2,
-            ) ??
-            "0.00";
+        proposal.depositAmount?.toStringAsFixed(2) ?? "0.00";
     invoiceID.value = proposal.invoiceID.toString();
     date = dateTimeConverter(
       inputFormat: "yyyy/MM/dd",
@@ -2507,17 +2531,10 @@ class InvoiceController extends GetxController with ExceptionHandler {
     // Set discount values
     invoiceController.invoiceDiscountDetails.value = proposal.discount ?? 0.00;
     if (proposal.discountOption == "1") {
-      invoiceController.editDiscountTextController.text = (((double.parse(
-                    proposal.discount?.toString() ?? "0.00",
-                  )) *
-                  100) /
-              double.parse(
-                proposal.subtotal?.toStringAsFixed(
-                      2,
-                    ) ??
-                    "0.00",
-              ))
-          .toStringAsFixed(2);
+      invoiceController.editDiscountTextController.text =
+          (((double.parse(proposal.discount?.toString() ?? "0.00")) * 100) /
+                  double.parse(proposal.subtotal?.toStringAsFixed(2) ?? "0.00"))
+              .toStringAsFixed(2);
     } else {
       invoiceController.editDiscountTextController.text = double.parse(
         proposal.discount?.toString() ?? "0.00",
@@ -2526,24 +2543,20 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     // Set tax values
 
-    tax.value = taxes
+    tax.value =
+        taxes
             .firstWhereOrNull(
               (tax) =>
-                  tax.id ==
-                  int.tryParse(
-                    invoiceController.initialTaxID.value,
-                  ),
+                  tax.id == int.tryParse(invoiceController.initialTaxID.value),
             )
             ?.rate
             ?.toStringAsFixed(2) ??
         "0.00";
-    invoiceController.selectedTaxName.value = taxes
+    invoiceController.selectedTaxName.value =
+        taxes
             .firstWhereOrNull(
               (tax) =>
-                  tax.id ==
-                  int.tryParse(
-                    invoiceController.initialTaxID.value,
-                  ),
+                  tax.id == int.tryParse(invoiceController.initialTaxID.value),
             )
             ?.name ??
         "";
@@ -2556,9 +2569,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
             id: item.itemId,
             name: item.name,
             description: item.description,
-            price: double.tryParse(
-              item.unitPrice ?? "0.00",
-            ),
+            price: double.tryParse(item.unitPrice ?? "0.00"),
             isTaxable: item.isTaxable == "TAX" ? true : false,
             // itemTypeId: int.parse(item.itemTyId!),
           ),
@@ -2566,21 +2577,15 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
         // Initialize controllers with existing values
         invoiceController.editAmountControllers.add(
-          TextEditingController(
-            text: item.unitPrice ?? "0.00",
-          ),
+          TextEditingController(text: item.unitPrice ?? "0.00"),
         );
 
         invoiceController.editDescriptionControllers.add(
-          TextEditingController(
-            text: item.description ?? "",
-          ),
+          TextEditingController(text: item.description ?? ""),
         );
 
         invoiceController.editQuantityControllers.add(
-          TextEditingController(
-            text: item.quantity ?? "1",
-          ),
+          TextEditingController(text: item.quantity ?? "1"),
         );
       }
     }
@@ -2588,16 +2593,12 @@ class InvoiceController extends GetxController with ExceptionHandler {
     await 0.5.delay();
     invoiceController.selectedQboClass(
       qboClassList
-          .where(
-            (e) => e.qboClassId.toString() == proposal.qboClassId,
-          )
+          .where((e) => e.qboClassId.toString() == proposal.qboClassId)
           .firstOrNull,
     );
     invoiceController.selectedQboLocation(
       invoiceController.qboLocationList
-          .where(
-            (e) => e.qboLocationId.toString() == proposal.qboLocationId,
-          )
+          .where((e) => e.qboLocationId.toString() == proposal.qboLocationId)
           .firstOrNull,
     );
     removedList.clear(); // Optional small delay before navigation
@@ -2612,9 +2613,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     // Show success toast if payment was successful
     if (response['IsValid'] == true && response['Message'] != null) {
-      MySnackBar.showToast(
-        message: response['Message'],
-      );
+      MySnackBar.showToast(message: response['Message']);
     }
 
     Get.back();
@@ -2622,9 +2621,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     log("Deposit Response: $response");
   }
 
-  Future<void> saveSignature({
-    Payment? payment,
-  }) async {
+  Future<void> saveSignature({Payment? payment}) async {
     if (customerSignature == '') return;
     if (payment == null) return;
 
@@ -2642,33 +2639,28 @@ class InvoiceController extends GetxController with ExceptionHandler {
     var companyID = MySharedPref.getCompanyID();
     var userID = MySharedPref.getUserName();
     final apptC = Get.find<AppointmentController>();
-    var response = await DioClient().post(
-      url: ApiUrl.saveSignature,
-      body: {
-        "signature": {
-          "appointmentId": apptC.appointmentID,
-          "invoiceId": payment.invocieId,
-          "paymentId": payment.id,
-          "customerId": customerID.value,
-          "companyId": companyID.toString(),
-          "signatureFileName": "signature.png",
-          "signatureFileContent": customerSignature,
-          "userId": userID,
-        },
-      },
-    ).catchError(handleError);
-    log("sign body ${{
-      "signature": {
-        "appointmentId": apptC.appointmentID,
-        "invoiceId": payment.invocieId,
-        "paymentId": payment.id,
-        "customerId": customerID.value,
-        "companyId": companyID,
-        "signatureFileName": "signature.png",
-        "signatureFileContent": customerSignature,
-        "userId": userID,
-      },
-    }}");
+    var response = await DioClient()
+        .post(
+          url: ApiUrl.saveSignature,
+          body: {
+            "signature": {
+              "appointmentId": apptC.appointmentID,
+              "invoiceId": payment.invocieId,
+              "paymentId": payment.id,
+              "customerId": customerID.value,
+              "companyId": companyID.toString(),
+              "signatureFileName": "signature.png",
+              "signatureFileContent": customerSignature,
+              "userId": userID,
+            },
+          },
+        )
+        .catchError(handleError);
+    log(
+      "sign body ${{
+        "signature": {"appointmentId": apptC.appointmentID, "invoiceId": payment.invocieId, "paymentId": payment.id, "customerId": customerID.value, "companyId": companyID, "signatureFileName": "signature.png", "signatureFileContent": customerSignature, "userId": userID},
+      }}",
+    );
     if (response == null) return;
     log("Save Signature Response: $response");
   }
@@ -2678,45 +2670,50 @@ class InvoiceController extends GetxController with ExceptionHandler {
     showLoading(debugInfo: "generateTuaPaymentLink - Start");
     var companyID = MySharedPref.getCompanyID();
 
-    var response = await DioClient().post(
-      url: ApiUrl.generateTuaPaymentLink,
-      body: {
-        "request": {
-          "CompanyID": companyID,
-          "MerchantName": '',
-          "CustomerID": customerID.value,
-          "FirstName": tuaFirstNameController.text,
-          "LastName": tuaLastNameController.text,
-          "Email": tuaEmailController.text,
-          "Mobile": tuaMobileController.text,
-          "Address": tuaAddressController.text,
-          "City": tuaCityController.text,
-          "State": tuaStateController.text,
-          "ZipCode": tuaZipCodeController.text,
-          "InvoiceNumber": invoiceNumber,
-          "LoanAmount": tuaRemainAmountController.text,
-          "BaseAmount": tuaBaseAmountController.text,
-          "Percentage": 10,
-          "QBOCustomerID":
-              int.parse(selectedInvoice.value!.qBOCustomerId ?? '0'),
-          "QBOInvoiceID": int.parse(selectedInvoice.value!.qBOId ?? '0'),
-          "SendTextLink": true,
-        }
-      },
-    ).catchError(handleError);
+    var response = await DioClient()
+        .post(
+          url: ApiUrl.generateTuaPaymentLink,
+          body: {
+            "request": {
+              "CompanyID": companyID,
+              "MerchantName": '',
+              "CustomerID": customerID.value,
+              "FirstName": tuaFirstNameController.text,
+              "LastName": tuaLastNameController.text,
+              "Email": tuaEmailController.text,
+              "Mobile": tuaMobileController.text,
+              "Address": tuaAddressController.text,
+              "City": tuaCityController.text,
+              "State": tuaStateController.text,
+              "ZipCode": tuaZipCodeController.text,
+              "InvoiceNumber": invoiceNumber,
+              "LoanAmount": tuaRemainAmountController.text,
+              "BaseAmount": tuaBaseAmountController.text,
+              "Percentage": 10,
+              "QBOCustomerID": int.parse(
+                selectedInvoice.value!.qBOCustomerId ?? '0',
+              ),
+              "QBOInvoiceID": int.parse(selectedInvoice.value!.qBOId ?? '0'),
+              "SendTextLink": true,
+            },
+          },
+        )
+        .catchError(handleError);
 
     if (response == null) return;
 
     hideLoading(debugInfo: "generateTuaPaymentLink - Success");
     MySnackBar.showToast(
-        message: response["Message"] ?? "Payment link generated successfully");
+      message: response["Message"] ?? "Payment link generated successfully",
+    );
     log(response["Message"] ?? "Payment link generated successfully");
   }
 
   void updateRequestedDepositAmount() {
     final rate =
         double.tryParse(requestDepositRateEditTextController.text) ?? 0.0;
-    final total = ((invoiceSubtotal.value - invoiceDiscount.value) -
+    final total =
+        ((invoiceSubtotal.value - invoiceDiscount.value) -
                 nonTaxableTotalInDetails.value) *
             (double.tryParse(tax.value) ?? 0) /
             100 +
@@ -2730,11 +2727,13 @@ class InvoiceController extends GetxController with ExceptionHandler {
   Future<void> getXPayLink(String amount) async {
     showLoading(debugInfo: "getXPayLink - Start");
     var companyID = MySharedPref.getCompanyID();
-    var response = await DioClient().get(
-      url:
-          "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx/GenerateXPayLink?companyId=$companyID&customerId=${customerID.value}&invoiceId=${invoiceID.value}&customerName=$customerName&email=$createCustomerEmail&amount=$amount",
-      params: {},
-    ).catchError(handleError);
+    var response = await DioClient()
+        .get(
+          url:
+              "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx/GenerateXPayLink?companyId=$companyID&customerId=${customerID.value}&invoiceId=${invoiceID.value}&customerName=$customerName&email=$createCustomerEmail&amount=$amount",
+          params: {},
+        )
+        .catchError(handleError);
 
     if (response == null) return;
     log("XPay Link: $response");
