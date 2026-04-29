@@ -109,19 +109,25 @@ class EquipmentModel {
 
   /// Create EquipmentModel from server JSON (PascalCase)
   factory EquipmentModel.fromJsonServer(Map<String, dynamic> json) {
+    final serialNumber = json['SerialNumber'] as String? ?? '';
+    final make = json['Make'] as String?;
+    final model = json['Model'] as String?;
+    final barcode = json['Barcode'] as String?;
+    final notes = json['Notes'] as String?;
+
     return EquipmentModel(
       id: json['Id']?.toString(),
       companyId: json['CompanyID'] as String?,
       customerId: json['CustomerID']?.toString(),
       customerGuid: json['CustomerGuid'] as String?,
       siteId: json['SiteId'] as int?,
-      serialNumber: json['SerialNumber'] as String? ?? '',
+      serialNumber: serialNumber.isNotEmpty ? serialNumber : 'N/A',
       equipmentTypeId: json['EquipmentTypeID']?.toString(),
-      make: json['Make'] as String?,
-      model: json['Model'] as String?,
-      barcode: json['Barcode'] as String?,
-      sku: json['Barcode'] as String?, // API doesn't have SKU, using Barcode
-      notes: json['Notes'] as String?,
+      make: make?.isNotEmpty == true ? make : null,
+      model: model?.isNotEmpty == true ? model : null,
+      barcode: barcode?.isNotEmpty == true ? barcode : null,
+      sku: barcode?.isNotEmpty == true ? barcode : null, // API doesn't have SKU, using Barcode
+      notes: notes?.isNotEmpty == true ? notes : null,
       warrantyStart: _parseApiDate(json['WarrantyStart'] as String?),
       warrantyEnd: _parseApiDate(json['WarrantyEnd'] as String?),
       laborWarrantyStart: _parseApiDate(json['LaborWarrantyStart'] as String?),
@@ -129,7 +135,7 @@ class EquipmentModel {
       installDate: _parseApiDate(json['InstallDate'] as String?),
       createdAt: _parseApiDate(json['CreatedDateTime'] as String?),
       updatedAt: _parseApiDate(json['UpdatedDateTime'] as String?),
-      type: '', // Will be set based on equipmentTypeId lookup
+      type: json['EquipmentType'] as String? ?? '', // Use EquipmentType from API response
     );
   }
 

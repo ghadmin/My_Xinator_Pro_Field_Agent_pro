@@ -521,8 +521,16 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
 class EquipmentCard extends StatelessWidget {
   final EquipmentModel equipment;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
-  const EquipmentCard({super.key, required this.equipment, this.onTap});
+  const EquipmentCard({
+    super.key,
+    required this.equipment,
+    this.onTap,
+    this.onEdit,
+    this.onDelete,
+  });
 
   String _formatDate(String? dateStr) {
     if (dateStr == null || dateStr.isEmpty) return 'N/A';
@@ -560,151 +568,190 @@ class EquipmentCard extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12.r),
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row with serial number
+      child: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row with actions
+            if (!isWarrantyValid || (onEdit != null || onDelete != null)) ...[
               Row(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          equipment.serialNumber,
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        if (equipment.type.isNotEmpty)
-                          Text(
-                            equipment.type,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
                   if (!isWarrantyValid)
                     Icon(
                       Icons.warning_amber_rounded,
                       color: Colors.orange,
                       size: 20.sp,
                     ),
+                  if (!isWarrantyValid && (onEdit != null || onDelete != null))
+                    const Spacer(),
+                  // Action buttons
+                  if (onEdit != null || onDelete != null) ...[
+                    if (onEdit != null)
+                      IconButton(
+                        onPressed: onEdit,
+                        icon: Icon(Icons.edit_outlined, size: 18.sp),
+                        color: Colors.blue,
+                        padding: EdgeInsets.all(4.w),
+                        constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.w),
+                      ),
+                    if (onDelete != null)
+                      IconButton(
+                        onPressed: onDelete,
+                        icon: Icon(Icons.delete_outline, size: 18.sp),
+                        color: Colors.red,
+                        padding: EdgeInsets.all(4.w),
+                        constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.w),
+                      ),
+                  ],
                 ],
               ),
-
-              // Make, Model, SKU
-              if (equipment.make != null ||
-                  equipment.model != null ||
-                  equipment.sku != null) ...[
-                SizedBox(height: 12.h),
-                Wrap(
-                  spacing: 16.w,
-                  runSpacing: 8.h,
-                  children: [
-                    if (equipment.make != null && equipment.make!.isNotEmpty)
-                      _buildInfoChip(Icons.business, equipment.make!),
-                    if (equipment.model != null && equipment.model!.isNotEmpty)
-                      _buildInfoChip(Icons.category, equipment.model!),
-                    if (equipment.sku != null && equipment.sku!.isNotEmpty)
-                      _buildInfoChip(Icons.tag, equipment.sku!),
-                  ],
-                ),
-              ],
-
-              // Dates
               SizedBox(height: 12.h),
-              Row(
-                children: [
-                  Icon(
-                    isWarrantyValid
-                        ? Icons.verified
-                        : Icons.warning_amber_rounded,
-                    size: 14.sp,
-                    color: isWarrantyValid ? Colors.green : Colors.orange,
-                  ),
-                  SizedBox(width: 6.w),
-                  Expanded(
-                    child: Text(
-                      'Warranty: ${_formatDate(equipment.warrantyStart)} - ${_formatDate(equipment.warrantyEnd)}',
+            ],
+
+            // All fields with labels
+            if (equipment.type.isNotEmpty)
+              _buildSingleDetailRow('Type', equipment.type),
+            _buildSingleDetailRow('Serial Number',
+                equipment.serialNumber.isNotEmpty ? equipment.serialNumber : 'N/A'),
+
+            // Make, Model in row
+            _buildDetailRow(
+                'Make', equipment.make?.isNotEmpty == true ? equipment.make! : 'N/A',
+                'Model', equipment.model?.isNotEmpty == true ? equipment.model! : 'N/A'),
+
+            // SKU
+            if (equipment.sku != null && equipment.sku!.isNotEmpty)
+              _buildSingleDetailRow('SKU', equipment.sku!),
+
+            SizedBox(height: 12.h),
+
+            // Warranty Dates Section
+            _buildDateSection('Warranty', equipment.warrantyStart, equipment.warrantyEnd),
+
+            // Labor Warranty Dates Section
+            if (equipment.laborWarrantyStart != null ||
+                equipment.laborWarrantyEnd != null)
+              _buildDateSection('Labor Warranty', equipment.laborWarrantyStart, equipment.laborWarrantyEnd),
+
+            // Install Date
+            if (equipment.installDate != null && equipment.installDate!.isNotEmpty)
+              _buildSingleDetailRow('Install Date', _formatDate(equipment.installDate)),
+
+            // Notes
+            if (equipment.notes != null && equipment.notes!.isNotEmpty) ...[
+              SizedBox(height: 12.h),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Notes',
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        fontSize: 11.sp,
                         color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                ],
-              ),
-
-              if (equipment.installDate != null &&
-                  equipment.installDate!.isNotEmpty) ...[
-                SizedBox(height: 6.h),
-                Row(
-                  children: [
-                    Icon(Icons.event, size: 14.sp, color: Colors.grey[400]),
-                    SizedBox(width: 6.w),
-                    Expanded(
-                      child: Text(
-                        'Installed: ${_formatDate(equipment.installDate)}',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.grey[600],
-                        ),
-                      ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      equipment.notes!,
+                      style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
+                      maxLines: null,
                     ),
                   ],
                 ),
-              ],
-
-              // Notes
-              if (equipment.notes != null && equipment.notes!.isNotEmpty) ...[
-                SizedBox(height: 12.h),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(12.w),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    equipment.notes!,
-                    style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
-                    maxLines: null,
-                  ),
-                ),
-              ],
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String value) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+  Widget _buildDetailRow(String label1, String value1, String label2, String value2) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 6.h),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildDetailItem(label1, value1),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: _buildDetailItem(label2, value2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSingleDetailRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 6.h),
+      child: _buildDetailItem(label, value),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 14.sp, color: Colors.grey[500]),
-        SizedBox(width: 4.w),
         Text(
-          value,
+          label,
           style: TextStyle(
-            fontSize: 12.sp,
-            color: Colors.grey[700],
+            fontSize: 11.sp,
+            color: Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
         ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13.sp,
+            color: Colors.grey[800],
+            fontWeight: FontWeight.w400,
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildDateSection(String label, String? startDate, String? endDate) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.sp,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Row(
+            children: [
+              Icon(Icons.calendar_today, size: 12.sp, color: Colors.grey[500]),
+              SizedBox(width: 4.w),
+              Text(
+                '${_formatDate(startDate)} - ${_formatDate(endDate)}',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

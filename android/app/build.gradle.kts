@@ -33,8 +33,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = "11"
+    compilerOptions {
+        jvmTarget.set("11")
     }
 
     // ✅ Signing Config for Play Store release
