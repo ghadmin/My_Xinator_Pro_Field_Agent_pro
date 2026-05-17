@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
@@ -90,12 +91,13 @@ class DioClient {
   Future<dynamic> get({
     required String url,
     Map<String, dynamic>? params,
+    Map<String, dynamic>? headers,
   }) async {
     try {
       log(" params: $params");
       var response = await _dio.get(
         url,
-        options: Options(headers: {}),
+        options: Options(headers: headers),
         queryParameters: params,
         // Don't encode query parameters to prevent double encoding issues
       );
@@ -114,12 +116,13 @@ class DioClient {
     required String url,
     Map<String, dynamic>? params,
     dynamic body,
+    Map<String, dynamic>? headers,
   }) async {
     var payload = json.encode(body);
     try {
       var response = await _dio.post(
         url,
-        options: Options(headers: {}),
+        options: Options(headers: headers),
         queryParameters: params,
         data: payload,
       );
@@ -236,12 +239,13 @@ class DioClient {
     required String url,
     Map<String, dynamic>? params,
     required String savePath, // Full path to save the file
+    Map<String, dynamic>? headers,
   }) async {
     try {
       var response = await _dio.download(
         url,
         savePath,
-        options: Options(headers: Header.defaultHeader),
+        options: Options(headers: headers),
         queryParameters: params,
       );
 
@@ -249,6 +253,32 @@ class DioClient {
         return File(savePath);
       }
     } catch (e) {
+      rethrow;
+    }
+    return null;
+  }
+
+  // DOWNLOAD FILE AS BYTES
+  Future<Uint8List?> downloadBytes({
+    required String url,
+    Map<String, dynamic>? params,
+    Map<String, dynamic>? headers,
+  }) async {
+    try {
+      var response = await _dio.get(
+        url,
+        options: Options(
+          headers: headers,
+          responseType: ResponseType.bytes,
+        ),
+        queryParameters: params,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return Uint8List.fromList(response.data);
+      }
+    } catch (e) {
+      log('Error downloading bytes: $e');
       rethrow;
     }
     return null;

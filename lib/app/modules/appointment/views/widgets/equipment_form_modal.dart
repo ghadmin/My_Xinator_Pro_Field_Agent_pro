@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../../../config/theme/light_theme_colors.dart';
 import '../../../../components/global-widgets/text_widget.dart';
-import '../../../../components/global-widgets/my_snackbar.dart';
 import '../../controllers/appointment_controller.dart';
 import '../../models/equipment_model.dart';
 import '../../models/equipment_type_model.dart';
@@ -123,7 +122,10 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
     );
 
     // Add or update in local list
-    controller.updateEquipment(equipment);
+    widget.equipment != null
+        ? controller.updateEquipment(equipment)
+        : controller.saveEquipment(equipment);
+    ;
   }
 
   Future<void> _selectDate(String fieldKey) async {
@@ -573,52 +575,112 @@ class EquipmentCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header row with actions
-            if (!isWarrantyValid || (onEdit != null || onDelete != null)) ...[
-              Row(
-                children: [
-                  if (!isWarrantyValid)
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      color: Colors.orange,
-                      size: 20.sp,
+            // Header row with type badge and actions
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Type Badge
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.w,
+                      vertical: 6.h,
                     ),
-                  if (!isWarrantyValid && (onEdit != null || onDelete != null))
-                    const Spacer(),
-                  // Action buttons
-                  if (onEdit != null || onDelete != null) ...[
-                    if (onEdit != null)
-                      IconButton(
-                        onPressed: onEdit,
-                        icon: Icon(Icons.edit_outlined, size: 18.sp),
-                        color: Colors.blue,
-                        padding: EdgeInsets.all(4.w),
-                        constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.w),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(
+                        color: Colors.blue.withValues(alpha: 0.3),
                       ),
-                    if (onDelete != null)
-                      IconButton(
-                        onPressed: onDelete,
-                        icon: Icon(Icons.delete_outline, size: 18.sp),
-                        color: Colors.red,
-                        padding: EdgeInsets.all(4.w),
-                        constraints: BoxConstraints(minWidth: 32.w, minHeight: 32.w),
+                    ),
+                    child: Text(
+                      'Equipment Type: ${equipment.type.isEmpty ? "N/A" : equipment.type}',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.blue[700],
+                        fontWeight: FontWeight.w600,
                       ),
-                  ],
-                ],
-              ),
-              SizedBox(height: 12.h),
-            ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                // Warning icon if warranty invalid
+                if (!isWarrantyValid)
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange,
+                    size: 20.sp,
+                  ),
+                // Action buttons
+                if (onEdit != null) SizedBox(width: 4.w),
+                if (onEdit != null)
+                  InkWell(
+                    onTap: onEdit,
+                    borderRadius: BorderRadius.circular(8.r),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 6.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: Colors.blue.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 16.sp,
+                            color: Colors.blue[700],
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            'Edit',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Colors.blue[700],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (onDelete != null) SizedBox(width: 8.w),
+                if (onDelete != null)
+                  IconButton(
+                    onPressed: onDelete,
+                    icon: Icon(Icons.delete_outline, size: 18.sp),
+                    color: Colors.red,
+                    padding: EdgeInsets.all(4.w),
+                    constraints: BoxConstraints(
+                      minWidth: 32.w,
+                      minHeight: 32.w,
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: 12.h),
 
-            // All fields with labels
-            if (equipment.type.isNotEmpty)
-              _buildSingleDetailRow('Type', equipment.type),
-            _buildSingleDetailRow('Serial Number',
-                equipment.serialNumber.isNotEmpty ? equipment.serialNumber : 'N/A'),
+            // All fields with labels (excluding Type since it's in header)
+            _buildSingleDetailRow(
+              'Serial Number',
+              equipment.serialNumber.isNotEmpty
+                  ? equipment.serialNumber
+                  : 'N/A',
+            ),
 
             // Make, Model in row
             _buildDetailRow(
-                'Make', equipment.make?.isNotEmpty == true ? equipment.make! : 'N/A',
-                'Model', equipment.model?.isNotEmpty == true ? equipment.model! : 'N/A'),
+              'Make',
+              equipment.make?.isNotEmpty == true ? equipment.make! : 'N/A',
+              'Model',
+              equipment.model?.isNotEmpty == true ? equipment.model! : 'N/A',
+            ),
 
             // SKU
             if (equipment.sku != null && equipment.sku!.isNotEmpty)
@@ -627,16 +689,28 @@ class EquipmentCard extends StatelessWidget {
             SizedBox(height: 12.h),
 
             // Warranty Dates Section
-            _buildDateSection('Warranty', equipment.warrantyStart, equipment.warrantyEnd),
+            _buildDateSection(
+              'Warranty',
+              equipment.warrantyStart,
+              equipment.warrantyEnd,
+            ),
 
             // Labor Warranty Dates Section
             if (equipment.laborWarrantyStart != null ||
                 equipment.laborWarrantyEnd != null)
-              _buildDateSection('Labor Warranty', equipment.laborWarrantyStart, equipment.laborWarrantyEnd),
+              _buildDateSection(
+                'Labor Warranty',
+                equipment.laborWarrantyStart,
+                equipment.laborWarrantyEnd,
+              ),
 
             // Install Date
-            if (equipment.installDate != null && equipment.installDate!.isNotEmpty)
-              _buildSingleDetailRow('Install Date', _formatDate(equipment.installDate)),
+            if (equipment.installDate != null &&
+                equipment.installDate!.isNotEmpty)
+              _buildSingleDetailRow(
+                'Install Date',
+                _formatDate(equipment.installDate),
+              ),
 
             // Notes
             if (equipment.notes != null && equipment.notes!.isNotEmpty) ...[
@@ -662,7 +736,10 @@ class EquipmentCard extends StatelessWidget {
                     SizedBox(height: 4.h),
                     Text(
                       equipment.notes!,
-                      style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: Colors.grey[700],
+                      ),
                       maxLines: null,
                     ),
                   ],
@@ -675,18 +752,19 @@ class EquipmentCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label1, String value1, String label2, String value2) {
+  Widget _buildDetailRow(
+    String label1,
+    String value1,
+    String label2,
+    String value2,
+  ) {
     return Padding(
       padding: EdgeInsets.only(bottom: 6.h),
       child: Row(
         children: [
-          Expanded(
-            child: _buildDetailItem(label1, value1),
-          ),
+          Expanded(child: _buildDetailItem(label1, value1)),
           SizedBox(width: 16.w),
-          Expanded(
-            child: _buildDetailItem(label2, value2),
-          ),
+          Expanded(child: _buildDetailItem(label2, value2)),
         ],
       ),
     );
@@ -743,10 +821,7 @@ class EquipmentCard extends StatelessWidget {
               SizedBox(width: 4.w),
               Text(
                 '${_formatDate(startDate)} - ${_formatDate(endDate)}',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 12.sp, color: Colors.grey[700]),
               ),
             ],
           ),

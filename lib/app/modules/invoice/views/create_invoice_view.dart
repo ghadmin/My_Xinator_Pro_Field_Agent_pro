@@ -132,8 +132,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: 220.sp,
+                              Flexible(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -998,7 +997,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                             ),
                                             SizedBox(height: 16.sp),
                                             SizedBox(
-                                              height: 42.sp,
+                                              height: 42.h,
                                               width: double.infinity,
                                               child: PrimaryButton(
                                                 title: "Close",
@@ -1570,7 +1569,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                     },
                                     child: Container(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: 10.sp,
+                                        horizontal: 8.sp,
                                         vertical: 5.sp,
                                       ),
                                       decoration: BoxDecoration(

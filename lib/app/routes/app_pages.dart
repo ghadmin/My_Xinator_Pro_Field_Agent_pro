@@ -4,7 +4,6 @@ import '../modules/appointment/bindings/appointment_binding.dart';
 import '../modules/appointment/bindings/custom_fields_binding.dart';
 import '../modules/appointment/views/appointment_details_view.dart';
 import '../modules/appointment/views/appointment_view.dart';
-import '../modules/appointment/views/see_all_form_screen.dart';
 import '../modules/appointment/views/tag_details_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/login_view.dart';
@@ -13,9 +12,9 @@ import '../modules/csl/views/csl_view.dart';
 import '../modules/customer/bindings/customer_binding.dart';
 import '../modules/customer/views/customer_details_view.dart';
 import '../modules/customer/views/customer_view.dart';
-import '../modules/forms/bindings/form_binding.dart';
-import '../modules/forms/views/form_builder_screen.dart';
-import '../modules/forms/views/form_view.dart';
+
+import '../modules/forms/binding/form_bindings.dart';
+import '../modules/forms/views/forms_inbox_view.dart';
 import '../modules/invoice/bindings/invoice_binding.dart';
 import '../modules/invoice/views/create_invoice_view.dart';
 import '../modules/invoice/views/invoice_details_view.dart';
@@ -41,7 +40,6 @@ import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
 import '../modules/twilio_chat/bindings/twilio_chat_binding.dart';
 import '../modules/twilio_chat/views/twilio_chat_view.dart';
-
 // ignore_for_file: constant_identifier_names
 
 part 'app_routes.dart';
@@ -78,7 +76,12 @@ class AppPages {
     GetPage(
       name: _Paths.APPOINTMENT,
       page: () => const AppointmentView(),
-      bindings: [AppointmentBinding(), CustomFieldsBinding()],
+      bindings: [AppointmentBinding(), CustomFieldsBinding(), FormBindings()],
+    ),
+    GetPage(
+      name: _Paths.FORMS,
+      page: () => const FormsInboxView(),
+      binding: FormBindings(),
     ),
     GetPage(name: _Paths.CSLVIEW, page: () => const CslScreen()),
     GetPage(
@@ -112,11 +115,7 @@ class AppPages {
     //   page: () => const InvoiceView(),
     //   binding: InvoiceBinding(),
     // ),
-    GetPage(
-      name: _Paths.INVOICE_CREATE,
-      page: () => CreateInvoiceView(),
-      bindings: [InvoiceBinding(), FormBinding()],
-    ),
+    GetPage(name: _Paths.INVOICE_CREATE, page: () => CreateInvoiceView()),
     GetPage(
       name: _Paths.TAG_DETAILS,
       page: () => TagSelectionScreen(),
@@ -125,13 +124,8 @@ class AppPages {
     GetPage(
       name: _Paths.INVOICE_DETAILS,
       page: () => const InvoiceDetailsView(),
-      bindings: [InvoiceBinding(), FormBinding()],
     ),
-    GetPage(
-      name: _Paths.FORMS,
-      page: () => const FormView(),
-      binding: FormBinding(),
-    ),
+
     GetPage(name: _Paths.X_PAY_LINK_WEB, page: () => XPayLinkScreen()),
     GetPage(
       name: _Paths.TICKET_STATUS,
@@ -168,11 +162,7 @@ class AppPages {
       page: () => const PaymentByCheckView(),
       binding: InvoiceBinding(),
     ),
-    GetPage(
-      name: _Paths.FORMS_CREATE_DRAGG_DROP,
-      page: () => const FormBuilderScreen(),
-      binding: FormBinding(),
-    ),
+
     GetPage(
       name: _Paths.PAYMENT_BY_BANK_TRANSFER,
       page: () => const PaymentByACHView(),
@@ -183,11 +173,7 @@ class AppPages {
       page: () => const ManualPaymentView(),
       binding: InvoiceBinding(),
     ),
-    GetPage(
-      name: Routes.SEEALLFORMS,
-      page: () =>
-          SeeAllFormsScreen(initialTabIndex: Get.arguments['tabIndex'] ?? 0),
-    ),
+
     GetPage(
       name: _Paths.XPAY_PAYMENT,
       page: () => const XPayPaymentView(),
@@ -198,5 +184,13 @@ class AppPages {
       page: () => const TwilioChatView(),
       binding: TwilioChatBinding(),
     ),
+
+    // GetPage(
+    //   name: _Paths.RAG_CHAT,
+    //   page: () => const RAGView(),
+    //   binding: BindingsBuilder(() {
+    //     Get.lazyPut<RAGController>(() => RAGController());
+    //   }),
+    // ),
   ];
 }

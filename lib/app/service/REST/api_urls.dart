@@ -1,15 +1,19 @@
 class ApiUrl {
   /// Base URL
-  static const baseUrl =
-      "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
   // static const baseUrl =
-  //   "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
+  //     "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
+  static const baseUrl =
+      //   "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
+      "https://mxp.myserviceforce.com/cec/Services/DeviceService.asmx";
 
-  //static const paymentBaseUrl =
-  //  "https://paymentportal.xceleran.com/webterminal/Clearent/AppCCPayment_CL.aspx";
   static const paymentBaseUrl =
-      "https://dev-services.myserviceforce.com/webterminal/Clearent/AppCCPayment_CL.aspx";
-
+      "https://paymentportal.xceleran.com/webterminal/Clearent/AppCCPayment_CL.aspx";
+  // static const paymentBaseUrl =
+  //     "https://dev-services.myserviceforce.com/webterminal/Clearent/AppCCPayment_CL.aspx";
+  static const fileBaseUrl =
+      "https://mxp.myserviceforce.com/cec/Services/FSMFiles";
+  static const imageBaseUrl =
+      "https://mxp.myserviceforce.com/cec/Services/FSMPictures";
   static const login = "$baseUrl/VerifyUser";
   static const getAppointment = "$baseUrl/GetAppointmentList";
   static const getInvoiceList = "$baseUrl/GetAppointmentListCustomerSiteWise";
@@ -31,7 +35,6 @@ class ApiUrl {
   static const saveSignature = "$baseUrl/SaveSignature";
   static const emailAutofill = "$baseUrl/GetAutoFillValuesForEmail";
   static const convertEST = "$baseUrl/ConvertEstimateToInvoice";
-  static const getFormTypeUrl = "$baseUrl/GetAllFormTemplates";
   // static const saveImageUrl = "$baseUrl/SaveImageForCSL";
   static const saveImageUrl = "$baseUrl/SavePictures";
   // static const getImageListUrl = "$baseUrl/GetImageForCSL";
@@ -61,4 +64,78 @@ class ApiUrl {
       "$baseUrl/SaveAppointmentCustomFields";
   static const generateTuaPaymentLink = "$baseUrl/GenerateTuaPaymentLink";
   static const getCustomerSitesUrl = "$baseUrl/GetCustomerSites";
+
+  // Forms API endpoints
+  static const getAllForms = "$baseUrl/GetAllFormTemplates";
+  static const assignFormsToAppointment = "$baseUrl/AssignForm";
+  static const getAppointmentForms = "$baseUrl/GetAppointmentForms";
+
+  //forms API endpoints
+
+  /// Base URL for FaProSync API
+  static const String baseTestUrl = "https://testsite.myserviceforce.com/fsm";
+
+  static const String baseLiveUrl = "https://mxp.myserviceforce.com/fsm";
+
+  /// Base URL for PDF files (no .ashx suffix)
+  static const String pdfBaseUrl = "https://testsite.myserviceforce.com";
+
+  /// Get current base URL
+  static String get currentBaseUrl => baseLiveUrl;
+
+  /// Get current PDF base URL
+  static String get currentPdfBaseUrl => pdfBaseUrl;
+
+  /// API Key for FaProSync
+  static const String apiKey = "fapro_a8f3k29dm4c7p1r6w9q2x5y8b3n7t1v4z6h0j2l5";
+
+  // ============== BUILD URL METHODS ==============
+
+  /// Build poll URL: GET /FaProSync.ashx?op=poll&companyId={X}&resourceId={Y}
+  static String pollUrl(String companyId, String resourceId) {
+    return "$currentBaseUrl/FaProSync.ashx?op=poll&companyId=$companyId&resourceId=$resourceId";
+  }
+
+  /// Build ack URL: POST /FaProSync.ashx?op=ack
+  static String get ackUrl => "$currentBaseUrl/FaProSync.ashx?op=ack";
+
+  /// Build submit URL: POST /FaProSync.ashx?op=submit
+  static String get submitUrl => "$currentBaseUrl/FaProSync.ashx?op=submit";
+
+  /// Build PDF download URL
+  static String pdfDownloadUrl(String relativePath) {
+    final cleanPath = relativePath.startsWith('/')
+        ? relativePath.substring(1)
+        : relativePath;
+    return "$currentPdfBaseUrl$cleanPath";
+  }
+
+  /// Build stamped PDF URL
+  static String stampedPdfUrl(String relativePath) {
+    return pdfDownloadUrl(relativePath);
+  }
+
+  /// Build get template URL: GET /FaProSync.ashx?op=gettemplate&companyId={X}&templateId={Y}
+  static String getTemplateUrl(String companyId, int templateId) {
+    return "$currentBaseUrl/FaProSync.ashx?op=gettemplate&companyId=$companyId&templateId=$templateId";
+  }
+
+  /// Build get template PDF URL: GET /FaProSync.ashx?op=gettemplatepdf&companyId={X}&templateId={Y}
+  static String getTemplatePdfUrl(String companyId, int templateId) {
+    return "$currentBaseUrl/FaProSync.ashx?op=gettemplatepdf&companyId=$companyId&templateId=$templateId";
+  }
+
+  // ============== HEADERS ==============
+
+  /// Authentication header with API key
+  static Map<String, String> get authHeaders => {"X-Api-Key": apiKey};
+
+  /// JSON content type headers with auth
+  static Map<String, String> get jsonHeaders => {
+    "Content-Type": "application/json",
+    ...authHeaders,
+  };
 }
+
+// Alias for consistency with existing code
+typedef ApiUrls = ApiUrl;

@@ -76,7 +76,7 @@ class ManualPaymentView extends GetView<InvoiceController> {
                 ),
               ),
               SizedBox(height: 30.h),
-              _backButton(),
+              _backButton(), SizedBox(height: 30.h),
             ],
           ),
         ),
@@ -127,8 +127,8 @@ class ManualPaymentView extends GetView<InvoiceController> {
 
   SizedBox _backButton() {
     return SizedBox(
-      height: 40.sp,
-      width: 245.sp,
+      height: 48.h,
+      width: 120.sp,
       child: PrimaryButton(
         title: "Back",
         onPressed: () async {

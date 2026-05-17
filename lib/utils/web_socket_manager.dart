@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:get/get.dart';
-import 'package:logger/logger.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'klog.dart';
 
 class WebSocketManager {
   late WebSocketChannel _channel;
@@ -36,21 +36,21 @@ class WebSocketManager {
           },
           cancelOnError: true,
         );
-        Logger().i('WebSocket connection established in: $url');
+        kLog('WebSocket connection established in: $url');
       } catch (e) {
         connectWebSocket();
-        Logger().e('WebSocket connection failed: $e');
+        kLog('WebSocket connection failed: $e');
       }
     }
   }
 
   // Decoding main socket response to get particular value
   void _parseReceivedMessage(String message) {
-    Logger().d('Received message: $message');
+    kLog('Received message: $message');
     final Map<String, dynamic> data = jsonDecode(message);
     if (data.containsKey('json_key')) {
       yourJsonKeyValue.value = data['json_key'];
-      Logger().d(yourJsonKeyValue.value);
+      kLog(yourJsonKeyValue.value);
     }
   }
 
@@ -58,13 +58,13 @@ class WebSocketManager {
     if (_webSocket.readyState == WebSocket.open) {
       _webSocket.add(message);
     } else {
-      Logger().e('WebSocket is not open.');
+      kLog('WebSocket is not open.');
     }
   }
 
   void closeWebSocket() {
     _channel.sink.close();
-    Logger().i("WebSocket connection closed!");
+    kLog("WebSocket connection closed!");
   }
 }
 

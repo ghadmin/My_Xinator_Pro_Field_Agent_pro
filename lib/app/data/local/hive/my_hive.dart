@@ -1,6 +1,6 @@
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:logger/logger.dart';
 
+import '../../../../utils/klog.dart';
 import '../../../modules/appointment/models/appointment_model.dart';
 import '../../../modules/customer/models/customer_model.dart';
 import '../../../modules/invoice/models/tax_model.dart';
@@ -19,6 +19,7 @@ class MyHive {
   static late Box<AppointmentStatusSetting> _appointmentStatusSettingBox;
   static late Box<TaxModel> _taxBox;
   static late Box<ItemListModel> _itemListBox;
+  static late Box<dynamic> _formsBox;
 
   // Box name, it's like the table name
 
@@ -29,6 +30,7 @@ class MyHive {
   static const String _itemListBoxName = 'itemListBox';
   static const String _appointmentStatusSettingBoxName =
       'appointmentStatusSetting';
+  static const String _formsBoxName = 'forms';
 
   /// Initialize local db (HIVE)
   /// Pass testPath only if you are testing hive
@@ -49,6 +51,7 @@ class MyHive {
     await initAppointmentStatusSettingBox();
     await initTaxBox();
     await initItemListBox();
+    await initFormsBox();
   }
 
   /// Initialize appointments box
@@ -85,6 +88,11 @@ class MyHive {
     _itemListBox = await Hive.openBox<ItemListModel>(_itemListBoxName);
   }
 
+  /// Initialize forms box
+  static Future<void> initFormsBox() async {
+    _formsBox = await Hive.openBox<dynamic>(_formsBoxName);
+  }
+
   /// Save all appointments to the database
   static Future<void> saveAllAppointments(
     List<Appointments> appointments,
@@ -93,7 +101,7 @@ class MyHive {
       await _appointmentBox.clear();
       await _appointmentBox.addAll(appointments);
     } catch (error) {
-      Logger().e("$error");
+      kLog("Error saving appointments: $error");
     }
   }
 
@@ -103,7 +111,7 @@ class MyHive {
       await _customerBox.clear();
       await _customerBox.addAll(customers);
     } catch (error) {
-      Logger().e("$error");
+      kLog("Error saving appointments: $error");
     }
   }
 
@@ -115,7 +123,7 @@ class MyHive {
       await _ticketStatusSettingBox.clear();
       await _ticketStatusSettingBox.addAll(ticketStatusSetting);
     } catch (error) {
-      Logger().e("$error");
+      kLog("Error saving appointments: $error");
     }
   }
 
@@ -127,7 +135,7 @@ class MyHive {
       await _appointmentStatusSettingBox.clear();
       await _appointmentStatusSettingBox.addAll(appointmentStatusSetting);
     } catch (error) {
-      Logger().e("$error");
+      kLog("Error saving appointments: $error");
     }
   }
 
@@ -137,7 +145,7 @@ class MyHive {
       await _taxBox.clear();
       await _taxBox.addAll(tax);
     } catch (error) {
-      Logger().e("$error");
+      kLog("Error saving appointments: $error");
     }
   }
 
@@ -147,7 +155,7 @@ class MyHive {
       await _itemListBox.clear();
       await _itemListBox.addAll(items);
     } catch (error) {
-      Logger().e("$error");
+      kLog("Error saving appointments: $error");
     }
   }
 
@@ -186,5 +194,69 @@ class MyHive {
   static List<ItemListModel> getAllItemList() {
     final item = _itemListBox.values.toList();
     return item.cast<ItemListModel>();
+  }
+
+  /// Save forms data for a specific resource
+  static Future<void> saveFormsData(
+    String resourceId,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      await _formsBox.put(resourceId, data);
+      kLog("✅ Saved forms data for resourceId: $resourceId");
+    } catch (error) {
+      kLog("❌ Error saving forms data: $error");
+    }
+  }
+
+  /// Get forms data for a specific resource
+  static Map<String, dynamic>? getFormsData(String resourceId) {
+    try {
+      final data = _formsBox.get(resourceId);
+      if (data != null && data is Map) {
+        return Map<String, dynamic>.from(data);
+      }
+      return null;
+    } catch (error) {
+      kLog("❌ Error getting forms data: $error");
+      return null;
+    }
+  }
+
+  /// Get all forms data
+  static Map<String, dynamic> getAllFormsData() {
+    try {
+      final data = <String, dynamic>{};
+      for (final key in _formsBox.keys) {
+        final value = _formsBox.get(key);
+        if (value != null && value is Map) {
+          data[key.toString()] = Map<String, dynamic>.from(value);
+        }
+      }
+      return data;
+    } catch (error) {
+      kLog("❌ Error getting all forms data: $error");
+      return {};
+    }
+  }
+
+  /// Clear forms data for a specific resource
+  static Future<void> clearFormsData(String resourceId) async {
+    try {
+      await _formsBox.delete(resourceId);
+      kLog("✅ Cleared forms data for resourceId: $resourceId");
+    } catch (error) {
+      kLog("❌ Error clearing forms data: $error");
+    }
+  }
+
+  /// Clear all forms data
+  static Future<void> clearAllFormsData() async {
+    try {
+      await _formsBox.clear();
+      kLog("✅ Cleared all forms data");
+    } catch (error) {
+      kLog("❌ Error clearing all forms data: $error");
+    }
   }
 }

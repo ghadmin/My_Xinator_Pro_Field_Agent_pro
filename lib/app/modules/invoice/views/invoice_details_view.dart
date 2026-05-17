@@ -59,8 +59,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           child: SafeArea(
             child: Obx(
               () => Padding(
-                padding:
-                    EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 20.sp,
+                  vertical: 20.sp,
+                ),
                 child: SingleChildScrollView(
                   physics: BouncingScrollPhysics(),
                   child: Column(
@@ -77,14 +79,15 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           color: controller.type.value == "Invoice"
                               ? theme.primaryColor
                               : controller.type.value == "Estimate" &&
-                                      controller.isConverted.value == true
-                                  ? Colors.green
-                                  : Colors.yellow,
+                                    controller.isConverted.value == true
+                              ? Colors.green
+                              : Colors.yellow,
                         ),
                         child: Text(
                           "${controller.type.value}: ${controller.invoiceNumber}",
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: controller.type.value == "Estimate" &&
+                            color:
+                                controller.type.value == "Estimate" &&
                                     controller.isConverted.value == false
                                 ? Colors.black
                                 : Colors.white,
@@ -110,7 +113,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       itemsList(theme),
                       SizedBox(height: 15.sp),
                       SizedBox(
-                        height: 48.sp,
+                        height: 52.h,
                         child: SecondaryButtonWithIcon(
                           title: "Add Item",
                           iconData: Icons.add_circle_outline,
@@ -226,19 +229,19 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     ),
                                   ]
                                 : classList.isEmpty
-                                    ? [
-                                        const DropdownMenuItem(
-                                          value: null,
-                                          enabled: false,
-                                          child: Text("No data available"),
-                                        ),
-                                      ]
-                                    : classList.map((cls) {
-                                        return DropdownMenuItem(
-                                          value: cls,
-                                          child: Text(cls.name),
-                                        );
-                                      }).toList(),
+                                ? [
+                                    const DropdownMenuItem(
+                                      value: null,
+                                      enabled: false,
+                                      child: Text("No data available"),
+                                    ),
+                                  ]
+                                : classList.map((cls) {
+                                    return DropdownMenuItem(
+                                      value: cls,
+                                      child: Text(cls.name),
+                                    );
+                                  }).toList(),
                             onChanged: (val) {
                               controller.selectedQboClass.value = val;
                             },
@@ -390,18 +393,22 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 controller.invoiceDetailsEmailBccFocusnode.value
                                     .unfocus();
                                 controller
-                                    .invoiceDetailsEmailSubjectFocusnode.value
+                                    .invoiceDetailsEmailSubjectFocusnode
+                                    .value
                                     .unfocus();
                                 controller
-                                    .invoiceDetailsEmailBodyFocusnode.value
+                                    .invoiceDetailsEmailBodyFocusnode
+                                    .value
                                     .unfocus();
                                 controller.invoiceDetailsSearchFocusnode.value
                                     .unfocus();
                                 controller
-                                    .invoiceDetailsEditDiscountFocusnode.value
+                                    .invoiceDetailsEditDiscountFocusnode
+                                    .value
                                     .unfocus();
                                 controller
-                                    .invoiceDetailsDepositRateFocusnode.value
+                                    .invoiceDetailsDepositRateFocusnode
+                                    .value
                                     .unfocus();
                               },
                               child: Container(
@@ -418,11 +425,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     children: [
                                       Text(
                                         "Send Email",
-                                        style:
-                                            theme.textTheme.bodyLarge?.copyWith(
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                              fontSize: 18.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                       SizedBox(height: 15.sp),
                                       GeneralTextField(
@@ -491,7 +498,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 width: 1.sp,
                                               ),
                                               value: controller
-                                                  .isSendXPayLink.value,
+                                                  .isSendXPayLink
+                                                  .value,
                                               onChanged: (value) {
                                                 controller
                                                     .invoiceDetailsNoteFocusnode
@@ -517,8 +525,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                     .invoiceDetailsSearchFocusnode
                                                     .value
                                                     .unfocus();
-                                                controller.isSendXPayLink
-                                                    .value = value!;
+                                                controller
+                                                        .isSendXPayLink
+                                                        .value =
+                                                    value!;
                                               },
                                             ),
                                           ),
@@ -526,11 +536,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                             "Send XPayLink",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              color: LightThemeColors
-                                                  .hintTextColor,
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                                  color: LightThemeColors
+                                                      .hintTextColor,
+                                                  fontSize: 14.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -551,7 +561,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 width: 1.sp,
                                               ),
                                               value: controller
-                                                  .isSendTuaPayLink.value,
+                                                  .isSendTuaPayLink
+                                                  .value,
                                               onChanged: (value) {
                                                 controller
                                                     .invoiceDetailsNoteFocusnode
@@ -577,8 +588,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                     .invoiceDetailsSearchFocusnode
                                                     .value
                                                     .unfocus();
-                                                controller.isSendTuaPayLink
-                                                    .value = value!;
+                                                controller
+                                                        .isSendTuaPayLink
+                                                        .value =
+                                                    value!;
                                               },
                                             ),
                                           ),
@@ -586,62 +599,70 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                             "Send TUA PAY Link",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              color: LightThemeColors
-                                                  .hintTextColor,
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                                  color: LightThemeColors
+                                                      .hintTextColor,
+                                                  fontSize: 14.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ],
                                       ),
-                                      Obx(() => SizedBox(
-                                            height: controller
-                                                        .selectedFiles.length <
-                                                    5
-                                                ? controller
-                                                        .selectedFiles.length *
+                                      Obx(
+                                        () => SizedBox(
+                                          height:
+                                              controller.selectedFiles.length <
+                                                  5
+                                              ? controller
+                                                        .selectedFiles
+                                                        .length *
                                                     50.sp
-                                                : 200.sp,
-                                            child: ListView.builder(
-                                              shrinkWrap: true,
-                                              physics: controller.selectedFiles
-                                                          .length <
-                                                      4
-                                                  ? NeverScrollableScrollPhysics()
-                                                  : BouncingScrollPhysics(),
-                                              itemCount: controller
-                                                  .selectedFiles.length,
-                                              itemBuilder: (context, index) {
-                                                return ListTile(
-                                                  leading: Icon(
-                                                    Remix.file_2_line,
-                                                    color: Colors.green,
-                                                    size: 16.sp,
-                                                  ),
-                                                  title: Text(controller
-                                                      .selectedFiles[index].path
+                                              : 200.sp,
+                                          child: ListView.builder(
+                                            shrinkWrap: true,
+                                            physics:
+                                                controller
+                                                        .selectedFiles
+                                                        .length <
+                                                    4
+                                                ? NeverScrollableScrollPhysics()
+                                                : BouncingScrollPhysics(),
+                                            itemCount:
+                                                controller.selectedFiles.length,
+                                            itemBuilder: (context, index) {
+                                              return ListTile(
+                                                leading: Icon(
+                                                  Remix.file_2_line,
+                                                  color: Colors.green,
+                                                  size: 16.sp,
+                                                ),
+                                                title: Text(
+                                                  controller
+                                                      .selectedFiles[index]
+                                                      .path
                                                       .split('/')
-                                                      .last),
-                                                  trailing: IconButton(
-                                                    icon: Icon(
-                                                      Icons.remove_circle,
-                                                      color:
-                                                          Colors.red.shade300,
-                                                    ),
-                                                    onPressed: () {
-                                                      controller.selectedFiles
-                                                          .removeAt(index);
-                                                      controller.docFileList =
-                                                          RxList.from(controller
-                                                              .selectedFiles); // Update docFileList for upload
-                                                    },
+                                                      .last,
+                                                ),
+                                                trailing: IconButton(
+                                                  icon: Icon(
+                                                    Icons.remove_circle,
+                                                    color: Colors.red.shade300,
                                                   ),
-                                                );
-                                              },
-                                            ),
-                                          )),
+                                                  onPressed: () {
+                                                    controller.selectedFiles
+                                                        .removeAt(index);
+                                                    controller
+                                                        .docFileList = RxList.from(
+                                                      controller.selectedFiles,
+                                                    ); // Update docFileList for upload
+                                                  },
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
                                       // SizedBox(
-                                      //   height: 48.sp,
+                                      //   height: 52.h,
                                       //   child: SecondaryButtonWithIcon(
                                       //       title: "Add Attachment",
                                       //       onPressed: () async {
@@ -655,7 +676,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                         children: [
                                           Expanded(
                                             child: SizedBox(
-                                              height: 48.sp,
+                                              height: 52.h,
                                               child: SecondaryButton(
                                                 title: "Cancel",
                                                 onPressed: () {
@@ -670,7 +691,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                           SizedBox(width: 10.sp),
                                           Expanded(
                                             child: SizedBox(
-                                              height: 48.sp,
+                                              height: 52.h,
                                               child: PrimaryButton(
                                                 title: "Send",
                                                 onPressed: () async {
@@ -683,11 +704,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                         controller.type.value,
                                                   );
                                                   if (controller
-                                                      .isSendTuaPayLink.value) {
+                                                      .isSendTuaPayLink
+                                                      .value) {
                                                     _showTuaPayLinkDialog(
-                                                        context,
-                                                        theme,
-                                                        controller);
+                                                      context,
+                                                      theme,
+                                                      controller,
+                                                    );
                                                   }
                                                 },
                                                 inactive: false,
@@ -769,20 +792,24 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     controller.invoiceDetailsNoteFocusnode.value
                                         .unfocus();
                                     controller
-                                        .invoiceDetailsEmailToFocusnode.value
+                                        .invoiceDetailsEmailToFocusnode
+                                        .value
                                         .unfocus();
                                     controller
-                                        .invoiceDetailsEmailBccFocusnode.value
+                                        .invoiceDetailsEmailBccFocusnode
+                                        .value
                                         .unfocus();
                                     controller
                                         .invoiceDetailsEmailSubjectFocusnode
                                         .value
                                         .unfocus();
                                     controller
-                                        .invoiceDetailsEmailBodyFocusnode.value
+                                        .invoiceDetailsEmailBodyFocusnode
+                                        .value
                                         .unfocus();
                                     controller
-                                        .invoiceDetailsSearchFocusnode.value
+                                        .invoiceDetailsSearchFocusnode
+                                        .value
                                         .unfocus();
                                     controller
                                         .invoiceDetailsEditDiscountFocusnode
@@ -809,9 +836,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                             "Send Email",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              fontSize: 18.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                                  fontSize: 18.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                           SizedBox(height: 15.sp),
                                           GeneralTextField(
@@ -875,8 +902,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                      4.r,
-                                                    ),
+                                                          4.r,
+                                                        ),
                                                   ),
                                                   side: BorderSide(
                                                     color: LightThemeColors
@@ -884,10 +911,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                     width: 1.sp,
                                                   ),
                                                   value: controller
-                                                      .isSendXPayLink.value,
+                                                      .isSendXPayLink
+                                                      .value,
                                                   onChanged: (value) {
-                                                    controller.isSendXPayLink
-                                                        .value = value!;
+                                                    controller
+                                                            .isSendXPayLink
+                                                            .value =
+                                                        value!;
                                                   },
                                                 ),
                                               ),
@@ -895,11 +925,12 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 "Send XPayLink",
                                                 style: theme.textTheme.bodyLarge
                                                     ?.copyWith(
-                                                  color: LightThemeColors
-                                                      .hintTextColor,
-                                                  fontSize: 14.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
+                                                      color: LightThemeColors
+                                                          .hintTextColor,
+                                                      fontSize: 14.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -914,8 +945,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                      4.r,
-                                                    ),
+                                                          4.r,
+                                                        ),
                                                   ),
                                                   side: BorderSide(
                                                     color: LightThemeColors
@@ -923,10 +954,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                     width: 1.sp,
                                                   ),
                                                   value: controller
-                                                      .isSendTuaPayLink.value,
+                                                      .isSendTuaPayLink
+                                                      .value,
                                                   onChanged: (value) {
-                                                    controller.isSendTuaPayLink
-                                                        .value = value!;
+                                                    controller
+                                                            .isSendTuaPayLink
+                                                            .value =
+                                                        value!;
                                                   },
                                                 ),
                                               ),
@@ -934,11 +968,12 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 "Send TUA PAY Link",
                                                 style: theme.textTheme.bodyLarge
                                                     ?.copyWith(
-                                                  color: LightThemeColors
-                                                      .hintTextColor,
-                                                  fontSize: 14.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
+                                                      color: LightThemeColors
+                                                          .hintTextColor,
+                                                      fontSize: 14.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -984,7 +1019,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                           //       ),
                                           //     )),
                                           // SizedBox(
-                                          //   height: 48.sp,
+                                          //   height: 52.h,
                                           //   child: SecondaryButtonWithIcon(
                                           //       title: "Add Attachment",
                                           //       onPressed: () async {
@@ -998,7 +1033,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                             children: [
                                               Expanded(
                                                 child: SizedBox(
-                                                  height: 48.sp,
+                                                  height: 52.h,
                                                   child: SecondaryButton(
                                                     title: "Cancel",
                                                     onPressed: () {
@@ -1013,7 +1048,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                               SizedBox(width: 10.sp),
                                               Expanded(
                                                 child: SizedBox(
-                                                  height: 48.sp,
+                                                  height: 52.h,
                                                   child: PrimaryButton(
                                                     title: "Send",
                                                     onPressed: () async {
@@ -1022,17 +1057,22 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                           .isSendTuaPayLink
                                                           .value) {
                                                         _showTuaPayLinkDialog(
-                                                            context,
-                                                            theme,
-                                                            controller);
+                                                          context,
+                                                          theme,
+                                                          controller,
+                                                        );
                                                       } else {
                                                         await controller
                                                             .sendEmail(
-                                                          pdfType: controller
-                                                              .type.value,
-                                                          emailType: controller
-                                                              .type.value,
-                                                        );
+                                                              pdfType:
+                                                                  controller
+                                                                      .type
+                                                                      .value,
+                                                              emailType:
+                                                                  controller
+                                                                      .type
+                                                                      .value,
+                                                            );
                                                       }
                                                     },
                                                     inactive: false,
@@ -1215,8 +1255,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   style: theme.textTheme.bodyLarge,
                                 ),
                                 SizedBox(height: 4.sp),
-                                controller.editDescriptionControllers[index]
-                                        .text.isEmpty
+                                controller
+                                        .editDescriptionControllers[index]
+                                        .text
+                                        .isEmpty
                                     ? SizedBox.shrink()
                                     : Text(
                                         controller
@@ -1249,24 +1291,30 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   controller.invoiceDetailsNoteFocusnode.value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailToFocusnode.value
+                                      .invoiceDetailsEmailToFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailBccFocusnode.value
+                                      .invoiceDetailsEmailBccFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailSubjectFocusnode.value
+                                      .invoiceDetailsEmailSubjectFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailBodyFocusnode.value
+                                      .invoiceDetailsEmailBodyFocusnode
+                                      .value
                                       .unfocus();
                                   controller.invoiceDetailsSearchFocusnode.value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEditDiscountFocusnode.value
+                                      .invoiceDetailsEditDiscountFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsDepositRateFocusnode.value
+                                      .invoiceDetailsDepositRateFocusnode
+                                      .value
                                       .unfocus();
                                   showAdaptiveDialog(
                                     context: context,
@@ -1289,10 +1337,12 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 child: Text(
                                                   'Edit Item',
                                                   style: theme
-                                                      .textTheme.bodyLarge
+                                                      .textTheme
+                                                      .bodyLarge
                                                       ?.copyWith(
-                                                    color: theme.primaryColor,
-                                                  ),
+                                                        color:
+                                                            theme.primaryColor,
+                                                      ),
                                                 ),
                                               ),
 
@@ -1309,25 +1359,24 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Description",
-                                                          style: theme.textTheme
+                                                          style: theme
+                                                              .textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 10.sp),
                                                         Expanded(
-                                                          child:
-                                                              GeneralTextField(
+                                                          child: GeneralTextField(
                                                             hint: "Description",
                                                             theme: theme,
                                                             maxLine: 4,
                                                             textEditingController:
                                                                 controller
-                                                                        .editDescriptionControllers[
-                                                                    index],
+                                                                    .editDescriptionControllers[index],
                                                             onChanged: (v) {
                                                               controller
-                                                                  .selectedItemList[
-                                                                      index]
-                                                                  .description = v;
+                                                                      .selectedItemList[index]
+                                                                      .description =
+                                                                  v;
                                                               controller
                                                                   .markAsDirty();
                                                             },
@@ -1340,31 +1389,29 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Amount: \$",
-                                                          style: theme.textTheme
+                                                          style: theme
+                                                              .textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 18.sp),
                                                         Expanded(
-                                                          child:
-                                                              GeneralTextField(
+                                                          child: GeneralTextField(
                                                             hint: "Amount",
                                                             textInputType:
-                                                                TextInputType
-                                                                    .numberWithOptions(
-                                                              decimal: true,
-                                                            ),
+                                                                TextInputType.numberWithOptions(
+                                                                  decimal: true,
+                                                                ),
                                                             theme: theme,
                                                             textEditingController:
                                                                 controller
-                                                                        .editAmountControllers[
-                                                                    index],
+                                                                    .editAmountControllers[index],
                                                             onChanged: (value) {
                                                               controller
-                                                                  .selectedItemList[
-                                                                      index]
-                                                                  .price = double
-                                                                      .tryParse(
-                                                                          value) ??
+                                                                      .selectedItemList[index]
+                                                                      .price =
+                                                                  double.tryParse(
+                                                                    value,
+                                                                  ) ??
                                                                   0.00;
 
                                                               controller
@@ -1384,25 +1431,23 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Quantity:",
-                                                          style: theme.textTheme
+                                                          style: theme
+                                                              .textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 25.sp),
                                                         Expanded(
-                                                          child:
-                                                              GeneralTextField(
+                                                          child: GeneralTextField(
                                                             hint: '1',
                                                             textInputType:
-                                                                TextInputType
-                                                                    .numberWithOptions(
-                                                              decimal: true,
-                                                              signed: false,
-                                                            ),
+                                                                TextInputType.numberWithOptions(
+                                                                  decimal: true,
+                                                                  signed: false,
+                                                                ),
                                                             theme: theme,
                                                             textEditingController:
                                                                 controller
-                                                                        .editQuantityControllers[
-                                                                    index],
+                                                                    .editQuantityControllers[index],
                                                             onChanged: (value) {
                                                               controller
                                                                   .markAsDirty();
@@ -1420,16 +1465,16 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Taxable:",
-                                                          style: theme.textTheme
+                                                          style: theme
+                                                              .textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 30.sp),
                                                         Obx(
-                                                          () => DropdownButton<
-                                                              bool>(
-                                                            value: controller
-                                                                    .selectedItemList[
-                                                                        index]
+                                                          () => DropdownButton<bool>(
+                                                            value:
+                                                                controller
+                                                                    .selectedItemList[index]
                                                                     .isTaxable ??
                                                                 true,
                                                             dropdownColor:
@@ -1452,9 +1497,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                               controller
                                                                   .markAsDirty();
                                                               controller
-                                                                  .selectedItemList[
-                                                                      index]
-                                                                  .isTaxable = value;
+                                                                      .selectedItemList[index]
+                                                                      .isTaxable =
+                                                                  value;
 
                                                               controller
                                                                   .createTotalForEdit();
@@ -1505,24 +1550,30 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   controller.invoiceDetailsNoteFocusnode.value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailToFocusnode.value
+                                      .invoiceDetailsEmailToFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailBccFocusnode.value
+                                      .invoiceDetailsEmailBccFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailSubjectFocusnode.value
+                                      .invoiceDetailsEmailSubjectFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailBodyFocusnode.value
+                                      .invoiceDetailsEmailBodyFocusnode
+                                      .value
                                       .unfocus();
                                   controller.invoiceDetailsSearchFocusnode.value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEditDiscountFocusnode.value
+                                      .invoiceDetailsEditDiscountFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsDepositRateFocusnode.value
+                                      .invoiceDetailsDepositRateFocusnode
+                                      .value
                                       .unfocus();
                                   showAdaptiveDialog(
                                     context: context,
@@ -1613,9 +1664,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           Offset offset = renderBox.localToGlobal(
                             Offset(0, 32.sp),
                           );
-                          final RenderBox overlay = Overlay.of(context)
-                              .context
-                              .findRenderObject() as RenderBox;
+                          final RenderBox overlay =
+                              Overlay.of(context).context.findRenderObject()
+                                  as RenderBox;
                           showMenu(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.all(
@@ -1649,23 +1700,28 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               controller.invoiceDetailsEmailBccFocusnode.value
                                   .unfocus();
                               controller
-                                  .invoiceDetailsEmailSubjectFocusnode.value
+                                  .invoiceDetailsEmailSubjectFocusnode
+                                  .value
                                   .unfocus();
                               controller.invoiceDetailsEmailBodyFocusnode.value
                                   .unfocus();
                               controller.invoiceDetailsSearchFocusnode.value
                                   .unfocus();
                               controller
-                                  .invoiceDetailsEditDiscountFocusnode.value
+                                  .invoiceDetailsEditDiscountFocusnode
+                                  .value
                                   .unfocus();
                               controller
-                                  .invoiceDetailsDepositRateFocusnode.value
+                                  .invoiceDetailsDepositRateFocusnode
+                                  .value
                                   .unfocus();
                               controller.markAsDirty();
-                              final selectedDiscount =
-                                  controller.discountOptions.firstWhere(
-                                (element) => element["value"] == selectedValue,
-                              );
+                              final selectedDiscount = controller
+                                  .discountOptions
+                                  .firstWhere(
+                                    (element) =>
+                                        element["value"] == selectedValue,
+                                  );
                               controller.selectedDiscountOption.value =
                                   selectedDiscount["value"];
                               controller.createTotalForEdit();
@@ -1735,7 +1791,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           theme: theme,
                           textAlignment: TextAlign.end,
                           focusNode: controller
-                              .invoiceDetailsEditDiscountFocusnode.value,
+                              .invoiceDetailsEditDiscountFocusnode
+                              .value,
                           textEditingController:
                               controller.editDiscountTextController,
                           onChanged: (value) {
@@ -1880,9 +1937,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       RenderBox renderBox =
                           context.findRenderObject() as RenderBox;
                       Offset offset = renderBox.localToGlobal(Offset(0, 32.sp));
-                      final RenderBox overlay = Overlay.of(context)
-                          .context
-                          .findRenderObject() as RenderBox;
+                      final RenderBox overlay =
+                          Overlay.of(context).context.findRenderObject()
+                              as RenderBox;
                       showMenu(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(8.r)),
@@ -1946,10 +2003,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 selectedTax.name ?? "";
                             controller.tax.value =
                                 selectedTax.rate?.toStringAsFixed(2) ?? "0.00";
-                            controller.selectedTaxID.value =
-                                selectedTax.id.toString();
-                            controller.initialTaxID.value =
-                                selectedTax.id.toString();
+                            controller.selectedTaxID.value = selectedTax.id
+                                .toString();
+                            controller.initialTaxID.value = selectedTax.id
+                                .toString();
                             controller.createTotalForEdit();
                             controller.updateRequestedDepositAmount();
                           }
@@ -2138,7 +2195,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "\$ ${controller.depositAmount.value}",
+                    "\$${controller.depositAmount.value}",
                     style: theme.textTheme.bodyLarge!.copyWith(
                       color: Colors.green,
                     ),
@@ -2161,7 +2218,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "\$ ${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}",
+                    "\$${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}",
                     style: theme.textTheme.bodyLarge!.copyWith(
                       color: Colors.red,
                     ),
@@ -2204,57 +2261,53 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             controller.type.value == "Invoice"
                 ? SizedBox.shrink()
                 : controller.isConverted.value
-                    ? SizedBox.shrink()
-                    : Row(
-                        children: [
-                          Obx(
-                            () => Checkbox(
-                              activeColor: theme.primaryColor,
-                              checkColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4.r),
-                              ),
-                              side: BorderSide(
-                                color: LightThemeColors.primaryColor,
-                                width: 1.sp,
-                              ),
-                              value: controller.convertToInvoice.value,
-                              onChanged: (value) {
-                                controller.invoiceDetailsNoteFocusnode.value
-                                    .unfocus();
-                                controller.invoiceDetailsEmailToFocusnode.value
-                                    .unfocus();
-                                controller.invoiceDetailsEmailBccFocusnode.value
-                                    .unfocus();
-                                controller
-                                    .invoiceDetailsEmailSubjectFocusnode.value
-                                    .unfocus();
-                                controller
-                                    .invoiceDetailsEmailBodyFocusnode.value
-                                    .unfocus();
-                                controller.invoiceDetailsSearchFocusnode.value
-                                    .unfocus();
-                                controller
-                                    .invoiceDetailsEditDiscountFocusnode.value
-                                    .unfocus();
-                                controller
-                                    .invoiceDetailsDepositRateFocusnode.value
-                                    .unfocus();
-                                controller.convertToInvoice.value = value!;
-                                controller.markAsDirty();
-                              },
-                            ),
+                ? SizedBox.shrink()
+                : Row(
+                    children: [
+                      Obx(
+                        () => Checkbox(
+                          activeColor: theme.primaryColor,
+                          checkColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4.r),
                           ),
-                          Text(
-                            "Convert to Invoice",
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          side: BorderSide(
+                            color: LightThemeColors.primaryColor,
+                            width: 1.sp,
                           ),
-                        ],
+                          value: controller.convertToInvoice.value,
+                          onChanged: (value) {
+                            controller.invoiceDetailsNoteFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailToFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailBccFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailSubjectFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailBodyFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsSearchFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEditDiscountFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsDepositRateFocusnode.value
+                                .unfocus();
+                            controller.convertToInvoice.value = value!;
+                            controller.markAsDirty();
+                          },
+                        ),
                       ),
+                      Text(
+                        "Convert to Invoice",
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: LightThemeColors.hintTextColor,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
             MainDivider(),
             SizedBox(height: 20.sp),
             Padding(
@@ -2272,9 +2325,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       RenderBox renderBox =
                           context.findRenderObject() as RenderBox;
                       Offset offset = renderBox.localToGlobal(Offset(0, 36.sp));
-                      final RenderBox overlay = Overlay.of(context)
-                          .context
-                          .findRenderObject() as RenderBox;
+                      final RenderBox overlay =
+                          Overlay.of(context).context.findRenderObject()
+                              as RenderBox;
                       showMenu(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(8.r)),
@@ -2297,9 +2350,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     e["name"] == "Requested Deposit Amount:(%)"
                                         ? "Requested Payment Amount:(%)"
                                         : e["name"] ==
-                                                "Requested Deposit Amount:(\$)"
-                                            ? "Requested Payment Amount:(\$)"
-                                            : e["name"],
+                                              "Requested Deposit Amount:(\$)"
+                                        ? "Requested Payment Amount:(\$)"
+                                        : e["name"],
                                   )
                                 : Text(e["name"] ?? ""),
                           );
@@ -2328,10 +2381,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               .clear();
                           controller.requestDepositRateEditTextController
                               .clear();
-                          final selectedDeposit =
-                              controller.depositRequestOptions.firstWhere(
-                            (element) => element["value"] == selectedValue,
-                          );
+                          final selectedDeposit = controller
+                              .depositRequestOptions
+                              .firstWhere(
+                                (element) => element["value"] == selectedValue,
+                              );
                           controller.selectedDepositRequestOption.value =
                               selectedDeposit["value"];
                           controller.selectedDepositRequestOptionName.value =
@@ -2357,17 +2411,19 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         children: [
                           controller.type.value == "Invoice"
                               ? Text(
-                                  controller.selectedDepositRequestOptionName
+                                  controller
+                                              .selectedDepositRequestOptionName
                                               .value ==
                                           "Requested Deposit Amount:(%)"
                                       ? "Requested Payment Amount:(%)"
-                                      : controller.selectedDepositRequestOptionName
-                                                  .value ==
-                                              "Requested Deposit Amount:(\$)"
-                                          ? "Requested Payment Amount:(\$)"
-                                          : controller
-                                              .selectedDepositRequestOptionName
-                                              .value,
+                                      : controller
+                                                .selectedDepositRequestOptionName
+                                                .value ==
+                                            "Requested Deposit Amount:(\$)"
+                                      ? "Requested Payment Amount:(\$)"
+                                      : controller
+                                            .selectedDepositRequestOptionName
+                                            .value,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color:
                                         LightThemeColors.bodyTextSecondaryColor,
@@ -2376,7 +2432,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 )
                               : Text(
                                   controller
-                                      .selectedDepositRequestOptionName.value,
+                                      .selectedDepositRequestOptionName
+                                      .value,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color:
                                         LightThemeColors.bodyTextSecondaryColor,
@@ -2413,33 +2470,39 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                             hint: "0.00",
                             theme: theme,
                             focusNode: controller
-                                .invoiceDetailsDepositRateFocusnode.value,
+                                .invoiceDetailsDepositRateFocusnode
+                                .value,
                             textInputType: TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             onChanged: (v) {
                               controller.markAsDirty();
                               final rate = double.tryParse(v) ?? 0.0;
-                              final total = ((controller.invoiceSubtotal.value -
+                              final total =
+                                  ((controller.invoiceSubtotal.value -
                                               controller
-                                                  .invoiceDiscount.value) -
+                                                  .invoiceDiscount
+                                                  .value) -
                                           controller
-                                              .nonTaxableTotalInDetails.value) *
+                                              .nonTaxableTotalInDetails
+                                              .value) *
                                       (double.tryParse(controller.tax.value) ??
                                           0) /
                                       100 +
                                   ((controller.invoiceSubtotal.value) -
                                       (controller.invoiceDiscount.value));
-                              final depositAmount = ((total -
-                                          double.parse(
-                                            controller.depositAmount.value,
-                                          )) *
-                                      rate /
-                                      100)
-                                  .toStringAsFixed(2);
+                              final depositAmount =
+                                  ((total -
+                                              double.parse(
+                                                controller.depositAmount.value,
+                                              )) *
+                                          rate /
+                                          100)
+                                      .toStringAsFixed(2);
                               controller
-                                  .requestedDepositAmountEditTextController
-                                  .text = depositAmount;
+                                      .requestedDepositAmountEditTextController
+                                      .text =
+                                  depositAmount;
                             },
                             textEditingController:
                                 controller.requestDepositRateEditTextController,
@@ -2485,9 +2548,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           ),
                         ),
                       ),
-                      keyboardType:
-                          TextInputType.numberWithOptions(decimal: true),
-                      readOnly: controller.selectedDepositRequestOption.value ==
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      readOnly:
+                          controller.selectedDepositRequestOption.value ==
                                   "1" ||
                               controller.selectedDepositRequestOption.value ==
                                   "0"
@@ -2508,7 +2573,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             MainDivider(),
             SizedBox(height: 5.sp),
             SizedBox(
-              height: 48.sp,
+              height: 52.h,
               width: double.infinity,
               child: PrimaryButton(
                 title: "Save",
@@ -2526,7 +2591,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             SizedBox(height: 10.sp),
             controller.selectedDepositRequestOption.value == "0"
                 ? SizedBox(
-                    height: 48.sp,
+                    height: 52.h,
                     width: double.infinity,
                     child: PrimaryButton(
                       title: "Pay Now",
@@ -2535,16 +2600,18 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           _showUnsavedChangesDialog(context, () {
                             // User confirms to proceed
                             controller.depositRequestPay.value = false;
-                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
-                                .then((_) {
+                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!.then((
+                              _,
+                            ) {
                               // Refresh invoice data when returning from payment
                               controller.getInvoiceName();
                             });
                           });
                         } else {
                           controller.depositRequestPay.value = false;
-                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
-                              .then((_) {
+                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!.then((
+                            _,
+                          ) {
                             // Refresh invoice data when returning from payment
                             controller.getInvoiceName();
                           });
@@ -2554,7 +2621,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     ),
                   )
                 : SizedBox(
-                    height: 48.sp,
+                    height: 52.h,
                     width: double.infinity,
                     child: PrimaryButton(
                       backgroundColor: Colors.black87,
@@ -2566,16 +2633,18 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         if (controller.isDirty.value) {
                           _showUnsavedChangesDialog(context, () {
                             controller.depositRequestPay.value = true;
-                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
-                                .then((_) {
+                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!.then((
+                              _,
+                            ) {
                               // Refresh invoice data when returning from payment
                               controller.getInvoiceName();
                             });
                           });
                         } else {
                           controller.depositRequestPay.value = true;
-                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
-                              .then((_) {
+                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!.then((
+                            _,
+                          ) {
                             // Refresh invoice data when returning from payment
                             controller.getInvoiceName();
                           });
@@ -2653,10 +2722,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               controller.createTotalForEdit();
                               controller.updateRequestedDepositAmount();
                             } else if (checked == false && alreadySelected) {
-                              final index =
-                                  controller.selectedItemList.indexWhere(
-                                (selected) => selected.id == item.id,
-                              );
+                              final index = controller.selectedItemList
+                                  .indexWhere(
+                                    (selected) => selected.id == item.id,
+                                  );
                               if (index != -1) {
                                 controller.selectedItemList.removeAt(index);
                                 controller.editAmountControllers.removeAt(
@@ -2826,13 +2895,15 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   ) {
     final apptC = Get.find<AppointmentController>();
     // Calculate base amount (invoice total after discount but before payments)
-    final payAmount = (double.parse(controller.invoiceTotal.value) -
-            double.parse(controller.depositAmount.value))
-        .toStringAsFixed(2);
+    final payAmount =
+        (double.parse(controller.invoiceTotal.value) -
+                double.parse(controller.depositAmount.value))
+            .toStringAsFixed(2);
 
     // Pre-fill base amount
-    controller.tuaBaseAmountController.text =
-        double.parse(controller.invoiceTotal.value).toStringAsFixed(2);
+    controller.tuaBaseAmountController.text = double.parse(
+      controller.invoiceTotal.value,
+    ).toStringAsFixed(2);
     controller.tuaRemainAmountController.text = payAmount;
 
     // Pre-fill customer information if available
@@ -2860,9 +2931,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           borderRadius: BorderRadius.circular(20.r),
         ),
         child: Container(
-          constraints: BoxConstraints(
-            maxHeight: .85.sh,
-          ),
+          constraints: BoxConstraints(maxHeight: .85.sh),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -2899,12 +2968,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       _buildSectionTitle("Amount Details", theme),
                       SizedBox(height: 12.sp),
                       _buildAmountField(
-                          label: "Base Amount",
-                          prefix: "\$",
-                          controller: controller.tuaBaseAmountController,
-                          readOnly: true,
-                          theme: theme,
-                          invoiceController: controller),
+                        label: "Base Amount",
+                        prefix: "\$",
+                        controller: controller.tuaBaseAmountController,
+                        readOnly: true,
+                        theme: theme,
+                        invoiceController: controller,
+                      ),
                       SizedBox(height: 12.sp),
                       _buildAmountField(
                         label: "Request Amount",
@@ -3003,7 +3073,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         hint: "Invoice Number",
                         theme: theme,
                         textEditingController: TextEditingController(
-                            text: controller.invoiceNumber),
+                          text: controller.invoiceNumber,
+                        ),
                         readOnly: true,
                       ),
 
@@ -3021,8 +3092,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   color: Colors.white,
                   border: Border(
                     top: BorderSide(
-                      color:
-                          LightThemeColors.buttonBorderColor.withOpacity(0.3),
+                      color: LightThemeColors.buttonBorderColor.withOpacity(
+                        0.3,
+                      ),
                       width: 1,
                     ),
                   ),
@@ -3031,29 +3103,33 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   children: [
                     SizedBox(
                       width: double.infinity,
-                      height: 48.sp,
+                      height: 52.h,
                       child: PrimaryButton(
                         title: "Submit",
                         onPressed: () async {
                           // Validate required fields
                           if (controller.tuaEmailController.text.isEmpty) {
                             MySnackBar.showToast(
-                                message: "Please enter email address");
+                              message: "Please enter email address",
+                            );
                             return;
                           }
                           if (controller.tuaFirstNameController.text.isEmpty) {
                             MySnackBar.showToast(
-                                message: "Please enter first name");
+                              message: "Please enter first name",
+                            );
                             return;
                           }
                           if (controller.tuaLastNameController.text.isEmpty) {
                             MySnackBar.showToast(
-                                message: "Please enter last name");
+                              message: "Please enter last name",
+                            );
                             return;
                           }
                           if (controller.tuaZipCodeController.text.isEmpty) {
                             MySnackBar.showToast(
-                                message: "Please enter zip code");
+                              message: "Please enter zip code",
+                            );
                             return;
                           }
 
@@ -3073,7 +3149,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     SizedBox(height: 12.sp),
                     SizedBox(
                       width: double.infinity,
-                      height: 48.sp,
+                      height: 52.h,
                       child: SecondaryButton(
                         title: "Cancel",
                         onPressed: () {
@@ -3129,13 +3205,14 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
     );
   }
 
-  Widget _buildAmountField(
-      {required String label,
-      required String prefix,
-      required TextEditingController controller,
-      required bool readOnly,
-      required ThemeData theme,
-      required InvoiceController invoiceController}) {
+  Widget _buildAmountField({
+    required String label,
+    required String prefix,
+    required TextEditingController controller,
+    required bool readOnly,
+    required ThemeData theme,
+    required InvoiceController invoiceController,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3154,9 +3231,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 ? LightThemeColors.bodyTextSecondaryColor.withOpacity(0.1)
                 : LightThemeColors.fillColor,
             borderRadius: BorderRadius.circular(10.r),
-            border: Border.all(
-              color: LightThemeColors.buttonBorderColor,
-            ),
+            border: Border.all(color: LightThemeColors.buttonBorderColor),
           ),
           child: Row(
             children: [

@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:get/get.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/hive/my_hive.dart';
@@ -20,18 +21,20 @@ class SettingsController extends GetxController with ExceptionHandler {
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
 
-      var response = await DioClient().get(
-        url: ApiUrl.getTicketStatusList,
-        params: {
-          "CompanyId": companyID,
-        },
-      ).catchError(handleError);
+      var response = await DioClient()
+          .get(
+            url: ApiUrl.getTicketStatusList,
+            params: {"CompanyId": companyID},
+          )
+          .catchError(handleError);
       log("ticket status response: $response");
       if (response == null) return;
 
-      tickets.assignAll((response as List)
-          .map((e) => TicketStatusSettings.fromJson(e))
-          .toList());
+      tickets.assignAll(
+        (response as List)
+            .map((e) => TicketStatusSettings.fromJson(e))
+            .toList(),
+      );
       await MyHive.saveAllTicketStatusSetting(tickets);
       hideLoading();
     } else {
@@ -59,18 +62,20 @@ class SettingsController extends GetxController with ExceptionHandler {
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
 
-      var response = await DioClient().get(
-        url: ApiUrl.getAppointmentStatusList,
-        params: {
-          "CompanyId": companyID,
-        },
-      ).catchError(handleError);
-
+      var response = await DioClient()
+          .get(
+            url: ApiUrl.getAppointmentStatusList,
+            params: {"CompanyId": companyID},
+          )
+          .catchError(handleError);
+      kLog('statuses res $response');
       if (response == null) return;
 
-      appointmentsStatus.assignAll((response as List)
-          .map((e) => AppointmentStatusSetting.fromJson(e))
-          .toList());
+      appointmentsStatus.assignAll(
+        (response as List)
+            .map((e) => AppointmentStatusSetting.fromJson(e))
+            .toList(),
+      );
       if (appointmentsStatus.isNotEmpty) {
         selectedAppointmentsStatus(appointmentsStatus.first);
       }

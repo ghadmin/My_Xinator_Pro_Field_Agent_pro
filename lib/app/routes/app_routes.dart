@@ -37,6 +37,8 @@ abstract class Routes {
   static const TAG_DETAILS = _Paths.TAG_DETAILS;
   static const XPAY_PAYMENT = _Paths.XPAY_PAYMENT;
   static const TWILIO_CHAT = _Paths.TWILIO_CHAT;
+  static const PDF_DYNAMIC_FORM = _Paths.PDF_DYNAMIC_FORM;
+  static const RAG_CHAT = _Paths.RAG_CHAT;
 }
 
 abstract class _Paths {
@@ -72,4 +74,6 @@ abstract class _Paths {
   static const TAG_DETAILS = '/tagDetails';
   static const XPAY_PAYMENT = '/x-pay-payment';
   static const TWILIO_CHAT = '/twilio-chat';
+  static const PDF_DYNAMIC_FORM = '/pdf_dynamic_form';
+  static const RAG_CHAT = '/rag-chat';
 }

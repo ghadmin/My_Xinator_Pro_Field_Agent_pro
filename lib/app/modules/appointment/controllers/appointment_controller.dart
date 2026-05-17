@@ -24,7 +24,6 @@ import '../../../service/handler/exception_handler.dart';
 import '../../../service/helper/dialog_helper.dart';
 import '../../../service/helper/network_connectivity.dart';
 import '../../customer/controllers/customer_controller.dart';
-import '../../forms/controllers/form_controller.dart';
 import '../../invoice/controllers/invoice_controller.dart';
 import '../../item/models/item_list_model.dart';
 import '../../settings/controllers/settings_controller.dart';
@@ -36,7 +35,6 @@ import '../models/image_list_model.dart';
 import '../models/note_model.dart';
 import '../models/site_model.dart';
 import '../models/tag_model.dart';
-import '../views/appointment_details_view.dart';
 
 class MediaModel {
   String time;
@@ -81,7 +79,6 @@ class AppointmentController extends GetxController
   final noteText = RxString("");
   final settingController = Get.put(SettingsController());
   final customFieldsController = Get.put(CustomFieldsController());
-  final formC = Get.put(FormController());
   final invoiceController = Get.put(InvoiceController());
   final customerController = Get.put(CustomerController());
   final TextEditingController sortTextController = TextEditingController();
@@ -97,12 +94,6 @@ class AppointmentController extends GetxController
   final customFieldTextController = Rx<TextEditingController>(
     TextEditingController(),
   );
-  List<ResourceItem> resources = [
-    ResourceItem(title: "Fill Gas"),
-    ResourceItem(title: "Wash Indoor"),
-    ResourceItem(title: "Wash Outdoor"),
-    ResourceItem(title: "Check Circuit"),
-  ];
 
   String appointmentID = "";
   String companyId = "";
@@ -306,14 +297,29 @@ class AppointmentController extends GetxController
       await customFieldsController.getAttachedCustomFields(
         appointmentId: appointment.apptID!,
       );
-
+      noteController.text = appointment.note ?? "";
       await getCustomerSite(showLoader: false);
       contactName =
           "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
-      address =
-          "${appointment.customer?.address1}, "
-          "${appointment.customer?.city}, "
-          "${appointment.customer?.state}, ";
+
+      // Build address from site or customer data
+      // if (selectedSite.value != null) {
+      //   final site = selectedSite.value!;
+      //   address = _buildAddressString(
+      //     address: c.address,
+      //     city: "",
+      //     state: site.state ?? "",
+      //     zipCode: site.zip ?? "",
+      //     country: site.country ?? "",
+      //   );
+      // } else {
+      address = _buildAddressString(
+        address: appointment.customer?.address1 ?? "",
+        city: appointment.customer?.city ?? "",
+        state: appointment.customer?.state ?? "",
+        zipCode: appointment.customer?.zipCode ?? "",
+        country: "",
+      );
       mobileNumber = appointment.customer?.mobile ?? "";
       phoneNumber = appointment.customer?.phone ?? "";
       customerTitle =
@@ -1107,7 +1113,6 @@ class AppointmentController extends GetxController
       if (sortTextController.text.isNotEmpty) {
         sortAppointmentsText(); // re-apply filter after refresh
       }
-      formC.getAttachedForms(isFromPeriodic: showLoader);
 
       await MyHive.saveAllAppointments(appointments);
       hideLoading();
@@ -1325,6 +1330,11 @@ class AppointmentController extends GetxController
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
+    kLog(
+      "body ${{
+        "appointment": {"CompanyID": companyID, "ApptID": appointmentID, "AppoinmentUId": appointmentUID, "CustomerID": customerID, "ServiceType": serviceType, "ServiceTypeId": serviceTypeID, "ResourceID": resourceID, "TimeSlotId": timeSlotID, "ApptDateTime": dateTimeConverter(inputTime: requestDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "StartDateTime": dateTimeConverter(inputTime: startDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "EndDateTime": dateTimeConverter(inputTime: endDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "CreatedDateTime": dateTimeConverter(inputTime: requestDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "TimeSlot": timeSlot, "Note": noteText.value, "PromoCode": promoCode, "StatusId": selectedStatusValue.value, "TicketStatusId": selectedTicketStatusValue.value, "UserID": userID, "CreatedBy": createdBy},
+      }}",
+    );
     var response = await DioClient()
         .post(
           url: ApiUrl.updateAppointment,
@@ -1434,7 +1444,7 @@ class AppointmentController extends GetxController
   }
 
   /// Save Equipment to server
-  Future<void> saveEquipment() async {
+  Future<void> saveEquipment(EquipmentModel equipment) async {
     showLoading();
 
     var companyID = await MySharedPref.getCompanyID();
@@ -1444,31 +1454,29 @@ class AppointmentController extends GetxController
         .post(
           url: ApiUrl.saveEquipmentUrl,
           body: {
-            "equipments": selectedEquipmentTypeList
-                .map(
-                  (e) => {
-                    "Id": 0,
-                    "CompanyID": companyID,
-                    "CustomerID": int.parse(customerID),
-                    "CustomerGuid": "",
-                    "SiteId": site?.id ?? 0,
-                    "Model": "",
-                    "Make": "",
-                    "SerialNumber": "",
-                    "Barcode": "",
-                    "EquipmentTypeID": e.equipmentTypeId,
-                    "Notes": "",
-                    "WarrantyStart": "",
-                    "WarrantyEnd": "",
-                    "LaborWarrantyStart": "",
-                    "LaborWarrantyEnd": "",
-                    "InstallDate": "",
-                    "CreatedDateTime": DateFormat(
-                      'MM/dd/yyyy HH:mm:ss',
-                    ).format(DateTime.now()),
-                  },
-                )
-                .toList(),
+            "equipments": [
+              {
+                "Id": 0,
+                "CompanyID": companyID,
+                "CustomerID": int.parse(customerID),
+                "CustomerGuid": "",
+                "SiteId": site?.id ?? 0,
+                "Model": equipment.model ?? "",
+                "Make": equipment.make ?? "",
+                "SerialNumber": equipment.serialNumber,
+                "Barcode": equipment.sku ?? "",
+                "EquipmentTypeID": equipment.equipmentTypeId,
+                "Notes": equipment.notes ?? "",
+                "WarrantyStart": equipment.warrantyStart ?? "",
+                "WarrantyEnd": equipment.warrantyEnd ?? "",
+                "LaborWarrantyStart": equipment.laborWarrantyStart ?? "",
+                "LaborWarrantyEnd": equipment.laborWarrantyEnd ?? "",
+                "InstallDate": equipment.installDate ?? "",
+                "CreatedDateTime": DateFormat(
+                  'MM/dd/yyyy HH:mm:ss',
+                ).format(DateTime.now()),
+              },
+            ],
           },
         )
         .catchError(handleError);
@@ -1485,6 +1493,7 @@ class AppointmentController extends GetxController
 
     selectedEquipmentTypeList.clear();
     MySnackBar.showToast(message: 'Equipment saved successfully');
+    Get.back();
   }
 
   /// Update Equipment to server
@@ -1665,5 +1674,21 @@ class AppointmentController extends GetxController
 
     hideLoading();
     super.onReady();
+  }
+
+  String _buildAddressString({
+    required String address,
+    required String city,
+    required String state,
+    required String zipCode,
+    required String country,
+  }) {
+    final parts = <String>[];
+    if (address.isNotEmpty) parts.add(address);
+    if (city.isNotEmpty) parts.add(city);
+    if (state.isNotEmpty) parts.add(state);
+    if (zipCode.isNotEmpty) parts.add(zipCode);
+    if (country.isNotEmpty) parts.add(country);
+    return parts.join(', ');
   }
 }

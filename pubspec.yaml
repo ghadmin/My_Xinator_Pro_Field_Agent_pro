@@ -2,7 +2,7 @@ name: myxinator_pro_field_agent_pro
 description: "A new Flutter project."
 
 publish_to: "none"
-version: 1.0.1+13
+version: 1.0.1+15
 
 environment:
   sdk: ^3.9.2
@@ -22,7 +22,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   dotted_border: ^3.1.0
   get: ^4.6.6
-  logger: ^2.5.0
+  syncfusion_flutter_pdfviewer:
+  signature:
+  google_fonts: ^6.2.1
   dio: ^5.7.0
   flutter_screenutil: ^5.9.3
   http: ^1.2.2
@@ -55,7 +57,6 @@ dependencies:
   webview_flutter: ^4.11.0
   flutter_map: ^8.1.1
   latlong2: ^0.9.1
-  signature: ^6.3.0
   video_thumbnail: ^0.5.6
   video_player: ^2.10.0
   path_provider: ^2.1.5
@@ -114,6 +115,7 @@ flutter:
     - assets/vectors/
     - assets/images/customers/
     - assets/fonts/
+    - assets/
     - animations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
