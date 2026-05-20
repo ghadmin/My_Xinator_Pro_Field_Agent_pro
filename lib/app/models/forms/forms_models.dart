@@ -232,11 +232,7 @@ class AckResponse {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'success': success,
-      'acked': acked,
-      'requested': requested,
-    };
+    return {'success': success, 'acked': acked, 'requested': requested};
   }
 }
 
@@ -310,14 +306,13 @@ class FieldResponse {
     required String label,
     required String value,
     FieldPosition? position,
-  }) =>
-      FieldResponse(
-        fieldId: fieldId,
-        label: label,
-        type: 'text',
-        value: value,
-        position: position,
-      );
+  }) => FieldResponse(
+    fieldId: fieldId,
+    label: label,
+    type: 'text',
+    value: value,
+    position: position,
+  );
 
   /// Create a textarea field response
   factory FieldResponse.textarea({
@@ -325,14 +320,13 @@ class FieldResponse {
     required String label,
     required String value,
     FieldPosition? position,
-  }) =>
-      FieldResponse(
-        fieldId: fieldId,
-        label: label,
-        type: 'textarea',
-        value: value,
-        position: position,
-      );
+  }) => FieldResponse(
+    fieldId: fieldId,
+    label: label,
+    type: 'textarea',
+    value: value,
+    position: position,
+  );
 
   /// Create a signature field response
   factory FieldResponse.signature({
@@ -340,14 +334,13 @@ class FieldResponse {
     required String label,
     required String base64DataUrl, // "data:image/png;base64,..."
     FieldPosition? position,
-  }) =>
-      FieldResponse(
-        fieldId: fieldId,
-        label: label,
-        type: 'signature',
-        value: base64DataUrl,
-        position: position,
-      );
+  }) => FieldResponse(
+    fieldId: fieldId,
+    label: label,
+    type: 'signature',
+    value: base64DataUrl,
+    position: position,
+  );
 
   /// Create a parts table field response
   factory FieldResponse.partsTable({
@@ -355,14 +348,13 @@ class FieldResponse {
     required String label,
     required PartsTableData data,
     FieldPosition? position,
-  }) =>
-      FieldResponse(
-        fieldId: fieldId,
-        label: label,
-        type: 'partstable',
-        value: data.toJsonString(),
-        position: position,
-      );
+  }) => FieldResponse(
+    fieldId: fieldId,
+    label: label,
+    type: 'partstable',
+    value: data.toJsonString(),
+    position: position,
+  );
 
   /// Create a number field response
   factory FieldResponse.number({
@@ -370,14 +362,13 @@ class FieldResponse {
     required String label,
     required num value,
     FieldPosition? position,
-  }) =>
-      FieldResponse(
-        fieldId: fieldId,
-        label: label,
-        type: 'number',
-        value: value.toString(),
-        position: position,
-      );
+  }) => FieldResponse(
+    fieldId: fieldId,
+    label: label,
+    type: 'number',
+    value: value.toString(),
+    position: position,
+  );
 
   /// Create a date field response
   factory FieldResponse.date({
@@ -385,14 +376,13 @@ class FieldResponse {
     required String label,
     required DateTime value,
     FieldPosition? position,
-  }) =>
-      FieldResponse(
-        fieldId: fieldId,
-        label: label,
-        type: 'date',
-        value: value.toIso8601String().split('T')[0], // YYYY-MM-DD
-        position: position,
-      );
+  }) => FieldResponse(
+    fieldId: fieldId,
+    label: label,
+    type: 'date',
+    value: value.toIso8601String().split('T')[0], // YYYY-MM-DD
+    position: position,
+  );
 
   /// Create a checkbox field response
   factory FieldResponse.checkbox({
@@ -400,14 +390,13 @@ class FieldResponse {
     required String label,
     required List<String> selectedValues,
     FieldPosition? position,
-  }) =>
-      FieldResponse(
-        fieldId: fieldId,
-        label: label,
-        type: 'checkbox',
-        value: selectedValues.join(','),
-        position: position,
-      );
+  }) => FieldResponse(
+    fieldId: fieldId,
+    label: label,
+    type: 'checkbox',
+    value: selectedValues.join(','),
+    position: position,
+  );
 
   /// Create a check (yes/no) field response
   factory FieldResponse.check({
@@ -415,14 +404,13 @@ class FieldResponse {
     required String label,
     required bool value,
     FieldPosition? position,
-  }) =>
-      FieldResponse(
-        fieldId: fieldId,
-        label: label,
-        type: 'check',
-        value: value ? 'true' : 'false',
-        position: position,
-      );
+  }) => FieldResponse(
+    fieldId: fieldId,
+    label: label,
+    type: 'check',
+    value: value ? 'true' : 'false',
+    position: position,
+  );
 }
 
 /// Position of a field on a PDF page
@@ -514,10 +502,7 @@ class PartsTableData {
   final String variant; // "used" or "toOrder"
   final List<PartRow> rows;
 
-  PartsTableData({
-    required this.variant,
-    required this.rows,
-  });
+  PartsTableData({required this.variant, required this.rows});
 
   /// Convert to JSON string for the API
   String toJsonString() {
@@ -530,10 +515,7 @@ class PartsTableData {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'variant': variant,
-      'rows': rows.map((r) => r.toJson()).toList(),
-    };
+    return {'variant': variant, 'rows': rows.map((r) => r.toJson()).toList()};
   }
 
   static String _jsonEncode({required Map<String, dynamic> data}) {
@@ -546,12 +528,16 @@ class PartsTableData {
       if (i > 0) buffer.write(',');
       final row = rows[i] as Map<String, dynamic>;
       buffer.write('{');
-      buffer.write('"itemId":${row['itemId'] == null ? 'null' : '"${row['itemId']}"'},');
+      buffer.write(
+        '"itemId":${row['itemId'] == null ? 'null' : '"${row['itemId']}"'},',
+      );
       buffer.write('"name":"${row['name']}",');
       buffer.write('"description":"${row['description']}",');
       buffer.write('"qty":${row['qty']},');
-      buffer.write('"price":${row['price'] == null ? 'null' : row['price']},');
-      buffer.write('"partNumber":${row['partNumber'] == null ? 'null' : '"${row['partNumber']}"'}');
+      buffer.write('"price":${row['price'] ?? 'null'},');
+      buffer.write(
+        '"partNumber":${row['partNumber'] == null ? 'null' : '"${row['partNumber']}"'}',
+      );
       buffer.write('}');
     }
     buffer.write(']}');
@@ -640,11 +626,7 @@ class PdfFileInfo {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'path': path,
-      'name': name,
-      'pageCount': pageCount,
-    };
+    return {'path': path, 'name': name, 'pageCount': pageCount};
   }
 }
 
@@ -704,17 +686,15 @@ class FormSection {
   final String title;
   final List<FormRow> rows;
 
-  FormSection({
-    required this.id,
-    required this.title,
-    required this.rows,
-  });
+  FormSection({required this.id, required this.title, required this.rows});
 
   factory FormSection.fromJson(Map<String, dynamic> json) {
     return FormSection(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
-      rows: (json['rows'] as List? ?? []).map((r) => FormRow.fromJson(r)).toList(),
+      rows: (json['rows'] as List? ?? [])
+          .map((r) => FormRow.fromJson(r))
+          .toList(),
     );
   }
 
@@ -732,10 +712,7 @@ class FormRow {
   final String id;
   final List<FormField> fields;
 
-  FormRow({
-    required this.id,
-    required this.fields,
-  });
+  FormRow({required this.id, required this.fields});
 
   factory FormRow.fromJson(Map<String, dynamic> json) {
     return FormRow(
@@ -747,9 +724,6 @@ class FormRow {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'fields': fields.map((f) => f.toJson()).toList(),
-    };
+    return {'id': id, 'fields': fields.map((f) => f.toJson()).toList()};
   }
 }

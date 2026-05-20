@@ -3,17 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/equipment/controllers/equipment_controller.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/equipment/models/equipment_model.dart';
 import '../../../../../config/theme/light_theme_colors.dart';
 import '../../../../components/global-widgets/text_widget.dart';
 import '../../controllers/appointment_controller.dart';
-import '../../models/equipment_model.dart';
-import '../../models/equipment_type_model.dart';
 
 /// Equipment Form Modal Bottom Sheet
 /// Shows a form to add or edit equipment with all required fields
 class EquipmentFormModal extends StatefulWidget {
-  final EquipmentModel? equipment; // null for add, non-null for edit
-  final List<EquipmentTypeModel> equipmentTypes;
+  final Equipment? equipment; // null for add, non-null for edit
+  final List<EquipmentType> equipmentTypes;
 
   const EquipmentFormModal({
     super.key,
@@ -37,10 +37,12 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
       'serialNumber': TextEditingController(
         text: widget.equipment?.serialNumber ?? '',
       ),
-      'type': TextEditingController(text: widget.equipment?.type ?? ''),
+      'type': TextEditingController(
+        text: widget.equipment?.equipmentType ?? '',
+      ),
       'make': TextEditingController(text: widget.equipment?.make ?? ''),
       'model': TextEditingController(text: widget.equipment?.model ?? ''),
-      'sku': TextEditingController(text: widget.equipment?.sku ?? ''),
+      'barcode': TextEditingController(text: widget.equipment?.barcode ?? ''),
       'warrantyStart': TextEditingController(
         text: widget.equipment?.warrantyStart ?? '',
       ),
@@ -75,30 +77,40 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
     super.dispose();
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     final controller = Get.find<AppointmentController>();
+    final equipmentController = Get.find<EquipmentController>();
 
     // Find the equipmentTypeId from the selected type description
     final selectedType = widget.equipmentTypes.firstWhereOrNull(
-      (t) => t.equipmentTypeDesc == _controllers['type']!.text,
+      (t) => t.typeName == _controllers['type']!.text,
     );
 
     // Create or update equipment
-    final equipment = EquipmentModel(
-      id:
-          widget.equipment?.id ??
-          DateTime.now().millisecondsSinceEpoch.toString(),
-      serialNumber: _controllers['serialNumber']!.text,
-      type: _controllers['type']!.text,
-      equipmentTypeId: selectedType?.equipmentTypeId,
+    final equipment = Equipment(
+      id: widget.equipment?.id ?? DateTime.now().millisecondsSinceEpoch,
+      siteId: 0, // Will be set by the controller
+      customerGuid: '', // Will be set by the controller
+      customerId: '', // Will be set by the controller
+      customerName: '', // Will be set by the controller
+      serialNumber: _controllers['serialNumber']!.text.isEmpty
+          ? null
+          : _controllers['serialNumber']!.text,
+      equipmentType: _controllers['type']!.text.isEmpty
+          ? null
+          : _controllers['type']!.text,
+      equipmentTypeId: selectedType?.id != null
+          ? int.parse(selectedType?.id ?? "0")
+          : null,
       make: _controllers['make']!.text.isEmpty
           ? null
           : _controllers['make']!.text,
       model: _controllers['model']!.text.isEmpty
           ? null
           : _controllers['model']!.text,
-      barcode: null,
-      sku: _controllers['sku']!.text.isEmpty ? null : _controllers['sku']!.text,
+      barcode: _controllers['barcode']!.text.isEmpty
+          ? null
+          : _controllers['barcode']!.text,
       warrantyStart: _controllers['warrantyStart']!.text.isEmpty
           ? null
           : _controllers['warrantyStart']!.text,
@@ -117,18 +129,87 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
       notes: _controllers['notes']!.text.isEmpty
           ? null
           : _controllers['notes']!.text,
-      createdAt:
-          widget.equipment?.createdAt ?? DateTime.now().toIso8601String(),
+      createdDateTime:
+          widget.equipment?.createdDateTime ?? DateTime.now().toIso8601String(),
     );
 
-    // Add or update in local list
-    widget.equipment != null
-        ? controller.updateEquipment(equipment)
-        : controller.saveEquipment(equipment);
-    ;
+    // Get appointment details for required parameters
+    final appointment = controller.selectedAppointment.value;
+    if (appointment == null) {
+      Get.snackbar(
+        'Error',
+        'Appointment information not available',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    final customerId = appointment.customerID?.toString() ?? '';
+    final customerGuid = appointment.customer?.customerGuid ?? '';
+    final siteId = int.tryParse(appointment.siteID ?? '') ?? 0;
+    final companyId = appointment.companyID;
+
+    // Add or update equipment
+    bool success;
+    if (widget.equipment != null) {
+      // Update existing equipment
+      success = await equipmentController.updateEquipment(
+        id: widget.equipment!.id,
+        customerId: customerId,
+        customerGuid: customerGuid,
+        siteId: siteId,
+        make: equipment.make,
+        model: equipment.model,
+        notes: equipment.notes,
+        equipmentTypeId: equipment.equipmentTypeId,
+        barcode: equipment.barcode,
+        serialNumber: equipment.serialNumber,
+        warrantyStart: equipment.warrantyStart,
+        warrantyEnd: equipment.warrantyEnd,
+        laborWarrantyStart: equipment.laborWarrantyStart,
+        laborWarrantyEnd: equipment.laborWarrantyEnd,
+        installDate: equipment.installDate,
+        companyId: companyId,
+      );
+    } else {
+      // Create new equipment
+      success = await equipmentController.createEquipment(
+        customerId: customerId,
+        customerGuid: customerGuid,
+        siteId: siteId,
+        make: equipment.make,
+        model: equipment.model,
+        notes: equipment.notes,
+        equipmentTypeId: equipment.equipmentTypeId,
+        barcode: equipment.barcode,
+        serialNumber: equipment.serialNumber,
+        warrantyStart: equipment.warrantyStart,
+        warrantyEnd: equipment.warrantyEnd,
+        laborWarrantyStart: equipment.laborWarrantyStart,
+        laborWarrantyEnd: equipment.laborWarrantyEnd,
+        installDate: equipment.installDate,
+        companyId: companyId,
+      );
+    }
+
+    // Close the modal only on success
+    if (success && mounted) {
+      // Use Navigator.pop to close this specific modal
+      Navigator.of(context).pop();
+    }
+
+    // Close the modal only on success
+    if (success) {
+      Get.back();
+    }
   }
 
   Future<void> _selectDate(String fieldKey) async {
+    // Unfocus all nodes to dismiss keyboard
+    _focusNodes.forEach((key, node) => node.unfocus());
+    // Small delay to ensure keyboard is fully dismissed
+    await Future.delayed(const Duration(milliseconds: 100));
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -160,7 +241,7 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
           child: Form(
             key: _formKey,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.max,
               children: [
                 // Handle bar
                 Container(
@@ -226,11 +307,11 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
                           hint: 'Enter model (optional)',
                         ),
 
-                        // SKU
+                        // Barcode
                         _buildTextField(
-                          key: 'sku',
-                          label: 'SKU',
-                          hint: 'Enter SKU (optional)',
+                          key: 'barcode',
+                          label: 'Barcode',
+                          hint: 'Enter barcode (optional)',
                         ),
 
                         // Warranty Start
@@ -451,15 +532,19 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
   }
 
   void _showTypeSelector() {
+    // Unfocus all nodes to dismiss keyboard
+    _focusNodes.forEach((key, node) => node.unfocus());
+
     Get.bottomSheet(
       Container(
+        height: Get.height * 0.9, // 90% of screen height
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
         child: SafeArea(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
             children: [
               // Header
               Padding(
@@ -481,21 +566,22 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
                 ),
               ),
               // Type list
-              Flexible(
+              Expanded(
                 child: ListView.separated(
-                  shrinkWrap: true,
                   itemCount: widget.equipmentTypes.length,
                   separatorBuilder: (_, __) => Divider(height: 1.h),
                   itemBuilder: (context, index) {
                     final type = widget.equipmentTypes[index];
-                    return ListTile(
-                      title: Text(type.equipmentTypeDesc),
-                      onTap: () {
-                        setState(() {
-                          _controllers['type']!.text = type.equipmentTypeDesc;
-                        });
-                        Get.back();
-                      },
+                    return Material(
+                      child: ListTile(
+                        title: Text(type.typeName),
+                        onTap: () {
+                          setState(() {
+                            _controllers['type']!.text = type.typeName;
+                          });
+                          Get.back();
+                        },
+                      ),
                     );
                   },
                 ),
@@ -521,7 +607,7 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
 /// Equipment Card Widget
 /// Displays equipment information in a card format (read-only)
 class EquipmentCard extends StatelessWidget {
-  final EquipmentModel equipment;
+  final Equipment equipment;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
@@ -594,7 +680,7 @@ class EquipmentCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Equipment Type: ${equipment.type.isEmpty ? "N/A" : equipment.type}',
+                      'Equipment Type: ${equipment.equipmentType?.isEmpty == true ? "N/A" : equipment.equipmentType}',
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: Colors.blue[700],
@@ -669,8 +755,9 @@ class EquipmentCard extends StatelessWidget {
             // All fields with labels (excluding Type since it's in header)
             _buildSingleDetailRow(
               'Serial Number',
-              equipment.serialNumber.isNotEmpty
-                  ? equipment.serialNumber
+              equipment.serialNumber!.isNotEmpty &&
+                      equipment.serialNumber != null
+                  ? equipment.serialNumber!
                   : 'N/A',
             ),
 
@@ -682,10 +769,9 @@ class EquipmentCard extends StatelessWidget {
               equipment.model?.isNotEmpty == true ? equipment.model! : 'N/A',
             ),
 
-            // SKU
-            if (equipment.sku != null && equipment.sku!.isNotEmpty)
-              _buildSingleDetailRow('SKU', equipment.sku!),
-
+            // // SKU
+            // if (equipment.s != null && equipment.sku!.isNotEmpty)
+            //   _buildSingleDetailRow('SKU', equipment.sku!),
             SizedBox(height: 12.h),
 
             // Warranty Dates Section

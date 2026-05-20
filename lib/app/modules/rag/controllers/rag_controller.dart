@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../services/rag_service.dart';
 import '../../../../utils/klog.dart';
+import '../../appointment/controllers/appointment_controller.dart';
 
 class RAGController extends GetxController {
   final RAGService _ragService = RAGService();
@@ -13,13 +14,57 @@ class RAGController extends GetxController {
   final RxBool hasError = false.obs;
   final RxString errorMessage = ''.obs;
   final RxInt indexedCount = 0.obs;
+  final RxBool isSyncing = false.obs;
 
   final questionController = TextEditingController();
 
   @override
   void onInit() {
     super.onInit();
+    syncAppointmentsFirst(); // Call syncAppointments first
     loadStats();
+  }
+
+  /// Sync appointments first when RAG controller initializes
+  Future<void> syncAppointmentsFirst() async {
+    try {
+      if (!Get.isRegistered<AppointmentController>()) {
+        kLog('AppointmentController not registered, skipping sync');
+        return;
+      }
+
+      final appointmentController = Get.find<AppointmentController>();
+
+      isSyncing.value = true;
+      kLog('Fetching appointments from server...');
+
+      // Call getAppointments to get fresh data from server
+      await appointmentController.getAppointments(showLoader: false);
+
+      if (appointmentController.appointments.isEmpty) {
+        kLog('No appointments to sync to RAG');
+        return;
+      }
+
+      kLog('Syncing ${appointmentController.appointments.length} appointments to RAG system...');
+
+      // Convert appointments to JSON format
+      final appointmentsData = appointmentController.appointments
+          .map((apt) => apt.toJson())
+          .toList();
+
+      final success = await _ragService.syncAppointments(appointmentsData);
+
+      if (success) {
+        kLog('Successfully synced ${appointmentsData.length} appointments to RAG');
+      } else {
+        kLog('Failed to sync appointments to RAG');
+      }
+    } catch (e) {
+      kLog('Error syncing appointments to RAG: $e');
+    } finally {
+      isSyncing.value = false;
+    }
   }
 
   @override

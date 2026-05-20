@@ -66,7 +66,7 @@ class EmptyWidget extends StatelessWidget {
         if (isRefreshShown)
           TextWidget(
             text: Strings.refresh.tr,
-            style: TextStyle(color: theme.hintColor.withOpacity(.5)),
+            style: TextStyle(color: theme.hintColor.withValues(alpha: 0.5)),
           ),
       ],
     );

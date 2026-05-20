@@ -3,8 +3,8 @@ class ApiUrl {
   // static const baseUrl =
   //     "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
   static const baseUrl =
-      //   "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
       "https://mxp.myserviceforce.com/cec/Services/DeviceService.asmx";
+  // "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
 
   static const paymentBaseUrl =
       "https://paymentportal.xceleran.com/webterminal/Clearent/AppCCPayment_CL.aspx";
@@ -12,8 +12,7 @@ class ApiUrl {
   //     "https://dev-services.myserviceforce.com/webterminal/Clearent/AppCCPayment_CL.aspx";
   static const fileBaseUrl =
       "https://mxp.myserviceforce.com/cec/Services/FSMFiles";
-  static const imageBaseUrl =
-      "https://mxp.myserviceforce.com/cec/Services/FSMPictures";
+  static const imageBaseUrl = "https://mxp.myserviceforce.com/fsm/FSMPictures";
   static const login = "$baseUrl/VerifyUser";
   static const getAppointment = "$baseUrl/GetAppointmentList";
   static const getInvoiceList = "$baseUrl/GetAppointmentListCustomerSiteWise";
@@ -84,7 +83,7 @@ class ApiUrl {
   static String get currentBaseUrl => baseLiveUrl;
 
   /// Get current PDF base URL
-  static String get currentPdfBaseUrl => pdfBaseUrl;
+  static String get currentPdfBaseUrl => baseLiveUrl;
 
   /// API Key for FaProSync
   static const String apiKey = "fapro_a8f3k29dm4c7p1r6w9q2x5y8b3n7t1v4z6h0j2l5";
@@ -134,6 +133,40 @@ class ApiUrl {
   static Map<String, String> get jsonHeaders => {
     "Content-Type": "application/json",
     ...authHeaders,
+  };
+
+  // ============== FaProMobile API ==============
+
+  /// Base URL for FaProMobile API
+  static const String faProMobileBaseUrl =
+      "https://mxp.myserviceforce.com/fsm/FaProMobile.ashx";
+
+  /// Build FaProMobile URL with query parameters
+  static String buildFaProMobileUrl({
+    required String resource,
+    required String operation,
+    required String companyId,
+    Map<String, String>? extraParams,
+  }) {
+    final uri = Uri.parse(faProMobileBaseUrl);
+    final params = {
+      'resource': resource,
+      'op': operation,
+      'companyId': companyId,
+      ...?extraParams,
+    };
+    return uri.replace(queryParameters: params).toString();
+  }
+
+  /// FaProMobile authentication header with API key
+  static Map<String, String> get faProMobileAuthHeaders => {
+    "X-Api-Key": apiKey,
+  };
+
+  /// FaProMobile JSON content type headers with auth
+  static Map<String, String> get faProMobileJsonHeaders => {
+    "Content-Type": "application/json",
+    "X-Api-Key": apiKey,
   };
 }
 

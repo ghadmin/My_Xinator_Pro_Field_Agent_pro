@@ -1522,8 +1522,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                               Padding(
                                                 padding: EdgeInsets.all(16.sp),
                                                 child: SizedBox(
-                                                  height: 45.sp,
-                                                  width: .4.sw,
+                                                  height: 50.sp,
+                                                  width: .5.sw,
                                                   child: PrimaryButton(
                                                     title: "Close",
                                                     onPressed: () {
@@ -1655,112 +1655,37 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 children: [
                   Builder(
                     builder: (context) {
-                      return SplashContainer(
-                        color: Colors.white,
-                        radius: 8,
-                        onPressed: () {
-                          RenderBox renderBox =
-                              context.findRenderObject() as RenderBox;
-                          Offset offset = renderBox.localToGlobal(
-                            Offset(0, 32.sp),
-                          );
-                          final RenderBox overlay =
-                              Overlay.of(context).context.findRenderObject()
-                                  as RenderBox;
-                          showMenu(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(8.r),
+                      return Container(
+                        margin: EdgeInsets.only(
+                          right: screenWidth > 374 ? 30.sp : 50.sp,
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.sp,
+                          vertical: 5.sp,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.r),
+                          border: Border.all(
+                            color: LightThemeColors.primaryColor,
+                            width: 1.sp,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Discount",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: LightThemeColors.bodyTextSecondaryColor,
+                                fontSize: 16.sp,
                               ),
                             ),
-                            context: context,
-                            position: RelativeRect.fromRect(
-                              offset &
-                                  Size(
-                                    32.sp,
-                                    32.sp,
-                                  ), // smaller rect, the touch area
-                              Offset.zero &
-                                  overlay
-                                      .size, // Bigger rect, the entire screen
-                            ),
-                            items: controller.discountOptions.map((e) {
-                              return PopupMenuItem(
-                                value: e["value"],
-                                child: Text(e["name"] ?? ""),
-                              );
-                            }).toList(),
-                          ).then((selectedValue) {
-                            if (selectedValue != null) {
-                              FocusScope.of(context).unfocus();
-                              controller.invoiceDetailsNoteFocusnode.value
-                                  .unfocus();
-                              controller.invoiceDetailsEmailToFocusnode.value
-                                  .unfocus();
-                              controller.invoiceDetailsEmailBccFocusnode.value
-                                  .unfocus();
-                              controller
-                                  .invoiceDetailsEmailSubjectFocusnode
-                                  .value
-                                  .unfocus();
-                              controller.invoiceDetailsEmailBodyFocusnode.value
-                                  .unfocus();
-                              controller.invoiceDetailsSearchFocusnode.value
-                                  .unfocus();
-                              controller
-                                  .invoiceDetailsEditDiscountFocusnode
-                                  .value
-                                  .unfocus();
-                              controller
-                                  .invoiceDetailsDepositRateFocusnode
-                                  .value
-                                  .unfocus();
-                              controller.markAsDirty();
-                              final selectedDiscount = controller
-                                  .discountOptions
-                                  .firstWhere(
-                                    (element) =>
-                                        element["value"] == selectedValue,
-                                  );
-                              controller.selectedDiscountOption.value =
-                                  selectedDiscount["value"];
-                              controller.createTotalForEdit();
-                            }
-                          });
-                        },
-                        child: Container(
-                          margin: EdgeInsets.only(
-                            right: screenWidth > 374 ? 30.sp : 50.sp,
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10.sp,
-                            vertical: 5.sp,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5.r),
-                            border: Border.all(
+                            SizedBox(width: 5.sp),
+                            Icon(
+                              Icons.arrow_drop_down,
                               color: LightThemeColors.primaryColor,
-                              width: 1.sp,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "Discount",
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color:
-                                      LightThemeColors.bodyTextSecondaryColor,
-                                  fontSize: 16.sp,
-                                ),
-                              ),
-                              SizedBox(width: 5.sp),
-                              Icon(
-                                Icons.arrow_drop_down,
-                                color: LightThemeColors.primaryColor,
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
                       );
                     },
@@ -1923,139 +1848,177 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 ),
               ],
             ),
-            ListTile(
-              title: Builder(
-                builder: (context) {
-                  return SplashContainer(
-                    color: Colors.white,
-                    radius: 8,
-                    onPressed: () {
-                      // Dismiss keyboard when opening dropdowns
+            Obx(
+              () => ListTile(
+                title: Builder(
+                  builder: (context) {
+                    final allNonTaxable = controller.areAllItemsNonTaxable;
+                    return SplashContainer(
+                      color: allNonTaxable
+                          ? Colors.grey.shade200
+                          : Colors.white,
+                      radius: 8,
+                      onPressed: allNonTaxable
+                          ? () {}
+                          : () {
+                              // Dismiss keyboard when opening dropdowns
 
-                      FocusScope.of(context).unfocus();
+                              FocusScope.of(context).unfocus();
 
-                      RenderBox renderBox =
-                          context.findRenderObject() as RenderBox;
-                      Offset offset = renderBox.localToGlobal(Offset(0, 32.sp));
-                      final RenderBox overlay =
-                          Overlay.of(context).context.findRenderObject()
-                              as RenderBox;
-                      showMenu(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8.r)),
+                              RenderBox renderBox =
+                                  context.findRenderObject() as RenderBox;
+                              Offset offset = renderBox.localToGlobal(
+                                Offset(0, 32.sp),
+                              );
+                              final RenderBox overlay =
+                                  Overlay.of(context).context.findRenderObject()
+                                      as RenderBox;
+                              showMenu(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(8.r),
+                                  ),
+                                ),
+                                context: context,
+                                position: RelativeRect.fromRect(
+                                  offset &
+                                      Size(
+                                        32.sp,
+                                        32.sp,
+                                      ), // smaller rect, the touch area
+                                  Offset.zero &
+                                      overlay
+                                          .size, // Bigger rect, the entire screen
+                                ),
+                                items: [
+                                  PopupMenuItem(
+                                    value: "",
+                                    child: Text(
+                                      "NO TAX",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+
+                                  ...controller.taxes.map((tax) {
+                                    return PopupMenuItem(
+                                      value: tax.id,
+                                      child: Text(tax.name ?? ""),
+                                    );
+                                  }),
+                                ],
+                              ).then((selectedTaxID) async {
+                                if (selectedTaxID != null) {
+                                  FocusScope.of(context).unfocus();
+                                  controller.invoiceDetailsNoteFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailToFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailBccFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailSubjectFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailBodyFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller.invoiceDetailsSearchFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEditDiscountFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsDepositRateFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller.markAsDirty();
+                                  if (selectedTaxID == "") {
+                                    controller.selectedTaxName.value = "NO TAX";
+                                    controller.tax.value = "0.00";
+                                    controller.selectedTaxID.value = "";
+                                    controller.createTotalForEdit();
+                                  } else if (selectedTaxID == -1) {
+                                    _showManualTaxDialog(context);
+                                  } else {
+                                    final selectedTax = controller.taxes
+                                        .firstWhereOrNull(
+                                          (tax) => tax.id == selectedTaxID,
+                                        );
+                                    if (selectedTax != null) {
+                                      controller.selectedTaxName.value =
+                                          selectedTax.name ?? "";
+                                      controller.tax.value =
+                                          selectedTax.rate?.toStringAsFixed(
+                                            2,
+                                          ) ??
+                                          "0.00";
+                                      controller.selectedTaxID.value =
+                                          selectedTax.id.toString();
+                                      controller.createTotalForEdit();
+                                      controller.updateRequestedDepositAmount();
+                                    }
+                                  }
+                                }
+                              });
+                            },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.sp,
+                          vertical: 5.sp,
                         ),
-                        context: context,
-                        position: RelativeRect.fromRect(
-                          offset &
-                              Size(
-                                32.sp,
-                                32.sp,
-                              ), // smaller rect, the touch area
-                          Offset.zero &
-                              overlay.size, // Bigger rect, the entire screen
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.r),
+                          border: Border.all(
+                            color: allNonTaxable
+                                ? Colors.grey
+                                : LightThemeColors.primaryColor,
+                            width: 1.sp,
+                          ),
                         ),
-                        items: [
-                          PopupMenuItem(
-                            value: "",
-                            child: Text(
-                              "NO TAX",
-                              style: TextStyle(color: Colors.red),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Tax Rate",
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: allNonTaxable
+                                    ? Colors.grey
+                                    : LightThemeColors.hintTextColor,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          ...controller.taxes.map((tax) {
-                            return PopupMenuItem(
-                              value: tax.id,
-                              child: Text(tax.name ?? ""),
-                            );
-                          }),
-                        ],
-                      ).then((selectedTaxID) async {
-                        if (selectedTaxID != null) {
-                          FocusScope.of(context).unfocus();
-                          controller.invoiceDetailsNoteFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEmailToFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEmailBccFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEmailSubjectFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEmailBodyFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsSearchFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEditDiscountFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsDepositRateFocusnode.value
-                              .unfocus();
-                          controller.markAsDirty();
-                          if (selectedTaxID == "") {
-                            controller.selectedTaxName.value = "NO TAX";
-                            controller.tax.value = "0.00";
-                            controller.selectedTaxID.value = "";
-                            controller.initialTaxID.value = "";
-                            controller.createTotalForEdit();
-                          } else {
-                            final selectedTax = controller.taxes.firstWhere(
-                              (tax) => tax.id == selectedTaxID,
-                            );
-                            controller.selectedTaxName.value =
-                                selectedTax.name ?? "";
-                            controller.tax.value =
-                                selectedTax.rate?.toStringAsFixed(2) ?? "0.00";
-                            controller.selectedTaxID.value = selectedTax.id
-                                .toString();
-                            controller.initialTaxID.value = selectedTax.id
-                                .toString();
-                            controller.createTotalForEdit();
-                            controller.updateRequestedDepositAmount();
-                          }
-                        }
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.sp,
-                        vertical: 5.sp,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5.r),
-                        border: Border.all(
-                          color: LightThemeColors.primaryColor,
-                          width: 1.sp,
+                            SizedBox(width: 5.sp),
+                            Icon(
+                              allNonTaxable
+                                  ? Icons.block
+                                  : Icons.arrow_drop_down,
+                              color: allNonTaxable
+                                  ? Colors.grey
+                                  : LightThemeColors.primaryColor,
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "Tax Rate",
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(width: 5.sp),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: LightThemeColors.primaryColor,
-                          ),
-                        ],
-                      ),
+                    );
+                  },
+                ),
+                trailing: SizedBox(
+                  width: screenWidth > 374 ? 150.sp : 165.sp,
+                  child: Text(
+                    "\$${(controller.discountedTaxableTotalInEdit.value).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
                     ),
-                  );
-                },
-              ),
-              trailing: SizedBox(
-                width: screenWidth > 374 ? 150.sp : 165.sp,
-                child: Text(
-                  "\$${(controller.discountedTaxableTotalInEdit.value).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
+                    textAlign: TextAlign.end,
                   ),
-                  textAlign: TextAlign.end,
                 ),
               ),
             ),
@@ -2807,7 +2770,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 ),
                 SizedBox(height: 20.sp),
                 SizedBox(
-                  height: 42.sp,
+                  height: 50.sp,
                   width: 150.sp,
                   child: PrimaryButton(
                     title: "Close",
@@ -2883,6 +2846,60 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             child: Text("Save & Continue"),
           ),
           TextButton(onPressed: () => Get.back(), child: Text("Cancel")),
+        ],
+      ),
+    );
+  }
+
+  void _showManualTaxDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final TextEditingController taxController = TextEditingController(
+      text: controller.selectedTaxID.value == "-1" ? controller.tax.value : "",
+    );
+
+    showAdaptiveDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Tax Rate", style: theme.textTheme.titleLarge),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Enter tax percentage:"),
+            SizedBox(height: 10),
+            TextField(
+              controller: taxController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                hintText: "8.25",
+                suffixText: "%",
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text("Cancel")),
+          TextButton(
+            onPressed: () {
+              final input = taxController.text.trim();
+              final taxRate = double.tryParse(input);
+              if (taxRate == null || taxRate < 0) {
+                Get.snackbar(
+                  "Invalid Input",
+                  "Please enter a valid tax percentage",
+                );
+                return;
+              }
+              controller.selectedTaxName.value = "Manual";
+              controller.tax.value = taxRate.toStringAsFixed(2);
+              controller.selectedTaxID.value = "-1";
+              controller.createTotalForEdit();
+              controller.updateRequestedDepositAmount();
+              Get.back();
+            },
+            child: Text("Apply"),
+          ),
         ],
       ),
     );
@@ -3092,8 +3109,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   color: Colors.white,
                   border: Border(
                     top: BorderSide(
-                      color: LightThemeColors.buttonBorderColor.withOpacity(
-                        0.3,
+                      color: LightThemeColors.buttonBorderColor.withValues(
+                        alpha: 0.3,
                       ),
                       width: 1,
                     ),
@@ -3201,7 +3218,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   Widget _buildDivider() {
     return Divider(
       height: 1,
-      color: LightThemeColors.buttonBorderColor.withOpacity(0.3),
+      color: LightThemeColors.buttonBorderColor.withValues(alpha: 0.3),
     );
   }
 
@@ -3228,7 +3245,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
         Container(
           decoration: BoxDecoration(
             color: readOnly
-                ? LightThemeColors.bodyTextSecondaryColor.withOpacity(0.1)
+                ? LightThemeColors.bodyTextSecondaryColor.withValues(alpha: 0.1)
                 : LightThemeColors.fillColor,
             borderRadius: BorderRadius.circular(10.r),
             border: Border.all(color: LightThemeColors.buttonBorderColor),

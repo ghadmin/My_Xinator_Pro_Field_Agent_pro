@@ -1130,7 +1130,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mime/mime.dart';
-import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../utils/date_converter.dart';
 import 'package:intl/intl.dart';
@@ -1437,6 +1436,27 @@ class InvoiceController extends GetxController with ExceptionHandler {
     }
   }
 
+  // Check if all items are taxable (used to determine if tax can be selected)
+  bool get areAllItemsTaxable {
+    if (selectedItemList.isEmpty) return true;
+    return selectedItemList.every((item) => item.isTaxable == true);
+  }
+
+  // Check if all items are non-taxable (used to disable tax dropdown)
+  bool get areAllItemsNonTaxable {
+    if (selectedItemList.isEmpty) return false;
+    return selectedItemList.every((item) => item.isTaxable == false);
+  }
+
+  // Reset tax to NO TAX if all items are non-taxable
+  void resetTaxIfNonTaxableItems() {
+    if (areAllItemsNonTaxable) {
+      selectedTaxName.value = "NO TAX";
+      tax.value = "0.00";
+      selectedTaxID.value = "";
+    }
+  }
+
   // ============================================
   // SURCHARGE FEATURE (Commented out for now)
   // ============================================
@@ -1636,6 +1656,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     descriptionControllers.removeAt(index);
     quantityControllers.removeAt(index);
 
+    resetTaxIfNonTaxableItems();
     createTotal();
   }
 
@@ -1652,6 +1673,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     editDescriptionControllers.removeAt(index);
     editQuantityControllers.removeAt(index);
 
+    resetTaxIfNonTaxableItems();
     createTotalForEdit();
     updateRequestedDepositAmount();
   }
@@ -1792,6 +1814,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     taxes.assignAll(
       (response as List).map((e) => TaxModel.fromJson(e)).toList(),
     );
+    taxes.add(TaxModel(id: -1, name: "Manual", rate: 0));
     await MyHive.saveTax(taxes);
     var savedTax = MyHive.getAllTax();
     taxes.assignAll(savedTax);
@@ -1835,6 +1858,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
   void selectItem(ItemListModel item) {
     selectedItemList.add(item);
+    resetTaxIfNonTaxableItems();
   }
 
   RxBool isInvoiceSaved = false.obs;
@@ -2379,6 +2403,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
         );
       }
     }
+    invoiceController.resetTaxIfNonTaxableItems();
     invoiceController.createTotalForEdit();
     await 0.5.delay();
     invoiceController.selectedQboClass(
@@ -2589,6 +2614,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
         );
       }
     }
+    invoiceController.resetTaxIfNonTaxableItems();
     invoiceController.createTotalForEdit();
     await 0.5.delay();
     invoiceController.selectedQboClass(

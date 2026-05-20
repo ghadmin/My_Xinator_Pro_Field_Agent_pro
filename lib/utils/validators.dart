@@ -63,7 +63,6 @@ class FormValidator extends GetxController {
   }
 }
 
-// TODO : HOW TO CALL THE VALIDATOR IN UI "onPressed" Function
 //      ElevatedButton(
 //               onPressed: () {
 //                 if (formKey.currentState!.validate()) {

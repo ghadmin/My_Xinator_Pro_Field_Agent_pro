@@ -3,19 +3,20 @@ import '../../../utils/klog.dart';
 import '../data/local/my_shared_pref.dart';
 
 class RAGService {
-  static const String baseUrl = 'http://localhost:8000'; // Update with your RAG API URL
+  static const String baseUrl =
+      'http://0.0.0.0:8000'; // Update with your RAG API URL
   static const String queryEndpoint = '/api/query';
   static const String syncEndpoint = '/api/sync';
   static const String statsEndpoint = '/api/stats';
 
-  final Dio _dio = Dio(BaseOptions(
-    baseUrl: baseUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 30),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  ));
+  final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      headers: {'Content-Type': 'application/json'},
+    ),
+  );
 
   /// Query appointments using natural language
   Future<RAGQueryResponse?> queryAppointments(
@@ -71,7 +72,9 @@ class RAGService {
 
       if (response.statusCode == 200) {
         final success = response.data['success'] ?? false;
-        kLog('RAG sync result: $success, processed: ${response.data['appointments_processed']}');
+        kLog(
+          'RAG sync result: $success, processed: ${response.data['appointments_processed']}',
+        );
         return success;
       }
       return false;
@@ -111,7 +114,8 @@ class RAGQueryResponse {
   factory RAGQueryResponse.fromJson(Map<String, dynamic> json) {
     return RAGQueryResponse(
       answer: json['answer'] as String? ?? '',
-      sources: (json['sources'] as List<dynamic>?)
+      sources:
+          (json['sources'] as List<dynamic>?)
               ?.map((e) => RAGSource.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
@@ -124,15 +128,14 @@ class RAGSource {
   final String content;
   final RAGMetadata metadata;
 
-  RAGSource({
-    required this.content,
-    required this.metadata,
-  });
+  RAGSource({required this.content, required this.metadata});
 
   factory RAGSource.fromJson(Map<String, dynamic> json) {
     return RAGSource(
       content: json['content'] as String? ?? '',
-      metadata: RAGMetadata.fromJson(json['metadata'] as Map<String, dynamic>? ?? {}),
+      metadata: RAGMetadata.fromJson(
+        json['metadata'] as Map<String, dynamic>? ?? {},
+      ),
     );
   }
 }

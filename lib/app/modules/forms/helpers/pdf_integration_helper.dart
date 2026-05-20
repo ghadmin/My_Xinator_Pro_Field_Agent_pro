@@ -103,10 +103,7 @@ class PdfIntegrationHelper {
     } catch (e) {
       debugPrint('Could not render page $pageNumber: $e');
     }
-    return PdfPageData(
-      imageData: Uint8List(0),
-      aspectRatio: 8.5 / 11,
-    );
+    return PdfPageData(imageData: Uint8List(0), aspectRatio: 8.5 / 11);
   }
 
   static dynamic _getPdfLibrary() {
@@ -118,10 +115,7 @@ class PdfPageData {
   final Uint8List imageData;
   final double aspectRatio;
 
-  const PdfPageData({
-    required this.imageData,
-    required this.aspectRatio,
-  });
+  const PdfPageData({required this.imageData, required this.aspectRatio});
 }
 
 abstract class PdfLibraryAdapter {
@@ -188,10 +182,7 @@ class PdfxAdapter implements PdfLibraryAdapter {
     } catch (e) {
       debugPrint('Could not render page: $e');
     }
-    return PdfPageData(
-      imageData: Uint8List(0),
-      aspectRatio: 8.5 / 11,
-    );
+    return PdfPageData(imageData: Uint8List(0), aspectRatio: 8.5 / 11);
   }
 
   dynamic _tryImportPdfx() {
@@ -235,7 +226,7 @@ class SyncfusionPdfAdapter implements PdfLibraryAdapter {
     String? backgroundColor,
   ) async {
     try {
-      final page = document.pages[pageNumber - 1];
+      // final page = document.pages[pageNumber - 1];
       final dynamic syncfusion = _tryImportSyncfusion();
 
       if (syncfusion != null) {
@@ -244,10 +235,7 @@ class SyncfusionPdfAdapter implements PdfLibraryAdapter {
           pageCount: 1,
         );
 
-        final image = await renderer.renderPage(
-          pageNumber - 1,
-          dpi: dpi,
-        );
+        final image = await renderer.renderPage(pageNumber - 1, dpi: dpi);
 
         return PdfPageData(
           imageData: image.bytes,
@@ -257,10 +245,7 @@ class SyncfusionPdfAdapter implements PdfLibraryAdapter {
     } catch (e) {
       debugPrint('Could not render page: $e');
     }
-    return PdfPageData(
-      imageData: Uint8List(0),
-      aspectRatio: 8.5 / 11,
-    );
+    return PdfPageData(imageData: Uint8List(0), aspectRatio: 8.5 / 11);
   }
 
   dynamic _tryImportSyncfusion() {
@@ -276,12 +261,7 @@ class FormRendererFactory {
     String? backgroundColor,
   }) async {
     if (adapter != null) {
-      return await _createWithAdapter(
-        adapter,
-        pdfBytes,
-        dpi,
-        backgroundColor,
-      );
+      return await _createWithAdapter(adapter, pdfBytes, dpi, backgroundColor);
     }
 
     return await PdfIntegrationHelper.createRendererFromPdfBytes(
@@ -303,10 +283,7 @@ class FormRendererFactory {
     try {
       final document = await adapter.openDocument(pdfBytes);
       if (document == null) {
-        return MemoryPdfPageRenderer(
-          pageImages: {},
-          aspectRatios: {},
-        );
+        return MemoryPdfPageRenderer(pageImages: {}, aspectRatios: {});
       }
 
       final pageCount = await adapter.getPageCount(document);

@@ -2,13 +2,19 @@ import 'package:get/get.dart';
 
 import '../modules/appointment/bindings/appointment_binding.dart';
 import '../modules/appointment/bindings/custom_fields_binding.dart';
+import '../modules/appointment/views/all_tab_screens/customer_location_screen.dart';
+import '../modules/appointment/views/all_tab_screens/forms_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/estimate_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/pictures_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/equipment_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/files_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/notes_tab_screen.dart';
 import '../modules/appointment/views/appointment_details_view.dart';
 import '../modules/appointment/views/appointment_view.dart';
 import '../modules/appointment/views/tag_details_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/sign_up_view.dart';
-import '../modules/csl/views/csl_view.dart';
 import '../modules/customer/bindings/customer_binding.dart';
 import '../modules/customer/views/customer_details_view.dart';
 import '../modules/customer/views/customer_view.dart';
@@ -29,6 +35,8 @@ import '../modules/item/bindings/item_binding.dart';
 import '../modules/item/views/item_view.dart';
 import '../modules/onboarding/bindings/onboarding_binding.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
+import '../modules/rag/controllers/rag_controller.dart';
+import '../modules/rag/views/rag_view.dart';
 import '../modules/settings/bindings/settings_binding.dart';
 import '../modules/settings/views/appointment_settings_view.dart';
 import '../modules/settings/views/appointment_status_view.dart';
@@ -83,11 +91,46 @@ class AppPages {
       page: () => const FormsInboxView(),
       binding: FormBindings(),
     ),
-    GetPage(name: _Paths.CSLVIEW, page: () => const CslScreen()),
+    // GetPage(name: _Paths.CSLVIEW, page: () => const CslScreen()),
     GetPage(
       name: _Paths.APPOINTMENT_DETAILS,
       page: () => AppointmentDetailsView(),
       bindings: [AppointmentBinding(), CustomFieldsBinding()],
+    ),
+    GetPage(
+      name: _Paths.CUSTOMER_LOCATION,
+      page: () => const CustomerLocationScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.FORMS_TAB,
+      page: () => const FormsTabScreen(),
+      bindings: [AppointmentBinding(), CustomFieldsBinding()],
+    ),
+    GetPage(
+      name: _Paths.ESTIMATE_TAB,
+      page: () => const EstimateTabScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.PICTURES_TAB,
+      page: () => const PicturesTabScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.EQUIPMENT_TAB,
+      page: () => const EquipmentTabScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.FILES_TAB,
+      page: () => const FilesTabScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.NOTES_TAB,
+      page: () => const NotesTabScreen(),
+      bindings: [AppointmentBinding()],
     ),
     GetPage(
       name: _Paths.SETTINGS,
@@ -185,12 +228,12 @@ class AppPages {
       binding: TwilioChatBinding(),
     ),
 
-    // GetPage(
-    //   name: _Paths.RAG_CHAT,
-    //   page: () => const RAGView(),
-    //   binding: BindingsBuilder(() {
-    //     Get.lazyPut<RAGController>(() => RAGController());
-    //   }),
-    // ),
+    GetPage(
+      name: _Paths.RAG_CHAT,
+      page: () => const RAGView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<RAGController>(() => RAGController());
+      }),
+    ),
   ];
 }

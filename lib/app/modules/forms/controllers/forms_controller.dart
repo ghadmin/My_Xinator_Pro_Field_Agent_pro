@@ -591,7 +591,7 @@ class FormsController extends GetxController with ExceptionHandler {
         'appointment_id': form.appointmentId,
         'form_instance_id': form.formInstanceId,
         'template_id': form.template.id,
-        'customer_id': form.customerId ?? '',
+        'customer_id': form.customerId,
         'queue_id': form.queueId.toString(),
         'date': DateTime.now().toIso8601String().split('T')[0],
         'datetime': DateTime.now().toIso8601String(),

@@ -71,7 +71,7 @@ class PdfFormBuilder extends StatefulWidget {
 }
 
 class _PdfFormBuilderState extends State<PdfFormBuilder> {
-  late InAppWebViewController _webViewController;
+  // late InAppWebViewController _webViewController;
   String? _pdfBase64;
   List<Map<String, dynamic>> _fields = [];
   Map<String, dynamic>? _selectedField;
@@ -498,7 +498,7 @@ class _PdfFormBuilderState extends State<PdfFormBuilder> {
         builtInZoomControls: false,
       ),
       onWebViewCreated: (controller) {
-        _webViewController = controller;
+        // _webViewController = controller;
         _setupBuilderHandlers(controller);
       },
       onConsoleMessage: (controller, consoleMessage) {
@@ -801,7 +801,7 @@ class _PdfFormBuilderState extends State<PdfFormBuilder> {
     setState(() => _currentPage = page);
   }
 
-  int _getTotalPages() => 1; // TODO: Get from PDF
+  int _getTotalPages() => 1;
 
   void _undo() {
     // TODO: Implement undo
@@ -820,7 +820,6 @@ class _PdfFormBuilderState extends State<PdfFormBuilder> {
     };
     kLog('Template saved: ${template.keys}');
     setState(() => _isDirty = false);
-    // TODO: Save to backend/local storage
   }
 
   void _previewForm() {

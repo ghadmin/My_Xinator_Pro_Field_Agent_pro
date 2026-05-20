@@ -11,6 +11,7 @@ abstract class Routes {
   static const SIGNUP = _Paths.SIGNUP;
   static const APPOINTMENT = _Paths.APPOINTMENT;
   static const APPOINTMENT_DETAILS = _Paths.APPOINTMENT_DETAILS;
+  static const CUSTOMER_LOCATION = _Paths.CUSTOMER_LOCATION;
   static const SETTINGS = _Paths.SETTINGS;
   static const APPOINTMENT_SETTINGS = _Paths.APPOINTMENT_SETTINGS;
   static const CUSTOMER = _Paths.CUSTOMER;
@@ -39,6 +40,12 @@ abstract class Routes {
   static const TWILIO_CHAT = _Paths.TWILIO_CHAT;
   static const PDF_DYNAMIC_FORM = _Paths.PDF_DYNAMIC_FORM;
   static const RAG_CHAT = _Paths.RAG_CHAT;
+  static const FORMS_TAB = _Paths.FORMS_TAB;
+  static const ESTIMATE_TAB = _Paths.ESTIMATE_TAB;
+  static const PICTURES_TAB = _Paths.PICTURES_TAB;
+  static const EQUIPMENT_TAB = _Paths.EQUIPMENT_TAB;
+  static const FILES_TAB = _Paths.FILES_TAB;
+  static const NOTES_TAB = _Paths.NOTES_TAB;
 }
 
 abstract class _Paths {
@@ -50,6 +57,7 @@ abstract class _Paths {
   static const APPOINTMENT = '/appointment';
   static const SIGNATURE = '/signature';
   static const APPOINTMENT_DETAILS = '/appointment_list';
+  static const CUSTOMER_LOCATION = '/customer-location';
   static const BILLABLE_ITEMS = '/billable_items';
   static const SETTINGS = '/settings';
   static const APPOINTMENT_SETTINGS = '/appointment_settings';
@@ -76,4 +84,10 @@ abstract class _Paths {
   static const TWILIO_CHAT = '/twilio-chat';
   static const PDF_DYNAMIC_FORM = '/pdf_dynamic_form';
   static const RAG_CHAT = '/rag-chat';
+  static const FORMS_TAB = '/forms-tab';
+  static const ESTIMATE_TAB = '/estimate-tab';
+  static const PICTURES_TAB = '/pictures-tab';
+  static const EQUIPMENT_TAB = '/equipment-tab';
+  static const FILES_TAB = '/files-tab';
+  static const NOTES_TAB = '/notes-tab';
 }

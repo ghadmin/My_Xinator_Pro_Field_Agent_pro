@@ -220,9 +220,6 @@ class ManualPaymentView extends GetView<InvoiceController> {
             inputTime: proposal.invoiceDate.toString(),
             outputFormat: "MM/dd/yyyy",
           );
-          if (proposal.taxType != "") {
-            invoiceC.initialTaxID.value = proposal.taxType ?? "";
-          }
 
           // Set discount values
           invoiceC.invoiceDiscountDetails.value = proposal.discount ?? 0.00;
@@ -241,12 +238,11 @@ class ManualPaymentView extends GetView<InvoiceController> {
           }
 
           // Set tax values
-
           invoiceC.tax.value =
               invoiceC.taxes
                   .firstWhereOrNull(
                     (tax) =>
-                        tax.id == int.tryParse(invoiceC.initialTaxID.value),
+                        tax.id == int.tryParse(proposal.taxType ?? ""),
                   )
                   ?.rate
                   ?.toStringAsFixed(2) ??
@@ -255,7 +251,7 @@ class ManualPaymentView extends GetView<InvoiceController> {
               invoiceC.taxes
                   .firstWhereOrNull(
                     (tax) =>
-                        tax.id == int.tryParse(invoiceC.initialTaxID.value),
+                        tax.id == int.tryParse(proposal.taxType ?? ""),
                   )
                   ?.name ??
               "";

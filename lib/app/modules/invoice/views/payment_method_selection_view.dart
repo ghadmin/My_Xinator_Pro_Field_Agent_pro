@@ -64,7 +64,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                         ),
                         Text(
                           controller.type.value == "Invoice"
-                              ? '\$${(double.parse(controller.total.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}'
+                              ? '\$${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}'
                               : '\$${double.parse(controller.total.value).toStringAsFixed(2)}',
                           style: TextStyle(
                             color: Colors.white,
@@ -180,11 +180,13 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                               .toStringAsFixed(2);
                       await controller.initializeWebController(
                         controller
-                            .requestedDepositAmountEditTextController.text,
+                            .requestedDepositAmountEditTextController
+                            .text,
                       );
-                      Get.toNamed(Routes.MANUAL_PAYMENT, arguments: {
-                        'invoiceId': controller.invoiceID.value,
-                      });
+                      Get.toNamed(
+                        Routes.MANUAL_PAYMENT,
+                        arguments: {'invoiceId': controller.invoiceID.value},
+                      );
                     },
                   )
                 : PaymentOption(
@@ -198,9 +200,10 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                       await controller.initializeWebController(
                         controller.finalCollectionAmount.value,
                       );
-                      Get.toNamed(Routes.MANUAL_PAYMENT, arguments: {
-                        'invoiceId': controller.invoiceID.value,
-                      });
+                      Get.toNamed(
+                        Routes.MANUAL_PAYMENT,
+                        arguments: {'invoiceId': controller.invoiceID.value},
+                      );
                     },
                   ),
             SizedBox(height: 8.sp),

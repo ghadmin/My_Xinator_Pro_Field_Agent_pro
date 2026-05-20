@@ -717,7 +717,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                                         value,
                                                                                       ) {
                                                                                         controller.selectedItemList[index].isTaxable = value;
-
+                                                                                        controller.resetTaxIfNonTaxableItems();
                                                                                         controller.createTotal();
                                                                                         controller.selectedItemList.refresh();
                                                                                       },
@@ -1548,6 +1548,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                             controller.tax.value = "0.00";
                                             controller.selectedTaxID.value = "";
                                             controller.createTotal();
+                                          } else if (selectedValue == -1) {
+                                            _showManualTaxDialog(context);
                                           } else {
                                             final selectedTax = controller.taxes
                                                 .firstWhere(
@@ -2203,5 +2205,58 @@ class CreateInvoiceView extends GetView<InvoiceController> {
               ),
             ),
           );
+  }
+
+  void _showManualTaxDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final TextEditingController taxController = TextEditingController(
+      text: controller.selectedTaxID.value == "-1" ? controller.tax.value : "",
+    );
+
+    showAdaptiveDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Tax Rate", style: theme.textTheme.titleLarge),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Enter tax percentage:"),
+            SizedBox(height: 10),
+            TextField(
+              controller: taxController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                hintText: "8.25",
+                suffixText: "%",
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text("Cancel")),
+          TextButton(
+            onPressed: () {
+              final input = taxController.text.trim();
+              final taxRate = double.tryParse(input);
+              if (taxRate == null || taxRate < 0) {
+                Get.snackbar(
+                  "Invalid Input",
+                  "Please enter a valid tax percentage",
+                );
+                return;
+              }
+              controller.selectedTaxName.value = "Manual";
+              controller.tax.value = taxRate.toStringAsFixed(2);
+              controller.selectedTaxID.value = "-1";
+              controller.createTotal();
+              Get.back();
+            },
+            child: Text("Apply"),
+          ),
+        ],
+      ),
+    );
   }
 }

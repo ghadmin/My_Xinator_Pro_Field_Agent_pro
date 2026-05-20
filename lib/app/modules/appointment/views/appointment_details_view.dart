@@ -1,8 +1,3 @@
-// ═══════════════════════════════════════════════════════════════
-// AppointmentDetailsView — Warm Organic Blue Redesign
-// Preserves all original logic and data with new UI design
-// ═══════════════════════════════════════════════════════════════
-
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -10,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -48,11 +42,15 @@ import '../../../routes/app_pages.dart';
 import '../../../utils/phone_number_formatter.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/custom_fields_controller.dart';
+import '../parts/image/controllers/image_controller.dart';
+import '../parts/file/controllers/file_controller.dart';
+import '../parts/file/models/file_item_model.dart';
 import '../models/appointment_model.dart';
 import '../models/custom_field_model.dart';
 import 'widgets/equipment_form_modal.dart';
-import '../models/file_model.dart';
 import '../../item/models/item_list_model.dart';
+import '../parts/notes/controllers/notes_controller.dart';
+import '../parts/equipment/controllers/equipment_controller.dart';
 
 class AppointmentDetailsView extends StatefulWidget {
   const AppointmentDetailsView({super.key});
@@ -63,7 +61,6 @@ class AppointmentDetailsView extends StatefulWidget {
 
 class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     with TickerProviderStateMixin {
-  late TabController _tabController;
   int _previousTabIndex = 0;
   FormsController? formsController;
   final GlobalKey _createInvoiceButtonKey = GlobalKey();
@@ -71,6 +68,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   @override
   void initState() {
     super.initState();
+
+    // Controllers are now registered via AppointmentBinding
+    // Using Get.find() to get the lazy-loaded instances
+    imageController = Get.find<ImageController>();
+    fileController = Get.find<FileController>();
+    notesController = Get.find<NotesController>();
 
     // Check if FormsController exists, if not create it
     if (Get.isRegistered<FormsController>()) {
@@ -80,125 +83,104 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
       formsController = Get.put(FormsController());
     }
 
-    _tabController = TabController(length: 8, vsync: this);
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return;
-      if (_tabController.index == _previousTabIndex) return;
+    // _tabController = TabController(length: 7, vsync: this);
+    // _tabController.addListener(() {
+    //   if (_tabController.indexIsChanging) return;
+    //   if (_tabController.index == _previousTabIndex) return;
 
-      _previousTabIndex = _tabController.index;
-      kLog("tabController index: ${_tabController.index}");
-      if (_tabController.index == 0) {
-        _loadSavedCustomFields();
-        setState(() {});
-      }
-      if (_tabController.index == 1) {
-        controller.getCustomerSite(showLoader: true);
-        Future.delayed(Duration(seconds: 7));
-        controller.isBasicExpanded(true);
-        setState(() {});
-      }
-      if (_tabController.index == 2) {
-        formsController = Get.put<FormsController>(FormsController());
-        formsController?.pollPendingForms(
-          controller.selectedAppointment.value?.resourceID ?? "",
-        );
-        // _buildFormsTab(context);
-        setState(() {});
-      }
-      if (_tabController.index == 4) {
-        controller.getImageList(true);
-        setState(() {});
-      }
-      if (_tabController.index == 3) {
-        controller.getInvoiceList(showLoader: true);
-        setState(() {});
-      }
-      if (_tabController.index == 5) {
-        controller.getCustomerSite(showLoader: true);
-        controller.getEquipment(showLoader: true);
-        controller.getEquipmentTypes(showLoader: true);
-        setState(() {});
-      }
-      if (_tabController.index == 6) {
-        controller.getFileList(showLoader: true);
-        setState(() {});
-      }
-      if (_tabController.index == 7) {
-        controller.getAllNotes(showLoader: true);
-        setState(() {});
-      }
-    });
-  }
+    //   _previousTabIndex = _tabController.index;
+    //   kLog("tabController index: ${_tabController.index}");
 
-  Future<void> _loadSavedCustomFields() async {
-    try {
-      final appointmentId = controller.selectedAppointment.value?.apptID;
-      if (appointmentId == null) return;
-
-      log("📥 Loading saved custom fields for appointment: $appointmentId");
-      await customFieldsController.getAttachedCustomFields(
-        appointmentId: appointmentId,
-      );
-
-      if (customFieldsController.attachedCustomFields.isNotEmpty) {
-        customFieldsController.selectedCustomFields.clear();
-
-        for (var attachedField in customFieldsController.attachedCustomFields) {
-          var fieldDef = customFieldsController.allCustomFields
-              .firstWhereOrNull((f) => f.fieldID == attachedField.fieldID);
-
-          if (fieldDef != null) {
-            var newField = CustomFieldModel(
-              fieldID: fieldDef.fieldID,
-              fieldName: fieldDef.fieldName,
-              fieldType: fieldDef.fieldType,
-              fieldOptions: fieldDef.fieldOptions,
-              isActive: fieldDef.isActive,
-              options: fieldDef.options,
-            );
-
-            switch (fieldDef.fieldType) {
-              case 'text':
-                newField.textValue = attachedField.fieldValue;
-                break;
-              case 'number':
-                newField.numberValue = attachedField.fieldValue;
-                break;
-              case 'dropdown':
-                newField.selectedValue = attachedField.fieldValue;
-                break;
-              case 'checklist':
-                newField.selectedOptions = attachedField.getFieldValueAsList();
-                break;
-            }
-
-            customFieldsController.selectedCustomFields.add(newField);
-          }
-        }
-
-        log(
-          "✅ Loaded ${customFieldsController.selectedCustomFields.length} saved custom fields",
-        );
-        setState(() {});
-      } else {
-        log(
-          "ℹ️ No attached custom fields found for appointment: $appointmentId",
-        );
-      }
-    } catch (e) {
-      log("❌ Error loading saved custom fields: $e");
-    }
+    //   // Navigate to dedicated pages
+    //   if (_tabController.index == 0) {
+    //     // CSL - Navigate to CSL view
+    //     controller.getCustomerSite(showLoader: true);
+    //     Future.delayed(Duration(seconds: 7));
+    //     controller.isBasicExpanded(true);
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 1) {
+    //     // Forms - Navigate to Forms page
+    //     Get.toNamed(Routes.FORMS);
+    //     // Reset to CSL tab after navigation
+    //     Future.delayed(Duration(milliseconds: 500), () {
+    //       if (_tabController.index == 1) {
+    //         _tabController.animateTo(0);
+    //       }
+    //     });
+    //   }
+    //   if (_tabController.index == 2) {
+    //     // Estimate - Navigate to Invoice page
+    //     controller.getInvoiceList(showLoader: true);
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 3) {
+    //     // Pictures - Navigate to pictures page (if exists)
+    //     final appointment = controller.selectedAppointment.value;
+    //     if (appointment != null) {
+    //       imageController.fetchPictures(
+    //         customerId: appointment.customerID?.toString() ?? '',
+    //         siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+    //       );
+    //     }
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 4) {
+    //     // Equipment - Show equipment section
+    //     controller.getCustomerSite(showLoader: true);
+    //     final appointment = controller.selectedAppointment.value;
+    //     if (appointment != null) {
+    //       equipmentController.fetchEquipment(
+    //         customerGuid: appointment.customer?.customerGuid ?? '',
+    //         siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+    //         companyId: appointment.companyID,
+    //       );
+    //       equipmentController.fetchEquipmentTypes(
+    //         companyId: appointment.companyID,
+    //       );
+    //     }
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 5) {
+    //     // Files - Show files section
+    //     final appointment = controller.selectedAppointment.value;
+    //     if (appointment != null) {
+    //       fileController.fetchFiles(
+    //         customerId: appointment.customerID?.toString() ?? '',
+    //         siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+    //       );
+    //     }
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 6) {
+    //     // Notes - Show notes section
+    //     final appointment = controller.selectedAppointment.value;
+    //     if (appointment != null) {
+    //       notesController.fetchNotes(
+    //         customerId: appointment.customerID?.toString() ?? '',
+    //         siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+    //         companyId: appointment.companyID,
+    //       );
+    //     }
+    //     setState(() {});
+    //   }
+    // });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    // _tabController.dispose();
     super.dispose();
   }
 
-  AppointmentController controller = Get.find<AppointmentController>();
-  CustomFieldsController customFieldsController =
+  final AppointmentController controller = Get.find<AppointmentController>();
+  final CustomFieldsController customFieldsController =
       Get.find<CustomFieldsController>();
+  late final ImageController imageController;
+  late final FileController fileController;
+  late final NotesController notesController;
+  final EquipmentController equipmentController =
+      Get.find<EquipmentController>();
 
   // ─────────────────────────────────────────────────────────────
   // MAIN BUILD — REDESIGNED WITH WARM ORGANIC BLUE THEME
@@ -252,23 +234,176 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                           ),
                           child: Column(
                             children: [
-                              _buildGradientHeader(context),
+                              // _buildGradientHeader(context),
+                              _buildTimeCard(),
+                              // _buildGradientHeader(context),
+                              SizedBox(height: 5.h),
 
-                              OrganicTabBar(
-                                controller: _tabController,
-                                tabs: const [
-                                  'Info',
-                                  'CSL',
-                                  'Forms',
-                                  'Estimate',
-                                  'Pictures',
-                                  'Equipment',
-                                  'Files',
-                                  'Notes',
-                                ],
+                              // Notes Card
+                              OrganicCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Any Details',
+                                      style: WarmOrganicBlueTheme.headingSmall,
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.all(14.r),
+                                      decoration: BoxDecoration(
+                                        color: WarmOrganicBlueTheme.warmGray,
+                                        borderRadius: BorderRadius.circular(
+                                          WarmOrganicBlueTheme.radiusMd,
+                                        ),
+                                      ),
+                                      child: GeneralTextField(
+                                        maxLine: 4,
+                                        hint: "Add a note here..",
+                                        theme: Theme.of(context),
+                                        textEditingController:
+                                            controller.noteController,
+                                        onChanged: (v) {
+                                          controller.isTyping(true);
+                                          controller.noteText(v);
+                                        },
+                                        onEditingComplete: () =>
+                                            controller.isTyping(false),
+                                      ),
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    OrganicPrimaryButton(
+                                      text: 'Save Notes',
+                                      height: 40.h,
+                                      onPressed: () async =>
+                                          await controller.updateAppointment(),
+                                    ),
+                                  ],
+                                ),
                               ),
                               SizedBox(height: 12.h),
-                              _buildSelectedTabContent(context),
+
+                              // Custom Fields Card
+                              OrganicCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Custom Fields',
+                                      style: WarmOrganicBlueTheme.headingSmall,
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    DropdownButton<CustomFieldModel>(
+                                      isExpanded: true,
+                                      icon: Icon(
+                                        Icons.add,
+                                        color: WarmOrganicBlueTheme.primaryBlue,
+                                      ),
+                                      value: null,
+                                      items: customFieldsController
+                                          .allCustomFields
+                                          .map((field) {
+                                            return DropdownMenuItem<
+                                              CustomFieldModel
+                                            >(
+                                              value: field,
+                                              child: Text(
+                                                field.fieldName!,
+                                                softWrap: true,
+                                              ),
+                                            );
+                                          })
+                                          .toList(),
+                                      onChanged: (value) {
+                                        if (value != null) {
+                                          customFieldsController
+                                              .saveCustomField(value);
+                                        }
+                                      },
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    ListView.separated(
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      itemCount: customFieldsController
+                                          .selectedCustomFields
+                                          .length,
+                                      separatorBuilder: (context, index) =>
+                                          Divider(
+                                            color:
+                                                WarmOrganicBlueTheme.warmSilver,
+                                            thickness: 1,
+                                            height: 24.h,
+                                          ),
+                                      itemBuilder: (context, index) {
+                                        final field = customFieldsController
+                                            .selectedCustomFields[index];
+                                        return Stack(
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.only(
+                                                right: 30.w,
+                                              ),
+                                              child: buildCustomFieldWidget(
+                                                field,
+                                                context,
+                                              ),
+                                            ),
+                                            Positioned(
+                                              top: 0,
+                                              right: 0,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  customFieldsController
+                                                      .selectedCustomFields
+                                                      .removeAt(index);
+                                                  setState(() {});
+                                                },
+                                                child: Container(
+                                                  padding: EdgeInsets.all(8.r),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red
+                                                        .withValues(alpha: 0.1),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.close,
+                                                    color: Colors.red,
+                                                    size: 20.sp,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
+                                    if (customFieldsController
+                                        .selectedCustomFields
+                                        .isNotEmpty)
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 12.h),
+                                        child: OrganicPrimaryButton(
+                                          text: "Save Custom Fields",
+                                          onPressed: () async {
+                                            await customFieldsController
+                                                .saveAttachedCustomFields(
+                                                  appointmentId: controller
+                                                      .selectedAppointment
+                                                      .value!
+                                                      .apptID,
+                                                );
+                                          },
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 12.h),
+
+                              _buildTabsGrid(),
+                              SizedBox(height: 70.h),
                             ],
                           ),
                         ),
@@ -282,232 +417,621 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // GRADIENT HEADER
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildGradientHeader(BuildContext context) {
+  Widget _buildTimeCard() {
+    // Parse the start date to get time and date information
+    String displayTime = 'N/A';
+    String displayDate = '';
+
+    try {
+      if (controller.startDate.isNotEmpty) {
+        final dateTime = DateFormat(
+          'MM/dd/yyyy hh:mm a',
+        ).parse(controller.startDate);
+        displayTime = DateFormat('hh:mm a').format(dateTime);
+        displayDate = DateFormat('MMM dd, yyyy').format(dateTime);
+      }
+    } catch (e) {
+      kLog('Error parsing start date: $e');
+    }
+
+    final customerName = controller.contactName;
+
     return Container(
-      width: double.infinity,
       margin: EdgeInsets.only(left: 20.w, right: 20.w, top: 12.h, bottom: 8.h),
       decoration: BoxDecoration(
-        gradient: WarmOrganicBlueTheme.headerGradient,
-        borderRadius: BorderRadius.all(
-          Radius.circular(WarmOrganicBlueTheme.radiusXl),
-        ),
-        boxShadow: WarmOrganicBlueTheme.elevatedShadow,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Row: Back + Title
-            GestureDetector(
-              onTap: () async {
-                controller.showLoading();
-                await controller.customerController.getCustomers();
-                controller.customerController.businessName =
-                    controller.contactName;
-                controller.customerController.title = controller.customerTitle;
-                controller.customerController.address = controller.address;
-                controller.customerController.phoneNumber =
-                    controller.phoneNumber;
-                controller.customerController.mobileNumber =
-                    controller.mobileNumber;
-                controller.customerController.email = controller.email;
-                controller.hideLoading();
-                Get.toNamed(Routes.CUSTOMER_DETAILS);
-              },
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          controller.contactName,
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          "Service: ${controller.serviceType}",
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Time section with pulsing dot
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayTime,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1C1C1E),
+                        letterSpacing: -1.2,
+                        height: 1.1,
+                      ),
                     ),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: Colors.white.withValues(alpha: 0.6),
-                    size: 24.sp,
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      displayDate,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF8E8E93),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: 16.h),
+            ],
+          ),
+          const SizedBox(height: 16),
 
-            // Status Badges
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => showDialogStatusChange(context, controller),
-                    child: _buildStatusBadge(
-                      controller
-                              .settingController
-                              .selectedAppointmentsStatus
-                              .value
-                              ?.statusName ??
-                          "",
-                      _getStatusColor(
-                        controller
+          // Status Badges Row
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => showDialogStatusChange(context, controller),
+                  child: _buildCompactStatusBadge(
+                    controller
                             .settingController
                             .selectedAppointmentsStatus
                             .value
-                            ?.statusName,
-                      ),
+                            ?.statusName ??
+                        "",
+                    _getStatusColor(
+                      controller
+                          .settingController
+                          .selectedAppointmentsStatus
+                          .value
+                          ?.statusName,
                     ),
                   ),
                 ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => showDialogTicketStatus(context, controller),
-                    child: _buildStatusBadge(
-                      'Ticket: ${controller.settingController.selectedTicket.value?.statusName ?? "N/A"}',
-                      _getTicketColor(
-                        controller
-                            .settingController
-                            .selectedTicket
-                            .value
-                            ?.statusName,
-                      ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => showDialogTicketStatus(context, controller),
+                  child: _buildCompactStatusBadge(
+                    'Ticket: ${controller.settingController.selectedTicket.value?.statusName ?? "N/A"}',
+                    _getTicketColor(
+                      controller
+                          .settingController
+                          .selectedTicket
+                          .value
+                          ?.statusName,
                     ),
                   ),
                 ),
-              ],
-            ),
-            SizedBox(height: 16.h),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
 
-            // Contact Info Chips
-            Row(
+          // Divider
+          Container(height: 1, color: const Color(0xFFE5E5EA)),
+          const SizedBox(height: 12),
+
+          // Customer row
+          GestureDetector(
+            onTap: () async {
+              controller.showLoading();
+              await controller.customerController.getCustomers();
+              controller.customerController.businessName =
+                  controller.contactName;
+              controller.customerController.title = controller.customerTitle;
+              controller.customerController.address = controller.address;
+              controller.customerController.phoneNumber =
+                  controller.phoneNumber;
+              controller.customerController.mobileNumber =
+                  controller.mobileNumber;
+              controller.customerController.email = controller.email;
+              controller.hideLoading();
+              Get.toNamed(Routes.CUSTOMER_DETAILS);
+            },
+            child: Row(
               children: [
                 Expanded(
-                  child: _buildHeaderInfoChip(
-                    Icons.location_on_rounded,
-                    controller.address,
-                    () async {
-                      await controller.initializeWebController();
-                      showDialog(
-                        barrierDismissible: true,
-                        context: context,
-                        builder: (BuildContext context) {
-                          return Dialog(
-                            // Make dialog full width
-                            child: Column(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        customerName.isNotEmpty ? customerName : 'N/A',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1C1C1E),
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      if (controller.serviceType.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFF007AFF,
+                              ).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Expanded(
-                                  child: Container(
-                                    width: double
-                                        .infinity, // ← This makes it full width
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(15.r),
+                                const Icon(
+                                  Icons.miscellaneous_services_rounded,
+                                  size: 11,
+                                  color: Color(0xFF007AFF),
+                                ),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    controller.serviceType,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF007AFF),
                                     ),
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 12.sp,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, size: 20, color: Color(0xFFC7C7CC)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Divider
+          Container(height: 1, color: const Color(0xFFE5E5EA)),
+          const SizedBox(height: 12),
+
+          // Appointment Info Tiles - 2 columns, 3 rows
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.calendar_today_rounded,
+                  'Request Date',
+                  controller.requestDate,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.play_circle_outline_rounded,
+                  'Start Date',
+                  controller.startDate,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.stop_circle_outlined,
+                  'End Date',
+                  controller.endDate,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.schedule_rounded,
+                  'Time Slot',
+                  controller.timeSlot,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.person_rounded,
+                  'Resource',
+                  controller.selectedAppointment.value?.resource?.name ?? "N/A",
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: SizedBox(), // Empty placeholder for 3rd row, 2nd column
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Divider
+          Container(height: 1, color: const Color(0xFFE5E5EA)),
+          const SizedBox(height: 12),
+
+          // Contact Info Chips
+          Row(
+            children: [
+              Expanded(
+                child: _buildContactChip(
+                  Icons.location_on_rounded,
+                  controller.address,
+                  () async {
+                    try {
+                      await controller.initializeWebController();
+                      if (context.mounted) {
+                        showDialog(
+                          barrierDismissible: true,
+                          context: context,
+                          builder: (BuildContext context) {
+                            return Dialog(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                          15.r,
+                                        ),
                                       ),
-                                      child: Obx(
-                                        () => Stack(
-                                          children: [
-                                            ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(12.sp),
-                                              child: WebViewWidget(
-                                                controller:
-                                                    controller.webController!,
-                                              ),
-                                            ),
-                                            if (controller.isLoading.value)
-                                              const Center(
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      color: Colors.blue,
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 12.sp,
+                                        ),
+                                        child: Obx(
+                                          () => Stack(
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      12.sp,
                                                     ),
+                                                child: WebViewWidget(
+                                                  controller:
+                                                      controller.webController!,
+                                                ),
                                               ),
-                                          ],
+                                              if (controller.isLoading.value)
+                                                const Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        color: Colors.blue,
+                                                      ),
+                                                ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                SizedBox(height: 10.sp),
-                                SizedBox(
-                                  height: 45.sp,
-                                  width: 120.sp,
-                                  child: PrimaryButton(
-                                    title: "Done",
-                                    onPressed: () => Get.back(),
-                                    inactive: false,
+                                  SizedBox(height: 10.sp),
+                                  SizedBox(
+                                    height: 45.sp,
+                                    width: 120.sp,
+                                    child: PrimaryButton(
+                                      title: "Done",
+                                      onPressed: () => Get.back(),
+                                      inactive: false,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 25.sp),
-                              ],
-                            ),
-                          );
-                        },
+                                  SizedBox(height: 25.sp),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    } catch (e) {
+                      MySnackBar.showErrorToast(message: e.toString());
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: _buildContactChip(
+                  Icons.phone_rounded,
+                  controller.mobileNumber.isNotEmpty
+                      ? controller.mobileNumber
+                      : controller.phoneNumber.isNotEmpty
+                      ? controller.phoneNumber
+                      : 'N/A',
+                  () async {
+                    try {
+                      await UrlLauncher.phoneCall(
+                        controller.mobileNumber.isNotEmpty
+                            ? controller.mobileNumber
+                            : controller.phoneNumber,
                       );
+                      if (context.mounted) {
+                        // Phone call initiated successfully
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        MySnackBar.showErrorToast(message: e.toString());
+                      }
+                    }
+                  },
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: _buildContactChip(
+                  Icons.email_rounded,
+                  controller.email.isNotEmpty ? controller.email : 'N/A',
+                  controller.email == ""
+                      ? null
+                      : () async {
+                          try {
+                            await UrlLauncher.email(controller.email);
+                            if (context.mounted) {
+                              // Email launched successfully
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              MySnackBar.showErrorToast(message: e.toString());
+                            }
+                          }
+                        },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-                      // await openMapWithRoute(
-                      //     "mohakhali dhaka bangladesh");
-                    },
-                  ),
+  Widget _buildTabsGrid() {
+    final tabs = [
+      {
+        'label': 'CSL',
+        'icon': Icons.business_rounded,
+        'color': const Color(0xFF5856D6),
+      },
+      {
+        'label': 'Forms',
+        'icon': Icons.description_rounded,
+        'color': const Color(0xFFFF9500),
+      },
+      {
+        'label': 'Estimate',
+        'icon': Icons.receipt_long_rounded,
+        'color': const Color(0xFF34C759),
+      },
+      {
+        'label': 'Pictures',
+        'icon': Icons.photo_library_rounded,
+        'color': const Color(0xFFFF2D55),
+      },
+      {
+        'label': 'Equipment',
+        'icon': Icons.handyman_rounded,
+        'color': const Color(0xFFFF9500),
+      },
+      {
+        'label': 'Files',
+        'icon': Icons.folder_rounded,
+        'color': const Color(0xFF5856D6),
+      },
+      {
+        'label': 'Notes',
+        'icon': Icons.note_rounded,
+        'color': const Color(0xFF34C759),
+      },
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 10.w,
+        mainAxisSpacing: 10.h,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: tabs.length,
+      itemBuilder: (context, index) {
+        final tab = tabs[index];
+
+        return GestureDetector(
+          onTap: () {
+            // Navigate to dedicated pages
+            _redirectTab(tab['label'].toString());
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 1),
                 ),
               ],
             ),
-            SizedBox(height: 10.h),
-            Row(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: _buildHeaderInfoChip(
-                    Icons.phone_rounded,
-                    controller.mobileNumber.isNotEmpty
-                        ? controller.mobileNumber
-                        : controller.phoneNumber.isNotEmpty
-                        ? controller.phoneNumber
-                        : 'N/A',
-                    () async {
-                      await UrlLauncher.phoneCall(controller.mobileNumber);
-                    },
-                  ),
+                Icon(
+                  tab['icon'] as IconData,
+                  size: 22.sp,
+                  color: (tab['color'] as Color),
                 ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: _buildHeaderInfoChip(
-                    Icons.email_rounded,
-                    controller.email.isNotEmpty ? controller.email : 'N/A',
-                    controller.email == ""
-                        ? () {}
-                        : () async {
-                            await UrlLauncher.email(controller.email);
-                          },
+                SizedBox(height: 4.h),
+                Text(
+                  tab['label'] as String,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1C1C1E),
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildContactChip(IconData icon, String text, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          color: onTap != null ? const Color(0xFFF2F2F7) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 16.sp,
+              color: onTap != null
+                  ? const Color(0xFF007AFF)
+                  : Colors.grey.shade400,
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: onTap != null
+                      ? const Color(0xFF1C1C1E)
+                      : Colors.grey.shade400,
+                ),
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCompactStatusBadge(String label, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          SizedBox(width: 6.w),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: color,
+                letterSpacing: -0.2,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          SizedBox(width: 4.w),
+          Icon(Icons.arrow_drop_down, color: color, size: 18.sp),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactInfoTile(IconData icon, String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(6.r),
+            decoration: BoxDecoration(
+              color: const Color(0xFF007AFF).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, size: 14.sp, color: const Color(0xFF007AFF)),
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF8E8E93),
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  value.isNotEmpty ? value : 'N/A',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1C1C1E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -524,8 +1048,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         children: [
           Flexible(
             child: TextWidget(
-              text: label,
-              maxLines: 1,
+              text: 'text',
               overflow: TextOverflow.ellipsis,
               softWrap: false,
               fontSize: 13.sp,
@@ -579,40 +1102,6 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
       default:
         return Colors.red;
     }
-  }
-
-  Widget _buildHeaderInfoChip(IconData icon, String text, VoidCallback? onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 50.h,
-        padding: EdgeInsets.symmetric(horizontal: 12.w),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusSm),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 16.sp, color: Colors.white),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: TextWidget(
-                  text: text,
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  maxLines: 5,
-                  overflow: TextOverflow.visible,
-                  softWrap: true,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -805,527 +1294,30 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   // ─────────────────────────────────────────────────────────────
   // TAB CONTENT SELECTOR
   // ─────────────────────────────────────────────────────────────
-  Widget _buildSelectedTabContent(BuildContext context) {
-    return Obx(() {
-      switch (_tabController.index) {
-        case 0:
-          return _buildInfoTab(context);
-        case 1:
-          return _buildCslTab(context);
-        case 2:
-          return _buildFormsTab(context);
-        case 3:
-          return _buildEstimateTab(context);
-        case 4:
-          return _buildPicturesTab(context);
-        case 5:
-          return _buildEquipmentTab(context);
-        case 6:
-          return _buildFilesTab(context);
-        case 7:
-          return _buildNotesTab(context);
-        default:
-          return _buildInfoTab(context);
-      }
-    });
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // TAB 0 — INFO
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildInfoTab(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Dates Card
-          OrganicCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Appointment Info',
-                  style: WarmOrganicBlueTheme.headingSmall,
-                ),
-                OrganicDivider(),
-                _buildInfoTile(
-                  Icons.calendar_today_rounded,
-                  'Request Date',
-                  controller.requestDate,
-                ),
-                _buildInfoTile(
-                  Icons.play_circle_outline_rounded,
-                  'Start Date',
-                  controller.startDate,
-                ),
-                _buildInfoTile(
-                  Icons.stop_circle_outlined,
-                  'End Date',
-                  controller.endDate,
-                ),
-                _buildInfoTile(
-                  Icons.schedule_rounded,
-                  'Time Slot',
-                  controller.timeSlot,
-                ),
-                _buildInfoTile(
-                  Icons.category_rounded,
-                  'Service Type',
-                  controller.serviceType,
-                ),
-                _buildInfoTile(
-                  Icons.person_rounded,
-                  'Resource',
-                  controller.selectedAppointment.value?.resource?.name ?? "N/A",
-                ),
-              ],
-            ),
-          ),
-
-          // Notes Card
-          OrganicCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Any Details', style: WarmOrganicBlueTheme.headingSmall),
-                SizedBox(height: 8.h),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(14.r),
-                  decoration: BoxDecoration(
-                    color: WarmOrganicBlueTheme.warmGray,
-                    borderRadius: BorderRadius.circular(
-                      WarmOrganicBlueTheme.radiusMd,
-                    ),
-                  ),
-                  child: GeneralTextField(
-                    maxLine: 4,
-                    hint: "Add a note here..",
-                    theme: Theme.of(context),
-                    textEditingController: controller.noteController,
-                    onChanged: (v) {
-                      controller.isTyping(true);
-                      controller.noteText(v);
-                    },
-                    onEditingComplete: () => controller.isTyping(false),
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                OrganicPrimaryButton(
-                  text: 'Save Notes',
-                  height: 40.h,
-                  onPressed: () async => await controller.updateAppointment(),
-                ),
-              ],
-            ),
-          ),
-
-          // Custom Fields Card
-          OrganicCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Custom Fields', style: WarmOrganicBlueTheme.headingSmall),
-                SizedBox(height: 12.h),
-                DropdownButton<CustomFieldModel>(
-                  isExpanded: true,
-                  icon: Icon(
-                    Icons.add,
-                    color: WarmOrganicBlueTheme.primaryBlue,
-                  ),
-                  value: null,
-                  items: customFieldsController.allCustomFields.map((field) {
-                    return DropdownMenuItem<CustomFieldModel>(
-                      value: field,
-                      child: Text(field.fieldName!, softWrap: true),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null)
-                      customFieldsController.saveCustomField(value);
-                  },
-                ),
-                SizedBox(height: 12.h),
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: customFieldsController.selectedCustomFields.length,
-                  separatorBuilder: (context, index) => Divider(
-                    color: WarmOrganicBlueTheme.warmSilver,
-                    thickness: 1,
-                    height: 24.h,
-                  ),
-                  itemBuilder: (context, index) {
-                    final field =
-                        customFieldsController.selectedCustomFields[index];
-                    return Stack(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(right: 30.w),
-                          child: buildCustomFieldWidget(field, context),
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: GestureDetector(
-                            onTap: () {
-                              customFieldsController.selectedCustomFields
-                                  .removeAt(index);
-                              setState(() {});
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(8.r),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.red,
-                                size: 20.sp,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                if (customFieldsController.selectedCustomFields.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsets.only(top: 12.h),
-                    child: OrganicPrimaryButton(
-                      text: "Save Custom Fields",
-                      onPressed: () async {
-                        await customFieldsController.saveAttachedCustomFields(
-                          appointmentId:
-                              controller.selectedAppointment.value!.apptID,
-                        );
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 80.h),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoTile(IconData icon, String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 10.h),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8.r),
-            decoration: BoxDecoration(
-              color: WarmOrganicBlueTheme.primaryBlueSoft,
-              borderRadius: BorderRadius.circular(
-                WarmOrganicBlueTheme.radiusSm,
-              ),
-            ),
-            child: Icon(
-              icon,
-              size: 18.sp,
-              color: WarmOrganicBlueTheme.primaryBlue,
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: WarmOrganicBlueTheme.caption),
-                SizedBox(height: 2.h),
-                Text(
-                  value,
-                  style: WarmOrganicBlueTheme.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // TAB 1 — CSL
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildCslTab(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Obx(
-        () => Column(
-          children: [
-            // Basic Information
-            OrganicCard(
-              shadow: WarmOrganicBlueTheme.softShadow,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(10.r),
-                        decoration: BoxDecoration(
-                          gradient: WarmOrganicBlueTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(
-                            WarmOrganicBlueTheme.radiusSm,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.business_rounded,
-                          size: 20.sp,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(width: 12.w),
-                      Text(
-                        'Basic Information',
-                        style: WarmOrganicBlueTheme.headingSmall,
-                      ),
-                      const Spacer(),
-                      OrganicIconButton(
-                        icon: controller.isBasicExpanded.value
-                            ? Icons.expand_less_rounded
-                            : Icons.expand_more_rounded,
-                        size: 20.sp,
-                        onTap: () => controller.isBasicExpanded(
-                          !controller.isBasicExpanded.value,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (controller.isBasicExpanded.value) ...[
-                    OrganicDivider(),
-                    _buildCSLRow(
-                      'Customer Name',
-                      '${controller.selectedSite.value?.firstName ?? ''} ${controller.selectedSite.value?.lastName ?? ''}'
-                          .trim(),
-                    ),
-                    if (controller.selectedSite.value?.siteName != null &&
-                        controller.selectedSite.value!.siteName!.isNotEmpty)
-                      _buildCSLRow(
-                        'Site Name',
-                        controller.selectedSite.value!.siteName!,
-                      ),
-                    if (controller.selectedSite.value?.address != null &&
-                        controller.selectedSite.value!.address!.isNotEmpty)
-                      _buildCSLRow(
-                        'Site Address',
-                        controller.selectedSite.value!.address!,
-                      ),
-                    if (controller.selectedSite.value?.state != null &&
-                        controller.selectedSite.value!.state!.isNotEmpty)
-                      _buildCSLRow(
-                        'State / Province',
-                        controller.selectedSite.value!.state!,
-                      ),
-                    if (controller.selectedSite.value?.zip != null &&
-                        controller.selectedSite.value!.zip!.isNotEmpty)
-                      _buildCSLRow(
-                        'Zip Code',
-                        controller.selectedSite.value!.zip!,
-                      ),
-                    if (controller.selectedSite.value?.contact != null &&
-                            controller
-                                .selectedSite
-                                .value!
-                                .contact!
-                                .isNotEmpty ||
-                        controller.selectedSite.value?.firstName != null ||
-                        controller.selectedSite.value?.lastName != null)
-                      _buildCSLRow(
-                        'Site Contact',
-                        '${controller.selectedSite.value?.contact ?? ''} ${controller.selectedSite.value?.firstName ?? ''} ${controller.selectedSite.value?.lastName ?? ''}'
-                            .trim(),
-                      ),
-                    if (controller.selectedSite.value?.phoneNumber != null &&
-                        controller.selectedSite.value!.phoneNumber!.isNotEmpty)
-                      _buildCSLRow(
-                        'Site Phone',
-                        controller.selectedSite.value!.phoneNumber!,
-                      ),
-                    if (controller.selectedSite.value?.email != null &&
-                        controller.selectedSite.value!.email!.isNotEmpty)
-                      _buildCSLRow(
-                        'Site Email',
-                        controller.selectedSite.value!.email!,
-                      ),
-                    if (controller.selectedSite.value == null) ...[
-                      _buildCSLRow(
-                        'Contact',
-                        'Phone: ${controller.selectedAppointment.value?.customer!.phone ?? "N/A"}\nMobile: ${controller.selectedAppointment.value?.customer!.mobile ?? "N/A"}',
-                      ),
-                      _buildCSLRow(
-                        'Email',
-                        controller.selectedAppointment.value?.customer!.email ??
-                            "N/A",
-                      ),
-                      if (controller
-                                  .selectedAppointment
-                                  .value
-                                  ?.customer!
-                                  .address1 !=
-                              null &&
-                          controller
-                              .selectedAppointment
-                              .value!
-                              .customer!
-                              .address1!
-                              .isNotEmpty)
-                        _buildCSLRow(
-                          'Address Line 1',
-                          controller
-                              .selectedAppointment
-                              .value!
-                              .customer!
-                              .address1!,
-                        ),
-                      if (controller
-                                  .selectedAppointment
-                                  .value
-                                  ?.customer!
-                                  .address2 !=
-                              null &&
-                          controller
-                              .selectedAppointment
-                              .value!
-                              .customer!
-                              .address2!
-                              .isNotEmpty)
-                        _buildCSLRow(
-                          'Address Line 2',
-                          controller
-                              .selectedAppointment
-                              .value!
-                              .customer!
-                              .address2!,
-                        ),
-                      if (controller
-                                  .selectedAppointment
-                                  .value
-                                  ?.customer!
-                                  .city !=
-                              null &&
-                          controller
-                              .selectedAppointment
-                              .value!
-                              .customer!
-                              .city!
-                              .isNotEmpty)
-                        _buildCSLRow(
-                          'City',
-                          controller.selectedAppointment.value!.customer!.city!,
-                        ),
-                      if (controller
-                                  .selectedAppointment
-                                  .value
-                                  ?.customer!
-                                  .state !=
-                              null &&
-                          controller
-                              .selectedAppointment
-                              .value!
-                              .customer!
-                              .state!
-                              .isNotEmpty)
-                        _buildCSLRow(
-                          'State / Province',
-                          controller
-                              .selectedAppointment
-                              .value!
-                              .customer!
-                              .state!,
-                        ),
-                      if (controller
-                                  .selectedAppointment
-                                  .value
-                                  ?.customer!
-                                  .zipCode !=
-                              null &&
-                          controller
-                              .selectedAppointment
-                              .value!
-                              .customer!
-                              .zipCode!
-                              .isNotEmpty)
-                        _buildCSLRow(
-                          'Zip Code',
-                          controller
-                              .selectedAppointment
-                              .value!
-                              .customer!
-                              .zipCode!,
-                        ),
-                    ],
-                    _buildCSLRow(
-                      'Created On',
-                      '${controller.selectedAppointment.value?.customer!.createdDateTime ?? "N/A"}',
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // Map Card
-            OrganicCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.all(16.r),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Location',
-                          style: WarmOrganicBlueTheme.headingSmall,
-                        ),
-                        Row(
-                          children: [
-                            OrganicIconButton(
-                              icon: Icons.directions_rounded,
-                              onTap: () => openMapWithRoute(controller.address),
-                            ),
-                            SizedBox(width: 10.w),
-                            OrganicIconButton(
-                              icon: Icons.open_in_new_rounded,
-                              color: WarmOrganicBlueTheme.accentCyan,
-                              onTap: () => openGoogleMaps(controller.address),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      bottom: Radius.circular(WarmOrganicBlueTheme.radiusLg),
-                    ),
-                    child: SizedBox(
-                      height: 250.h,
-                      width: double.infinity,
-                      child: _InlineMap(address: controller.address),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 80.h),
-          ],
-        ),
-      ),
-    );
+  void _redirectTab(String tabName) {
+    switch (tabName) {
+      case 'CSL':
+        Get.toNamed(Routes.CUSTOMER_LOCATION);
+        break;
+      case 'Forms':
+        Get.toNamed(Routes.FORMS_TAB);
+        break;
+      case 'Estimate':
+        Get.toNamed(Routes.ESTIMATE_TAB);
+        break;
+      case 'Pictures':
+        Get.toNamed(Routes.PICTURES_TAB);
+        break;
+      case 'Equipment':
+        Get.toNamed(Routes.EQUIPMENT_TAB);
+        break;
+      case 'Files':
+        Get.toNamed(Routes.FILES_TAB);
+        break;
+      case 'Notes':
+        Get.toNamed(Routes.NOTES_TAB);
+        break;
+    }
   }
 
   Widget _buildCSLRow(String label, String value) {
@@ -2210,128 +2202,157 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                         OrganicPrimaryButton(
                           text: "Upload Images",
                           onPressed: () async {
-                            await controller.uploadImages(
-                              tagName: item.time.split(" ")[0],
-                              description: item.descriptionController.text,
+                            // Get appointment details
+                            final appointment =
+                                controller.selectedAppointment.value;
+                            if (appointment == null) {
+                              MySnackBar.showErrorToast(
+                                message: "No appointment selected",
+                              );
+                              return;
+                            }
+
+                            // Upload each image using ACC Controller
+                            for (final imagePath
+                                in controller.mediaList.first.images) {
+                              final file = File(imagePath);
+                              if (!file.existsSync()) {
+                                kLog('Image file does not exist: $imagePath');
+                                continue;
+                              }
+
+                              await imageController.uploadPicture(
+                                customerId:
+                                    appointment.customerID?.toString() ?? '',
+                                siteId:
+                                    int.tryParse(appointment.siteID ?? '') ?? 0,
+                                file: file,
+                                appointmentId: appointment.apptID.toString(),
+                                reference:
+                                    item.descriptionController.text.isNotEmpty
+                                    ? item.descriptionController.text
+                                    : item.time.split(" ")[0],
+                              );
+                            }
+
+                            // Clear media list after upload
+                            controller.mediaList.clear();
+                            // Refresh images list
+                            await imageController.fetchPictures(
+                              customerId:
+                                  appointment.customerID?.toString() ?? '',
+                              siteId:
+                                  int.tryParse(appointment.siteID ?? '') ?? 0,
                             );
                           },
                         ),
+                        SizedBox(height: 40.h),
                       ],
                     ),
                   );
-                })
-                .toList(),
+                }),
           ],
 
           // Uploaded Images Grouped by Date
-          if (controller.imagesGroupedByDate.isNotEmpty) ...[
+          if (imageController.picturesGroupedByDate.isNotEmpty) ...[
             SizedBox(height: 16.h),
-            ...(controller.imagesGroupedByDate.keys.toList()..sort()).map((
-              date,
-            ) {
-              final images = controller.imagesGroupedByDate[date]!;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.w),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        date,
-                        style: WarmOrganicBlueTheme.caption.copyWith(
-                          fontWeight: FontWeight.w600,
+            ...(imageController.picturesGroupedByDate.keys.toList()..sort())
+                .map((date) {
+                  final images = imageController.picturesGroupedByDate[date]!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            date,
+                            style: WarmOrganicBlueTheme.caption.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.symmetric(horizontal: 12.sp),
-                    child: Row(
-                      children: images.map((item) {
-                        kLog("${ApiUrl.imageBaseUrl}/${item.pictureURL!}");
-                        return GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => Dialog(
-                                child: Stack(
-                                  children: [
-                                    item.pictureURL != null
-                                        ? CachedNetworkImage(
-                                            imageUrl:
-                                                "${ApiUrl.imageBaseUrl}/${item.pictureURL!}",
-                                            fit: BoxFit.cover,
-                                            placeholder: (_, __) => const Center(
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            ),
-                                            errorWidget: (_, __, ___) =>
-                                                const Center(
-                                                  child: Icon(Icons.error),
-                                                ),
-                                          )
-                                        : Image.memory(
-                                            item.bytes!,
-                                            fit: BoxFit.cover,
-                                            gaplessPlayback: true,
+                      SizedBox(height: 8.h),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(horizontal: 12.sp),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: images.map((item) {
+                            return GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => Dialog(
+                                    child: Stack(
+                                      children: [
+                                        CachedNetworkImage(
+                                          imageUrl: item.fileUrl,
+                                          fit: BoxFit.cover,
+                                          placeholder: (_, __) => const Center(
+                                            child: CircularProgressIndicator(),
                                           ),
-                                    Positioned(
-                                      top: 8,
-                                      right: 8,
-                                      child: IconButton(
-                                        icon: const Icon(
-                                          Icons.close,
-                                          color: Colors.white,
+                                          errorWidget: (_, __, ___) =>
+                                              const Center(
+                                                child: Icon(Icons.error),
+                                              ),
                                         ),
-                                        onPressed: () => Navigator.pop(context),
-                                        style: IconButton.styleFrom(
-                                          backgroundColor: Colors.black54,
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                            ),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            style: IconButton.styleFrom(
+                                              backgroundColor: Colors.black54,
+                                            ),
+                                          ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                height: 150,
+                                width: 150,
+                                margin: EdgeInsets.only(right: 12.sp),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10.r),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10.r),
+                                  child: CachedNetworkImage(
+                                    imageUrl: item.fileUrl,
+                                    fit: BoxFit.fill,
+                                    placeholder: (_, __) => Container(
+                                      color: Colors.grey[200],
+                                      child: const Center(
+                                        child: CircularProgressIndicator(),
                                       ),
                                     ),
-                                  ],
+                                    errorWidget: (_, __, ___) => Container(
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.error),
+                                    ),
+                                  ),
                                 ),
                               ),
                             );
-                          },
-                          child: Container(
-                            height: 150,
-                            width: 150,
-                            margin: EdgeInsets.only(right: 12.sp),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10.r),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10.r),
-                              child: item.pictureURL != null
-                                  ? CachedNetworkImage(
-                                      imageUrl: item.pictureURL!,
-                                      fit: BoxFit.fill,
-                                      placeholder: (_, __) => Container(
-                                        color: Colors.grey[200],
-                                        child: const Center(
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      ),
-                                      errorWidget: (_, __, ___) => Container(
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.error),
-                                      ),
-                                    )
-                                  : Image.memory(item.bytes!, fit: BoxFit.fill),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  SizedBox(height: 10.h),
-                ],
-              );
-            }),
+                          }).toList(),
+                        ),
+                      ),
+                      SizedBox(height: 10.h),
+                    ],
+                  );
+                }),
           ],
         ],
       ),
@@ -2355,9 +2376,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                 onPressed: () {
                   Get.bottomSheet(
                     EquipmentFormModal(
-                      equipmentTypes: controller.equipmentTypeList,
+                      equipmentTypes: equipmentController.equipmentTypes,
                     ),
-                    isScrollControlled: false,
+                    isScrollControlled: true,
                     backgroundColor: Colors.transparent,
                   );
                 },
@@ -2368,9 +2389,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
             SizedBox(height: 16.h),
 
             // Equipment List
-            if (controller.equipmentList.isNotEmpty) ...[
+            if (equipmentController.equipment.isNotEmpty) ...[
               OrganicSectionTitle(title: 'Equipment List'),
-              ...controller.equipmentList.map(
+              ...equipmentController.equipment.map(
                 (equipment) => Padding(
                   padding: EdgeInsets.only(bottom: 12.h),
                   child: EquipmentCard(
@@ -2378,11 +2399,47 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                     onEdit: () => Get.bottomSheet(
                       EquipmentFormModal(
                         equipment: equipment,
-                        equipmentTypes: controller.equipmentTypeList,
+                        equipmentTypes: equipmentController.equipmentTypes,
                       ),
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
                     ),
+                    onDelete: () async {
+                      final confirm = await Get.dialog<bool>(
+                        AlertDialog(
+                          title: const Text('Delete Equipment'),
+                          content: const Text(
+                            'Are you sure you want to delete this equipment?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Get.back(result: false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Get.back(result: true),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        final appointment =
+                            controller.selectedAppointment.value;
+                        if (appointment != null) {
+                          await equipmentController.deleteEquipment(
+                            id: equipment.id,
+                            customerGuid:
+                                appointment.customer?.customerGuid ?? '',
+                            siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+                            companyId: appointment.companyID,
+                          );
+                        }
+                      }
+                    },
                   ),
                 ),
               ),
@@ -2422,117 +2479,192 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
       () => Column(
         children: [
           SizedBox(height: 8.h),
-          // Upload Button
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: GestureDetector(
-                onTap: () => showSingleFilePickerBottomSheet(context),
-                child: DottedBorder(
-                  options: RectDottedBorderOptions(dashPattern: [3, 2]),
-                  child: Icon(
-                    Icons.add,
-                    size: 25.sp,
-                    color: Theme.of(context).primaryColor,
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: OrganicPrimaryButton(
+              text: 'Add Files',
+              icon: Icons.add_photo_alternate_rounded,
+              height: 42.h,
+              onPressed: () => showFileBottomSheet(context, -1),
+            ),
+          ),
+
+          SizedBox(height: 16.h),
+
+          // Upload Section
+          if (controller.fileUploadList.isNotEmpty) ...[
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Uploads',
+                  style: WarmOrganicBlueTheme.caption.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
-          ),
-          SizedBox(height: 16.h),
+            SizedBox(height: 8.h),
+            ...controller.fileUploadList
+                .toList()
+                .asMap()
+                .entries
+                .toList()
+                .reversed
+                .map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  return OrganicCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.time, style: WarmOrganicBlueTheme.bodySmall),
+                        SizedBox(height: 10.h),
+                        TextField(
+                          controller: item.descriptionController,
+                          decoration: InputDecoration(
+                            hintText: "Add description...",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 10.h),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              ...item.files.map((file) {
+                                final fileName = file.path.split('/').last;
+                                final extension = fileName.contains('.')
+                                    ? fileName.split('.').last.toLowerCase()
+                                    : '';
+                                return Container(
+                                  height: 120,
+                                  width: 100,
+                                  margin: const EdgeInsets.only(right: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        _getFileIconData(extension) ??
+                                            Icons.insert_drive_file,
+                                        size: 40,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                      SizedBox(height: 5),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
+                                        child: Text(
+                                          fileName,
+                                          style: const TextStyle(fontSize: 10),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                              GestureDetector(
+                                onTap: () =>
+                                    showFileBottomSheet(context, index),
+                                child: Container(
+                                  height: 120,
+                                  width: 100,
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    border: Border.all(color: Colors.grey),
+                                  ),
+                                  child: const Icon(
+                                    Icons.add,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 10.h),
+                        OrganicPrimaryButton(
+                          text: "Upload Files",
+                          onPressed: () async {
+                            // Get appointment details
+                            final appointment =
+                                controller.selectedAppointment.value;
+                            if (appointment == null) {
+                              MySnackBar.showErrorToast(
+                                message: "No appointment selected",
+                              );
+                              return;
+                            }
 
-          // Upload Section
-          if (controller.fileUploadList.isNotEmpty)
-            ...controller.fileUploadList.map(
-              (item) => OrganicCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.time, style: WarmOrganicBlueTheme.bodySmall),
-                    SizedBox(height: 10.h),
-                    TextField(
-                      controller: item.descriptionController,
-                      decoration: InputDecoration(
-                        hintText: "Add description...",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.r),
+                            // Upload each file in current item using FileController
+                            for (final file in item.files) {
+                              if (!file.existsSync()) {
+                                kLog('File does not exist: ${file.path}');
+                                continue;
+                              }
+
+                              await fileController.uploadFile(
+                                customerId:
+                                    appointment.customerID?.toString() ?? '',
+                                siteId:
+                                    int.tryParse(appointment.siteID ?? '') ?? 0,
+                                file: file,
+                                appointmentId: appointment.apptID.toString(),
+                                reference:
+                                    item.descriptionController.text.isNotEmpty
+                                    ? item.descriptionController.text
+                                    : item.time.split(" ")[0],
+                                companyId: appointment.companyID,
+                              );
+                            }
+
+                            // Clear current item from file upload list after upload
+                            controller.fileUploadList.removeAt(index);
+                            // Refresh files list
+                            await fileController.fetchFiles(
+                              customerId:
+                                  appointment.customerID?.toString() ?? '',
+                              siteId:
+                                  int.tryParse(appointment.siteID ?? '') ?? 0,
+                            );
+                          },
                         ),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
+                        SizedBox(height: 40.h),
+                      ],
                     ),
-                    SizedBox(height: 10.h),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: item.files.map((file) {
-                          final fileName = file.path.split('/').last;
-                          final extension = fileName.contains('.')
-                              ? fileName.split('.').last.toLowerCase()
-                              : '';
-                          return Container(
-                            height: 120,
-                            width: 100,
-                            margin: const EdgeInsets.only(right: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey[300]!),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  _getFileIconData(extension) ??
-                                      Icons.insert_drive_file,
-                                  size: 40,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                SizedBox(height: 5),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4,
-                                  ),
-                                  child: Text(
-                                    fileName,
-                                    style: const TextStyle(fontSize: 10),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-                    OrganicPrimaryButton(
-                      text: "Upload Files",
-                      onPressed: () async {
-                        await controller.uploadFiles(
-                          tagName: item.time.split(" ")[0],
-                          description: item.descriptionController.text,
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                  );
+                }),
+          ],
 
           // Files Grouped by Date
-          if (controller.filesGroupedByDate.isNotEmpty) ...[
+          if (fileController.filesGroupedByDate.isNotEmpty) ...[
             SizedBox(height: 16.h),
 
-            ...(controller.filesGroupedByDate.keys.toList()..sort()).map((
+            ...(fileController.filesGroupedByDate.keys.toList()..sort()).map((
               date,
             ) {
-              final files = controller.filesGroupedByDate[date]!;
+              final files = fileController.filesGroupedByDate[date]!;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2572,7 +2704,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  _getFileIconData(file.fileExtension) ??
+                                  _getFileIconData(file.extension) ??
                                       Icons.insert_drive_file,
                                   size: 40,
                                   color: Theme.of(context).primaryColor,
@@ -2583,7 +2715,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 4),
                                   child: Text(
-                                    file.fileName ?? 'Unknown',
+                                    file.fileName,
                                     style: TextStyle(fontSize: 10),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
@@ -2639,53 +2771,39 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
       child: Column(
         children: [
           // Add Note Button
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: () {
-                controller.note1Controller.clear();
-                controller.noteId(-1);
-                showNotesDialog(context, controller, theme, false);
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            child: OrganicPrimaryButton(
+              text: 'Add Notes',
+              icon: Icons.add_photo_alternate_rounded,
+              height: 42.h,
+              onPressed: () {
+                showAccNotesDialog(context, notesController, controller, theme);
               },
-              child: DottedBorder(
-                options: RectDottedBorderOptions(dashPattern: [3, 2]),
-                child: Icon(
-                  Icons.add,
-                  size: 25.sp,
-                  color: Theme.of(context).primaryColor,
-                ),
-              ),
             ),
           ),
           SizedBox(height: 20.h),
 
           // Notes List
           Obx(() {
-            final filteredNoteList = controller.noteList
-                .where(
-                  (note) =>
-                      note.siteId.toString() ==
-                          controller.selectedAppointment.value?.siteID &&
-                      note.customerId ==
-                          controller.selectedAppointment.value?.customerID,
-                )
-                .toList();
+            final notes = notesController.notes;
 
-            if (filteredNoteList.isEmpty) {
+            if (notes.isEmpty) {
               return Center(child: TextWidget(text: "No Notes Found"));
             }
 
             return ListView.separated(
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
-              itemCount: filteredNoteList.length,
+              itemCount: notes.length,
               separatorBuilder: (_, __) => SizedBox(height: 8.h),
               itemBuilder: (context, index) {
-                final note = filteredNoteList[index];
-                final isOwnNote =
-                    note.userId!.trim() == controller.userId.toString().trim();
+                final note = notes[index];
+                final createdAt =
+                    DateTime.tryParse(note.createdAt) ?? DateTime.now();
+
                 return OrganicCard(
-                  color: isOwnNote ? Colors.green[50] : Colors.grey[100],
+                  color: Colors.grey[100],
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2701,7 +2819,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                               ),
                               SizedBox(width: 6.w),
                               Text(
-                                note.userName ?? "N/A",
+                                "User ${note.userId ?? 'N/A'}",
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -2709,9 +2827,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                             ],
                           ),
                           Text(
-                            DateFormat(
-                              "dd MMM yyyy",
-                            ).format(DateTime.parse(note.createdAt!)),
+                            DateFormat("dd MMM yyyy HH:mm").format(createdAt),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: Colors.grey[600],
                             ),
@@ -2720,7 +2836,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                       ),
                       SizedBox(height: 8.h),
                       TextWidget(
-                        text: note.description ?? "N/A",
+                        text: note.description,
                         style: theme.textTheme.bodyMedium,
                       ),
                     ],
@@ -2740,13 +2856,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
   // HELPER METHODS (Preserved from Original)
   // ─────────────────────────────────────────────────────────────
 
-  Future<void> _downloadFile(FileModel file) async {
-    final fileName =
-        file.fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
+  Future<void> _downloadFile(FileItem file) async {
+    final fileName = file.fileName;
+    final extension = file.extension;
+
     String finalFileName = fileName;
-    if (file.fileExtension != null &&
-        !fileName.endsWith('.${file.fileExtension}')) {
-      finalFileName = '$fileName.${file.fileExtension}';
+    if (!fileName.endsWith('.$extension')) {
+      finalFileName = '$fileName.$extension';
     }
 
     Directory downloadDir;
@@ -2783,10 +2899,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     try {
       Uint8List? fileBytes;
 
-      if (file.fileURL != null && file.fileURL!.isNotEmpty) {
+      if (file.fileUrl.isNotEmpty) {
         try {
           final response = await Dio().get(
-            file.fileURL!,
+            file.fileUrl,
             options: Options(responseType: ResponseType.bytes),
           );
           fileBytes = response.data as Uint8List;
@@ -2797,24 +2913,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
           );
           return;
         }
-      } else {
-        fileBytes = file.bytes;
-        if (fileBytes == null &&
-            file.fileContent != null &&
-            file.fileContent!.isNotEmpty) {
-          try {
-            fileBytes = base64Decode(file.fileContent!);
-          } catch (e) {
-            if (mounted) Navigator.pop(context);
-            MySnackBar.showErrorToast(message: 'Failed to decode file content');
-            return;
-          }
-        }
       }
 
       if (fileBytes == null) {
         if (mounted) Navigator.pop(context);
-        MySnackBar.showErrorToast(message: 'File content not available');
+        MySnackBar.showErrorToast(message: 'Failed to download file');
         return;
       }
 
@@ -2831,10 +2934,11 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     }
   }
 
-  Future<void> _openFile(String filePath, FileModel file) async {
-    final ext = file.fileExtension?.toLowerCase();
+  Future<void> _openFile(String filePath, FileItem file) async {
+    final ext = file.extension.toLowerCase();
 
-    if (file.isImage) {
+    // Check if file is an image
+    if (_isImageFile(file.fileType)) {
       if (mounted) {
         showDialog(
           context: context,
@@ -2879,6 +2983,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         message: 'Could not open file: ${result.message}',
       );
     }
+  }
+
+  bool _isImageFile(String? fileType) {
+    if (fileType == null) return false;
+    final type = fileType.toLowerCase();
+    return type.startsWith('image/');
   }
 
   bool _isVideo(String path) {
@@ -3059,6 +3169,128 @@ void showNotesDialog(
                           title: isOld ? "Update" : "Save",
                           onPressed: () async {
                             await controller.saveNote(isOld);
+                          },
+                          inactive: false,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
+void showAccNotesDialog(
+  BuildContext context,
+  NotesController notesController,
+  AppointmentController appointmentController,
+  ThemeData theme,
+) {
+  final TextEditingController noteController = TextEditingController();
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.sp),
+        ),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.sp, vertical: 24.sp),
+        child: Padding(
+          padding: EdgeInsets.all(16.sp),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextWidget(
+                  text: "Add Note",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp,
+                    color: WarmOrganicBlueTheme.deepNavy,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                TextWidget(
+                  text: "Description",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: WarmOrganicBlueTheme.darkSlate,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GeneralTextField(
+                    maxLine: 4,
+                    minLine: 1,
+                    textInputType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    hint: "Add a note here..",
+                    theme: theme,
+                    isEnabled: true,
+                    textEditingController: noteController,
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.sp,
+                        child: PrimaryButton(
+                          backgroundColor: Colors.redAccent,
+                          title: "Cancel",
+                          onPressed: () => Navigator.pop(context),
+                          inactive: false,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.sp,
+                        child: PrimaryButton(
+                          backgroundColor: LightThemeColors.primaryColor,
+                          title: "Save",
+                          onPressed: () async {
+                            if (noteController.text.trim().isEmpty) {
+                              MySnackBar.showErrorToast(
+                                message: "Please enter a note",
+                              );
+                              return;
+                            }
+
+                            final appointment =
+                                appointmentController.selectedAppointment.value;
+                            if (appointment == null) {
+                              MySnackBar.showErrorToast(
+                                message: "No appointment selected",
+                              );
+                              return;
+                            }
+
+                            final success = await notesController.createNote(
+                              customerId:
+                                  appointment.customerID?.toString() ?? '',
+                              siteId:
+                                  int.tryParse(appointment.siteID ?? '') ?? 0,
+                              description: noteController.text.trim(),
+                              companyId: appointment.companyID,
+                            );
+
+                            if (success) {
+                              Navigator.pop(context);
+                            }
                           },
                           inactive: false,
                         ),
@@ -3363,12 +3595,10 @@ void showMediaBottomSheet(BuildContext context, int index) {
                           final newImages = <String>[];
                           for (var file in files) {
                             if (file != null) {
-                              try {
-                                final compressedPath = await compressImage(
-                                  file.path,
-                                );
-                                newImages.add(compressedPath);
-                              } catch (e) {}
+                              final compressedPath = await compressImage(
+                                file.path,
+                              );
+                              newImages.add(compressedPath);
                             }
                           }
 
@@ -3492,6 +3722,7 @@ class _MediaButton extends StatelessWidget {
 
 void showSingleFilePickerBottomSheet(BuildContext context) {
   final controller = Get.find<AppointmentController>();
+  final fileController = Get.find<FileController>();
 
   showModalBottomSheet(
     context: context,
@@ -3517,7 +3748,14 @@ void showSingleFilePickerBottomSheet(BuildContext context) {
                   File(result.files.single.path!),
                 ], context);
                 if (validFiles.isNotEmpty) {
-                  controller.addFilesToUploadList(validFiles);
+                  // Add files to upload list
+                  controller.fileUploadList.add(
+                    FileUploadItem(
+                      time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
+                      files: validFiles,
+                    ),
+                  );
+                  controller.update();
                 }
               }
             },
@@ -3538,7 +3776,98 @@ void showSingleFilePickerBottomSheet(BuildContext context) {
                   File(result.files.single.path!),
                 ], context);
                 if (validFiles.isNotEmpty) {
-                  controller.addFilesToUploadList(validFiles);
+                  // Upload file directly using FileController
+                  final appointment = controller.selectedAppointment.value;
+                  if (appointment != null) {
+                    await fileController.uploadFile(
+                      customerId: appointment.customerID?.toString() ?? '',
+                      siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+                      file: validFiles.first,
+                      appointmentId: appointment.apptID.toString(),
+                      companyId: appointment.companyID,
+                    );
+                  }
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void showFileBottomSheet(BuildContext context, int index) {
+  final controller = Get.find<AppointmentController>();
+
+  showModalBottomSheet(
+    context: context,
+    builder: (sheetContext) => Container(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Icon(Icons.document_scanner),
+            title: Text("Pick Document"),
+            onTap: () async {
+              Navigator.pop(sheetContext);
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.custom,
+                allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
+                allowMultiple: true,
+              );
+              if (result != null &&
+                  result.files.isNotEmpty &&
+                  context.mounted) {
+                final validFiles = await _validateAndFilterFiles(
+                  result.files.map((e) => File(e.path!)).toList(),
+                  context,
+                );
+                if (validFiles.isNotEmpty) {
+                  if (index != -1) {
+                    controller.fileUploadList[index].files.addAll(validFiles);
+                  } else {
+                    controller.fileUploadList.add(
+                      FileUploadItem(
+                        time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
+                        files: validFiles,
+                      ),
+                    );
+                  }
+                  controller.update();
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.folder),
+            title: Text("Browse Files"),
+            onTap: () async {
+              Navigator.pop(sheetContext);
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.any,
+                allowMultiple: true,
+              );
+              if (result != null &&
+                  result.files.isNotEmpty &&
+                  context.mounted) {
+                final validFiles = await _validateAndFilterFiles(
+                  result.files.map((e) => File(e.path!)).toList(),
+                  context,
+                );
+                if (validFiles.isNotEmpty) {
+                  if (index != -1) {
+                    controller.fileUploadList[index].files.addAll(validFiles);
+                  } else {
+                    controller.fileUploadList.add(
+                      FileUploadItem(
+                        time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
+                        files: validFiles,
+                      ),
+                    );
+                  }
+                  controller.update();
                 }
               }
             },

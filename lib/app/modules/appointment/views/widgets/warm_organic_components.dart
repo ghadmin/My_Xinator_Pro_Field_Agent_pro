@@ -99,7 +99,7 @@ class OrganicStatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusFull),
         boxShadow: [
           BoxShadow(
-            color: bgColor.withOpacity(0.3),
+            color: bgColor.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -148,7 +148,7 @@ class OrganicInfoRow extends StatelessWidget {
               padding: EdgeInsets.all(8.r),
               decoration: BoxDecoration(
                 color: (iconColor ?? WarmOrganicBlueTheme.primaryBlue)
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(
                   WarmOrganicBlueTheme.radiusSm,
                 ),
@@ -325,7 +325,7 @@ class OrganicSecondaryButton extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusMd),
         border: Border.all(
-          color: WarmOrganicBlueTheme.primaryBlue.withOpacity(0.3),
+          color: WarmOrganicBlueTheme.primaryBlue.withValues(alpha: 0.3),
         ),
         boxShadow: WarmOrganicBlueTheme.subtleShadow,
       ),
@@ -540,51 +540,54 @@ class _OrganicTabBarState extends State<OrganicTabBar>
                   return false;
                 },
                 child: TabBar(
-                controller: widget.controller,
-                isScrollable: true,
-                indicator: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(
-                    WarmOrganicBlueTheme.radiusSm,
+                  controller: widget.controller,
+                  isScrollable: true,
+                  indicator: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(
+                      WarmOrganicBlueTheme.radiusSm,
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      width: 0.5,
+                    ),
                   ),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    width: 0.5,
+                  indicatorPadding: EdgeInsets.only(
+                    left: 4.w,
+                    right: 4.w,
+                    top: 15.h,
                   ),
+                  dividerColor: Colors.transparent,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+                  labelStyle: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  unselectedLabelStyle: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  tabAlignment: TabAlignment.start,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 4.h,
+                  ),
+                  // Remove labelPadding — width is now controlled per tab
+                  labelPadding: EdgeInsets.zero,
+                  tabs: widget.tabs
+                      .map(
+                        (t) => Container(
+                          alignment: Alignment.center,
+                          height: 50,
+                          width: 90.w, // ← fixed width for every tab
+                          child: Tab(text: t),
+                        ),
+                      )
+                      .toList(),
                 ),
-                indicatorPadding: EdgeInsets.only(
-                  left: 4.w,
-                  right: 4.w,
-                  top: 15.h,
-                ),
-                dividerColor: Colors.transparent,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
-                labelStyle: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-                unselectedLabelStyle: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-                tabAlignment: TabAlignment.start,
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-                // Remove labelPadding — width is now controlled per tab
-                labelPadding: EdgeInsets.zero,
-                tabs: widget.tabs
-                    .map(
-                      (t) => Container(
-                        alignment: Alignment.center,
-                        height: 50,
-                        width: 90.w, // ← fixed width for every tab
-                        child: Tab(text: t),
-                      ),
-                    )
-                    .toList(),
               ),
             ),
-              ),
           ],
         ),
       ),
@@ -683,7 +686,7 @@ class OrganicChip extends StatelessWidget {
               ? [
                   BoxShadow(
                     color: (selectedColor ?? WarmOrganicBlueTheme.primaryBlue)
-                        .withOpacity(0.3),
+                        .withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -739,7 +742,7 @@ class OrganicEmptyState extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 40.sp,
-                color: WarmOrganicBlueTheme.primaryBlue.withOpacity(0.6),
+                color: WarmOrganicBlueTheme.primaryBlue.withValues(alpha: 0.6),
               ),
             ),
             SizedBox(height: 16.h),
@@ -987,7 +990,9 @@ class OrganicIconButton extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(10.r),
         decoration: BoxDecoration(
-          color: (color ?? WarmOrganicBlueTheme.primaryBlue).withOpacity(0.1),
+          color: (color ?? WarmOrganicBlueTheme.primaryBlue).withValues(
+            alpha: 0.1,
+          ),
           borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusSm),
         ),
         child: Icon(
@@ -1018,7 +1023,8 @@ class OrganicPopupMenu<T> extends StatelessWidget {
     return PopupMenuButton<T>(
       elevation: 8,
       shadowColor:
-          shadowColor ?? WarmOrganicBlueTheme.primaryBlue.withOpacity(0.15),
+          shadowColor ??
+          WarmOrganicBlueTheme.primaryBlue.withValues(alpha: 0.15),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusMd),
       ),
@@ -1074,7 +1080,7 @@ class OrganicMediaGridItem extends StatelessWidget {
                       vertical: 4.h,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(
                           WarmOrganicBlueTheme.radiusMd,
