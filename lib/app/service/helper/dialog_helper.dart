@@ -176,7 +176,7 @@ class DialogHelper {
   ///show loading
   static Future<void> showLoading() async {
     final completer = Completer<void>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       Get.dialog(
         barrierDismissible: false,
         barrierColor: Colors.black.withValues(alpha: .1),
@@ -215,6 +215,8 @@ class DialogHelper {
           ),
         ),
       );
+      // Complete after dialog is shown
+      await Future.delayed(const Duration(milliseconds: 50));
       completer.complete();
     });
     return completer.future;

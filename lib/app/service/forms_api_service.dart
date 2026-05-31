@@ -246,4 +246,202 @@ class FormsApiService {
       return null;
     }
   }
+
+  // ============== FaProMobile API METHODS ==============
+
+  /// List files for a customer/site using FaProMobile API
+  ///
+  /// GET ?resource=files&op=list&customerId={id}&siteId={id}
+  Future<Map<String, dynamic>?> listFiles({
+    required String companyId,
+    required String customerId,
+    required String siteId,
+  }) async {
+    try {
+      log('📄 Listing files: companyId=$companyId, customerId=$customerId, siteId=$siteId');
+
+      final url = ApiUrl.buildFaProMobileUrl(
+        resource: 'files',
+        operation: 'list',
+        companyId: companyId,
+        extraParams: {
+          'customerId': customerId,
+          'siteId': siteId,
+        },
+      );
+
+      final response = await _dioClient.get(
+        url: url,
+        headers: ApiUrl.faProMobileAuthHeaders,
+      );
+
+      if (response != null) {
+        log('✅ Files list response: ${response['count'] ?? 0} items');
+        return response;
+      }
+
+      log('⚠️ Files list response is null');
+      return null;
+    } catch (e) {
+      log('❌ List files error: $e');
+      return null;
+    }
+  }
+
+  /// Download file bytes from FaProMobile API
+  ///
+  /// Note: As per API docs, a sessionless download endpoint is planned
+  /// but not yet available. This method attempts to fetch from the fileUrl
+  /// returned by the list endpoint, which may require authentication.
+  Future<Uint8List?> downloadFileBytes({
+    required String companyId,
+    required int fileId,
+    required String fileUrl,
+  }) async {
+    try {
+      log('📄 Downloading file: fileId=$fileId, url=$fileUrl');
+
+      // Try the fileUrl from the list response
+      // Note: This may fail due to session authentication requirements
+      final response = await _dioClient.downloadBytes(
+        url: fileUrl,
+        headers: ApiUrl.faProMobileAuthHeaders,
+      );
+
+      if (response != null) {
+        log('✅ File bytes downloaded: ${response.length} bytes');
+        return response;
+      }
+
+      log('⚠️ File bytes response is null');
+      return null;
+    } catch (e) {
+      log('❌ Download file error: $e');
+      return null;
+    }
+  }
+
+  /// Find and download a PDF file by filename
+  ///
+  /// Combines list + download to find a specific PDF and return its bytes
+  Future<Uint8List?> findAndDownloadPdf({
+    required String companyId,
+    required String customerId,
+    required String siteId,
+    required String fileName,
+  }) async {
+    try {
+      // Step 1: List files to find the PDF ID
+      final listResponse = await listFiles(
+        companyId: companyId,
+        customerId: customerId,
+        siteId: siteId,
+      );
+
+      if (listResponse == null || !listResponse['success']) {
+        log('⚠️ Failed to list files');
+        return null;
+      }
+
+      final items = listResponse['items'] as List?;
+      if (items == null || items.isEmpty) {
+        log('⚠️ No files found');
+        return null;
+      }
+
+      // Step 2: Find the PDF by filename (case-insensitive partial match)
+      Map<String, dynamic>? targetFile;
+      for (final item in items) {
+        final file = item as Map<String, dynamic>;
+        final currentFileName = file['fileName'] as String? ?? '';
+        if (currentFileName.toLowerCase().contains(fileName.toLowerCase())) {
+          targetFile = file;
+          break;
+        }
+      }
+
+      if (targetFile == null) {
+        log('⚠️ PDF not found: $fileName');
+        return null;
+      }
+
+      final fileId = targetFile['id'] as int?;
+      final fileUrl = targetFile['fileUrl'] as String?;
+
+      if (fileId == null || fileUrl == null || fileUrl.isEmpty) {
+        log('⚠️ Invalid file data: id=$fileId, url=$fileUrl');
+        return null;
+      }
+
+      log('📄 Found PDF: id=$fileId, fileName=${targetFile['fileName']}');
+
+      // Step 3: Download the file bytes
+      return await downloadFileBytes(
+        companyId: companyId,
+        fileId: fileId,
+        fileUrl: fileUrl,
+      );
+    } catch (e) {
+      log('❌ Find and download PDF error: $e');
+      return null;
+    }
+  }
+
+  /// Send PDF via email to customer
+  ///
+  /// POST /fsm/FaProSync.ashx?op=emailPdf
+  Future<Map<String, dynamic>?> sendPdfEmail({
+    required String companyId,
+    int? formResponseId,
+    int? templateId,
+    String? appointmentId,
+    String? customerId,
+    String? toEmail,
+  }) async {
+    try {
+      log('📧 Sending PDF email: companyId=$companyId, formResponseId=$formResponseId, templateId=$templateId, appointmentId=$appointmentId');
+
+      // Build request body - prefer formResponseId (Shape A), fall back to natural key (Shape B)
+      final body = <String, dynamic>{'companyId': companyId};
+
+      if (formResponseId != null && formResponseId > 0) {
+        // Shape A - preferred when you have the formResponseId from submit
+        body['formResponseId'] = formResponseId;
+      } else if (templateId != null && appointmentId != null && customerId != null) {
+        // Shape B - natural key; resolves the latest matching FormResponse
+        body['templateId'] = templateId;
+        body['appointmentId'] = appointmentId;
+        body['customerId'] = customerId;
+      } else {
+        log('⚠️ Invalid emailPdf request: missing formResponseId or natural key');
+        return null;
+      }
+
+      // Optional email override
+      if (toEmail != null && toEmail.isNotEmpty) {
+        body['to'] = toEmail;
+      }
+
+      final response = await _dioClient.post(
+        url: '${ApiUrl.currentBaseUrl}/FaProSync.ashx?op=emailPdf',
+        body: body,
+        headers: ApiUrl.authHeaders,
+      );
+
+      if (response != null) {
+        if (response['success'] == true) {
+          log('✅ PDF email sent successfully: to=${response['toEmail']}, status=${response['emailStatus']}');
+        } else {
+          log('⚠️ PDF email failed: ${response['emailError'] ?? response['error']}');
+        }
+        return response;
+      }
+
+      log('⚠️ PDF email response is null');
+      return null;
+    } catch (e) {
+      log('❌ Send PDF email error: $e');
+      rethrow;
+    }
+  }
 }

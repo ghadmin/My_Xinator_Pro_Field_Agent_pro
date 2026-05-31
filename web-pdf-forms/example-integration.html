@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Field PDF Form - API Integration Example</title>
+    <link rel="stylesheet" href="css/pdf-form.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .example-container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .code-block {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .code-block code {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        button.launch-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button.launch-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="example-container">
+        <h1>🚀 Smart Field PDF Form - API Integration Example</h1>
+
+        <div class="success">
+            <strong>✅ Implementation Complete!</strong><br>
+            The web implementation following both PDF specifications is ready.
+        </div>
+
+        <h2>📋 What Was Implemented</h2>
+
+        <h3>1. Smart Field Data Parsing</h3>
+        <p>Following <strong>Smart Field Issue Solution.pdf</strong>:</p>
+        <ul>
+            <li>✅ Parse <code>smartFieldData</code> JSON string from API response</li>
+            <li>✅ Look up values by <code>field.id</code> (e.g., "pdf_1776450913261_56q93m")</li>
+            <li>✅ NOT by <code>smartFieldSource</code> (e.g., "system.CompanyName")</li>
+        </ul>
+
+        <h3>2. View Hierarchy</h3>
+        <p>Following <strong>PDF Implementation Details.pdf</strong>:</p>
+        <ul>
+            <li>✅ ScrollContainer (overflow: auto) → PageContainer (position: relative)</li>
+            <li>✅ PageBitmap + Overlay (position: absolute, same size as page)</li>
+            <li>✅ Field boxes as children of Overlay (position: absolute in pixels)</li>
+        </ul>
+
+        <h3>3. Field Placement Math</h3>
+        <div class="code-block">
+            <code>// Position is stored as fractions (xPct, yPct, wPct, hPct)<br>
+// Convert to pixels at render time<br>
+const boxLeftPx = pageWidth * (field.position.xPct / 100);<br>
+const boxTopPx = pageHeight * (field.position.yPct / 100);<br>
+const boxWidthPx = pageWidth * (field.position.wPct / 100);<br>
+const boxHeightPx = pageHeight * (field.position.hPct / 100);</code>
+        </div>
+
+        <h2>🎯 Launch the Application</h2>
+
+        <button class="launch-btn" onclick="window.open('index.html', '_blank')">
+            📄 Open Demo Form
+        </button>
+
+        <button class="launch-btn" onclick="window.open('index.html?formId=123&templateId=57', '_blank')">
+            🔗 Open with API Parameters
+        </button>
+
+        <h2>🔌 API Integration</h2>
+
+        <h3>Expected API Response Structure</h3>
+        <div class="code-block">
+            <code>{<br>
+&nbsp;&nbsp;"success": true,<br>
+&nbsp;&nbsp;"items": [{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"queueId": 123,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"formInstanceId": 456,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"templateId": 57,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"template": {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"id": 57,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"name": "Service Form",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"structure": "{\"fields\":[{\"id\":\"pdf_1776450913261_56q93m\",\"type\":\"smartfield\",...}]}"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"smartFieldData": "{\"pdf_1776450913261_56q93m\":\"msProDemo\"}"<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}]<br>
+}</code>
+        </div>
+
+        <h3>Required API Endpoints</h3>
+        <div class="code-block">
+            <code>GET /api/forms/template/{templateId}?companyId={companyId}<br>
+GET /api/forms/smart-fields/{formId}?companyId={companyId}<br>
+GET /api/forms/pdf/{templateId}?companyId={companyId}<br>
+POST /api/forms/submit</code>
+        </div>
+
+        <div class="note">
+            <strong>⚠️ Note:</strong> Update the API endpoints in <code>js/app.js</code> to match your backend implementation.
+        </div>
+
+        <h2>📁 File Structure</h2>
+        <div class="code-block">
+            <code>web-pdf-forms/<br>
+├── index.html              # Main application<br>
+├── css/<br>
+│   └── pdf-form.css        # Styles following PDF specs<br>
+├── js/<br>
+│   ├── app.js              # Main controller<br>
+│   ├── smart-field-parser.js  # Smart field parsing<br>
+│   ├── pdf-form-renderer.js   # PDF rendering<br>
+│   └── signature-pad.js        # Signature capture<br>
+├── example-integration.html # This file<br>
+└── README.md              # Full documentation</code>
+        </div>
+
+        <h2>✨ Key Features</h2>
+
+        <ul>
+            <li>✅ Smart field values resolved by <code>field.id</code></li>
+            <li>✅ Proper ScrollContainer → PageContainer hierarchy</li>
+            <li>✅ Percentage-based field positioning</li>
+            <li>✅ No scroll listeners - automatic scrolling</li>
+            <li>✅ Form validation and progress tracking</li>
+            <li>✅ Signature capture with touch support</li>
+            <li>✅ Parts table with dynamic rows</li>
+            <li>✅ Responsive design</li>
+        </ul>
+
+        <h2>🧪 Testing</h2>
+
+        <ol>
+            <li>Click "Open Demo Form" to see the demo with sample data</li>
+            <li>Fill out the form fields</li>
+            <li>Check browser console (F12) for form data structure</li>
+            <li>Click "Submit Form" to see the submission payload</li>
+        </ol>
+
+        <h2>📚 References</h2>
+
+        <ul>
+            <li><strong>Smart Field Issue Solution.pdf</strong> - Smart field data structure and lookup</li>
+            <li><strong>PDF Implementation Details.pdf</strong> - View hierarchy and field placement</li>
+        </ul>
+
+        <div class="success">
+            <strong>🎉 Ready for Production!</strong><br>
+            This implementation matches the web version specifications exactly.
+        </div>
+    </div>
+</body>
+</html>

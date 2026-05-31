@@ -1,10 +1,6 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -13,7 +9,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -24,19 +19,17 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../utils/url_launcher.dart';
 import '../../../../config/theme/warm_organic_blue_theme.dart';
 import '../../../service/REST/api_urls.dart';
+import '../models/custom_field_model.dart';
 import 'widgets/warm_organic_components.dart';
 // ───────────────────────────────────────────────────────────────────
 
 import '../../../../config/theme/light_theme_colors.dart';
-import '../../../../utils/date_converter.dart';
 import '../../../../utils/klog.dart';
 import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/text_widget.dart';
-import '../../../data/local/my_shared_pref.dart';
-import '../../../models/forms/forms_models.dart';
 import '../../../modules/forms/controllers/forms_controller.dart';
 import '../../../routes/app_pages.dart';
 import '../../../utils/phone_number_formatter.dart';
@@ -44,11 +37,6 @@ import '../controllers/appointment_controller.dart';
 import '../controllers/custom_fields_controller.dart';
 import '../parts/image/controllers/image_controller.dart';
 import '../parts/file/controllers/file_controller.dart';
-import '../parts/file/models/file_item_model.dart';
-import '../models/appointment_model.dart';
-import '../models/custom_field_model.dart';
-import 'widgets/equipment_form_modal.dart';
-import '../../item/models/item_list_model.dart';
 import '../parts/notes/controllers/notes_controller.dart';
 import '../parts/equipment/controllers/equipment_controller.dart';
 
@@ -61,10 +49,7 @@ class AppointmentDetailsView extends StatefulWidget {
 
 class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     with TickerProviderStateMixin {
-  int _previousTabIndex = 0;
   FormsController? formsController;
-  final GlobalKey _createInvoiceButtonKey = GlobalKey();
-
   @override
   void initState() {
     super.initState();
@@ -316,6 +301,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                           })
                                           .toList(),
                                       onChanged: (value) {
+                                        kLog("value: ${value?.fieldName}");
                                         if (value != null) {
                                           customFieldsController
                                               .saveCustomField(value);
@@ -323,80 +309,92 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                       },
                                     ),
                                     SizedBox(height: 12.h),
-                                    ListView.separated(
-                                      shrinkWrap: true,
-                                      physics: NeverScrollableScrollPhysics(),
-                                      itemCount: customFieldsController
-                                          .selectedCustomFields
-                                          .length,
-                                      separatorBuilder: (context, index) =>
-                                          Divider(
-                                            color:
-                                                WarmOrganicBlueTheme.warmSilver,
-                                            thickness: 1,
-                                            height: 24.h,
-                                          ),
-                                      itemBuilder: (context, index) {
-                                        final field = customFieldsController
-                                            .selectedCustomFields[index];
-                                        return Stack(
-                                          children: [
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                right: 30.w,
-                                              ),
-                                              child: buildCustomFieldWidget(
-                                                field,
-                                                context,
-                                              ),
+                                    Obx(
+                                      () => ListView.separated(
+                                        shrinkWrap: true,
+                                        physics: NeverScrollableScrollPhysics(),
+                                        itemCount: customFieldsController
+                                            .selectedCustomFields
+                                            .length,
+                                        separatorBuilder: (context, index) =>
+                                            Divider(
+                                              color: WarmOrganicBlueTheme
+                                                  .warmSilver,
+                                              thickness: 1,
+                                              height: 24.h,
                                             ),
-                                            Positioned(
-                                              top: 0,
-                                              right: 0,
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  customFieldsController
-                                                      .selectedCustomFields
-                                                      .removeAt(index);
-                                                  setState(() {});
-                                                },
-                                                child: Container(
-                                                  padding: EdgeInsets.all(8.r),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.red
-                                                        .withValues(alpha: 0.1),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.close,
-                                                    color: Colors.red,
-                                                    size: 20.sp,
+                                        itemBuilder: (context, index) {
+                                          final field = customFieldsController
+                                              .selectedCustomFields[index];
+                                          return Stack(
+                                            children: [
+                                              Padding(
+                                                padding: EdgeInsets.only(
+                                                  right: 30.w,
+                                                ),
+                                                child: buildCustomFieldWidget(
+                                                  field,
+                                                  context,
+                                                ),
+                                              ),
+                                              Positioned(
+                                                top: 0,
+                                                right: 0,
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    customFieldsController
+                                                        .selectedCustomFields
+                                                        .removeAt(index);
+                                                    setState(() {});
+                                                  },
+                                                  child: Container(
+                                                    padding: EdgeInsets.all(
+                                                      8.r,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red
+                                                          .withValues(
+                                                            alpha: 0.1,
+                                                          ),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.close,
+                                                      color: Colors.red,
+                                                      size: 20.sp,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                    if (customFieldsController
-                                        .selectedCustomFields
-                                        .isNotEmpty)
-                                      Padding(
-                                        padding: EdgeInsets.only(top: 12.h),
-                                        child: OrganicPrimaryButton(
-                                          text: "Save Custom Fields",
-                                          onPressed: () async {
-                                            await customFieldsController
-                                                .saveAttachedCustomFields(
-                                                  appointmentId: controller
-                                                      .selectedAppointment
-                                                      .value!
-                                                      .apptID,
-                                                );
-                                          },
-                                        ),
+                                            ],
+                                          );
+                                        },
                                       ),
+                                    ),
+                                    Obx(
+                                      () =>
+                                          customFieldsController
+                                              .selectedCustomFields
+                                              .isNotEmpty
+                                          ? Padding(
+                                              padding: EdgeInsets.only(
+                                                top: 12.h,
+                                              ),
+                                              child: OrganicPrimaryButton(
+                                                text: "Save Custom Fields",
+                                                onPressed: () async {
+                                                  await customFieldsController
+                                                      .saveAttachedCustomFields(
+                                                        appointmentId: controller
+                                                            .selectedAppointment
+                                                            .value!
+                                                            .apptID,
+                                                      );
+                                                },
+                                              ),
+                                            )
+                                          : const SizedBox.shrink(),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -671,7 +669,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               ),
               SizedBox(width: 12.w),
               Expanded(
-                child: SizedBox(), // Empty placeholder for 3rd row, 2nd column
+                child: _buildCompactInfoTile(
+                  Icons.fingerprint_rounded,
+                  'Appt ID',
+                  controller.selectedAppointment.value?.apptID?.toString() ??
+                      "N/A",
+                ),
               ),
             ],
           ),
@@ -835,7 +838,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         'color': const Color(0xFFFF9500),
       },
       {
-        'label': 'Estimate',
+        'label': 'Est/Inv',
         'icon': Icons.receipt_long_rounded,
         'color': const Color(0xFF34C759),
       },
@@ -1031,32 +1034,6 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String label, Color color) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusFull),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: TextWidget(
-              text: 'text',
-              overflow: TextOverflow.ellipsis,
-              softWrap: false,
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          Icon(Icons.arrow_drop_down, color: Colors.white, size: 20.sp),
         ],
       ),
     );
@@ -1302,7 +1279,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
       case 'Forms':
         Get.toNamed(Routes.FORMS_TAB);
         break;
-      case 'Estimate':
+      case 'Est/Inv':
         Get.toNamed(Routes.ESTIMATE_TAB);
         break;
       case 'Pictures':
@@ -1319,1688 +1296,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
         break;
     }
   }
-
-  Widget _buildCSLRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110.w,
-            child: Text(
-              label,
-              style: WarmOrganicBlueTheme.bodySmall.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: WarmOrganicBlueTheme.bodyMedium.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // TAB 2 — FORMS
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildFormsTab(BuildContext context) {
-    final appointmentId =
-        controller.selectedAppointment.value?.apptID?.toString() ?? '';
-
-    return Obx(() {
-      // final isLoading = formsController?.isPolling.value ?? false;
-      // final allForms = formsController?.pendingForms ?? [];
-
-      // // Filter forms by appointment ID
-      // final formsForAppointment = allForms.isNotEmpty
-      //     ? allForms.where((f) => f.appointmentId == appointmentId).toList()
-      //     : <FormQueueItem>[];
-
-      // // Poll for forms on first load
-      // if (appointmentId.isNotEmpty && allForms.isEmpty) {
-      //   WidgetsBinding.instance.addPostFrameCallback((_) {
-      //     final resourceId =
-      //         controller.selectedAppointment.value?.resourceID ?? 0;
-      //     if (resourceId > 0) {
-      //       formsController?.pollPendingForms(resourceId);
-      //     }
-      //   });
-      // }
-
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header with refresh button
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Forms', style: WarmOrganicBlueTheme.headingSmall),
-                OrganicIconButton(
-                  icon: Icons.refresh_rounded,
-                  onTap: () {
-                    final resourceId =
-                        controller.selectedAppointment.value?.resourceID ?? 0;
-                    if (resourceId > 0) {
-                      formsController?.pollPendingForms(resourceId);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 8.h),
-
-          // Content
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: formsController!.pendingForms.isEmpty
-                ? Center(
-                    child: Column(
-                      children: [
-                        OrganicEmptyState(
-                          icon: Icons.description_outlined,
-                          title: 'No Forms',
-                          subtitle: appointmentId.isNotEmpty
-                              ? 'No forms attached to this appointment.'
-                              : 'Select an appointment to view forms.',
-                        ),
-                        SizedBox(height: 50.h),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    primary: false,
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    itemCount: formsController!.pendingForms.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: 12.h),
-                        child: _buildFormCard(
-                          context,
-                          formsController!.pendingForms[index],
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      );
-    });
-  }
-
-  Widget _buildFormCard(BuildContext context, FormQueueItem form) {
-    final status = formsController?.getFormStatus(form) ?? 'Pending';
-    final statusColor = formsController?.getFormStatusColor(form) ?? '#9E9E9E';
-
-    return OrganicCard(
-      margin: EdgeInsets.only(bottom: 12.h),
-      shadow: WarmOrganicBlueTheme.softShadow,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  form.template.name,
-                  style: WarmOrganicBlueTheme.headingSmall.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: Color(
-                    int.parse(statusColor.replaceFirst('#', '0xFF')),
-                  ).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: Color(
-                      int.parse(statusColor.replaceFirst('#', '0xFF')),
-                    ).withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: Color(
-                      int.parse(statusColor.replaceFirst('#', '0xFF')),
-                    ),
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          if (form.template.description.isNotEmpty) ...[
-            SizedBox(height: 4.h),
-            Text(
-              form.template.description,
-              style: WarmOrganicBlueTheme.bodySmall.copyWith(
-                color: WarmOrganicBlueTheme.coolGray,
-              ),
-            ),
-          ],
-
-          SizedBox(height: 8.h),
-
-          // Action button
-          OrganicSecondaryButton(
-            text: 'View Form',
-            icon: Icons.visibility_rounded,
-            height: 32.h,
-            width: double.infinity,
-            onPressed: () async {
-              kLog('selected form name ${form.template.name}');
-              final jsonData = form.template.structure != '';
-              if (!jsonData) {
-                return MySnackBar.showErrorToast(
-                  message: "Form template structure is empty or invalid.",
-                );
-              }
-              final config = {
-                'form': jsonDecode(form.template.structure),
-                // Pass form metadata for submission
-                'formInstanceId': form.formInstanceId,
-                'templateId': form.templateId,
-                'appointmentId': form.appointmentId,
-                'customerId': form.customerId,
-                'queueId': form.queueId,
-                'formName': form.template.name,
-              };
-
-              // Parse smartFieldData if available
-              if (form.smartFieldData.isNotEmpty) {
-                try {
-                  final smartFieldValues =
-                      jsonDecode(form.smartFieldData) as Map<String, dynamic>;
-                  config['smartFieldValues'] = smartFieldValues;
-                  kLog(
-                    'SmartField values loaded: ${smartFieldValues.length} fields',
-                  );
-                } catch (e) {
-                  kLog('Error parsing smartFieldData: $e');
-                }
-              }
-
-              // Show loading dialog using controller
-              controller.showLoading();
-
-              try {
-                final pdfBase64 = await formsController?.getFormPdfAsBase64(
-                  ApiUrl.pdfBaseUrl + config['form']['pdfFile']['path'],
-                );
-
-                // Hide loading dialog
-                controller.hideLoading();
-
-                if (pdfBase64 == null) {
-                  MySnackBar.showErrorToast(
-                    message: "Failed to load form PDF.",
-                  );
-                  return;
-                }
-
-                config['pdfBase64'] = pdfBase64;
-                Get.toNamed(Routes.PDF_DYNAMIC_FORM, arguments: config);
-              } catch (e) {
-                // Hide loading dialog on error
-                controller.hideLoading();
-                MySnackBar.showErrorToast(message: "Error loading PDF: $e");
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // TAB 3 — ESTIMATE / INVOICE
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildEstimateTab(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Obx(
-        () => Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            // Action Row
-            OrganicPrimaryButton(
-              key: _createInvoiceButtonKey,
-              text: 'Create New',
-              icon: Icons.add_rounded,
-              height: 40.h,
-              width: 140.w,
-              onPressed: () => _showCreateInvoiceMenu(context),
-            ),
-            SizedBox(height: 12.h),
-
-            // Invoice Cards
-            if (controller
-                        .sortedAppointments[controller.selectedAptIndex.value]
-                        .invoices ==
-                    null ||
-                controller
-                    .sortedAppointments[controller.selectedAptIndex.value]
-                    .invoices!
-                    .isEmpty)
-              OrganicEmptyState(
-                icon: Icons.receipt_long_rounded,
-                title: 'No Invoices',
-                subtitle: 'Create an invoice or estimate for this appointment.',
-              )
-            else
-              ...controller
-                  .sortedAppointments[controller.selectedAptIndex.value]
-                  .invoices!
-                  .map((proposal) => _buildInvoiceCard(context, proposal)),
-
-            // Extended Appointments
-            // if (controller.extendedAppointments.isNotEmpty) ...[
-            //   SizedBox(height: 16.h),
-            //   OrganicSectionTitle(title: 'Extended Appointments'),
-            //   ...controller.extendedAppointments.map(
-            //     (extendedAppt) => Column(
-            //       children: [
-            //         Text(
-            //           'Appointment ID: ${extendedAppt.appoinmentUId}',
-            //           style: WarmOrganicBlueTheme.bodyMedium.copyWith(
-            //             fontWeight: FontWeight.w600,
-            //           ),
-            //         ),
-            //         SizedBox(height: 10.h),
-            //         ...extendedAppt.invoices!.map(
-            //           (invoice) =>
-            //               _buildInvoiceCard(context, invoice, isExtended: true),
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-            // ],
-            SizedBox(height: 80.h),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInvoiceCard(
-    BuildContext context,
-    Invoices proposal, {
-    bool isExtended = false,
-  }) {
-    final isEstimate = proposal.type == "Estimate";
-    return OrganicCard(
-      margin: EdgeInsets.only(bottom: 10.h),
-      shadow: WarmOrganicBlueTheme.softShadow,
-      onTap: () async {
-        controller.showLoading();
-        // Load invoice details logic here...
-        controller.invoiceController.isExternalInvoice.value = isExtended;
-        await _loadInvoiceDetails(proposal);
-        controller.hideLoading();
-        Get.toNamed(Routes.INVOICE_DETAILS);
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: isEstimate
-                      ? WarmOrganicBlueTheme.statusYellowLight
-                      : WarmOrganicBlueTheme.statusGreenLight,
-                  borderRadius: BorderRadius.circular(
-                    WarmOrganicBlueTheme.radiusFull,
-                  ),
-                ),
-                child: Text(
-                  isEstimate ? 'Estimate' : 'Invoice',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w700,
-                    color: isEstimate
-                        ? WarmOrganicBlueTheme.statusYellow
-                        : WarmOrganicBlueTheme.statusGreen,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                proposal.number ?? "",
-                style: WarmOrganicBlueTheme.bodySmall.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          _buildCSLRow(
-            'Amount',
-            '\$${proposal.total?.toStringAsFixed(2) ?? "0.00"}',
-          ),
-          _buildCSLRow(
-            'Date',
-            dateTimeConverter(
-              inputFormat: "yyyy/MM/dd hh:mm a",
-              inputTime: proposal.invoiceDate.toString(),
-              outputFormat: "MM/dd/yyyy",
-            ),
-          ),
-          SizedBox(height: 8.h),
-          SizedBox(
-            width: double.infinity,
-            child: OrganicSecondaryButton(
-              text: 'View Details',
-              height: 36.h,
-              onPressed: () async {
-                controller.showLoading();
-                controller.invoiceController.isExternalInvoice.value = false;
-                // Save backup if we were in "new" mode before switching to "existing"
-                if (controller.invoiceController.existingItemType.value ==
-                    SelectedItemCategory.newOne) {
-                  controller.invoiceController.saveBackup("new");
-                }
-
-                controller.invoiceController.existingItemType.value =
-                    SelectedItemCategory.existingOne;
-
-                // Clear previous selection if needed
-                controller.invoiceController.selectedItemList.clear();
-                for (var c
-                    in controller.invoiceController.editAmountControllers) {
-                  c.dispose();
-                }
-                for (var c
-                    in controller
-                        .invoiceController
-                        .editDescriptionControllers) {
-                  c.dispose();
-                }
-                for (var c
-                    in controller.invoiceController.editQuantityControllers) {
-                  c.dispose();
-                }
-                controller.invoiceController.editAmountControllers.clear();
-                controller.invoiceController.editDescriptionControllers.clear();
-                controller.invoiceController.editQuantityControllers.clear();
-                controller.invoiceController.editNoteTextController.clear();
-                controller.invoiceController.editDiscountTextController.clear();
-                controller.invoiceController.initialTaxID.value = "";
-
-                // Set basic info
-
-                controller.invoiceController.invoiceItemList.value =
-                    proposal.items ?? [];
-                controller.invoiceController.depositList.value =
-                    proposal.paymentList ?? [];
-                controller.invoiceController.selectedDiscountOption.value =
-                    proposal.discountOption ?? "2";
-                controller.invoiceController.invoiceNumber =
-                    proposal.number ?? "";
-                controller.invoiceController.isConverted.value =
-                    proposal.isConverted ?? false;
-                controller.invoiceController.customerName =
-                    proposal.fullName ?? "";
-                controller.invoiceController.address = "${proposal.city}, ";
-                controller.invoiceController.depositAmount.value =
-                    proposal.depositAmount?.toStringAsFixed(2) ?? "0.00";
-                controller.invoiceController.invoiceID.value = proposal
-                    .invoiceID
-                    .toString();
-                controller.invoiceController.date = dateTimeConverter(
-                  inputFormat: "yyyy/MM/dd",
-                  inputTime: proposal.invoiceDate.toString(),
-                  outputFormat: "MM/dd/yyyy",
-                );
-                controller.invoiceController.subtotal =
-                    proposal.subtotal?.toStringAsFixed(2) ?? "";
-                controller.invoiceController.customerID.value =
-                    proposal.customerId ?? "";
-                controller.invoiceController.status = proposal.status ?? "";
-                controller.invoiceController.type.value = proposal.type ?? "";
-                controller.invoiceController.total.value =
-                    proposal.total?.toStringAsFixed(2) ?? "";
-                if (proposal.requestedAmountType == 2) {
-                  // type = fixed
-                  controller
-                          .invoiceController
-                          .selectedDepositRequestOption
-                          .value =
-                      "2";
-                  controller
-                          .invoiceController
-                          .requestedDepositAmountEditTextController
-                          .text =
-                      proposal.requestedDepositAmount ?? "0.00";
-                  controller
-                      .invoiceController
-                      .selectedDepositRequestOptionName
-                      .value = controller
-                      .invoiceController
-                      .depositRequestOptions[2]["name"];
-                }
-                if (proposal.requestedAmountType == 1) {
-                  // type = percentage
-                  controller
-                          .invoiceController
-                          .selectedDepositRequestOption
-                          .value =
-                      "1";
-                  controller
-                          .invoiceController
-                          .requestDepositRateEditTextController
-                          .text =
-                      proposal.requestedDepositPercentage ?? "0.00";
-                  controller
-                          .invoiceController
-                          .requestedDepositAmountEditTextController
-                          .text =
-                      proposal.requestedDepositAmount ?? "0.00";
-                  controller
-                      .invoiceController
-                      .selectedDepositRequestOptionName
-                      .value = controller
-                      .invoiceController
-                      .depositRequestOptions[1]["name"];
-                }
-                if (proposal.requestedAmountType == 0) {
-                  // type = null
-                  controller
-                          .invoiceController
-                          .selectedDepositRequestOption
-                          .value =
-                      "0";
-                  controller
-                          .invoiceController
-                          .requestDepositRateEditTextController
-                          .text =
-                      proposal.requestedDepositPercentage ?? "0.00";
-                  controller
-                          .invoiceController
-                          .requestedDepositAmountEditTextController
-                          .text =
-                      proposal.requestedDepositAmount ?? "0.00";
-                  controller
-                      .invoiceController
-                      .selectedDepositRequestOptionName
-                      .value = controller
-                      .invoiceController
-                      .depositRequestOptions[0]["name"];
-                }
-                controller.invoiceController.notes = proposal.note ?? "";
-                controller.invoiceController.editNoteTextController.text =
-                    proposal.note ?? "";
-                controller.invoiceController.due = proposal.due ?? "";
-                controller.invoiceController.showingDate.value =
-                    dateTimeConverter(
-                      inputFormat: "yyyy/MM/dd hh:mm a",
-                      inputTime: proposal.invoiceDate.toString(),
-                      outputFormat: "MM/dd/yyyy",
-                    );
-                if (proposal.taxType != "") {
-                  controller.invoiceController.initialTaxID.value =
-                      proposal.taxType ?? "";
-                }
-
-                // Set discount values
-                controller.invoiceController.invoiceDiscountDetails.value =
-                    proposal.discount ?? 0.00;
-                if (proposal.discountOption == "1") {
-                  controller.invoiceController.editDiscountTextController.text =
-                      (((double.parse(
-                                    proposal.discount?.toString() ?? "0.00",
-                                  )) *
-                                  100) /
-                              double.parse(
-                                proposal.subtotal?.toStringAsFixed(2) ?? "0.00",
-                              ))
-                          .toStringAsFixed(2);
-                } else {
-                  controller.invoiceController.editDiscountTextController.text =
-                      double.parse(
-                        proposal.discount?.toString() ?? "0.00",
-                      ).toStringAsFixed(2);
-                }
-
-                // Set tax values
-
-                controller.invoiceController.tax.value =
-                    controller.invoiceController.taxes
-                        .firstWhereOrNull(
-                          (tax) =>
-                              tax.id ==
-                              int.tryParse(
-                                controller.invoiceController.initialTaxID.value,
-                              ),
-                        )
-                        ?.rate
-                        ?.toStringAsFixed(2) ??
-                    "0.00";
-                controller.invoiceController.selectedTaxName.value =
-                    controller.invoiceController.taxes
-                        .firstWhereOrNull(
-                          (tax) =>
-                              tax.id ==
-                              int.tryParse(
-                                controller.invoiceController.initialTaxID.value,
-                              ),
-                        )
-                        ?.name ??
-                    "";
-
-                // Populate selectedItemList and initialize controllers
-                if (proposal.items != null && proposal.items!.isNotEmpty) {
-                  for (var item in proposal.items!) {
-                    controller.invoiceController.selectedItemList.add(
-                      ItemListModel(
-                        id: item.itemId,
-                        name: item.name,
-                        description: item.description,
-                        price: double.tryParse(item.unitPrice ?? "0.00"),
-                        isTaxable: item.isTaxable == "TAX" ? true : false,
-                        // itemTypeId: int.parse(item.itemTyId!),
-                      ),
-                    );
-
-                    // Initialize controllers with existing values
-                    controller.invoiceController.editAmountControllers.add(
-                      TextEditingController(text: item.unitPrice ?? "0.00"),
-                    );
-
-                    controller.invoiceController.editDescriptionControllers.add(
-                      TextEditingController(text: item.description ?? ""),
-                    );
-
-                    controller.invoiceController.editQuantityControllers.add(
-                      TextEditingController(text: item.quantity ?? "1"),
-                    );
-                  }
-                }
-                controller.invoiceController.createTotalForEdit();
-                await 0.5.delay();
-                controller.invoiceController.selectedQboClass(
-                  controller.invoiceController.qboClassList
-                      .where(
-                        (e) => e.qboClassId.toString() == proposal.qboClassId,
-                      )
-                      .firstOrNull,
-                );
-                controller.invoiceController.selectedQboLocation(
-                  controller.invoiceController.qboLocationList
-                      .where(
-                        (e) =>
-                            e.qboLocationId.toString() ==
-                            proposal.qboLocationId,
-                      )
-                      .firstOrNull,
-                );
-                controller.invoiceController.removedList
-                    .clear(); // Optional small delay before navigation
-                controller.hideLoading();
-                final x = MySharedPref.getCompanyType() ?? '';
-                controller.invoiceController.isLocAndClassShow.value =
-                    x == 'PCS';
-                controller.invoiceController.selectedInvoice.value = proposal;
-                Get.toNamed(Routes.INVOICE_DETAILS);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _loadInvoiceDetails(dynamic invoice) async {
-    // Load invoice details logic from original code
-    controller.invoiceController.existingItemType.value =
-        SelectedItemCategory.existingOne;
-    controller.invoiceController.selectedItemList.clear();
-    // ... (rest of invoice loading logic from original)
-  }
-
-  void _showCreateInvoiceMenu(BuildContext context) {
-    final RenderBox buttonRenderBox =
-        _createInvoiceButtonKey.currentContext!.findRenderObject() as RenderBox;
-    final RenderBox overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
-
-    // Get the button's position and size
-    final buttonPosition = buttonRenderBox.localToGlobal(Offset.zero);
-    final buttonSize = buttonRenderBox.size;
-
-    showMenu(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(8.r)),
-      ),
-      context: context,
-      position: RelativeRect.fromRect(
-        Rect.fromLTWH(
-          buttonPosition.dx,
-          buttonPosition.dy + buttonSize.height,
-          buttonSize.width,
-          buttonSize.height,
-        ),
-        Offset.zero & overlay.size,
-      ),
-      items: controller.invoiceController.createTypes.map((e) {
-        return PopupMenuItem(
-          value: e["name"],
-          child: TextWidget(text: "${e["name"]}"),
-        );
-      }).toList(),
-    ).then((v) async {
-      if (v != null) {
-        controller.invoiceController.clearAllItems();
-        controller.invoiceController.selectedCreateType.value = v;
-
-        final x = MySharedPref.getCompanyType() ?? '';
-        controller.invoiceController.isLocAndClassShow.value = x == 'IsPcs';
-
-        controller.invoiceController.createCustomerName =
-            controller.contactName;
-        controller.invoiceController.createCustomerAddress = controller.address;
-        controller.invoiceController.createCustomerPhone =
-            controller.mobileNumber;
-        controller.invoiceController.createCustomerEmail = controller.email;
-        controller.invoiceController.customerID.value = controller.customerID;
-        controller.invoiceController.appointmentID = controller.appointmentID;
-        controller.invoiceController.selectedTaxID.value = "";
-        controller.invoiceController.createDiscountTextController.clear();
-
-        await controller.invoiceController.getInvoiceName();
-        Get.toNamed(Routes.INVOICE_CREATE);
-      }
-    });
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // TAB 4 — PICTURES
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildPicturesTab(BuildContext context) {
-    return Obx(
-      () => Column(
-        children: [
-          SizedBox(height: 8.h),
-          // Upload Buttons
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: OrganicPrimaryButton(
-              text: 'Add Photo',
-              icon: Icons.add_photo_alternate_rounded,
-              height: 42.h,
-              onPressed: () => _showMediaOptions(context),
-            ),
-          ),
-          SizedBox(height: 16.h),
-
-          // Upload Section
-          if (controller.mediaList.isNotEmpty) ...[
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Uploads',
-                  style: WarmOrganicBlueTheme.caption.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 8.h),
-            ...controller.mediaList
-                .toList()
-                .asMap()
-                .entries
-                .toList()
-                .reversed
-                .map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return OrganicCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item.time, style: WarmOrganicBlueTheme.bodySmall),
-                        SizedBox(height: 10.h),
-                        TextField(
-                          controller: item.descriptionController,
-                          decoration: InputDecoration(
-                            hintText: "Add description...",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10.h),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              ...item.images.map((e) {
-                                if (_isVideo(e)) {
-                                  return GestureDetector(
-                                    onTap: () => showMediaDialog(context, e),
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        right: 8.0,
-                                      ),
-                                      child: FutureBuilder<String?>(
-                                        future: generateVideoThumbnail(e),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasData &&
-                                              snapshot.data != null) {
-                                            return Stack(
-                                              children: [
-                                                Container(
-                                                  height: 150,
-                                                  width: 150,
-                                                  decoration: BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          10.r,
-                                                        ),
-                                                    image: DecorationImage(
-                                                      fit: BoxFit.fill,
-                                                      image: FileImage(
-                                                        File(snapshot.data!),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const Positioned.fill(
-                                                  child: Center(
-                                                    child: Icon(
-                                                      Icons.play_circle_fill,
-                                                      size: 40,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }
-                                          return Container(
-                                            height: 150,
-                                            width: 150,
-                                            color: Colors.grey[300],
-                                            child: const Icon(
-                                              Icons.play_circle_fill,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  return GestureDetector(
-                                    onTap: () => showMediaDialog(context, e),
-                                    child: Container(
-                                      height: 150,
-                                      width: 150,
-                                      margin: EdgeInsets.only(right: 20),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          10.r,
-                                        ),
-                                        image: DecorationImage(
-                                          fit: BoxFit.fill,
-                                          image: FileImage(File(e)),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }),
-                              GestureDetector(
-                                onTap: () =>
-                                    showMediaBottomSheet(context, index),
-                                child: Container(
-                                  height: 150,
-                                  width: 150,
-                                  margin: const EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(10.r),
-                                    border: Border.all(color: Colors.grey),
-                                  ),
-                                  child: const Icon(
-                                    Icons.add,
-                                    size: 40,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 10.h),
-                        OrganicPrimaryButton(
-                          text: "Upload Images",
-                          onPressed: () async {
-                            // Get appointment details
-                            final appointment =
-                                controller.selectedAppointment.value;
-                            if (appointment == null) {
-                              MySnackBar.showErrorToast(
-                                message: "No appointment selected",
-                              );
-                              return;
-                            }
-
-                            // Upload each image using ACC Controller
-                            for (final imagePath
-                                in controller.mediaList.first.images) {
-                              final file = File(imagePath);
-                              if (!file.existsSync()) {
-                                kLog('Image file does not exist: $imagePath');
-                                continue;
-                              }
-
-                              await imageController.uploadPicture(
-                                customerId:
-                                    appointment.customerID?.toString() ?? '',
-                                siteId:
-                                    int.tryParse(appointment.siteID ?? '') ?? 0,
-                                file: file,
-                                appointmentId: appointment.apptID.toString(),
-                                reference:
-                                    item.descriptionController.text.isNotEmpty
-                                    ? item.descriptionController.text
-                                    : item.time.split(" ")[0],
-                              );
-                            }
-
-                            // Clear media list after upload
-                            controller.mediaList.clear();
-                            // Refresh images list
-                            await imageController.fetchPictures(
-                              customerId:
-                                  appointment.customerID?.toString() ?? '',
-                              siteId:
-                                  int.tryParse(appointment.siteID ?? '') ?? 0,
-                            );
-                          },
-                        ),
-                        SizedBox(height: 40.h),
-                      ],
-                    ),
-                  );
-                }),
-          ],
-
-          // Uploaded Images Grouped by Date
-          if (imageController.picturesGroupedByDate.isNotEmpty) ...[
-            SizedBox(height: 16.h),
-            ...(imageController.picturesGroupedByDate.keys.toList()..sort())
-                .map((date) {
-                  final images = imageController.picturesGroupedByDate[date]!;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            date,
-                            style: WarmOrganicBlueTheme.caption.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 8.h),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.symmetric(horizontal: 12.sp),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: images.map((item) {
-                            return GestureDetector(
-                              onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (_) => Dialog(
-                                    child: Stack(
-                                      children: [
-                                        CachedNetworkImage(
-                                          imageUrl: item.fileUrl,
-                                          fit: BoxFit.cover,
-                                          placeholder: (_, __) => const Center(
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                          errorWidget: (_, __, ___) =>
-                                              const Center(
-                                                child: Icon(Icons.error),
-                                              ),
-                                        ),
-                                        Positioned(
-                                          top: 8,
-                                          right: 8,
-                                          child: IconButton(
-                                            icon: const Icon(
-                                              Icons.close,
-                                              color: Colors.white,
-                                            ),
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            style: IconButton.styleFrom(
-                                              backgroundColor: Colors.black54,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                height: 150,
-                                width: 150,
-                                margin: EdgeInsets.only(right: 12.sp),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10.r),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10.r),
-                                  child: CachedNetworkImage(
-                                    imageUrl: item.fileUrl,
-                                    fit: BoxFit.fill,
-                                    placeholder: (_, __) => Container(
-                                      color: Colors.grey[200],
-                                      child: const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                    ),
-                                    errorWidget: (_, __, ___) => Container(
-                                      color: Colors.grey[300],
-                                      child: const Icon(Icons.error),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      SizedBox(height: 10.h),
-                    ],
-                  );
-                }),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // TAB 5 — EQUIPMENT
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildEquipmentTab(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Obx(
-        () => Column(
-          children: [
-            // Add Equipment Button
-            Align(
-              alignment: Alignment.centerRight,
-              child: PrimaryButtonWithIcon(
-                title: 'Add Equipment',
-                onPressed: () {
-                  Get.bottomSheet(
-                    EquipmentFormModal(
-                      equipmentTypes: equipmentController.equipmentTypes,
-                    ),
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                  );
-                },
-                iconData: Icons.add,
-                inactive: false,
-              ),
-            ),
-            SizedBox(height: 16.h),
-
-            // Equipment List
-            if (equipmentController.equipment.isNotEmpty) ...[
-              OrganicSectionTitle(title: 'Equipment List'),
-              ...equipmentController.equipment.map(
-                (equipment) => Padding(
-                  padding: EdgeInsets.only(bottom: 12.h),
-                  child: EquipmentCard(
-                    equipment: equipment,
-                    onEdit: () => Get.bottomSheet(
-                      EquipmentFormModal(
-                        equipment: equipment,
-                        equipmentTypes: equipmentController.equipmentTypes,
-                      ),
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                    ),
-                    onDelete: () async {
-                      final confirm = await Get.dialog<bool>(
-                        AlertDialog(
-                          title: const Text('Delete Equipment'),
-                          content: const Text(
-                            'Are you sure you want to delete this equipment?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Get.back(result: false),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Get.back(result: true),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.red,
-                              ),
-                              child: const Text('Delete'),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirm == true) {
-                        final appointment =
-                            controller.selectedAppointment.value;
-                        if (appointment != null) {
-                          await equipmentController.deleteEquipment(
-                            id: equipment.id,
-                            customerGuid:
-                                appointment.customer?.customerGuid ?? '',
-                            siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
-                            companyId: appointment.companyID,
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ] else ...[
-              SizedBox(height: 32.h),
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.construction, size: 64.sp, color: Colors.grey),
-                    SizedBox(height: 16.h),
-                    Text(
-                      'No equipment added yet',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            SizedBox(height: 80.h),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // TAB 6 — FILES
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildFilesTab(BuildContext context) {
-    return Obx(
-      () => Column(
-        children: [
-          SizedBox(height: 8.h),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: OrganicPrimaryButton(
-              text: 'Add Files',
-              icon: Icons.add_photo_alternate_rounded,
-              height: 42.h,
-              onPressed: () => showFileBottomSheet(context, -1),
-            ),
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Upload Section
-          if (controller.fileUploadList.isNotEmpty) ...[
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Uploads',
-                  style: WarmOrganicBlueTheme.caption.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 8.h),
-            ...controller.fileUploadList
-                .toList()
-                .asMap()
-                .entries
-                .toList()
-                .reversed
-                .map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return OrganicCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item.time, style: WarmOrganicBlueTheme.bodySmall),
-                        SizedBox(height: 10.h),
-                        TextField(
-                          controller: item.descriptionController,
-                          decoration: InputDecoration(
-                            hintText: "Add description...",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10.h),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              ...item.files.map((file) {
-                                final fileName = file.path.split('/').last;
-                                final extension = fileName.contains('.')
-                                    ? fileName.split('.').last.toLowerCase()
-                                    : '';
-                                return Container(
-                                  height: 120,
-                                  width: 100,
-                                  margin: const EdgeInsets.only(right: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: Colors.grey[300]!,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        _getFileIconData(extension) ??
-                                            Icons.insert_drive_file,
-                                        size: 40,
-                                        color: Theme.of(context).primaryColor,
-                                      ),
-                                      SizedBox(height: 5),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                        ),
-                                        child: Text(
-                                          fileName,
-                                          style: const TextStyle(fontSize: 10),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                              GestureDetector(
-                                onTap: () =>
-                                    showFileBottomSheet(context, index),
-                                child: Container(
-                                  height: 120,
-                                  width: 100,
-                                  margin: const EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8.r),
-                                    border: Border.all(color: Colors.grey),
-                                  ),
-                                  child: const Icon(
-                                    Icons.add,
-                                    size: 40,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 10.h),
-                        OrganicPrimaryButton(
-                          text: "Upload Files",
-                          onPressed: () async {
-                            // Get appointment details
-                            final appointment =
-                                controller.selectedAppointment.value;
-                            if (appointment == null) {
-                              MySnackBar.showErrorToast(
-                                message: "No appointment selected",
-                              );
-                              return;
-                            }
-
-                            // Upload each file in current item using FileController
-                            for (final file in item.files) {
-                              if (!file.existsSync()) {
-                                kLog('File does not exist: ${file.path}');
-                                continue;
-                              }
-
-                              await fileController.uploadFile(
-                                customerId:
-                                    appointment.customerID?.toString() ?? '',
-                                siteId:
-                                    int.tryParse(appointment.siteID ?? '') ?? 0,
-                                file: file,
-                                appointmentId: appointment.apptID.toString(),
-                                reference:
-                                    item.descriptionController.text.isNotEmpty
-                                    ? item.descriptionController.text
-                                    : item.time.split(" ")[0],
-                                companyId: appointment.companyID,
-                              );
-                            }
-
-                            // Clear current item from file upload list after upload
-                            controller.fileUploadList.removeAt(index);
-                            // Refresh files list
-                            await fileController.fetchFiles(
-                              customerId:
-                                  appointment.customerID?.toString() ?? '',
-                              siteId:
-                                  int.tryParse(appointment.siteID ?? '') ?? 0,
-                            );
-                          },
-                        ),
-                        SizedBox(height: 40.h),
-                      ],
-                    ),
-                  );
-                }),
-          ],
-
-          // Files Grouped by Date
-          if (fileController.filesGroupedByDate.isNotEmpty) ...[
-            SizedBox(height: 16.h),
-
-            ...(fileController.filesGroupedByDate.keys.toList()..sort()).map((
-              date,
-            ) {
-              final files = fileController.filesGroupedByDate[date]!;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.w),
-                    child: Text(
-                      date,
-                      style: WarmOrganicBlueTheme.caption.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: 8.h),
-
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.symmetric(horizontal: 12.sp),
-                    child: Row(
-                      children: files.map((file) {
-                        return GestureDetector(
-                          onTap: () => _downloadFile(file),
-                          child: Container(
-                            height: 120,
-                            width: 100,
-                            margin: EdgeInsets.only(right: 12.sp),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  _getFileIconData(file.extension) ??
-                                      Icons.insert_drive_file,
-                                  size: 40,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-
-                                SizedBox(height: 5),
-
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 4),
-                                  child: Text(
-                                    file.fileName,
-                                    style: TextStyle(fontSize: 10),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-
-                  SizedBox(height: 10.h),
-                ],
-              );
-            }),
-          ],
-        ],
-      ),
-    );
-  }
-
-  IconData? _getFileIconData(String? extension) {
-    if (extension == null) return null;
-    switch (extension.toLowerCase()) {
-      case 'pdf':
-        return Icons.picture_as_pdf;
-      case 'doc':
-      case 'docx':
-        return Icons.description;
-      case 'xls':
-      case 'xlsx':
-        return Icons.table_chart;
-      case 'txt':
-        return Icons.text_snippet;
-      case 'zip':
-      case 'rar':
-        return Icons.archive;
-      default:
-        return Icons.insert_drive_file;
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // TAB 7 — NOTES
-  // ─────────────────────────────────────────────────────────────
-  Widget _buildNotesTab(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Column(
-        children: [
-          // Add Note Button
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            child: OrganicPrimaryButton(
-              text: 'Add Notes',
-              icon: Icons.add_photo_alternate_rounded,
-              height: 42.h,
-              onPressed: () {
-                showAccNotesDialog(context, notesController, controller, theme);
-              },
-            ),
-          ),
-          SizedBox(height: 20.h),
-
-          // Notes List
-          Obx(() {
-            final notes = notesController.notes;
-
-            if (notes.isEmpty) {
-              return Center(child: TextWidget(text: "No Notes Found"));
-            }
-
-            return ListView.separated(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemCount: notes.length,
-              separatorBuilder: (_, __) => SizedBox(height: 8.h),
-              itemBuilder: (context, index) {
-                final note = notes[index];
-                final createdAt =
-                    DateTime.tryParse(note.createdAt) ?? DateTime.now();
-
-                return OrganicCard(
-                  color: Colors.grey[100],
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person,
-                                size: 14.sp,
-                                color: Colors.grey[600],
-                              ),
-                              SizedBox(width: 6.w),
-                              Text(
-                                "User ${note.userId ?? 'N/A'}",
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            DateFormat("dd MMM yyyy HH:mm").format(createdAt),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8.h),
-                      TextWidget(
-                        text: note.description,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          }),
-
-          SizedBox(height: 80.h),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // HELPER METHODS (Preserved from Original)
-  // ─────────────────────────────────────────────────────────────
-
-  Future<void> _downloadFile(FileItem file) async {
-    final fileName = file.fileName;
-    final extension = file.extension;
-
-    String finalFileName = fileName;
-    if (!fileName.endsWith('.$extension')) {
-      finalFileName = '$fileName.$extension';
-    }
-
-    Directory downloadDir;
-    if (Platform.isAndroid) {
-      downloadDir = Directory('/storage/emulated/0/Download');
-    } else if (Platform.isIOS) {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      downloadDir = Directory('${appDocDir.path}/Downloads');
-    } else {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      downloadDir = Directory('${appDocDir.path}/Downloads');
-    }
-
-    if (!await downloadDir.exists()) {
-      await downloadDir.create(recursive: true);
-    }
-
-    final filePath = '${downloadDir.path}/$finalFileName';
-    final savedFile = File(filePath);
-
-    if (await savedFile.exists()) {
-      await _openFile(filePath, file);
-      return;
-    }
-
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) =>
-          const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      Uint8List? fileBytes;
-
-      if (file.fileUrl.isNotEmpty) {
-        try {
-          final response = await Dio().get(
-            file.fileUrl,
-            options: Options(responseType: ResponseType.bytes),
-          );
-          fileBytes = response.data as Uint8List;
-        } catch (e) {
-          if (mounted) Navigator.pop(context);
-          MySnackBar.showErrorToast(
-            message: 'Failed to download file from server',
-          );
-          return;
-        }
-      }
-
-      if (fileBytes == null) {
-        if (mounted) Navigator.pop(context);
-        MySnackBar.showErrorToast(message: 'Failed to download file');
-        return;
-      }
-
-      await savedFile.writeAsBytes(fileBytes, flush: true);
-      kLog("File saved to: $filePath");
-
-      if (mounted) Navigator.pop(context);
-      await _openFile(filePath, file);
-    } catch (e, s) {
-      kLog("Error saving file: $e");
-      kLog(s);
-      if (mounted) Navigator.pop(context);
-      MySnackBar.showErrorToast(message: 'Failed to download file: $e');
-    }
-  }
-
-  Future<void> _openFile(String filePath, FileItem file) async {
-    final ext = file.extension.toLowerCase();
-
-    // Check if file is an image
-    if (_isImageFile(file.fileType)) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => Dialog(
-            child: Stack(
-              children: [
-                InteractiveViewer(
-                  child: Image.file(File(filePath), fit: BoxFit.contain),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black54,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-      return;
-    }
-
-    if (ext == 'mp4' || ext == 'mov' || ext == 'avi' || ext == 'mkv') {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => _VideoDialog(videoPath: filePath),
-        );
-      }
-      return;
-    }
-
-    final result = await OpenFilex.open(filePath);
-    if (result.type != ResultType.done) {
-      MySnackBar.showErrorToast(
-        message: 'Could not open file: ${result.message}',
-      );
-    }
-  }
-
-  bool _isImageFile(String? fileType) {
-    if (fileType == null) return false;
-    final type = fileType.toLowerCase();
-    return type.startsWith('image/');
-  }
-
-  bool _isVideo(String path) {
-    final ext = path.split('.').last.toLowerCase();
-    return ['mp4', 'mov', 'avi', 'mkv'].contains(ext);
-  }
-
-  void _showMediaOptions(BuildContext context) {
-    showMediaBottomSheet(context, -1);
-  }
 }
-
 // ─────────────────────────────────────────────────────────────
 // GLOBAL HELPER FUNCTIONS (Preserved from Original)
 // ─────────────────────────────────────────────────────────────
@@ -3736,7 +2032,7 @@ void showSingleFilePickerBottomSheet(BuildContext context) {
             title: Text("Pick Document"),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
+              final result = await FilePicker.pickFiles(
                 type: FileType.custom,
                 allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
                 allowMultiple: false,
@@ -3765,7 +2061,7 @@ void showSingleFilePickerBottomSheet(BuildContext context) {
             title: Text("Browse Files"),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
+              final result = await FilePicker.pickFiles(
                 type: FileType.any,
                 allowMultiple: false,
               );
@@ -3812,7 +2108,7 @@ void showFileBottomSheet(BuildContext context, int index) {
             title: Text("Pick Document"),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
+              final result = await FilePicker.pickFiles(
                 type: FileType.custom,
                 allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
                 allowMultiple: true,
@@ -3845,7 +2141,7 @@ void showFileBottomSheet(BuildContext context, int index) {
             title: Text("Browse Files"),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
+              final result = await FilePicker.pickFiles(
                 type: FileType.any,
                 allowMultiple: true,
               );

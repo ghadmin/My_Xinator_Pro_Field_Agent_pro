@@ -796,85 +796,91 @@ class AppointmentController extends GetxController
   }
 
   Future<void> getAppointments({bool showLoader = true}) async {
-    if (showLoader) showLoading();
+    try {
+      if (showLoader) showLoading();
 
-    // showLoading();
-    if (showLoader) isAppointmentEmpty.value = false;
-    if (await NetworkConnectivity.isNetworkAvailable()) {
-      var companyID = await MySharedPref.getCompanyID();
-      var userID = await MySharedPref.getUserName();
-      var currentDateTime = DateTime.now();
+      // showLoading();
+      if (showLoader) isAppointmentEmpty.value = false;
+      if (await NetworkConnectivity.isNetworkAvailable()) {
+        var companyID = await MySharedPref.getCompanyID();
+        var userID = await MySharedPref.getUserName();
+        var currentDateTime = DateTime.now();
 
-      var response = await DioClient()
-          .get(
-            url: ApiUrl.getAppointment,
-            params: {
-              "appointmentTypeStatus": 2,
-              "appointmentDate": dateTimeConverter(
-                inputTime: currentDateTime.toString(),
-                outputFormat: "yyyy/MM/dd",
-              ),
-              "CompanyId": companyID,
-              "userId": userID,
-            },
-          )
-          .catchError(!showLoader ? handleError : () {});
-      log("refreshing appointments ${jsonEncode(response)}");
-      if (response == null) {
+        var response = await DioClient()
+            .get(
+              url: ApiUrl.getAppointment,
+              params: {
+                "appointmentTypeStatus": 2,
+                "appointmentDate": dateTimeConverter(
+                  inputTime: currentDateTime.toString(),
+                  outputFormat: "yyyy/MM/dd",
+                ),
+                "CompanyId": companyID,
+                "userId": userID,
+              },
+            )
+            .catchError(!showLoader ? handleError : () {});
+        log("refreshing appointments ${jsonEncode(response)}");
+        if (response == null) {
+          hideLoading();
+          showEmptyWidget();
+          return;
+        }
+
+        if (response.isEmpty) {
+          appointments.clear();
+          if (showLoader) hideLoading();
+          showEmptyWidget();
+          return;
+        }
+
+        appointments.assignAll(
+          (response as List).map((e) => Appointments.fromJson(e)).toList(),
+        );
+
+        sortedAppointments.assignAll(
+          (response).map((e) => Appointments.fromJson(e)).toList()
+            ..sort((a, b) {
+              final aDate = DateFormat(
+                "yyyy/MM/dd hh:mm a",
+              ).parse(a.startDateTime!);
+              final bDate = DateFormat(
+                "yyyy/MM/dd hh:mm a",
+              ).parse(b.startDateTime!);
+              return aDate.compareTo(bDate);
+            }),
+        );
+        if (sortTextController.text.isNotEmpty) {
+          sortAppointmentsText(); // re-apply filter after refresh
+        }
+
+        await MyHive.saveAllAppointments(appointments);
         hideLoading();
-        showEmptyWidget();
-        return;
-      }
 
-      if (response.isEmpty) {
-        appointments.clear();
-        if (showLoader) hideLoading();
-        showEmptyWidget();
-        return;
-      }
-
-      appointments.assignAll(
-        (response as List).map((e) => Appointments.fromJson(e)).toList(),
-      );
-
-      sortedAppointments.assignAll(
-        (response).map((e) => Appointments.fromJson(e)).toList()..sort((a, b) {
-          final aDate = DateFormat(
-            "yyyy/MM/dd hh:mm a",
-          ).parse(a.startDateTime!);
-          final bDate = DateFormat(
-            "yyyy/MM/dd hh:mm a",
-          ).parse(b.startDateTime!);
-          return aDate.compareTo(bDate);
-        }),
-      );
-      if (sortTextController.text.isNotEmpty) {
-        sortAppointmentsText(); // re-apply filter after refresh
-      }
-
-      await MyHive.saveAllAppointments(appointments);
-      hideLoading();
-
-      if (appointments.isEmpty) {
-        showEmptyWidget();
-      }
-    } else {
-      var savedAppointments = MyHive.getAllAppointments();
-
-      if (savedAppointments.isNotEmpty) {
-        appointments.assignAll(savedAppointments);
-        savedAppointments.assignAll(savedAppointments);
-        //hideLoading();
-        MySnackBar.showErrorToast(message: "No network!");
-        NetworkConnectivity.connectionChangeCount = 1;
+        if (appointments.isEmpty) {
+          showEmptyWidget();
+        }
       } else {
-        appointments.clear();
-        savedAppointments.clear();
-        isError.value = true;
-        NetworkConnectivity.connectionChangeCount = 1;
-        // hideLoading();
-        showEmptyWidget();
+        var savedAppointments = MyHive.getAllAppointments();
+
+        if (savedAppointments.isNotEmpty) {
+          appointments.assignAll(savedAppointments);
+          savedAppointments.assignAll(savedAppointments);
+          //hideLoading();
+          MySnackBar.showErrorToast(message: "No network!");
+          NetworkConnectivity.connectionChangeCount = 1;
+        } else {
+          appointments.clear();
+          savedAppointments.clear();
+          isError.value = true;
+          NetworkConnectivity.connectionChangeCount = 1;
+          // hideLoading();
+          showEmptyWidget();
+        }
       }
+    } catch (e) {
+      hideLoading();
+      MySnackBar.showErrorToast(message: "$e");
     }
   }
 

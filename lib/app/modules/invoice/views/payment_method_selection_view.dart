@@ -32,13 +32,13 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
             ),
             SizedBox(height: 16.sp),
             Container(
-              height: 180.sp,
+              height: 185.sp,
               color: Colors.transparent,
               child: Stack(
                 children: [
                   Container(
                     width: double.infinity,
-                    height: 180.sp,
+                    height: 185.sp,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -72,7 +72,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 6.sp),
+                        SizedBox(height: 4.sp),
                         controller.depositRequestPay.value
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +110,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                                   ),
                                 ],
                               ),
-                        SizedBox(height: 3.sp),
+                        SizedBox(height: 2.sp),
                         TextWidget(
                           text:
                               'Due by ${dateTimeConverter(inputTime: DateTime.now().toString(), outputFormat: "MM/dd/yyyy")}',

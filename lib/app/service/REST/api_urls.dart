@@ -77,7 +77,9 @@ class ApiUrl {
   static const String baseLiveUrl = "https://mxp.myserviceforce.com/fsm";
 
   /// Base URL for PDF files (no .ashx suffix)
-  static const String pdfBaseUrl = "https://testsite.myserviceforce.com";
+  static const String pdfBaseUrl =
+      // "https://testsite.myserviceforce.com";
+      "https://mxp.myserviceforce.com";
 
   /// Get current base URL
   static String get currentBaseUrl => baseLiveUrl;

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Field PDF Form Filling</title>
+    <link rel="stylesheet" href="css/pdf-form.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="form-header">
+            <div class="header-content">
+                <h1 id="form-title">Loading Form...</h1>
+                <p id="form-description"></p>
+            </div>
+            <div class="header-actions">
+                <div class="completion-indicator">
+                    <span class="completion-text">0%</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Progress Bar -->
+        <div id="loading-progress" class="loading-progress">
+            <div class="progress-bar"></div>
+        </div>
+
+        <!-- Validation Errors -->
+        <div id="validation-errors" class="validation-errors" style="display: none;">
+            <div class="error-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span>Validation Errors</span>
+            </div>
+            <ul id="error-list" class="error-list"></ul>
+        </div>
+
+        <!-- Main PDF Container - ScrollContainer -->
+        <div id="pdf-container" class="pdfb-canvas-inner">
+            <!-- PDF Pages will be rendered here -->
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button id="save-draft-btn" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Draft
+            </button>
+            <button id="submit-btn" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Submit Form
+            </button>
+        </div>
+    </div>
+
+    <!-- Signature Modal -->
+    <div id="signature-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Signature</h2>
+                <button class="modal-close" id="close-signature-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <canvas id="signature-canvas" class="signature-canvas"></canvas>
+                <div class="signature-actions">
+                    <button id="clear-signature" class="btn btn-secondary">Clear</button>
+                    <button id="save-signature" class="btn btn-primary">Save Signature</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">Loading form template...</p>
+    </div>
+
+    <script src="js/pdf-lib.min.js"></script>
+    <script src="js/signature-pad.js"></script>
+    <script src="js/smart-field-parser.js"></script>
+    <script src="js/pdf-form-renderer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

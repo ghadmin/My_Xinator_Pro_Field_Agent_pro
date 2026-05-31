@@ -27,7 +27,6 @@ abstract class Routes {
   static const PAYMENT_BY_CHECK = _Paths.PAYMENT_BY_CHECK;
   static const PAYMENT_BY_BANK_TRANSFER = _Paths.PAYMENT_BY_BANK_TRANSFER;
   static const MANUAL_PAYMENT = _Paths.MANUAL_PAYMENT;
-  static const BILLABLE_ITEMS = _Paths.BILLABLE_ITEMS;
   static const SIGNATURE = _Paths.SIGNATURE;
   static const X_PAY_LINK_WEB = _Paths.X_PAY_LINK_WEB;
   static const FORMS = _Paths.FORMS;
@@ -46,6 +45,7 @@ abstract class Routes {
   static const EQUIPMENT_TAB = _Paths.EQUIPMENT_TAB;
   static const FILES_TAB = _Paths.FILES_TAB;
   static const NOTES_TAB = _Paths.NOTES_TAB;
+  static const BILLABLE_ITEM_SCREEN = _Paths.BILLABLE_ITEM_SCREEN;
 }
 
 abstract class _Paths {
@@ -58,7 +58,6 @@ abstract class _Paths {
   static const SIGNATURE = '/signature';
   static const APPOINTMENT_DETAILS = '/appointment_list';
   static const CUSTOMER_LOCATION = '/customer-location';
-  static const BILLABLE_ITEMS = '/billable_items';
   static const SETTINGS = '/settings';
   static const APPOINTMENT_SETTINGS = '/appointment_settings';
   static const CUSTOMER = '/customer';
@@ -90,4 +89,5 @@ abstract class _Paths {
   static const EQUIPMENT_TAB = '/equipment-tab';
   static const FILES_TAB = '/files-tab';
   static const NOTES_TAB = '/notes-tab';
+  static const BILLABLE_ITEM_SCREEN = '/billable-item-screen';
 }

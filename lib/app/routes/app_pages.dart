@@ -21,7 +21,9 @@ import '../modules/customer/views/customer_view.dart';
 
 import '../modules/forms/binding/form_bindings.dart';
 import '../modules/forms/views/forms_inbox_view.dart';
+import '../components/form_widget/pdf_dynamic_form.dart';
 import '../modules/invoice/bindings/invoice_binding.dart';
+import '../modules/invoice/views/billable_items_view.dart';
 import '../modules/invoice/views/create_invoice_view.dart';
 import '../modules/invoice/views/invoice_details_view.dart';
 import '../modules/invoice/views/manual_payment_view.dart';
@@ -108,6 +110,11 @@ class AppPages {
       bindings: [AppointmentBinding(), CustomFieldsBinding()],
     ),
     GetPage(
+      name: _Paths.BILLABLE_ITEM_SCREEN,
+      page: () => const BillableItemsView(),
+      // bindings: [AppointmentBinding(), CustomFieldsBinding()],
+    ),
+    GetPage(
       name: _Paths.ESTIMATE_TAB,
       page: () => const EstimateTabScreen(),
       bindings: [AppointmentBinding()],
@@ -167,6 +174,7 @@ class AppPages {
     GetPage(
       name: _Paths.INVOICE_DETAILS,
       page: () => const InvoiceDetailsView(),
+      bindings: [InvoiceBinding()], // Add BillableItemsBinding here
     ),
 
     GetPage(name: _Paths.X_PAY_LINK_WEB, page: () => XPayLinkScreen()),
@@ -234,6 +242,29 @@ class AppPages {
       binding: BindingsBuilder(() {
         Get.lazyPut<RAGController>(() => RAGController());
       }),
+    ),
+    GetPage(
+      name: _Paths.PDF_DYNAMIC_FORM,
+      page: () {
+        // Extract arguments passed via Get.toNamed
+        final args = Get.arguments as Map<String, dynamic>;
+
+        return PdfDynamicForm(
+          mode: PdfFormMode.viewer,
+          config: {
+            'pdfBase64': args['pdfBase64'] as String?,
+            'form': args['form'] as Map<String, dynamic>?,
+            'smartFieldValues':
+                args['smartFieldValues'] as Map<String, dynamic>? ?? {},
+            'formInstanceId': args['formInstanceId'] as int?,
+            'templateId': args['templateId'] as int?,
+            'appointmentId': args['appointmentId'] as String?,
+            'customerId': args['customerId'] as String?,
+            'queueId': args['queueId'] as int?,
+            'formName': args['formName'] as String?,
+          },
+        );
+      },
     ),
   ];
 }

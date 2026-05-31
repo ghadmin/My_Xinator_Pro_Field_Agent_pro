@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/form_field_model.dart';
 import 'form_field_widgets.dart';
 import 'signature_pad_widget.dart';
@@ -179,6 +180,16 @@ class _DynamicPdfFormWidgetState extends State<DynamicPdfFormWidget> {
     );
   }
 
+  /// Build a PDF page with proper view hierarchy
+  ///
+  /// Following the recommended pattern from PDF Implementation Details:
+  /// - ScrollContainer (SingleChildScrollView) - handles scrolling
+  /// └── PageContainer (Container) - sized to match rendered bitmap
+  ///     ├── PageBitmap (Image.memory) - the rendered PDF page
+  ///     └── Overlay (Stack) - same size as page, holds field boxes
+  ///         ├── FieldBox 1 (Positioned) - positioned by percentage
+  ///         ├── FieldBox 2
+  ///         └── ...
   Widget _buildPdfPage(int pageNum) {
     final pageFields = widget.template.getFieldsForPage(pageNum);
     final pageImage = _pdfPageImages[pageNum];
@@ -199,13 +210,104 @@ class _DynamicPdfFormWidgetState extends State<DynamicPdfFormWidget> {
       ),
       child: AspectRatio(
         aspectRatio: aspectRatio,
-        child: Stack(
-          children: [
-            _buildPdfBackground(pageImage),
-            ...pageFields.map((field) => _buildFieldOverlay(field, aspectRatio)),
-          ],
-        ),
+        child: _buildPageContainer(pageImage, pageFields, aspectRatio),
       ),
+    );
+  }
+
+  /// Build the page container with proper layering
+  ///
+  /// This creates the PageContainer from the PDF implementation guide.
+  /// The PageContainer is the parent that holds both the bitmap and overlay.
+  Widget _buildPageContainer(
+    Uint8List? pageImage,
+    List<FormFieldModel> pageFields,
+    double aspectRatio,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The page container size (in pixels) matches the rendered bitmap size
+        final pageWidth = constraints.maxWidth;
+        final pageHeight = pageWidth / aspectRatio;
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // PageBitmap layer - the rendered PDF page
+            _buildPageBitmap(pageImage),
+
+            // Overlay layer - position:absolute, same size as page container
+            // Field boxes are children of this overlay, not the scrollview
+            _buildFieldOverlayLayer(
+              pageFields: pageFields,
+              pageWidth: pageWidth,
+              pageHeight: pageHeight,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Build the page bitmap layer
+  ///
+  /// This is the PageBitmap from the PDF implementation guide.
+  /// It displays the rendered PDF page image.
+  Widget _buildPageBitmap(Uint8List? pageImage) {
+    return Positioned.fill(
+      child: _buildPdfBackground(pageImage),
+    );
+  }
+
+  /// Build the overlay layer for field boxes
+  ///
+  /// This is the Overlay from the PDF implementation guide.
+  /// It's an absolute-positioned layer that sits on top of the bitmap.
+  /// Field boxes are positioned as children of this overlay.
+  Widget _buildFieldOverlayLayer({
+    required List<FormFieldModel> pageFields,
+    required double pageWidth,
+    required double pageHeight,
+  }) {
+    return Positioned.fill(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: pageFields.map((field) {
+          return _buildFieldBox(
+            field: field,
+            pageWidth: pageWidth,
+            pageHeight: pageHeight,
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  /// Build a single field box
+  ///
+  /// Field placement math from PDF implementation guide:
+  /// boxLeftPx = pageContainer.width * field.position.xPct
+  /// boxTopPx = pageContainer.height * field.position.yPct
+  /// boxWidthPx = pageContainer.width * field.position.wPct
+  /// boxHeightPx = pageContainer.height * field.position.hPct
+  Widget _buildFieldBox({
+    required FormFieldModel field,
+    required double pageWidth,
+    required double pageHeight,
+  }) {
+    // Position is stored as fractions (xPct, yPct, wPct, hPct)
+    // Convert to pixels at render time
+    final boxLeftPx = pageWidth * (field.position.xPct / 100);
+    final boxTopPx = pageHeight * (field.position.yPct / 100);
+    final boxWidthPx = pageWidth * (field.position.wPct / 100);
+    final boxHeightPx = pageHeight * (field.position.hPct / 100);
+
+    return Positioned(
+      left: boxLeftPx,
+      top: boxTopPx,
+      width: boxWidthPx,
+      height: boxHeightPx,
+      child: _buildFieldWidget(field),
     );
   }
 
@@ -246,19 +348,6 @@ class _DynamicPdfFormWidgetState extends State<DynamicPdfFormWidget> {
     );
   }
 
-  Widget _buildFieldOverlay(FormFieldModel field, double pageAspectRatio) {
-    final screenWidth = MediaQuery.of(context).size.width - 32;
-    final screenHeight = screenWidth / pageAspectRatio;
-
-    return Positioned(
-      left: (field.position.xPct / 100) * screenWidth,
-      top: (field.position.yPct / 100) * screenHeight,
-      width: (field.position.wPct / 100) * screenWidth,
-      height: (field.position.hPct / 100) * screenHeight,
-      child: _buildFieldWidget(field),
-    );
-  }
-
   Widget _buildFieldWidget(FormFieldModel field) {
     final fieldValue = _formData[field.id] ?? field.defaultValue;
 
@@ -274,6 +363,7 @@ class _DynamicPdfFormWidgetState extends State<DynamicPdfFormWidget> {
         );
 
       case 'textarea':
+      case 'text area':
         return TextFieldWidget(
           id: field.id,
           header: field.header,
@@ -294,10 +384,57 @@ class _DynamicPdfFormWidgetState extends State<DynamicPdfFormWidget> {
         );
 
       case 'checkbox':
+      case 'check':
         return CheckboxFieldWidget(
           id: field.id,
           label: field.header ?? '',
           value: fieldValue == true || fieldValue == 'true',
+          onChanged: (value) => _updateFieldValue(field.id, value),
+          readOnly: widget.readOnly,
+        );
+
+      case 'checkboxes':
+        final List<String> selectedValues = fieldValue is List
+            ? List<String>.from(fieldValue)
+            : (fieldValue?.toString().isNotEmpty == true ? [fieldValue.toString()] : []);
+        return CheckboxesFieldWidget(
+          id: field.id,
+          header: field.header,
+          options: field.dropdownOptions ?? [],
+          selectedValues: selectedValues,
+          onChanged: (values) => _updateFieldValue(field.id, values),
+          readOnly: widget.readOnly,
+        );
+
+      case 'radio':
+      case 'radio buttons':
+      case 'radiobuttons':
+        final String? selectedValue = fieldValue?.toString();
+        return RadioButtonsFieldWidget(
+          id: field.id,
+          header: field.header,
+          options: field.dropdownOptions ?? [],
+          selectedValue: selectedValue,
+          onChanged: (value) => _updateFieldValue(field.id, value),
+          readOnly: widget.readOnly,
+        );
+
+      case 'number':
+        return TextFieldWidget(
+          id: field.id,
+          header: field.header,
+          value: fieldValue?.toString() ?? '',
+          onChanged: (value) => _updateFieldValue(field.id, value),
+          readOnly: widget.readOnly,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        );
+
+      case 'date':
+        return DateFieldWidget(
+          id: field.id,
+          header: field.header,
+          value: fieldValue?.toString(),
           onChanged: (value) => _updateFieldValue(field.id, value),
           readOnly: widget.readOnly,
         );
@@ -312,7 +449,11 @@ class _DynamicPdfFormWidgetState extends State<DynamicPdfFormWidget> {
         );
 
       case 'smartfield':
-        final smartValue = widget.smartFieldValues[field.smartFieldSource] ??
+      case 'smart field':
+        // Look up smart field value by field.id (e.g., "pdf_1776450913261_56q93m")
+        // NOT by smartFieldSource (e.g., "system.CompanyName")
+        // See: Smart Field Issue Solution PDF
+        final smartValue = widget.smartFieldValues[field.id] ??
             fieldValue?.toString() ??
             '';
         return SmartFieldWidget(
@@ -322,6 +463,7 @@ class _DynamicPdfFormWidgetState extends State<DynamicPdfFormWidget> {
         );
 
       case 'partstable':
+      case 'parts table':
         final tableData = fieldValue is List
             ? List<Map<String, String>>.from(
                 fieldValue.map((row) => Map<String, String>.from(row)))

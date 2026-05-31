@@ -449,23 +449,68 @@ class CustomerDetailsView extends GetView<CustomerController> {
   // CUSTOMER INFO SECTION
   // ---------------------------------------------------------------------------
   Widget _buildCustomerInfoCard(ThemeData theme) {
+    final customer = controller.selectedCustomer.value;
+
     return Card(
       elevation: 0,
       color: Colors.white,
       child: Column(
         children: [
+          // User ID
+          _tile(
+            "User ID",
+            customer?.customerID != null && customer!.customerID!.isNotEmpty
+                ? customer.customerID!
+                : "N/A",
+            theme,
+          ),
+          MainDivider(),
+
+          // First Name
+          _tile(
+            "First Name",
+            customer?.firstName != null && customer!.firstName!.isNotEmpty
+                ? customer.firstName!
+                : "N/A",
+            theme,
+          ),
+          MainDivider(),
+
+          // Last Name
+          _tile(
+            "Last Name",
+            customer?.lastName != null && customer!.lastName!.isNotEmpty
+                ? customer.lastName!
+                : "N/A",
+            theme,
+          ),
+          MainDivider(),
+
+          // Email
+          _emailTile(
+            "Email",
+            controller.email != '' ? controller.email : "N/A",
+            theme,
+          ),
+          MainDivider(),
+
+          // Created Date
+          _tile(
+            "Created Date",
+            _formatCreatedDate(customer?.createdDateTime),
+            theme,
+          ),
+          MainDivider(),
+
+          // Business Name
           _tile(
             "Business Name",
             controller.businessName != '' ? controller.businessName : "N/A",
             theme,
           ),
-          // MainDivider(),
-          // _tile(
-          //   "Title",
-          //   controller.title != '' ? controller.title : "N/A",
-          //   theme,
-          // ),
           MainDivider(),
+
+          // Address
           _tile(
             "Address",
             controller.address != '' ? controller.address : "N/A",
@@ -473,36 +518,51 @@ class CustomerDetailsView extends GetView<CustomerController> {
             multiLine: true,
           ),
           MainDivider(),
+
+          // Mobile
           _callTile(
             "Mobile",
             controller.mobileNumber != '' ? controller.mobileNumber : "N/A",
             theme,
           ),
           MainDivider(),
+
+          // Phone
           _callTile(
             "Phone",
             controller.phoneNumber != '' ? controller.phoneNumber : "N/A",
             theme,
           ),
-          MainDivider(),
-          _emailTile(
-            "Email",
-            controller.email != '' ? controller.email : "N/A",
-            theme,
-          ),
-          // MainDivider(),
-          // _navTile("Invoices", "See Invoices >", theme),
-          // MainDivider(),
-          // _navTile("Estimates", "See Estimates >", theme),
-          // MainDivider(),
-          // _navTile("Appointments", "See Appointments >", theme),
-          // MainDivider(),
-          // _navTile("Files", "View Files >", theme),
-          // MainDivider(),
-          // _navTile("Email History", "See History >", theme),
         ],
       ),
     );
+  }
+
+  String _formatCreatedDate(dynamic createdDateTime) {
+    if (createdDateTime == null) return "N/A";
+
+    try {
+      DateTime dateTime;
+
+      if (createdDateTime is String) {
+        dateTime = DateTime.parse(createdDateTime);
+      } else if (createdDateTime is DateTime) {
+        dateTime = createdDateTime;
+      } else {
+        return "N/A";
+      }
+
+      // Format: M/d/yyyy h:mm:ss a
+      return '${dateTime.month}/${dateTime.day}/${dateTime.year} ${_formatHour(dateTime.hour)}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')} ${dateTime.hour >= 12 ? "PM" : "AM"}';
+    } catch (e) {
+      return "N/A";
+    }
+  }
+
+  String _formatHour(int hour) {
+    if (hour == 0) return '12';
+    if (hour > 12) return (hour - 12).toString();
+    return hour.toString();
   }
 
   Widget _tile(

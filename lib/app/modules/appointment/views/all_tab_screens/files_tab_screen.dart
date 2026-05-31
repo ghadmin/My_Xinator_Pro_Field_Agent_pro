@@ -628,7 +628,7 @@ void showFileBottomSheet(BuildContext context, int index) {
             title: Text("Pick Document"),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
+              final result = await FilePicker.pickFiles(
                 type: FileType.custom,
                 allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
                 allowMultiple: true,
@@ -661,7 +661,7 @@ void showFileBottomSheet(BuildContext context, int index) {
             title: Text("Browse Files"),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
+              final result = await FilePicker.pickFiles(
                 type: FileType.any,
                 allowMultiple: true,
               );

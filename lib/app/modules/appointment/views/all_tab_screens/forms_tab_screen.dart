@@ -4,6 +4,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:myxinator_pro_field_agent_pro/app/data/local/my_shared_pref.dart';
+import 'package:myxinator_pro_field_agent_pro/app/service/helper/network_connectivity.dart';
 import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:myxinator_pro_field_agent_pro/app/components/global-widgets/my_snackbar.dart';
@@ -14,6 +16,7 @@ import 'package:myxinator_pro_field_agent_pro/app/service/REST/api_urls.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/appointment_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/custom_fields_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/widgets/warm_organic_components.dart';
+import 'package:remixicon/remixicon.dart';
 
 class FormsTabScreen extends StatefulWidget {
   const FormsTabScreen({super.key});
@@ -58,10 +61,7 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: WarmOrganicBlueTheme.warmGray,
-        title: Text(
-          'Forms',
-          style: WarmOrganicBlueTheme.headingMedium,
-        ),
+        title: Text('Forms', style: WarmOrganicBlueTheme.headingMedium),
         centerTitle: false,
       ),
       body: Obx(() {
@@ -93,13 +93,33 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                       primary: false,
                       shrinkWrap: true,
                       padding: EdgeInsets.zero,
-                      itemCount: formsController!.pendingForms.length,
+                      itemCount: formsController!.pendingForms
+                          .where(
+                            (f) =>
+                                f.appointmentId ==
+                                appointmentController
+                                    .selectedAppointment
+                                    .value!
+                                    .apptID
+                                    .toString(),
+                          )
+                          .length,
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: EdgeInsets.only(bottom: 12.h),
                           child: _buildFormCard(
                             context,
-                            formsController!.pendingForms[index],
+                            formsController!.pendingForms
+                                .where(
+                                  (f) =>
+                                      f.appointmentId ==
+                                      appointmentController
+                                          .selectedAppointment
+                                          .value!
+                                          .apptID
+                                          .toString(),
+                                )
+                                .toList()[index],
                           ),
                         );
                       },
@@ -112,9 +132,6 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
   }
 
   Widget _buildFormCard(BuildContext context, FormQueueItem form) {
-    final status = formsController?.getFormStatus(form) ?? 'Pending';
-    final statusColor = formsController?.getFormStatusColor(form) ?? '#9E9E9E';
-
     return OrganicCard(
       margin: EdgeInsets.only(bottom: 12.h),
       shadow: WarmOrganicBlueTheme.softShadow,
@@ -131,29 +148,28 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                   ),
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: Color(
-                    int.parse(statusColor.replaceFirst('#', '0xFF')),
-                  ).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: Color(
-                      int.parse(statusColor.replaceFirst('#', '0xFF')),
-                    ).withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: Color(
-                      int.parse(statusColor.replaceFirst('#', '0xFF')),
-                    ),
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+              IconButton(
+                icon: Icon(Remix.telegram_2_fill, color: WarmOrganicBlueTheme.primaryBlue),
+                iconSize: 20,
+                onPressed: () async {
+                  final companyId = await MySharedPref.getCompanyID();
+                  if (companyId == null || companyId.isEmpty) {
+                    MySnackBar.showErrorToast(
+                      message: 'Company ID not found. Please login again.',
+                    );
+                    return;
+                  }
+
+                  await formsController?.sendPdfEmail(
+                    companyId: companyId,
+                    templateId: form.templateId,
+                    appointmentId: form.appointmentId,
+                    customerId: form.customerId,
+                  );
+                },
+                tooltip: 'Send Email to Customer',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
             ],
           ),
@@ -209,8 +225,11 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
               controller.showLoading();
 
               try {
+                // Construct PDF URL using pdfBaseUrl + path from template
+                final pdfUrl =
+                    ApiUrl.pdfBaseUrl + config['form']['pdfFile']['path'];
                 final pdfBase64 = await formsController?.getFormPdfAsBase64(
-                  ApiUrl.pdfBaseUrl + config['form']['pdfFile']['path'],
+                  pdfUrl,
                 );
 
                 controller.hideLoading();
@@ -224,8 +243,10 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
 
                 config['pdfBase64'] = pdfBase64;
                 Get.toNamed(Routes.PDF_DYNAMIC_FORM, arguments: config);
-              } catch (e) {
+              } catch (e, s) {
                 controller.hideLoading();
+                kLog(e);
+                kLog(s);
                 MySnackBar.showErrorToast(message: "Error loading PDF: $e");
               }
             },

@@ -44,7 +44,7 @@ class CustomerController extends GetxController with ExceptionHandler {
           p0.address1,
           p0.mobile,
           p0.phone,
-          p0.email
+          p0.email,
         ].where((e) => e != null).join(' ').toLowerCase();
 
         return combinedText.contains(sortTextController.text.toLowerCase());
@@ -59,16 +59,19 @@ class CustomerController extends GetxController with ExceptionHandler {
     if (await NetworkConnectivity.isNetworkAvailable()) {
       var companyID = await MySharedPref.getCompanyID();
       var currentDateTime = DateTime.now();
-      var response = await DioClient().get(
-        url: ApiUrl.getCustomer,
-        params: {
-          "Date": dateTimeConverter(
-              inputTime: currentDateTime.toString(),
-              outputFormat: "yyyy/MM/dd"),
-          "CompanyId": companyID,
-        },
-      ).catchError(handleError);
-      log("customer res ${jsonEncode(response)}");
+      var response = await DioClient()
+          .get(
+            url: ApiUrl.getCustomer,
+            params: {
+              "Date": dateTimeConverter(
+                inputTime: currentDateTime.toString(),
+                outputFormat: "yyyy/MM/dd",
+              ),
+              "CompanyId": companyID,
+            },
+          )
+          .catchError(handleError);
+      // log("customer res ${jsonEncode(response)}");
       if (response == null) {
         showEmptyWidget();
         return;
@@ -81,7 +84,8 @@ class CustomerController extends GetxController with ExceptionHandler {
         return;
       }
       customers.assignAll(
-          (response as List).map((e) => CustomerModel.fromJson(e)).toList());
+        (response as List).map((e) => CustomerModel.fromJson(e)).toList(),
+      );
       sortedCustomers.addAll(customers);
       await MyHive.saveAllCustomers(customers);
 

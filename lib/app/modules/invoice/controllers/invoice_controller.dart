@@ -1198,12 +1198,31 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final Rx<FocusNode> createInvoiceEmailSubjectFocusnode = FocusNode().obs;
   final Rx<FocusNode> createInvoiceEmailBodyFocusnode = FocusNode().obs;
 
+  // Search and Filter logic
+  final RxString searchByType = "Name".obs;
+  final List<String> searchOptions = ["Name", "Group", "Bundle"];
+
+  final RxList<String> groupList = <String>[
+    'Group 1',
+    'Group 2',
+    'Group 3',
+  ].obs; // To be populated by API
+  final RxString selectedGroup = "".obs;
+
+  final RxList<String> bundleList = <String>[
+    'Bundle 1',
+    'Bundle 2',
+    'Bundle 3',
+  ].obs; // To be populated by API
+  final RxString selectedBundle = "".obs;
+
   @override
   void onInit() async {
     super.onInit();
     await Future.delayed(Duration(seconds: 1), () {});
     getQBOClasses();
     getQBOLocations();
+    // _populateDemoFilterOptions(); // Populate demo options
     // Load immediately when controller is created
   }
 
@@ -1388,7 +1407,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxDouble invoiceSubtotal = 0.00.obs;
   RxDouble discountedTaxableTotalInEdit = 0.00.obs;
   RxDouble discountedTaxableTotalInCreate = 0.00.obs;
-
+  ScrollController billableItemsScrollController = ScrollController();
   // Customer signature (Base64 encoded string)
   String customerSignature = "";
 
@@ -1440,6 +1459,36 @@ class InvoiceController extends GetxController with ExceptionHandler {
   bool get areAllItemsTaxable {
     if (selectedItemList.isEmpty) return true;
     return selectedItemList.every((item) => item.isTaxable == true);
+  }
+
+  /// Reorders billable items and keeps their corresponding controllers in sync
+  void reorderBillableItems(int oldIndex, int newIndex) {
+    // Adjust newIndex when moving an item down the list
+    // ReorderableListView reports the index after the item would be removed,
+    // so we need to subtract 1 when moving down to get the correct position
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+
+    // Reorder the item in the list
+    final item = selectedItemList.removeAt(oldIndex);
+    selectedItemList.insert(newIndex, item);
+
+    // Keep controllers in sync with the reordered items
+    final amountController = editAmountControllers.removeAt(oldIndex);
+    editAmountControllers.insert(newIndex, amountController);
+
+    final descriptionController = editDescriptionControllers.removeAt(oldIndex);
+    editDescriptionControllers.insert(newIndex, descriptionController);
+
+    final quantityController = editQuantityControllers.removeAt(oldIndex);
+    editQuantityControllers.insert(newIndex, quantityController);
+
+    // Mark form as dirty since order changed
+    markAsDirty();
+
+    // Refresh the list to update the UI
+    selectedItemList.refresh();
   }
 
   // Check if all items are non-taxable (used to disable tax dropdown)
@@ -1984,9 +2033,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxList<File> docFileList = <File>[].obs;
 
   Future<void> pickFiles() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-    );
+    FilePickerResult? result = await FilePicker.pickFiles(allowMultiple: true);
 
     if (result != null) {
       List<File> files = result.paths.map((path) => File(path!)).toList();

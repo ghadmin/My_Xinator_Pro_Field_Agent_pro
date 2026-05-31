@@ -47,9 +47,15 @@ class _SignatureDialogModalState extends State<SignatureDialogModal>
   // Global key for capturing typed signature as image
   final GlobalKey _typedSignatureKey = GlobalKey();
 
+  // Signature ID timestamp (captured once)
+  late final int _signatureId;
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize signature ID timestamp once
+    _signatureId = DateTime.now().millisecondsSinceEpoch;
 
     // Initialize provider
     _provider = Get.put(SignatureProvider());
@@ -411,7 +417,7 @@ class _SignatureDialogModalState extends State<SignatureDialogModal>
                     ),
                     SizedBox(height: 8.h),
                     Text(
-                      'ID: ${DateTime.now().millisecondsSinceEpoch}',
+                      'ID: $_signatureId',
                       style: TextStyle(
                         fontSize: 10.sp,
                         color: Colors.grey.shade500,
@@ -507,7 +513,10 @@ class _SignatureDialogModalState extends State<SignatureDialogModal>
           final success = await _provider.saveSignature();
 
           if (success && mounted) {
-            widget.onSignatureSaved?.call(signatureImage, _provider.fullName.value);
+            widget.onSignatureSaved?.call(
+              signatureImage,
+              _provider.fullName.value,
+            );
             Navigator.pop(context, true);
           }
         } else {
@@ -520,9 +529,9 @@ class _SignatureDialogModalState extends State<SignatureDialogModal>
       } catch (e) {
         kLog('Error capturing typed signature: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     } else if (_tabController.index == 0) {
@@ -551,8 +560,9 @@ class _SignatureDialogModalState extends State<SignatureDialogModal>
   Future<String?> _captureTypedSignature() async {
     try {
       // Find the RenderRepaintBoundary
-      RenderRepaintBoundary? boundary = _typedSignatureKey.currentContext
-          ?.findRenderObject() as RenderRepaintBoundary?;
+      RenderRepaintBoundary? boundary =
+          _typedSignatureKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
 
       if (boundary == null) {
         kLog('Failed to find RenderRepaintBoundary');
@@ -561,7 +571,9 @@ class _SignatureDialogModalState extends State<SignatureDialogModal>
 
       // Capture the widget as an image
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
 
       if (byteData == null) {
         kLog('Failed to get byte data');

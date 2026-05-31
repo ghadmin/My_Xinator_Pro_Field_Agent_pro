@@ -1,0 +1,511 @@
+/* PDF Form Filling Styles */
+/* Following the PDF Implementation Details guide */
+
+/* ============== RESET & BASE ============== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    overflow: hidden; /* Prevent body scroll, use ScrollContainer instead */
+}
+
+/* ============== APP CONTAINER ============== */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 100%;
+}
+
+/* ============== HEADER ============== */
+.form-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-content h1 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.header-content p {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.completion-indicator {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.completion-text {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* ============== LOADING PROGRESS ============== */
+.loading-progress {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+    display: none;
+}
+
+.loading-progress.active {
+    display: block;
+}
+
+.loading-progress .progress-bar {
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    width: 0%;
+    transition: width 0.3s ease;
+    animation: progress 1.5s ease-in-out infinite;
+}
+
+@keyframes progress {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ============== VALIDATION ERRORS ============== */
+.validation-errors {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 16px 24px;
+    display: none;
+}
+
+.validation-errors.show {
+    display: block;
+}
+
+.error-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #856404;
+    margin-bottom: 12px;
+}
+
+.error-list {
+    list-style: none;
+    padding-left: 28px;
+}
+
+.error-list li {
+    color: #856404;
+    margin-bottom: 4px;
+    position: relative;
+}
+
+.error-list li:before {
+    content: "•";
+    position: absolute;
+    left: -16px;
+}
+
+/* ============== SCROLL CONTAINER ============== */
+/* This is the ScrollContainer from PDF Implementation Details */
+/* overflow: auto - handles scrolling */
+.pdfb-canvas-inner {
+    flex: 1;
+    overflow: auto;
+    background: #e0e0e0;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+/* ============== PAGE CONTAINER ============== */
+/* This is the PageContainer - position: relative */
+/* Sized to match the rendered bitmap in pixels */
+.pdfb-page {
+    position: relative;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    margin: 0 auto;
+}
+
+/* ============== PAGE BITMAP ============== */
+/* This is the PageBitmap - the rendered PDF page */
+.pdfb-page-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* ============== OVERLAY ============== */
+/* This is the Overlay - position: absolute, top:0 left:0 */
+/* Same width/height as the bitmap */
+.pdfb-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* ============== FIELD BOXES ============== */
+/* Field boxes are children of the Overlay */
+/* position: absolute with top/left in PIXELS */
+.pdfb-field-box {
+    position: absolute;
+    pointer-events: auto;
+    box-sizing: border-box;
+}
+
+.pdfb-field-box input,
+.pdfb-field-box textarea,
+.pdfb-field-box select {
+    width: 100%;
+    height: 100%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.pdfb-field-box input:focus,
+.pdfb-field-box textarea:focus,
+.pdfb-field-box select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.pdfb-field-box.smart-field {
+    background: rgba(240, 240, 240, 0.9);
+    border: 1px dashed #999;
+}
+
+.pdfb-field-box.smart-field input {
+    background: rgba(230, 230, 230, 0.95);
+    font-weight: 500;
+    color: #333;
+}
+
+.pdfb-field-box.signature-field {
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pdfb-field-box.signature-field:hover {
+    border-color: #667eea;
+    background: rgba(240, 240, 255, 0.9);
+}
+
+.pdfb-field-box.signature-field.signed {
+    border-color: #28a745;
+    border-style: solid;
+}
+
+.pdfb-field-box.signature-field .signature-placeholder {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+}
+
+.pdfb-field-box.signature-field .signature-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.pdfb-field-box.checkbox-field {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdfb-field-box.checkbox-field input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.pdfb-field-box.parts-table-field {
+    background: white;
+    border: 1px solid #ddd;
+    overflow: auto;
+}
+
+.parts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.parts-table th,
+.parts-table td {
+    border: 1px solid #ddd;
+    padding: 4px 8px;
+    text-align: left;
+}
+
+.parts-table th {
+    background: #f5f5f5;
+    font-weight: 600;
+}
+
+.parts-table input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 12px;
+}
+
+.parts-table .add-row-btn,
+.parts-table .remove-row-btn {
+    padding: 2px 8px;
+    font-size: 10px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.parts-table .add-row-btn {
+    background: #28a745;
+    color: white;
+}
+
+.parts-table .remove-row-btn {
+    background: #dc3545;
+    color: white;
+}
+
+/* ============== FORM ACTIONS ============== */
+.form-actions {
+    background: white;
+    padding: 16px 24px;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    z-index: 100;
+}
+
+.btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 150px;
+    justify-content: center;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #e8e8e8;
+}
+
+/* ============== MODAL ============== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.modal-close:hover {
+    background: #f5f5f5;
+}
+
+.modal-body {
+    padding: 24px;
+    flex: 1;
+    overflow: auto;
+}
+
+.signature-canvas {
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    width: 100%;
+    height: 300px;
+    cursor: crosshair;
+    background: #fafafa;
+}
+
+.signature-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+/* ============== LOADING OVERLAY ============== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.loading-overlay.show {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loading-text {
+    margin-top: 16px;
+    color: #666;
+    font-size: 14px;
+}
+
+/* ============== RESPONSIVE ============== */
+@media (max-width: 768px) {
+    .form-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .pdfb-canvas-inner {
+        padding: 16px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .signature-canvas {
+        height: 200px;
+    }
+}

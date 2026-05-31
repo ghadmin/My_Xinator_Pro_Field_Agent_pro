@@ -101,30 +101,31 @@ class FormsController extends GetxController with ExceptionHandler {
 
       if (response != null && response.success && response.items.isNotEmpty) {
         // Save API response to Hive FIRST
-        await MyHive.saveFormsData(resourceId.toString(), response.toJson());
-        log('✅ Saved to Hive for resourceId: $resourceId');
+        // await MyHive.saveFormsData(resourceId.toString(), response.toJson());
+        // log('✅ Saved to Hive for resourceId: $resourceId');
 
         // Then acknowledge forms to remove from server queue
         if (response.count > 0) {
           final queueIds = response.items.map((item) => item.queueId).toList();
           if (queueIds.isNotEmpty) {
-            final ackSuccess = await acknowledgeForms(queueIds);
-            if (ackSuccess) {
-              log('✅ Successfully acknowledged ${queueIds.length} forms');
-            } else {
-              log(
-                '⚠️ Failed to acknowledge forms - will remain in server queue',
-              );
-            }
+            // final ackSuccess = await acknowledgeForms(queueIds);
+            // if (ackSuccess) {
+            //   log('✅ Successfully acknowledged ${queueIds.length} forms');
+            // } else {
+            //   log(
+            //     '⚠️ Failed to acknowledge forms - will remain in server queue',
+            //   );
+            // }
           }
         }
 
-        // Load from Hive to update UI
-        await _loadPendingFormsFromHive(resourceId.toString());
+        // Load from API directly to update UI (skip Hive)
+        await _loadPendingFormsFromApi(response.items);
       } else {
         log('⚠️ Poll returned no data');
-        // Still try to load from Hive
-        await _loadPendingFormsFromHive(resourceId.toString());
+        // Clear the pending forms list
+        pendingForms.clear();
+        hasPendingForms.value = false;
       }
     } catch (e) {
       log('❌ Poll error: $e');
@@ -135,6 +136,24 @@ class FormsController extends GetxController with ExceptionHandler {
     } finally {
       isPolling.value = false;
       hideLoading();
+    }
+  }
+
+  /// Load pending forms from API response directly
+  ///
+  /// Bypasses Hive and loads forms directly from API response
+  Future<void> _loadPendingFormsFromApi(List<FormQueueItem> items) async {
+    try {
+      // The items are already FormQueueItem objects from the API response
+      final forms = items.cast<FormQueueItem>().toList();
+
+      pendingForms.assignAll(forms);
+      hasPendingForms.value = true;
+      log('✅ Loaded ${forms.length} forms from API');
+    } catch (e) {
+      log('❌ Error loading forms from API: $e');
+      pendingForms.clear();
+      hasPendingForms.value = false;
     }
   }
 
@@ -176,6 +195,83 @@ class FormsController extends GetxController with ExceptionHandler {
       // On error, clear to show empty state
       pendingForms.clear();
       hasPendingForms.value = false;
+    }
+  }
+
+  /// Save form progress data to Hive
+  ///
+  /// Saves field values (text, signatures, etc.) for a specific form instance
+  /// This allows restoring user input when the form is opened again
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  /// [fieldValues] - Map of fieldId -> value (text, base64 signature, etc.)
+  /// [appointmentId] - The appointment ID for data association
+  Future<void> saveFormProgress(
+    int formInstanceId,
+    Map<String, dynamic> fieldValues, {
+    String? appointmentId,
+  }) async {
+    try {
+      await MyHive.saveFormProgress(
+        formInstanceId,
+        fieldValues,
+        appointmentId: appointmentId,
+      );
+      log(
+        '✅ Saved form progress for appointmentId=$appointmentId, formInstanceId=$formInstanceId (${fieldValues.length} fields)',
+      );
+    } catch (e) {
+      log('❌ Error saving form progress: $e');
+    }
+  }
+
+  /// Get saved form progress data from Hive
+  ///
+  /// Retrieves previously saved field values for a form instance
+  /// Returns empty map if no saved data exists or appointment ID doesn't match
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  /// [appointmentId] - The appointment ID to verify match
+  Map<String, dynamic> getFormProgress(
+    int formInstanceId, {
+    String? appointmentId,
+  }) {
+    try {
+      return MyHive.getFormProgress(
+        formInstanceId,
+        appointmentId: appointmentId,
+      );
+    } catch (e) {
+      log('❌ Error loading form progress: $e');
+      return {};
+    }
+  }
+
+  /// Clear saved form progress data from Hive
+  ///
+  /// Removes saved field values (typically after successful submission)
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  Future<void> clearFormProgress(int formInstanceId) async {
+    try {
+      await MyHive.clearFormProgress(formInstanceId);
+      log('✅ Cleared form progress for formInstanceId=$formInstanceId');
+    } catch (e) {
+      log('❌ Error clearing form progress: $e');
+    }
+  }
+
+  /// Check if form has saved progress
+  ///
+  /// Returns true if there's previously saved data for this form instance
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  bool hasFormProgress(int formInstanceId) {
+    try {
+      return MyHive.hasFormProgress(formInstanceId);
+    } catch (e) {
+      log('❌ Error checking form progress: $e');
+      return false;
     }
   }
 
@@ -324,7 +420,8 @@ class FormsController extends GetxController with ExceptionHandler {
           log('📄 Stamped PDF URL: ${response.stampedPdfUrl}');
         }
 
-        // Remove from acknowledged/pending lists and add to completed
+        // ✅ FIXED: Don't remove from pendingForms - update status instead
+        // This keeps forms visible in UI with "Submitted" status
         final form =
             acknowledgedForms.firstWhereOrNull(
               (f) => f.formInstanceId == formInstanceId,
@@ -334,9 +431,14 @@ class FormsController extends GetxController with ExceptionHandler {
             );
 
         if (form != null) {
-          acknowledgedForms.remove(form);
-          pendingForms.remove(form);
+          // Add to completed forms list (for historical tracking)
           completedForms.add(form);
+
+          // Keep in pendingForms but update could be done to show completed status
+          // The UI will show different status based on getFormStatus() method
+          log(
+            '✅ Form $formInstanceId submitted successfully, kept in pending list with completed status',
+          );
         }
 
         return true;
@@ -393,6 +495,54 @@ class FormsController extends GetxController with ExceptionHandler {
   /// Get the full URL for viewing a stamped PDF
   String getStampedPdfUrl(String relativePath) {
     return _formsApiService.getStampedPdfUrl(relativePath);
+  }
+
+  /// Send PDF via email to customer
+  ///
+  /// Sends the stamped PDF to the customer's email address
+  Future<bool> sendPdfEmail({
+    required String companyId,
+    int? formResponseId,
+    int? templateId,
+    String? appointmentId,
+    String? customerId,
+    String? toEmail,
+  }) async {
+    try {
+      showLoading();
+
+      final response = await _formsApiService.sendPdfEmail(
+        companyId: companyId,
+        formResponseId: formResponseId,
+        templateId: templateId,
+        appointmentId: appointmentId,
+        customerId: customerId,
+        toEmail: toEmail,
+      );
+
+      hideLoading();
+
+      if (response != null &&
+          response['success'] == true &&
+          response['emailError'] == null) {
+        MySnackBar.showInfoToast(
+          message: 'PDF sent to ${response['toEmail'] ?? 'customer'}',
+        );
+        log('✅ PDF email sent successfully: ${response['toEmail']}');
+        return true;
+      } else {
+        final error = response?['emailError'] ?? response?['error'] ?? 'Unknown error';
+        MySnackBar.showErrorToast(message: 'Failed to send email: $error');
+        log('❌ PDF email failed: $error');
+        return false;
+      }
+    } catch (e) {
+      hideLoading();
+      log('❌ Send PDF email error: $e');
+      MySnackBar.showErrorToast(message: 'Failed to send email: $e');
+      handleError(e);
+      return false;
+    }
   }
 
   // ============== APPOINTMENT FORMS METHODS ==============
@@ -551,6 +701,8 @@ class FormsController extends GetxController with ExceptionHandler {
   ///
   /// Fetches PDF from server and returns base64 encoded string
   /// suitable for data URLs in web views
+  ///
+  /// The PDF URL is constructed as: pdfBaseUrl + template['pdfFile']['path']
   Future<String?> getFormPdfAsBase64(String pdfUrl) async {
     try {
       if (!await NetworkConnectivity.isNetworkAvailable()) {
@@ -577,14 +729,154 @@ class FormsController extends GetxController with ExceptionHandler {
     }
   }
 
+  // ============== FORM PROGRESS (HIVE) - COMMENTED OUT ==============
+  /*
+  /// Save form progress data to Hive
+  ///
+  /// Saves field values (text, signatures, etc.) for a specific form instance
+  /// This allows restoring user input when the form is opened again
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  /// [fieldValues] - Map of fieldId -> value (text, base64 signature, etc.)
+  Future<void> saveFormProgress(int formInstanceId, Map<String, dynamic> fieldValues) async {
+    try {
+      await MyHive.saveFormProgress(formInstanceId, fieldValues);
+      log('✅ Saved form progress for formInstanceId=$formInstanceId (${fieldValues.length} fields)');
+    } catch (e) {
+      log('❌ Error saving form progress: $e');
+    }
+  }
+
+  /// Get saved form progress data from Hive
+  ///
+  /// Retrieves previously saved field values for a form instance
+  /// Returns empty map if no saved data exists or appointment ID doesn't match
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  /// [appointmentId] - The appointment ID to verify match
+  Map<String, dynamic> getFormProgress(
+    int formInstanceId, {
+    String? appointmentId,
+  }) {
+    try {
+      return MyHive.getFormProgress(
+        formInstanceId,
+        appointmentId: appointmentId,
+      );
+    } catch (e) {
+      log('❌ Error loading form progress: $e');
+      return {};
+    }
+  }
+
+  /// Clear saved form progress data from Hive
+  ///
+  /// Removes saved field values (typically after successful submission)
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  Future<void> clearFormProgress(int formInstanceId) async {
+    try {
+      await MyHive.clearFormProgress(formInstanceId);
+      log('✅ Cleared form progress for formInstanceId=$formInstanceId');
+    } catch (e) {
+      log('❌ Error clearing form progress: $e');
+    }
+  }
+
+  /// Check if form has saved progress
+  ///
+  /// Returns true if there's previously saved data for this form instance
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  bool hasFormProgress(int formInstanceId) {
+    try {
+      return MyHive.hasFormProgress(formInstanceId);
+    } catch (e) {
+      log('❌ Error checking form progress: $e');
+      return false;
+    }
+  }
+  */
+
+  // ============== API METHODS ==============
+  ///
+  /// According to the Smart Field Issue Solution PDF:
+  /// - smartFieldData is a sibling property to template.structure
+  /// - Both are JSON strings that need to be parsed
+  /// - Smart field values are keyed by field.id (e.g., "pdf_1776450913261_56q93m")
+  ///
+  /// Example API response structure:
+  /// items[i] = {
+  ///   queueId, formInstanceId, appointmentId, templateId, customerId, ...,
+  ///   template: { id, name, structure: "", ... },
+  ///   smartFieldData: "" // ← the values
+  /// }
+  Map<String, dynamic> parseSmartFieldData(FormQueueItem form) {
+    try {
+      if (form.smartFieldData.isEmpty) {
+        log('⚠️ No smartFieldData provided for form ${form.formInstanceId}');
+        return {};
+      }
+
+      final smartFieldData =
+          jsonDecode(form.smartFieldData) as Map<String, dynamic>;
+      log('✅ Parsed smartFieldData: ${smartFieldData.keys.toList()}');
+      return smartFieldData;
+    } catch (e) {
+      log('❌ Error parsing smartFieldData: $e');
+      return {};
+    }
+  }
+
+  /// Parse form template structure
+  ///
+  /// Parses the template.structure JSON string to extract field definitions
+  /// Returns a map of field.id -> field definition for easy lookup
+  Map<String, dynamic> parseTemplateStructure(FormQueueItem form) {
+    try {
+      if (form.template.structure.isEmpty) {
+        log(
+          '⚠️ No template structure provided for form ${form.formInstanceId}',
+        );
+        return {};
+      }
+
+      final structureData =
+          jsonDecode(form.template.structure) as Map<String, dynamic>;
+      final fields = structureData['fields'] as List? ?? [];
+
+      final fieldMap = <String, dynamic>{};
+      for (final field in fields) {
+        if (field is Map<String, dynamic>) {
+          final fieldId = field['id'] as String?;
+          if (fieldId != null) {
+            fieldMap[fieldId] = field;
+          }
+        }
+      }
+
+      log('✅ Parsed template structure: ${fieldMap.keys.length} fields');
+      return fieldMap;
+    } catch (e) {
+      log('❌ Error parsing template structure: $e');
+      return {};
+    }
+  }
+
   /// Get smart field values for a form
+  ///
+  /// Parses smartFieldData from the API response and merges with app-level values
   Future<Map<String, dynamic>> getSmartFieldValues(FormQueueItem form) async {
     try {
+      // Parse smartFieldData from API first (this is the primary source)
+      final apiSmartFields = parseSmartFieldData(form);
+
+      // Get app-level values as fallback
       final technicianName = await MySharedPref.getUserName() ?? 'Unknown';
       final technicianId = MySharedPref.getResourceID();
       final companyId = await MySharedPref.getCompanyID();
 
-      return {
+      final appSmartFields = {
         'technician_name': technicianName,
         'technician_id': technicianId?.toString() ?? '',
         'company_id': companyId ?? '',
@@ -596,6 +888,9 @@ class FormsController extends GetxController with ExceptionHandler {
         'date': DateTime.now().toIso8601String().split('T')[0],
         'datetime': DateTime.now().toIso8601String(),
       };
+
+      // Merge: API smart fields take precedence over app-level fields
+      return {...appSmartFields, ...apiSmartFields};
     } catch (e) {
       log('❌ Error getting smart field values: $e');
       return {};
@@ -639,8 +934,8 @@ class FormsController extends GetxController with ExceptionHandler {
         );
 
         if (value == null || value == '') {
-          // Skip empty values except for checkboxes (unchecked should still be sent)
-          if (type != 'checkbox') {
+          // Skip empty values except for checkboxes and checks (unchecked should still be sent)
+          if (type != 'checkbox' && type != 'check') {
             log('⏭️ Skipping empty field: $fieldId');
             continue;
           }
@@ -680,6 +975,16 @@ class FormsController extends GetxController with ExceptionHandler {
               fieldId: fieldId,
               label: label,
               value: isChecked,
+              position: position,
+            );
+            break;
+
+          case 'check':
+            final isCheckChecked = value == true || value == 'true';
+            response = FieldResponse.check(
+              fieldId: fieldId,
+              label: label,
+              value: isCheckChecked,
               position: position,
             );
             break;

@@ -56,41 +56,95 @@ class MyHive {
 
   /// Initialize appointments box
   static Future<void> initAppointmentsBox() async {
-    _appointmentBox = await Hive.openBox<Appointments>(_appointmentBoxName);
+    try {
+      _appointmentBox = await Hive.openBox<Appointments>(_appointmentBoxName);
+    } catch (error) {
+      kLog("Error opening appointmentBox: $error. Deleting and recreating.");
+      await Hive.deleteBoxFromDisk(_appointmentBoxName);
+      _appointmentBox = await Hive.openBox<Appointments>(_appointmentBoxName);
+    }
   }
 
   /// Initialize customer box
   static Future<void> initCustomersBox() async {
-    _customerBox = await Hive.openBox<CustomerModel>(_customerBoxName);
+    try {
+      _customerBox = await Hive.openBox<CustomerModel>(_customerBoxName);
+    } catch (error) {
+      kLog("Error opening customerBox: $error. Deleting and recreating.");
+      await Hive.deleteBoxFromDisk(_customerBoxName);
+      _customerBox = await Hive.openBox<CustomerModel>(_customerBoxName);
+    }
   }
 
   /// Initialize ticketStatusSetting box
   static Future<void> initTicketStatusSettingBox() async {
-    _ticketStatusSettingBox = await Hive.openBox<TicketStatusSettings>(
-      _ticketStatusSettingBoxName,
-    );
+    try {
+      _ticketStatusSettingBox = await Hive.openBox<TicketStatusSettings>(
+        _ticketStatusSettingBoxName,
+      );
+    } catch (error) {
+      kLog(
+        "Error opening ticketStatusSettingBox: $error. Deleting and recreating.",
+      );
+      await Hive.deleteBoxFromDisk(_ticketStatusSettingBoxName);
+      _ticketStatusSettingBox = await Hive.openBox<TicketStatusSettings>(
+        _ticketStatusSettingBoxName,
+      );
+    }
   }
 
   /// Initialize appointmentStatusSetting box
   static Future<void> initAppointmentStatusSettingBox() async {
-    _appointmentStatusSettingBox = await Hive.openBox<AppointmentStatusSetting>(
-      _appointmentStatusSettingBoxName,
-    );
+    try {
+      _appointmentStatusSettingBox =
+          await Hive.openBox<AppointmentStatusSetting>(
+            _appointmentStatusSettingBoxName,
+          );
+    } catch (error) {
+      kLog(
+        "Error opening appointmentStatusSettingBox: $error. Deleting and recreating.",
+      );
+      await Hive.deleteBoxFromDisk(_appointmentStatusSettingBoxName);
+      _appointmentStatusSettingBox =
+          await Hive.openBox<AppointmentStatusSetting>(
+            _appointmentStatusSettingBoxName,
+          );
+    }
   }
 
   /// Initialize tax box
   static Future<void> initTaxBox() async {
-    _taxBox = await Hive.openBox<TaxModel>(_taxBoxName);
+    try {
+      _taxBox = await Hive.openBox<TaxModel>(_taxBoxName);
+    } catch (error) {
+      kLog("Error opening taxBox: $error. Deleting and recreating.");
+      await Hive.deleteBoxFromDisk(_taxBoxName);
+      _taxBox = await Hive.openBox<TaxModel>(_taxBoxName);
+    }
   }
 
   /// Initialize item List box
   static Future<void> initItemListBox() async {
-    _itemListBox = await Hive.openBox<ItemListModel>(_itemListBoxName);
+    try {
+      _itemListBox = await Hive.openBox<ItemListModel>(_itemListBoxName);
+    } catch (error) {
+      kLog(
+        "Error opening itemListBox, file might be corrupted. Deleting and recreating: $error",
+      );
+      await Hive.deleteBoxFromDisk(_itemListBoxName);
+      _itemListBox = await Hive.openBox<ItemListModel>(_itemListBoxName);
+    }
   }
 
   /// Initialize forms box
   static Future<void> initFormsBox() async {
-    _formsBox = await Hive.openBox<dynamic>(_formsBoxName);
+    try {
+      _formsBox = await Hive.openBox<dynamic>(_formsBoxName);
+    } catch (error) {
+      kLog("Error opening formsBox: $error. Deleting and recreating.");
+      await Hive.deleteBoxFromDisk(_formsBoxName);
+      _formsBox = await Hive.openBox<dynamic>(_formsBoxName);
+    }
   }
 
   /// Save all appointments to the database
@@ -257,6 +311,114 @@ class MyHive {
       kLog("✅ Cleared all forms data");
     } catch (error) {
       kLog("❌ Error clearing all forms data: $error");
+    }
+  }
+
+  /// Save form progress data (field values, signatures, etc.)
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  /// [fieldValues] - Map of fieldId -> value (text, base64 signature, etc.)
+  static Future<void> saveFormProgress(
+    int formInstanceId,
+    Map<String, dynamic> fieldValues, {
+    String? appointmentId,
+  }) async {
+    try {
+      final progressKey =
+          'form_progress_${appointmentId ?? 'unknown'}_$formInstanceId';
+      final progressData = {
+        'formInstanceId': formInstanceId,
+        'appointmentId': appointmentId,
+        'fieldValues': fieldValues,
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+      await _formsBox.put(progressKey, progressData);
+      kLog(
+        "✅ Saved form progress for appointmentId: $appointmentId, formInstanceId: $formInstanceId (${fieldValues.length} fields)",
+      );
+    } catch (error) {
+      kLog("❌ Error saving form progress: $error");
+    }
+  }
+
+  /// Get saved form progress data
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  /// [appointmentId] - The appointment ID to verify match
+  /// Returns map of fieldId -> value, or empty map if no saved data exists or IDs don't match
+  static Map<String, dynamic> getFormProgress(
+    int formInstanceId, {
+    String? appointmentId,
+  }) {
+    try {
+      final progressKey =
+          'form_progress_${appointmentId ?? 'unknown'}_$formInstanceId';
+      final progressData = _formsBox.get(progressKey);
+
+      if (progressData != null && progressData is Map) {
+        // Verify appointmentId matches if provided
+        if (appointmentId != null) {
+          final savedAppointmentId = progressData['appointmentId'];
+          if (savedAppointmentId != appointmentId) {
+            kLog(
+              "⚠️ Appointment ID mismatch: expected $appointmentId, got $savedAppointmentId",
+            );
+            return {};
+          }
+        }
+
+        // Convert the Map to ensure String keys
+        final Map<String, dynamic> fieldValues = {};
+        final rawFieldValues = progressData['fieldValues'];
+
+        if (rawFieldValues != null && rawFieldValues is Map) {
+          // Convert each entry to ensure proper typing
+          rawFieldValues.forEach((key, value) {
+            if (key != null && value != null) {
+              fieldValues[key.toString()] = value;
+            }
+          });
+          kLog(
+            "✅ Loaded form progress for appointmentId: $appointmentId, formInstanceId: $formInstanceId (${fieldValues.length} saved fields)",
+          );
+          return fieldValues;
+        }
+      }
+
+      kLog(
+        "⚠️ No saved progress found for appointmentId: $appointmentId, formInstanceId: $formInstanceId",
+      );
+      return {};
+    } catch (error) {
+      kLog("❌ Error getting form progress: $error");
+      return {};
+    }
+  }
+
+  /// Clear saved form progress data
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  static Future<void> clearFormProgress(int formInstanceId) async {
+    try {
+      final progressKey = 'form_progress_$formInstanceId';
+      await _formsBox.delete(progressKey);
+      kLog("✅ Cleared form progress for formInstanceId: $formInstanceId");
+    } catch (error) {
+      kLog("❌ Error clearing form progress: $error");
+    }
+  }
+
+  /// Check if form has saved progress
+  ///
+  /// [formInstanceId] - Unique ID for the form instance
+  static bool hasFormProgress(int formInstanceId) {
+    try {
+      final progressKey = 'form_progress_$formInstanceId';
+      final progressData = _formsBox.get(progressKey);
+      return progressData != null;
+    } catch (error) {
+      kLog("❌ Error checking form progress: $error");
+      return false;
     }
   }
 }

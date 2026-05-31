@@ -337,6 +337,256 @@ class SmartFieldWidget extends StatelessWidget {
   }
 }
 
+class CheckboxesFieldWidget extends StatelessWidget {
+  final String id;
+  final String? header;
+  final List<String> options;
+  final List<String> selectedValues;
+  final ValueChanged<List<String>> onChanged;
+  final bool readOnly;
+
+  const CheckboxesFieldWidget({
+    super.key,
+    required this.id,
+    this.header,
+    required this.options,
+    required this.selectedValues,
+    required this.onChanged,
+    this.readOnly = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (header != null && header!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              header!,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+      Expanded(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: options.map((option) {
+              final isSelected = selectedValues.contains(option);
+              return InkWell(
+                onTap: readOnly ? null : () {
+                  final newValues = List<String>.from(selectedValues);
+                  if (isSelected) {
+                    newValues.remove(option);
+                  } else {
+                    newValues.add(option);
+                  }
+                  onChanged(newValues);
+                },
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: isSelected,
+                      onChanged: readOnly ? null : (v) {
+                        final newValues = List<String>.from(selectedValues);
+                        if (v == true) {
+                          newValues.add(option);
+                        } else {
+                          newValues.remove(option);
+                        }
+                        onChanged(newValues);
+                      },
+                    ),
+                    Expanded(
+                      child: Text(
+                        option,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: readOnly ? Colors.grey : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+}
+
+class RadioButtonsFieldWidget extends StatelessWidget {
+  final String id;
+  final String? header;
+  final List<String> options;
+  final String? selectedValue;
+  final ValueChanged<String?> onChanged;
+  final bool readOnly;
+
+  const RadioButtonsFieldWidget({
+    super.key,
+    required this.id,
+    this.header,
+    required this.options,
+    this.selectedValue,
+    required this.onChanged,
+    this.readOnly = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (header != null && header!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              header!,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+      Expanded(
+        child: RadioGroup<String>(
+          groupValue: selectedValue,
+          onChanged: readOnly ? (_) {} : onChanged,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: options.map((option) {
+                return Row(
+                  children: [
+                    Radio<String>(
+                      value: option,
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: readOnly ? null : () => onChanged(option),
+                        child: Text(
+                          option,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: readOnly ? Colors.grey : Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+}
+
+class DateFieldWidget extends StatelessWidget {
+  final String id;
+  final String? header;
+  final String? value;
+  final ValueChanged<String> onChanged;
+  final bool readOnly;
+
+  const DateFieldWidget({
+    super.key,
+    required this.id,
+    this.header,
+    this.value,
+    required this.onChanged,
+    this.readOnly = false,
+  });
+
+  Future<void> _selectDate(BuildContext context) async {
+    DateTime? pickedDate;
+
+    if (!readOnly) {
+      pickedDate = await showDatePicker(
+        context: context,
+        initialDate: value != null && value!.isNotEmpty
+            ? DateTime.tryParse(value!) ?? DateTime.now()
+            : DateTime.now(),
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100),
+      );
+
+      if (pickedDate != null) {
+        final formattedDate = '${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}';
+        onChanged(formattedDate);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (header != null && header!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              header!,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+      Expanded(
+        child: GestureDetector(
+          onTap: readOnly ? null : () => _selectDate(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[400]!),
+              borderRadius: BorderRadius.circular(4),
+              color: readOnly ? Colors.grey[100] : Colors.white,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: readOnly ? Colors.grey[400] : Colors.grey[600],
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    value?.isNotEmpty == true ? value! : 'Select Date',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: value?.isNotEmpty == true
+                          ? Colors.black
+                          : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+}
+
 class PartsTableWidget extends StatefulWidget {
   final String id;
   final String? header;

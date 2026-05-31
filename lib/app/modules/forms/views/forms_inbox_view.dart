@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,14 +8,13 @@ import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
 import '../../../components/drawer/custom_drawer.dart';
+import '../../../components/form_widget/pdf_dynamic_form.dart';
 import '../../../components/global-widgets/asset_image_box.dart';
 import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../models/forms/forms_models.dart';
 import '../controllers/forms_controller.dart';
-import 'dynamic_form_filling_view.dart';
-import '../models/form_field_model.dart';
 
 class FormsInboxView extends GetView<FormsController> {
   const FormsInboxView({super.key});
@@ -287,9 +287,11 @@ class FormsInboxView extends GetView<FormsController> {
         barrierDismissible: false,
       );
 
-      final templateData = await controller.getFormTemplate(form.template.id);
-      final template = FormTemplateModel.fromJson(templateData);
+      // Parse template structure
+      final templateStructure = jsonDecode(form.template.structure);
+      final fields = templateStructure['fields'] as List? ?? [];
 
+      // Get PDF bytes (assuming you have a method to fetch PDF)
       Uint8List? pdfBytes;
       try {
         pdfBytes = await controller.getFormPdfBytes(form.template.id);
@@ -297,23 +299,43 @@ class FormsInboxView extends GetView<FormsController> {
         debugPrint('Could not load PDF: $e');
       }
 
+      // Parse smart field data
+      final smartFieldValues = controller.parseSmartFieldData(form);
+
       Get.back();
 
-      final smartFieldValues = await controller.getSmartFieldValues(form);
+      if (pdfBytes != null) {
+        // Convert PDF bytes to base64
+        final pdfBase64 = base64Encode(pdfBytes);
 
-      await Get.to(
-        () => DynamicFormFillingView(
-          formId: form.queueId.toString(),
-          formTitle: form.template.name,
-          formDescription: form.template.description.isNotEmpty
-              ? form.template.description
-              : null,
-          template: template,
-          smartFieldValues: smartFieldValues,
-          initialFormData: {},
-          pdfBytes: pdfBytes,
-        ),
-      );
+        // Navigate to PDF Dynamic Form (Web-based viewer)
+        await Get.to(
+          () => PdfDynamicForm(
+            mode: PdfFormMode.viewer,
+            config: {
+              'pdfBase64': pdfBase64,
+              'form': {
+                'fields': fields,
+              },
+              'smartFieldValues': smartFieldValues,
+              'formInstanceId': form.formInstanceId,
+              'templateId': form.templateId,
+              'appointmentId': form.appointmentId,
+              'customerId': form.customerId,
+              'queueId': form.queueId,
+              'formName': form.template.name,
+            },
+          ),
+        );
+      } else {
+        Get.snackbar(
+          'Error',
+          'PDF not available for this form',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
     } catch (e) {
       Get.back();
       Get.snackbar(

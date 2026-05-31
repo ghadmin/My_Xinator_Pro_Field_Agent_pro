@@ -100,6 +100,11 @@ class _PdfFormBuilderState extends State<PdfFormBuilder> {
       label: 'Smart Field',
       icon: Icons.auto_awesome,
     ),
+    FieldType(
+      type: 'partstable',
+      label: 'Parts Table',
+      icon: Icons.table_chart,
+    ),
   ];
 
   @override
@@ -917,6 +922,271 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
     _pdfBase64 = widget.config['pdfBase64'] as String?;
     _smartFieldValues =
         widget.config['smartFieldValues'] as Map<String, dynamic>?;
+
+    // Load saved form progress from Hive
+    _loadSavedFormProgress();
+  }
+
+  /// Load saved form progress from Hive
+  Future<void> _loadSavedFormProgress() async {
+    try {
+      final formInstanceId = widget.config['formInstanceId'] as int?;
+      final appointmentId = widget.config['appointmentId'] as String?;
+
+      kLog('🔍 Looking for saved form progress:');
+      kLog('  formInstanceId: $formInstanceId');
+      kLog('  appointmentId: $appointmentId');
+
+      if (formInstanceId == null || appointmentId == null) {
+        kLog('⚠️ formInstanceId or appointmentId is null, skipping load');
+        return;
+      }
+
+      // Check if FormsController is registered
+      if (!Get.isRegistered<FormsController>()) {
+        kLog('⚠️ FormsController not registered, skipping form progress load');
+        // Try to register it if not available
+        try {
+          Get.put(FormsController());
+          kLog('✅ Registered FormsController');
+        } catch (e) {
+          kLog('❌ Could not register FormsController: $e');
+          return;
+        }
+      }
+
+      final formsController = Get.find<FormsController>();
+      final savedProgress = formsController.getFormProgress(
+        formInstanceId,
+        appointmentId: appointmentId,
+      );
+
+      kLog('📦 Saved progress found: ${savedProgress.isNotEmpty} (${savedProgress.length} fields)');
+
+      if (savedProgress.isNotEmpty) {
+        setState(() {
+          formValues.addAll(savedProgress);
+        });
+        kLog(
+          '✅ Loaded ${savedProgress.length} saved field values for appointmentId=$appointmentId, formInstanceId=$formInstanceId',
+        );
+        kLog('📋 Saved fields: ${savedProgress.keys.toList()}');
+
+        // After loading saved data, update the web view
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          kLog('🔄 Restoring saved fields to web view...');
+          _restoreSavedFieldsToWebView(savedProgress);
+        });
+      } else {
+        kLog('⚠️ No saved progress found for appointmentId=$appointmentId, formInstanceId=$formInstanceId');
+      }
+    } catch (e) {
+      kLog('❌ Error loading form progress: $e');
+    }
+  }
+
+  /// Restore saved field values to the web view
+  Future<void> _restoreSavedFieldsToWebView(
+    Map<String, dynamic> savedValues,
+  ) async {
+    try {
+      kLog('🔄 _restoreSavedFieldsToWebView called with ${savedValues.length} values');
+
+      if (_webViewController == null) {
+        kLog('⚠️ Web view controller is null, waiting...');
+        // Wait for web view to be created
+        await Future.delayed(const Duration(milliseconds: 1000));
+        if (_webViewController == null) {
+          kLog('❌ Web view controller still null after delay, giving up');
+          return;
+        }
+      }
+
+      int restoredCount = 0;
+
+      // Restore each saved field value to the web view
+      for (final entry in savedValues.entries) {
+        final fieldId = entry.key;
+        final value = entry.value;
+
+        if (value == null || value.toString().isEmpty) {
+          kLog('⏭️ Skipping empty field: $fieldId');
+          continue;
+        }
+
+        kLog('🔧 Restoring field: $fieldId (value length: ${value.toString().length})');
+        await _updateWebViewField(fieldId, value);
+        restoredCount++;
+      }
+
+      kLog('✅ Restored $restoredCount/${savedValues.length} field values to web view');
+    } catch (e) {
+      kLog('❌ Error restoring fields to web view: $e');
+    }
+  }
+
+  /// Update a single field in the web view
+  Future<void> _updateWebViewField(String fieldId, dynamic value) async {
+    try {
+      if (_webViewController == null) {
+        kLog('❌ Web view controller is null in _updateWebViewField');
+        return;
+      }
+
+      // Check if this is a parts table (List of Maps)
+      if (value is List && value.isNotEmpty && value.first is Map) {
+        kLog('🔧 Restoring parts table: $fieldId (${value.length} rows)');
+        // Convert to JSON for JavaScript
+        final partsDataJson = jsonEncode(value);
+        await _webViewController!.evaluateJavascript(
+          source: "restorePartsTableData('$fieldId', $partsDataJson);",
+        );
+        kLog('✅ Parts table restored: $fieldId');
+        return;
+      }
+
+      final valueString = value.toString();
+      kLog('🔧 _updateWebViewField: $fieldId (isSignature: ${valueString.length > 1000})');
+
+      // Check if this is a signature (base64 image data)
+      final isSignature =
+          valueString.contains('data:image') ||
+          valueString.startsWith('iVBORw0KGgo') ||
+          valueString.length > 1000;
+
+      // Use window object to avoid escaping issues for large data
+      await _webViewController!.evaluateJavascript(
+        source: "window.__tempFieldValue = `${valueString.replaceAll('`', '\\`')}`;",
+      );
+
+      // Call JavaScript to update the field
+      await _webViewController!.evaluateJavascript(
+        source:
+            '''
+        (function() {
+          const fieldId = '$fieldId';
+          const value = window.__tempFieldValue;
+          delete window.__tempFieldValue;
+
+          console.log('Restoring field:', fieldId, 'value length:', value ? value.length : 0);
+
+          // Find the field container
+          const fieldElement = document.querySelector('[data-field-id="' + fieldId + '"]');
+          if (!fieldElement) {
+            console.log('❌ Field not found: ' + fieldId);
+            return;
+          }
+
+          // Get the field container (might be the signature area div)
+          const container = fieldElement.closest('.field-overlay');
+          if (!container) {
+            console.log('❌ Container not found for: ' + fieldId);
+            return;
+          }
+
+          $isSignature
+            ? _restoreSignatureField(container, fieldId, value)
+            : _restoreRegularField(fieldElement, value);
+
+          function _restoreSignatureField(container, fieldId, base64Data) {
+            console.log('🖼️ Restoring signature for:', fieldId);
+
+            // Check if base64 data URL or raw base64
+            let dataUrl = base64Data;
+            if (!dataUrl.startsWith('data:image')) {
+              // It's raw base64, add the data URL prefix
+              dataUrl = 'data:image/png;base64,' + base64Data;
+            }
+
+            // Clear container and create new image
+            container.innerHTML = '';
+
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            img.style.cursor = 'pointer';
+
+            // Add click handler to reopen signature dialog
+            img.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              openSignature(fieldId);
+            });
+
+            container.appendChild(img);
+            console.log('✅ Signature restored for: ' + fieldId);
+          }
+
+          function _restoreRegularField(field, value) {
+            console.log('📝 Restoring regular field:', field.tagName, 'value:', value);
+
+            if (field.tagName === 'INPUT') {
+              const inputType = field.type.toLowerCase();
+              if (inputType === 'checkbox' || inputType === 'radio') {
+                field.checked = (value === true || value === 'true');
+              } else {
+                field.value = value;
+              }
+            } else if (field.tagName === 'TEXTAREA') {
+              field.value = value;
+            } else if (field.tagName === 'SELECT') {
+              field.value = value;
+            }
+          }
+        })();
+      ''',
+      );
+
+      kLog('✅ JavaScript executed for field: $fieldId');
+    } catch (e) {
+      kLog('❌ Error updating field $fieldId: $e');
+    }
+  }
+
+  /// Save form progress to Hive
+  ///
+  /// Auto-saves current form field values to Hive storage
+  /// This allows restoring user input when the form is opened again
+  Future<void> _saveFormProgress() async {
+    try {
+      final formInstanceId = widget.config['formInstanceId'] as int?;
+      final appointmentId = widget.config['appointmentId'] as String?;
+
+      if (formInstanceId == null || appointmentId == null) {
+        kLog('⚠️ formInstanceId or appointmentId is null, skipping save');
+        return;
+      }
+
+      // Check if FormsController is registered
+      if (!Get.isRegistered<FormsController>()) {
+        kLog('⚠️ FormsController not registered, skipping form progress save');
+        // Try to register it if not available
+        try {
+          Get.put(FormsController());
+          kLog('✅ Registered FormsController');
+        } catch (e) {
+          kLog('❌ Could not register FormsController: $e');
+          return;
+        }
+      }
+
+      final formsController = Get.find<FormsController>();
+
+      // Create a copy of current form values
+      final currentValues = Map<String, dynamic>.from(formValues);
+
+      // Save to Hive with appointmentId
+      await formsController.saveFormProgress(
+        formInstanceId,
+        currentValues,
+        appointmentId: appointmentId,
+      );
+      kLog('✅ Auto-saved form progress for appointmentId=$appointmentId, formInstanceId=$formInstanceId (${currentValues.length} fields)');
+    } catch (e) {
+      kLog('❌ Error saving form progress: $e');
+    }
   }
 
   @override
@@ -995,6 +1265,25 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
         .field-overlay .image-area .placeholder { font-size: 10px; color: #2196F3; text-align: center; padding: 4px; }
         .field-overlay .file-area { width: 100%; height: 100%; border: 1px dashed #2196F3; background: rgba(255, 255, 255, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
         .field-overlay .file-area .file-name { font-size: 10px; color: #2196F3; text-align: center; padding: 4px; word-break: break-all; }
+        .field-overlay .parts-table { width: 100%; height: 100%; border: 1px solid #2196F3; background: white; display: flex; flex-direction: column; font-size: 10px; overflow: hidden; }
+        .field-overlay .parts-table .table-header { display: flex; background: #f0f0f0; border-bottom: 1px solid #2196F3; font-weight: 600; flex-shrink: 0; }
+        .field-overlay .parts-table .table-header .header-cell { padding: 4px; text-align: center; border-right: 1px solid #ddd; }
+        .field-overlay .parts-table .table-header .header-cell:last-child { border-right: none; }
+        .field-overlay .parts-table .table-body { flex: 1; overflow-y: auto; }
+        .field-overlay .parts-table .table-row { display: flex; border-bottom: 1px solid #eee; }
+        .field-overlay .parts-table .table-row:last-child { border-bottom: none; }
+        .field-overlay .parts-table .table-row .row-cell { padding: 2px; border-right: 1px solid #eee; }
+        .field-overlay .parts-table .table-row .row-cell:last-child { border-right: none; }
+        .field-overlay .parts-table .table-row .cell-qty { width: 40px; flex-shrink: 0; }
+        .field-overlay .parts-table .table-row .cell-desc { flex: 1; }
+        .field-overlay .parts-table .table-row .cell-action { width: 24px; flex-shrink: 0; }
+        .field-overlay .parts-table .table-row input { width: 100%; height: 100%; border: none; font-size: 10px; padding: 2px; box-sizing: border-box; }
+        .field-overlay .parts-table .table-row input:focus { outline: none; background: #f9f9f9; }
+        .field-overlay .parts-table .table-row .btn-delete { width: 100%; height: 100%; border: none; background: none; color: #ef5350; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .field-overlay .parts-table .table-row .btn-delete:disabled { color: #ccc; cursor: not-allowed; }
+        .field-overlay .parts-table .table-footer { display: flex; border-top: 1px solid #2196F3; padding: 4px; flex-shrink: 0; }
+        .field-overlay .parts-table .btn-add { flex: 1; padding: 4px 8px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .field-overlay .parts-table .btn-add:disabled { background: #ccc; cursor: not-allowed; }
         .required-field::before { content: '*'; color: red; margin-right: 2px; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -1099,6 +1388,45 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     wrapper.appendChild(input);
                     break;
                 }
+                case 'check': {
+                    const checkContainer = document.createElement('div');
+                    checkContainer.className = 'checkbox-item';
+                    checkContainer.style.display = 'flex';
+                    checkContainer.style.alignItems = 'center';
+                    checkContainer.style.gap = '8px';
+                    checkContainer.style.height = '100%';
+
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.id = 'check_' + field.id;
+                    input.dataset.fieldId = field.id;
+                    input.style.width = 'auto';
+                    input.style.height = 'auto';
+                    input.style.margin = '0';
+
+                    const label = document.createElement('label');
+                    label.htmlFor = 'check_' + field.id;
+                    label.textContent = field.header || field.label || field.placeholder || '';
+                    label.style.flex = '1';
+                    label.style.cursor = 'pointer';
+                    label.style.fontSize = '12px';
+                    label.style.whiteSpace = 'nowrap';
+                    label.style.overflow = 'hidden';
+                    label.style.textOverflow = 'ellipsis';
+
+                    input.onchange = function() {
+                        const value = this.checked ? 'true' : 'false';
+                        updateFieldValue(field.id, value);
+                    };
+
+                    checkContainer.appendChild(input);
+                    checkContainer.appendChild(label);
+                    wrapper.appendChild(checkContainer);
+
+                    // Set initial value to false
+                    updateFieldValue(field.id, 'false');
+                    break;
+                }
                 case 'radio': {
                     const radioGroup = document.createElement('div');
                     radioGroup.className = 'radio-group';
@@ -1201,8 +1529,238 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     });
                     break;
                 }
+                case 'partstable': {
+                    const maxRows = field.maxRows || 10;
+                    const table = document.createElement('div');
+                    table.className = 'parts-table';
+                    table.dataset.fieldId = field.id;
+                    table.id = 'partsTable_' + field.id;
+
+                    // Create table header
+                    const header = document.createElement('div');
+                    header.className = 'table-header';
+                    header.innerHTML = `
+                        <div class="header-cell cell-qty">Qty</div>
+                        <div class="header-cell cell-desc">Description</div>
+                        <div class="header-cell cell-action"></div>
+                    `;
+                    table.appendChild(header);
+
+                    // Create table body
+                    const body = document.createElement('div');
+                    body.className = 'table-body';
+                    body.id = 'partsTableBody_' + field.id;
+                    table.appendChild(body);
+
+                    // Create table footer with add button
+                    const footer = document.createElement('div');
+                    footer.className = 'table-footer';
+                    const addButton = document.createElement('button');
+                    addButton.className = 'btn-add';
+                    addButton.type = 'button';
+                    addButton.innerHTML = '<span>+</span> Add Row';
+                    addButton.onclick = function() { addPartsTableRow(field.id, maxRows); };
+                    footer.appendChild(addButton);
+                    table.appendChild(footer);
+
+                    // Add initial empty row
+                    addPartsTableRow(field.id, maxRows);
+
+                    wrapper.appendChild(table);
+                    break;
+                }
             }
             return wrapper;
+        }
+
+        // Add a new row to the parts table
+        function addPartsTableRow(fieldId, maxRows) {
+            const body = document.getElementById('partsTableBody_' + fieldId);
+            if (!body) return;
+
+            const currentRows = body.querySelectorAll('.table-row').length;
+            if (currentRows >= maxRows) return;
+
+            const rowIndex = currentRows;
+            const row = document.createElement('div');
+            row.className = 'table-row';
+            row.dataset.rowIndex = rowIndex;
+
+            const qtyCell = document.createElement('div');
+            qtyCell.className = 'row-cell cell-qty';
+            const qtyInput = document.createElement('input');
+            qtyInput.type = 'number';
+            qtyInput.className = 'input-qty';
+            qtyInput.placeholder = '0';
+            qtyInput.onchange = function() { updatePartsTableCell(fieldId, rowIndex, 'qty', this.value); };
+            qtyCell.appendChild(qtyInput);
+            row.appendChild(qtyCell);
+
+            const descCell = document.createElement('div');
+            descCell.className = 'row-cell cell-desc';
+            const descInput = document.createElement('input');
+            descInput.type = 'text';
+            descInput.className = 'input-desc';
+            descInput.placeholder = 'Item description';
+            descInput.onchange = function() { updatePartsTableCell(fieldId, rowIndex, 'description', this.value); };
+            descCell.appendChild(descInput);
+            row.appendChild(descCell);
+
+            const actionCell = document.createElement('div');
+            actionCell.className = 'row-cell cell-action';
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-delete';
+            deleteBtn.type = 'button';
+            deleteBtn.textContent = '×';
+            deleteBtn.disabled = (currentRows === 0);
+            deleteBtn.onclick = function() { removePartsTableRow(fieldId, rowIndex); };
+            actionCell.appendChild(deleteBtn);
+            row.appendChild(actionCell);
+
+            body.appendChild(row);
+
+            // Update the data
+            if (!window.partsTableData) {
+                window.partsTableData = {};
+            }
+            if (!window.partsTableData[fieldId]) {
+                window.partsTableData[fieldId] = [];
+            }
+            window.partsTableData[fieldId].push({qty: '', description: ''});
+            updateFieldValue(fieldId, window.partsTableData[fieldId]);
+        }
+
+        // Remove a row from the parts table
+        function removePartsTableRow(fieldId, rowIndex) {
+            const body = document.getElementById('partsTableBody_' + fieldId);
+            if (!body) return;
+
+            const rows = body.querySelectorAll('.table-row');
+            if (rows.length <= 1) return; // Keep at least one row
+
+            var rowToRemove = null;
+            rows.forEach(function(row) {
+                if (row.dataset.rowIndex == rowIndex) {
+                    rowToRemove = row;
+                }
+            });
+
+            if (rowToRemove) {
+                rowToRemove.remove();
+            }
+
+            // Reindex remaining rows
+            var remainingRows = body.querySelectorAll('.table-row');
+            remainingRows.forEach(function(row, index) {
+                row.dataset.rowIndex = index;
+                var deleteBtn = row.querySelector('.btn-delete');
+                if (deleteBtn) {
+                    deleteBtn.disabled = (index == 0);
+                    deleteBtn.onclick = function() { removePartsTableRow(fieldId, index); };
+                }
+                var qtyInput = row.querySelector('.input-qty');
+                if (qtyInput) {
+                    qtyInput.onchange = function() { updatePartsTableCell(fieldId, index, 'qty', this.value); };
+                }
+                var descInput = row.querySelector('.input-desc');
+                if (descInput) {
+                    descInput.onchange = function() { updatePartsTableCell(fieldId, index, 'description', this.value); };
+                }
+            });
+
+            // Update the data
+            if (window.partsTableData && window.partsTableData[fieldId]) {
+                window.partsTableData[fieldId].splice(rowIndex, 1);
+                updateFieldValue(fieldId, window.partsTableData[fieldId]);
+            }
+        }
+
+        // Update a cell value in the parts table
+        function updatePartsTableCell(fieldId, rowIndex, key, value) {
+            if (!window.partsTableData) {
+                window.partsTableData = {};
+            }
+            if (!window.partsTableData[fieldId]) {
+                window.partsTableData[fieldId] = [];
+            }
+            if (!window.partsTableData[fieldId][rowIndex]) {
+                window.partsTableData[fieldId][rowIndex] = {qty: '', description: ''};
+            }
+            window.partsTableData[fieldId][rowIndex][key] = value;
+            updateFieldValue(fieldId, window.partsTableData[fieldId]);
+        }
+
+        // Restore parts table data from saved form progress
+        function restorePartsTableData(fieldId, data) {
+            if (!Array.isArray(data) || data.length == 0) {
+                // Add default empty row if no data
+                addPartsTableRow(fieldId, 10);
+                return;
+            }
+
+            var body = document.getElementById('partsTableBody_' + fieldId);
+            if (!body) {
+                // Table not yet created, wait for it
+                setTimeout(function() { restorePartsTableData(fieldId, data); }, 100);
+                return;
+            }
+
+            // Clear existing rows
+            body.innerHTML = '';
+
+            // Initialize data storage
+            if (!window.partsTableData) {
+                window.partsTableData = {};
+            }
+            window.partsTableData[fieldId] = [];
+
+            // Add rows from saved data
+            data.forEach(function(rowData, index) {
+                var qty = rowData.qty || '';
+                var description = rowData.description || '';
+
+                var row = document.createElement('div');
+                row.className = 'table-row';
+                row.dataset.rowIndex = index;
+
+                var qtyCell = document.createElement('div');
+                qtyCell.className = 'row-cell cell-qty';
+                var qtyInput = document.createElement('input');
+                qtyInput.type = 'number';
+                qtyInput.className = 'input-qty';
+                qtyInput.placeholder = '0';
+                qtyInput.value = qty;
+                qtyInput.onchange = function() { updatePartsTableCell(fieldId, index, 'qty', this.value); };
+                qtyCell.appendChild(qtyInput);
+                row.appendChild(qtyCell);
+
+                var descCell = document.createElement('div');
+                descCell.className = 'row-cell cell-desc';
+                var descInput = document.createElement('input');
+                descInput.type = 'text';
+                descInput.className = 'input-desc';
+                descInput.placeholder = 'Item description';
+                descInput.value = description;
+                descInput.onchange = function() { updatePartsTableCell(fieldId, index, 'description', this.value); };
+                descCell.appendChild(descInput);
+                row.appendChild(descCell);
+
+                var actionCell = document.createElement('div');
+                actionCell.className = 'row-cell cell-action';
+                var deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-delete';
+                deleteBtn.type = 'button';
+                deleteBtn.textContent = '×';
+                deleteBtn.disabled = (index == 0);
+                deleteBtn.onclick = function() { removePartsTableRow(fieldId, index); };
+                actionCell.appendChild(deleteBtn);
+                row.appendChild(actionCell);
+
+                body.appendChild(row);
+                window.partsTableData[fieldId].push({qty: qty, description: description});
+            });
+
+            updateFieldValue(fieldId, window.partsTableData[fieldId]);
         }
 
         async function getSmartFieldValue(field) {
@@ -1275,18 +1833,51 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
         }
 
         function updateSignatureImage(fieldId, imageDataUrl) {
-            const field = document.querySelector('[data-field-id="' + fieldId + '"]');
-            if (field) {
-                const container = field.closest('.field-overlay');
-                if (container) {
-                    const img = document.createElement('img');
-                    img.src = imageDataUrl;
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'contain';
-                    container.innerHTML = '';
-                    container.appendChild(img);
+            console.log('updateSignatureImage called for:', fieldId);
+
+            // Try to find the signature area or any element with this fieldId
+            let container = document.querySelector('.signature-area[data-field-id="' + fieldId + '"]');
+
+            // If not found, try to find any element with the fieldId and get its container
+            if (!container) {
+                const field = document.querySelector('[data-field-id="' + fieldId + '"]');
+                if (field) {
+                    container = field.closest('.field-overlay');
                 }
+            }
+
+            if (container) {
+                console.log('Found container for:', fieldId);
+
+                // Remove all existing content
+                while (container.firstChild) {
+                    container.removeChild(container.firstChild);
+                }
+
+                // Create new image
+                const img = document.createElement('img');
+                img.src = imageDataUrl;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'contain';
+                img.style.cursor = 'pointer';
+                img.style.display = 'block';
+
+                // Add click handler to reopen signature dialog
+                img.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openSignature(fieldId);
+                });
+
+                container.appendChild(img);
+
+                // Update the data-field-id on the container for next time
+                container.setAttribute('data-field-id', fieldId);
+
+                console.log('✅ Signature image updated for:', fieldId, 'image src length:', img.src.length);
+            } else {
+                console.log('❌ Container not found for:', fieldId);
             }
         }
 
@@ -1342,6 +1933,9 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
           final value = args[1];
           setState(() => formValues[fieldId] = value);
           kLog('Field updated: $fieldId = $value');
+
+          // Auto-save form progress to Hive
+          _saveFormProgress();
         }
         return true;
       },
@@ -1379,17 +1973,26 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
           if (result == true &&
               capturedSignatureData != null &&
               capturedSignatureData!.isNotEmpty) {
-            kLog('Updating signature on PDF: $fieldId');
+            kLog('🔄 UPDATING signature on PDF: $fieldId');
 
-            // Update the UI
+            // Update formValues immediately WITHOUT setState to avoid rebuild
+            formValues[fieldId] = capturedSignatureData;
+
+            // Use window object to pass large base64 string without escaping issues
             await controller.evaluateJavascript(
-              source:
-                  "updateSignatureImage('$fieldId', '$capturedSignatureData')",
+              source: "window.__tempSignature = `$capturedSignatureData`;",
             );
 
-            // Store the value in formValues
-            setState(() => formValues[fieldId] = capturedSignatureData);
+            // Update the UI using the window object
+            await controller.evaluateJavascript(
+              source: "if (typeof updateSignatureImage === 'function') { updateSignatureImage('$fieldId', window.__tempSignature); } delete window.__tempSignature;",
+            );
+
             kLog('✅ Signature updated successfully');
+
+            // Auto-save form progress to Hive
+            await _saveFormProgress();
+
             return capturedSignatureData;
           } else {
             kLog('⚠️ No signature data or dialog cancelled');
@@ -1429,6 +2032,10 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
             // Store the value
             setState(() => formValues[fieldId] = dataUrl);
             kLog('Image updated: $fieldId');
+
+            // Auto-save form progress to Hive
+            _saveFormProgress();
+
             return dataUrl;
           }
         }
@@ -1459,6 +2066,10 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
               },
             );
             kLog('File updated: $fieldId = $fileName');
+
+            // Auto-save form progress to Hive
+            _saveFormProgress();
+
             return fileName;
           }
         }
@@ -1595,6 +2206,10 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
 
     try {
       // Get the FormsController
+      if (!Get.isRegistered<FormsController>()) {
+        Get.put(FormsController());
+        kLog('✅ Registered FormsController for form submission');
+      }
       final formsController = Get.find<FormsController>();
 
       // Build a FormQueueItem-like object for submission
@@ -1634,6 +2249,11 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Form submitted successfully')),
         );
+
+        // ✅ Keep saved form progress after submission
+        // The form data remains in Hive for future reference
+        kLog('✅ Form submitted - saved progress retained in Hive');
+
         // Navigate back
         if (!mounted) return;
         Navigator.pop(context);
