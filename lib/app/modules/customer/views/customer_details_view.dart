@@ -400,6 +400,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/url_launcher.dart';
+import '../../../utils/simple_phone_formatter.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/text_widget.dart';
@@ -522,7 +523,7 @@ class CustomerDetailsView extends GetView<CustomerController> {
           // Mobile
           _callTile(
             "Mobile",
-            controller.mobileNumber != '' ? controller.mobileNumber : "N/A",
+            controller.mobileNumber != '' ? PhoneDisplayFormatter.format(controller.mobileNumber) : "N/A",
             theme,
           ),
           MainDivider(),
@@ -530,7 +531,7 @@ class CustomerDetailsView extends GetView<CustomerController> {
           // Phone
           _callTile(
             "Phone",
-            controller.phoneNumber != '' ? controller.phoneNumber : "N/A",
+            controller.phoneNumber != '' ? PhoneDisplayFormatter.format(controller.phoneNumber) : "N/A",
             theme,
           ),
         ],

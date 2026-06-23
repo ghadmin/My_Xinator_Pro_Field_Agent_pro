@@ -116,6 +116,7 @@ class AppointmentController extends GetxController
   RxInt selectedAptIndex = 0.obs;
   final selectedSite = Rx<SiteModel?>(null);
   RxBool isAppointmentEmpty = false.obs;
+  final selectedDateRange = Rx<DateTimeRange?>(null);
 
   RxInt selectedStatusValue = 0.obs; //khel
   RxInt selectedTicketStatusValue = 0.obs; //khel
@@ -135,7 +136,11 @@ class AppointmentController extends GetxController
 
   Future<void> getAllNotes({bool showLoader = true}) async {
     try {
-      if (showLoader) showLoading();
+      kLog('getAllNotes showLoader: $showLoader');
+      if (showLoader) {
+        kLog('getAllNotes calling showLoading');
+        showLoading();
+      }
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
         var companyID = await MySharedPref.getCompanyID();
@@ -185,7 +190,11 @@ class AppointmentController extends GetxController
   /// Get customer site details using siteId from selected appointment
   Future<void> getCustomerSite({bool showLoader = true}) async {
     try {
-      if (showLoader) showLoading();
+      kLog('getCustomerSite showLoader: $showLoader');
+      if (showLoader) {
+        kLog('getCustomerSite calling showLoading');
+        showLoading();
+      }
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
         final appointment = selectedAppointment.value;
@@ -290,7 +299,7 @@ class AppointmentController extends GetxController
         appointmentId: appointment.apptID!,
       );
       noteController.text = appointment.note ?? "";
-      await getCustomerSite(showLoader: false);
+      await getCustomerSite(showLoader: true);
       contactName =
           "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
 
@@ -481,6 +490,7 @@ class AppointmentController extends GetxController
 
       if (range != null) {
         selectedDate.value = null;
+        selectedDateRange.value = range;
         selectedDateString(
           '${DateFormat("MM/dd/yyyy").format(range.start)} - ${DateFormat("MM/dd/yyyy").format(range.end)}',
         );
@@ -494,7 +504,12 @@ class AppointmentController extends GetxController
 
     final list = appointments.where((p0) {
       final date = DateFormat("yyyy/MM/dd hh:mm a").parse(p0.startDateTime!);
-      return date.isAfter(range.start.subtract(const Duration(days: 1))) &&
+      // Filter out Pending and Scheduled status appointments
+      final validStatus =
+          p0.status?.statusName != "Pending" &&
+          p0.status?.statusName != "Scheduled";
+      return validStatus &&
+          date.isAfter(range.start.subtract(const Duration(days: 1))) &&
           date.isBefore(range.end.add(const Duration(days: 1)));
     }).toList();
 
@@ -835,11 +850,25 @@ class AppointmentController extends GetxController
         }
 
         appointments.assignAll(
-          (response as List).map((e) => Appointments.fromJson(e)).toList(),
+          (response as List)
+              .map((e) => Appointments.fromJson(e))
+              .where(
+                (apt) =>
+                    apt.status?.statusName != "Pending" &&
+                    apt.status?.statusName != "Scheduled",
+              )
+              .toList(),
         );
 
         sortedAppointments.assignAll(
-          (response).map((e) => Appointments.fromJson(e)).toList()
+          response
+              .map((e) => Appointments.fromJson(e))
+              .where(
+                (apt) =>
+                    apt.status?.statusName != "Pending" &&
+                    apt.status?.statusName != "Scheduled",
+              )
+              .toList()
             ..sort((a, b) {
               final aDate = DateFormat(
                 "yyyy/MM/dd hh:mm a",
@@ -851,7 +880,11 @@ class AppointmentController extends GetxController
             }),
         );
         if (sortTextController.text.isNotEmpty) {
-          sortAppointmentsText(); // re-apply filter after refresh
+          sortAppointmentsText(); // re-apply text filter after refresh
+        } else if (selectedDateRange.value != null) {
+          sortAppointmentsInRange(selectedDateRange.value!); // re-apply date range filter after refresh
+        } else if (selectedDate.value != null) {
+          sortAppointmentsDate(); // re-apply single date filter after refresh
         }
 
         await MyHive.saveAllAppointments(appointments);
@@ -878,8 +911,10 @@ class AppointmentController extends GetxController
           showEmptyWidget();
         }
       }
-    } catch (e) {
+    } catch (e, s) {
       hideLoading();
+      kLog(e);
+      kLog(s);
       MySnackBar.showErrorToast(message: "$e");
     }
   }
@@ -915,7 +950,18 @@ class AppointmentController extends GetxController
       }
 
       extendedAppointments.assignAll(
-        (response as List).map((e) => Appointments.fromJson(e)).toList(),
+        ((response as List).map((e) => Appointments.fromJson(e)).toList()
+              ..where(
+                (apt) =>
+                    apt.status?.statusName != "Pending" &&
+                    apt.status?.statusName != "Scheduled",
+              ))
+            .where(
+              (apt) =>
+                  apt.status?.statusName != "Pending" &&
+                  apt.status?.statusName != "Scheduled",
+            )
+            .toList(),
       );
 
       hideLoading();
@@ -924,6 +970,7 @@ class AppointmentController extends GetxController
 
   void clearSort() {
     selectedDate(null);
+    selectedDateRange(null);
     selectedDateString('');
     sortedAppointments.clear();
     sortedAppointments.addAll(appointments);
@@ -1057,7 +1104,11 @@ class AppointmentController extends GetxController
         final formattedSelectedDate = DateFormat(
           "yyyy/MM/dd",
         ).format(selectedDate.value!);
-        return formattedDate == formattedSelectedDate;
+        // Filter out Pending and Scheduled status appointments
+        final validStatus =
+            p0.status?.statusName != "Pending" &&
+            p0.status?.statusName != "Scheduled";
+        return validStatus && formattedDate == formattedSelectedDate;
       }).toList();
       sortedAppointments.clear();
       if (list.isEmpty) {
@@ -1193,6 +1244,7 @@ class AppointmentController extends GetxController
 
   @override
   void onReady() async {
+    kLog('onReady called - showing loader');
     showLoading();
     await getAppointments();
     await settingController.getAppointmentStatus();

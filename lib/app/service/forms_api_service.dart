@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:myxinator_pro_field_agent_pro/app/service/REST/api_urls.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 
 import '../models/forms/forms_models.dart';
 import 'REST/dio_client.dart';
@@ -26,7 +28,7 @@ class FormsApiService {
         url: ApiUrl.pollUrl(companyId, resourceId),
         headers: ApiUrl.authHeaders,
       );
-
+      kLog('📋 Poll response: ${jsonEncode(response)}');
       if (response == null) {
         log('⚠️ Poll response is null');
         return null;
@@ -194,6 +196,73 @@ class FormsApiService {
     }
   }
 
+  /// Get form response by ID
+  ///
+  /// GET /FaProSync.ashx?op=getResponse&companyId={X}&formResponseId={Y}
+  Future<Map<String, dynamic>?> getResponse({
+    required String companyId,
+    required int formResponseId,
+  }) async {
+    try {
+      log(
+        '📋 Getting form response: companyId=$companyId, formResponseId=$formResponseId',
+      );
+
+      final response = await _dioClient.get(
+        url: ApiUrl.getResponseUrl(companyId, formResponseId),
+        headers: ApiUrl.authHeaders,
+      );
+
+      if (response == null) {
+        log('⚠️ Get response returned null');
+        return null;
+      }
+
+      log('✅ Form response loaded successfully');
+      return response;
+    } catch (e) {
+      log('❌ Get response error: $e');
+      rethrow;
+    }
+  }
+
+  /// Get form response by natural key (templateId + appointmentId + customerId)
+  ///
+  /// GET /FaProSync.ashx?op=getResponse&companyId={X}&templateId={Y}&appointmentId={Z}&customerId={W}
+  Future<Map<String, dynamic>?> getResponseByNaturalKey({
+    required String companyId,
+    required int templateId,
+    required String appointmentId,
+    required String customerId,
+  }) async {
+    try {
+      log(
+        '📋 Getting form response by natural key: companyId=$companyId, templateId=$templateId, appointmentId=$appointmentId, customerId=$customerId',
+      );
+
+      final response = await _dioClient.get(
+        url: ApiUrl.getResponseByNaturalKeyUrl(
+          companyId: companyId,
+          templateId: templateId,
+          appointmentId: appointmentId,
+          customerId: customerId,
+        ),
+        headers: ApiUrl.authHeaders,
+      );
+
+      if (response == null) {
+        log('⚠️ Get response by natural key returned null');
+        return null;
+      }
+
+      log('✅ Form response loaded successfully');
+      return response;
+    } catch (e) {
+      log('❌ Get response by natural key error: $e');
+      rethrow;
+    }
+  }
+
   /// Get PDF bytes for form rendering
   ///
   /// Downloads the PDF file and returns as Uint8List
@@ -258,16 +327,15 @@ class FormsApiService {
     required String siteId,
   }) async {
     try {
-      log('📄 Listing files: companyId=$companyId, customerId=$customerId, siteId=$siteId');
+      log(
+        '📄 Listing files: companyId=$companyId, customerId=$customerId, siteId=$siteId',
+      );
 
       final url = ApiUrl.buildFaProMobileUrl(
         resource: 'files',
         operation: 'list',
         companyId: companyId,
-        extraParams: {
-          'customerId': customerId,
-          'siteId': siteId,
-        },
+        extraParams: {'customerId': customerId, 'siteId': siteId},
       );
 
       final response = await _dioClient.get(
@@ -399,7 +467,9 @@ class FormsApiService {
     String? toEmail,
   }) async {
     try {
-      log('📧 Sending PDF email: companyId=$companyId, formResponseId=$formResponseId, templateId=$templateId, appointmentId=$appointmentId');
+      log(
+        '📧 Sending PDF email: companyId=$companyId, formResponseId=$formResponseId, templateId=$templateId, appointmentId=$appointmentId',
+      );
 
       // Build request body - prefer formResponseId (Shape A), fall back to natural key (Shape B)
       final body = <String, dynamic>{'companyId': companyId};
@@ -407,13 +477,17 @@ class FormsApiService {
       if (formResponseId != null && formResponseId > 0) {
         // Shape A - preferred when you have the formResponseId from submit
         body['formResponseId'] = formResponseId;
-      } else if (templateId != null && appointmentId != null && customerId != null) {
+      } else if (templateId != null &&
+          appointmentId != null &&
+          customerId != null) {
         // Shape B - natural key; resolves the latest matching FormResponse
         body['templateId'] = templateId;
         body['appointmentId'] = appointmentId;
         body['customerId'] = customerId;
       } else {
-        log('⚠️ Invalid emailPdf request: missing formResponseId or natural key');
+        log(
+          '⚠️ Invalid emailPdf request: missing formResponseId or natural key',
+        );
         return null;
       }
 
@@ -430,9 +504,13 @@ class FormsApiService {
 
       if (response != null) {
         if (response['success'] == true) {
-          log('✅ PDF email sent successfully: to=${response['toEmail']}, status=${response['emailStatus']}');
+          log(
+            '✅ PDF email sent successfully: to=${response['toEmail']}, status=${response['emailStatus']}',
+          );
         } else {
-          log('⚠️ PDF email failed: ${response['emailError'] ?? response['error']}');
+          log(
+            '⚠️ PDF email failed: ${response['emailError'] ?? response['error']}',
+          );
         }
         return response;
       }
@@ -441,6 +519,90 @@ class FormsApiService {
       return null;
     } catch (e) {
       log('❌ Send PDF email error: $e');
+      rethrow;
+    }
+  }
+
+  /// Send custom email with optional PDF attachment
+  ///
+  /// POST /fsm/FaProSync.ashx?op=sendEmail
+  /// Allows complete control over email content and optional PDF attachment
+  ///
+  /// Per API spec (2026-06-02):
+  /// - Required: companyId, to, subject, body
+  /// - Optional: cc, customerId, formResponseId (for PDF attachment)
+  /// - Returns success=true ONLY when pipeline returns "Sent"
+  /// - Soft send failures return success=false with emailStatus/emailError
+  Future<Map<String, dynamic>?> sendCustomEmail({
+    required String companyId,
+    required String to,
+    required String subject,
+    required String body,
+    String? cc,
+    String? customerId,
+    int? formResponseId,
+  }) async {
+    try {
+      log(
+        '📧 Sending custom email: companyId=$companyId, to=$to, subject=$subject, cc=$cc, formResponseId=$formResponseId',
+      );
+
+      // Build request body per API specification
+      final requestBody = <String, dynamic>{
+        'companyId': companyId,
+        'to': to,
+        'subject': subject,
+        'body': body,
+      };
+
+      // Add optional CC (comma-separated recipients supported)
+      if (cc != null && cc.isNotEmpty) {
+        requestBody['cc'] = cc;
+      }
+
+      // Add customerId for EmailHistory linking and [token] replacement
+      if (customerId != null && customerId.isNotEmpty) {
+        requestBody['customerId'] = customerId;
+      }
+
+      // Attach stamped PDF if formResponseId provided
+      // PDF is attached if present on disk; missing PDF doesn't block send (attached=false)
+      if (formResponseId != null && formResponseId > 0) {
+        requestBody['formResponseId'] = formResponseId;
+      }
+
+      final response = await _dioClient.post(
+        url: '${ApiUrl.currentBaseUrl}/FaProSync.ashx?op=sendEmail',
+        body: requestBody,
+        headers: ApiUrl.authHeaders,
+      );
+
+      if (response != null) {
+        // Log full response for debugging
+        log(
+          '📧 Email API response: ${response['success']}, toEmail=${response['toEmail']}, '
+          'attached=${response['attached']}, status=${response['emailStatus']}',
+        );
+
+        if (response['success'] == true) {
+          log(
+            '✅ Custom email sent successfully: to=${response['toEmail']}, subject=${response['subject']}, '
+            'attached=${response['attached']}, status=${response['emailStatus']}',
+          );
+        } else {
+          // Soft send failure (provider rejected but no exception)
+          log(
+            '⚠️ Custom email soft failed: status=${response['emailStatus']}, '
+            'error=${response['emailError'] ?? response['error']}',
+          );
+        }
+        return response;
+      }
+
+      log('⚠️ Custom email response is null');
+      return null;
+    } catch (e) {
+      log('❌ Send custom email error: $e');
       rethrow;
     }
   }

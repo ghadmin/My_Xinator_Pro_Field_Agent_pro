@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:ionicons/ionicons.dart';
+// import 'package:ionicons/ionicons.dart'; // Replaced with Icons class due to compatibility issues
 import 'package:lottie/lottie.dart';
 
 import '../../../config/translations/strings_enum.dart';
@@ -56,7 +56,7 @@ class EmptyWidget extends StatelessWidget {
                 padding: EdgeInsets.zero,
               ),
               child: Icon(
-                Ionicons.refresh,
+                Icons.refresh,
                 size: 24,
                 color: theme.primaryColor.withValues(alpha: 0.7),
               ),

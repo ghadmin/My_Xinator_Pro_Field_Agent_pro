@@ -14,6 +14,7 @@ import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/splash_container.dart'
     show SplashContainer;
 import '../../../routes/app_pages.dart';
+import '../../../utils/simple_phone_formatter.dart';
 import '../../appointment/controllers/appointment_controller.dart';
 import '../controllers/invoice_controller.dart';
 import '../models/qbo_class_dropdown_model.dart';
@@ -4048,6 +4049,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         theme: theme,
                         textEditingController: controller.tuaMobileController,
                         textInputType: TextInputType.phone,
+                        inputFormatters: [PhoneInputFormatter()],
                       ),
                       SizedBox(height: 12.sp),
                       GeneralTextField(

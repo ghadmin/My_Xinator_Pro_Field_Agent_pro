@@ -55,7 +55,7 @@ class MySnackBar {
           ],
         ),
         backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
         margin: EdgeInsets.only(
           top: MediaQuery.of(context).padding.top + 10,
           left: 10,
@@ -111,7 +111,7 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
+        behavior: SnackBarBehavior.fixed,
         margin: EdgeInsets.only(
           top: MediaQuery.of(context).padding.top + 10,
           left: 10,

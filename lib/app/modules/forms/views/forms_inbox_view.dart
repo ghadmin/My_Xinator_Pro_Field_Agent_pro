@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
+import '../../../../utils/klog.dart';
 import '../../../components/drawer/custom_drawer.dart';
 import '../../../components/form_widget/pdf_dynamic_form.dart';
 import '../../../components/global-widgets/asset_image_box.dart';
@@ -15,6 +16,7 @@ import '../../../components/global-widgets/splash_container.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../models/forms/forms_models.dart';
 import '../controllers/forms_controller.dart';
+import '../binding/form_bindings.dart';
 
 class FormsInboxView extends GetView<FormsController> {
   const FormsInboxView({super.key});
@@ -291,7 +293,7 @@ class FormsInboxView extends GetView<FormsController> {
       final templateStructure = jsonDecode(form.template.structure);
       final fields = templateStructure['fields'] as List? ?? [];
 
-      // Get PDF bytes (assuming you have a method to fetch PDF)
+      // Get PDF bytes
       Uint8List? pdfBytes;
       try {
         pdfBytes = await controller.getFormPdfBytes(form.template.id);
@@ -301,6 +303,32 @@ class FormsInboxView extends GetView<FormsController> {
 
       // Parse smart field data
       final smartFieldValues = controller.parseSmartFieldData(form);
+
+      // Check if form is submitted and fetch response data
+      List? responses;
+      bool isReadOnly = false;
+
+      if (form.instanceStatus == 'Submitted' ||
+          controller.getFormStatus(form) == 'Submitted') {
+        isReadOnly = true;
+
+        // Try to fetch the submitted form response
+        try {
+          final responseData = await controller.getFormResponseByNaturalKey(
+            templateId: form.templateId,
+            appointmentId: form.appointmentId,
+            customerId: form.customerId,
+          );
+
+          if (responseData != null && responseData.success == true) {
+            responses = responseData.responses;
+            kLog('Loaded form response with ${responses?.length ?? 0} field values');
+          }
+        } catch (e) {
+          debugPrint('Could not load form response: $e');
+          // Continue without response data - form will be empty
+        }
+      }
 
       Get.back();
 
@@ -324,8 +352,12 @@ class FormsInboxView extends GetView<FormsController> {
               'customerId': form.customerId,
               'queueId': form.queueId,
               'formName': form.template.name,
+              // Add response data for pre-populating fields
+              if (responses != null) 'responses': responses,
+              'isReadOnly': isReadOnly,
             },
           ),
+          binding: FormBindings(),
         );
       } else {
         Get.snackbar(

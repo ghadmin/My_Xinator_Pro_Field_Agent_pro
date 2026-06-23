@@ -4,6 +4,7 @@ import 'package:get/get_state_manager/src/simple/get_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/appointment_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/widgets/warm_organic_components.dart';
+import 'package:myxinator_pro_field_agent_pro/app/utils/simple_phone_formatter.dart';
 import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
 
 class CustomerLocationScreen extends GetView<AppointmentController> {
@@ -121,7 +122,7 @@ class CustomerLocationScreen extends GetView<AppointmentController> {
                                 .isNotEmpty)
                           _buildInfoRow(
                             title: 'Phone',
-                            value: controller.selectedSite.value!.phoneNumber!,
+                            value: PhoneDisplayFormatter.format(controller.selectedSite.value!.phoneNumber!),
                           ),
 
                         if (controller.selectedSite.value?.email != null &&

@@ -4,6 +4,7 @@ import '../../../../utils/klog.dart';
 import '../../../modules/appointment/models/appointment_model.dart';
 import '../../../modules/customer/models/customer_model.dart';
 import '../../../modules/invoice/models/tax_model.dart';
+import '../../../modules/item/models/item_group_model.dart';
 import '../../../modules/item/models/item_list_model.dart';
 import '../../../modules/settings/models/appointment_status_setting.dart';
 import '../../../modules/settings/models/ticket_status_model.dart';
@@ -19,6 +20,7 @@ class MyHive {
   static late Box<AppointmentStatusSetting> _appointmentStatusSettingBox;
   static late Box<TaxModel> _taxBox;
   static late Box<ItemListModel> _itemListBox;
+  static late Box<ItemGroupModel> _itemGroupListBox;
   static late Box<dynamic> _formsBox;
 
   // Box name, it's like the table name
@@ -28,6 +30,7 @@ class MyHive {
   static const String _ticketStatusSettingBoxName = 'ticketStatusSetting';
   static const String _taxBoxName = 'tax';
   static const String _itemListBoxName = 'itemListBox';
+  static const String _itemGroupListBoxName = 'itemGroupListBox';
   static const String _appointmentStatusSettingBoxName =
       'appointmentStatusSetting';
   static const String _formsBoxName = 'forms';
@@ -51,6 +54,7 @@ class MyHive {
     await initAppointmentStatusSettingBox();
     await initTaxBox();
     await initItemListBox();
+    await initItemGroupListBox();
     await initFormsBox();
   }
 
@@ -136,6 +140,19 @@ class MyHive {
     }
   }
 
+  /// Initialize item group List box
+  static Future<void> initItemGroupListBox() async {
+    try {
+      _itemGroupListBox = await Hive.openBox<ItemGroupModel>(_itemGroupListBoxName);
+    } catch (error) {
+      kLog(
+        "Error opening itemGroupListBox, file might be corrupted. Deleting and recreating: $error",
+      );
+      await Hive.deleteBoxFromDisk(_itemGroupListBoxName);
+      _itemGroupListBox = await Hive.openBox<ItemGroupModel>(_itemGroupListBoxName);
+    }
+  }
+
   /// Initialize forms box
   static Future<void> initFormsBox() async {
     try {
@@ -213,6 +230,16 @@ class MyHive {
     }
   }
 
+  /// Save all itemGroupList to the database
+  static Future<void> saveItemGroupList(List<ItemGroupModel> itemGroups) async {
+    try {
+      await _itemGroupListBox.clear();
+      await _itemGroupListBox.addAll(itemGroups);
+    } catch (error) {
+      kLog("Error saving item groups: $error");
+    }
+  }
+
   /// Get all appointments from Hive
   static List<Appointments> getAllAppointments() {
     final recipes = _appointmentBox.values.toList();
@@ -248,6 +275,12 @@ class MyHive {
   static List<ItemListModel> getAllItemList() {
     final item = _itemListBox.values.toList();
     return item.cast<ItemListModel>();
+  }
+
+  /// Get all itemGroupList from Hive
+  static List<ItemGroupModel> getAllItemGroups() {
+    final itemGroups = _itemGroupListBox.values.toList();
+    return itemGroups.cast<ItemGroupModel>();
   }
 
   /// Save forms data for a specific resource
@@ -318,7 +351,7 @@ class MyHive {
   ///
   /// [formInstanceId] - Unique ID for the form instance
   /// [fieldValues] - Map of fieldId -> value (text, base64 signature, etc.)
-  static Future<void> saveFormProgress(
+  static Future<void>   saveFormProgress(
     int formInstanceId,
     Map<String, dynamic> fieldValues, {
     String? appointmentId,

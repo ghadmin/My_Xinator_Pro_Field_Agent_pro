@@ -879,8 +879,10 @@ class _PdfFormBuilderState extends State<PdfFormBuilder> {
   }
 
   String _escapeJson(dynamic json) {
+    // Properly escape JSON for use in JavaScript
+    // jsonEncode already handles escaping, we just need to escape script tags
     final str = jsonEncode(json);
-    return str.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
+    return str.replaceAll('</', '<\\/'); // Only escape script closing tags
   }
 }
 
@@ -914,7 +916,10 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
   List? _fields;
   String? _pdfBase64;
   Map<String, dynamic>? _smartFieldValues;
+  List? _responses; // Form response data for pre-populating fields
   double _currentZoom = 0.75;
+  bool _isReadOnly = false; // View-only mode for submitted forms
+  bool _isLoadingData = true; // Loading state for API data
 
   @override
   void initState() {
@@ -922,281 +927,346 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
     _pdfBase64 = widget.config['pdfBase64'] as String?;
     _smartFieldValues =
         widget.config['smartFieldValues'] as Map<String, dynamic>?;
+    _responses = widget.config['responses'] as List?;
+    if (_responses == null && widget.config['formResponse'] != null) {
+      final formResponse =
+          widget.config['formResponse'] as Map<String, dynamic>;
+      _responses = formResponse['responses'] as List?;
+      kLog(
+        '📥 Extracted responses from formResponse: ${_responses?.length ?? 0}',
+      );
+    }
+    _isReadOnly = widget.config['isReadOnly'] as bool? ?? false;
 
-    // Load saved form progress from Hive
-    _loadSavedFormProgress();
+    // Load saved form progress from API (will also handle response initialization)
+    _loadFormProgress();
   }
 
-  /// Load saved form progress from Hive
-  Future<void> _loadSavedFormProgress() async {
+  /// Load saved form progress from API
+  /// Called on init to restore previously submitted form data
+  Future<void> _loadFormProgress() async {
     try {
-      final formInstanceId = widget.config['formInstanceId'] as int?;
+      final templateId = widget.config['templateId'] as int?;
       final appointmentId = widget.config['appointmentId'] as String?;
+      final customerId = widget.config['customerId'] as String?;
 
-      kLog('🔍 Looking for saved form progress:');
-      kLog('  formInstanceId: $formInstanceId');
-      kLog('  appointmentId: $appointmentId');
-
-      if (formInstanceId == null || appointmentId == null) {
-        kLog('⚠️ formInstanceId or appointmentId is null, skipping load');
+      if (templateId == null || appointmentId == null || customerId == null) {
+        kLog('⚠️ Missing required data for API call, skipping progress load');
+        _setLoadingComplete();
         return;
-      }
-
-      // Check if FormsController is registered
-      if (!Get.isRegistered<FormsController>()) {
-        kLog('⚠️ FormsController not registered, skipping form progress load');
-        // Try to register it if not available
-        try {
-          Get.put(FormsController());
-          kLog('✅ Registered FormsController');
-        } catch (e) {
-          kLog('❌ Could not register FormsController: $e');
-          return;
-        }
       }
 
       final formsController = Get.find<FormsController>();
-      final savedProgress = formsController.getFormProgress(
-        formInstanceId,
+
+      kLog(
+        '📡 Fetching form data from API: templateId=$templateId, appointmentId=$appointmentId, customerId=$customerId',
+      );
+
+      // Fetch form response from API by natural key
+      final responseData = await formsController.getFormResponseByNaturalKey(
+        templateId: templateId,
         appointmentId: appointmentId,
+        customerId: customerId,
       );
+      if (responseData != null && responseData.success == true) {
+        final responses = responseData.responses;
+        if (responses != null && responses.isNotEmpty) {
+          // Process responses and populate formValues
+          for (final response in responses) {
+            final fieldId = response.fieldId;
+            final value = response.value;
+            final type = response.type;
+            kLog("type d $type");
+            if (fieldId != null && value != null) {
+              // Handle different field types
+              switch (type) {
+                case 'signature':
+                case 'image':
+                  // For signature/image, ensure proper data URL format
+                  if (value.startsWith('data:image')) {
+                    formValues[fieldId] = value;
+                  } else {
+                    formValues[fieldId] = 'data:image/png;base64,$value';
+                  }
+                  break;
 
-      kLog('📦 Saved progress found: ${savedProgress.isNotEmpty} (${savedProgress.length} fields)');
+                case 'checkbox':
+                case 'check':
+                  // Convert checkbox values to boolean
+                  formValues[fieldId] = value == 'true' || value == '1';
+                  break;
 
-      if (savedProgress.isNotEmpty) {
-        setState(() {
-          formValues.addAll(savedProgress);
-        });
-        kLog(
-          '✅ Loaded ${savedProgress.length} saved field values for appointmentId=$appointmentId, formInstanceId=$formInstanceId',
-        );
-        kLog('📋 Saved fields: ${savedProgress.keys.toList()}');
+                case 'number':
+                  // Parse numeric values
+                  formValues[fieldId] = num.tryParse(value) ?? 0;
+                  break;
 
-        // After loading saved data, update the web view
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          kLog('🔄 Restoring saved fields to web view...');
-          _restoreSavedFieldsToWebView(savedProgress);
-        });
-      } else {
-        kLog('⚠️ No saved progress found for appointmentId=$appointmentId, formInstanceId=$formInstanceId');
-      }
-    } catch (e) {
-      kLog('❌ Error loading form progress: $e');
-    }
-  }
+                case 'date':
+                  // Keep date as string (already in proper format)
+                  formValues[fieldId] = value;
+                  break;
 
-  /// Restore saved field values to the web view
-  Future<void> _restoreSavedFieldsToWebView(
-    Map<String, dynamic> savedValues,
-  ) async {
-    try {
-      kLog('🔄 _restoreSavedFieldsToWebView called with ${savedValues.length} values');
+                case 'dropdown':
+                case 'radio':
+                  // Keep dropdown/radio values as strings
+                  formValues[fieldId] = value;
+                  break;
 
-      if (_webViewController == null) {
-        kLog('⚠️ Web view controller is null, waiting...');
-        // Wait for web view to be created
-        await Future.delayed(const Duration(milliseconds: 1000));
-        if (_webViewController == null) {
-          kLog('❌ Web view controller still null after delay, giving up');
-          return;
-        }
-      }
+                case 'textarea':
+                  // Keep textarea content as string
+                  formValues[fieldId] = value;
+                  break;
 
-      int restoredCount = 0;
+                case 'text':
+                  // Keep text field content as string
+                  formValues[fieldId] = value;
+                  break;
 
-      // Restore each saved field value to the web view
-      for (final entry in savedValues.entries) {
-        final fieldId = entry.key;
-        final value = entry.value;
+                case 'file':
+                  // Handle file uploads - value should be JSON string with file info
+                  try {
+                    if (value.contains('data:') || value.contains('{')) {
+                      formValues[fieldId] = value;
+                    } else {
+                      formValues[fieldId] = value;
+                    }
+                  } catch (e) {
+                    formValues[fieldId] = value;
+                  }
+                  break;
 
-        if (value == null || value.toString().isEmpty) {
-          kLog('⏭️ Skipping empty field: $fieldId');
-          continue;
-        }
+                case 'smartfield':
+                  // Keep smartfield values as strings
+                  formValues[fieldId] = value;
+                  break;
 
-        kLog('🔧 Restoring field: $fieldId (value length: ${value.toString().length})');
-        await _updateWebViewField(fieldId, value);
-        restoredCount++;
-      }
+                case 'partstable':
+                  // Handle parts table - value should be JSON array
+                  try {
+                    if (value.startsWith('[')) {
+                      formValues[fieldId] = value;
+                    } else {
+                      formValues[fieldId] = value;
+                    }
+                  } catch (e) {
+                    kLog('⚠️ Error parsing parts table for $fieldId: $e');
+                    formValues[fieldId] = value;
+                  }
+                  break;
 
-      kLog('✅ Restored $restoredCount/${savedValues.length} field values to web view');
-    } catch (e) {
-      kLog('❌ Error restoring fields to web view: $e');
-    }
-  }
-
-  /// Update a single field in the web view
-  Future<void> _updateWebViewField(String fieldId, dynamic value) async {
-    try {
-      if (_webViewController == null) {
-        kLog('❌ Web view controller is null in _updateWebViewField');
-        return;
-      }
-
-      // Check if this is a parts table (List of Maps)
-      if (value is List && value.isNotEmpty && value.first is Map) {
-        kLog('🔧 Restoring parts table: $fieldId (${value.length} rows)');
-        // Convert to JSON for JavaScript
-        final partsDataJson = jsonEncode(value);
-        await _webViewController!.evaluateJavascript(
-          source: "restorePartsTableData('$fieldId', $partsDataJson);",
-        );
-        kLog('✅ Parts table restored: $fieldId');
-        return;
-      }
-
-      final valueString = value.toString();
-      kLog('🔧 _updateWebViewField: $fieldId (isSignature: ${valueString.length > 1000})');
-
-      // Check if this is a signature (base64 image data)
-      final isSignature =
-          valueString.contains('data:image') ||
-          valueString.startsWith('iVBORw0KGgo') ||
-          valueString.length > 1000;
-
-      // Use window object to avoid escaping issues for large data
-      await _webViewController!.evaluateJavascript(
-        source: "window.__tempFieldValue = `${valueString.replaceAll('`', '\\`')}`;",
-      );
-
-      // Call JavaScript to update the field
-      await _webViewController!.evaluateJavascript(
-        source:
-            '''
-        (function() {
-          const fieldId = '$fieldId';
-          const value = window.__tempFieldValue;
-          delete window.__tempFieldValue;
-
-          console.log('Restoring field:', fieldId, 'value length:', value ? value.length : 0);
-
-          // Find the field container
-          const fieldElement = document.querySelector('[data-field-id="' + fieldId + '"]');
-          if (!fieldElement) {
-            console.log('❌ Field not found: ' + fieldId);
-            return;
-          }
-
-          // Get the field container (might be the signature area div)
-          const container = fieldElement.closest('.field-overlay');
-          if (!container) {
-            console.log('❌ Container not found for: ' + fieldId);
-            return;
-          }
-
-          $isSignature
-            ? _restoreSignatureField(container, fieldId, value)
-            : _restoreRegularField(fieldElement, value);
-
-          function _restoreSignatureField(container, fieldId, base64Data) {
-            console.log('🖼️ Restoring signature for:', fieldId);
-
-            // Check if base64 data URL or raw base64
-            let dataUrl = base64Data;
-            if (!dataUrl.startsWith('data:image')) {
-              // It's raw base64, add the data URL prefix
-              dataUrl = 'data:image/png;base64,' + base64Data;
-            }
-
-            // Clear container and create new image
-            container.innerHTML = '';
-
-            const img = document.createElement('img');
-            img.src = dataUrl;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'contain';
-            img.style.cursor = 'pointer';
-
-            // Add click handler to reopen signature dialog
-            img.addEventListener('click', function(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              openSignature(fieldId);
-            });
-
-            container.appendChild(img);
-            console.log('✅ Signature restored for: ' + fieldId);
-          }
-
-          function _restoreRegularField(field, value) {
-            console.log('📝 Restoring regular field:', field.tagName, 'value:', value);
-
-            if (field.tagName === 'INPUT') {
-              const inputType = field.type.toLowerCase();
-              if (inputType === 'checkbox' || inputType === 'radio') {
-                field.checked = (value === true || value === 'true');
-              } else {
-                field.value = value;
+                default:
+                  // Default handling for unknown types
+                  formValues[fieldId] = value;
+                  kLog('⚠️ Unknown field type: $type for $fieldId');
+                  break;
               }
-            } else if (field.tagName === 'TEXTAREA') {
-              field.value = value;
-            } else if (field.tagName === 'SELECT') {
-              field.value = value;
             }
           }
-        })();
-      ''',
-      );
+          kLog('📥 Loaded form data from API: ${formValues.length} fields');
 
-      kLog('✅ JavaScript executed for field: $fieldId');
+          kLog(
+            'loaded form data from api details $formValues',
+          );
+        } else {
+          kLog('📭 No form responses found in API data');
+        }
+      } else {
+        kLog('⚠️ API returned no data or failed');
+      }
     } catch (e) {
-      kLog('❌ Error updating field $fieldId: $e');
+      kLog('❌ Error loading form progress from API: $e');
+    } finally {
+      _setLoadingComplete();
+    }
+  }
+
+  /// Set loading complete and trigger UI update
+  void _setLoadingComplete() {
+    if (mounted) {
+      setState(() {
+        _isLoadingData = false;
+      });
+      kLog('✅ Form data loading complete');
     }
   }
 
   /// Save form progress to Hive
-  ///
-  /// Auto-saves current form field values to Hive storage
-  /// This allows restoring user input when the form is opened again
-  Future<void> _saveFormProgress() async {
-    try {
-      final formInstanceId = widget.config['formInstanceId'] as int?;
-      final appointmentId = widget.config['appointmentId'] as String?;
+  /// Called automatically when field values change
+  // void _saveFormProgress() {
+  //   try {
+  //     final formInstanceId = widget.config['formInstanceId'] as int?;
+  //     final appointmentId = widget.config['appointmentId'] as String?;
 
-      if (formInstanceId == null || appointmentId == null) {
-        kLog('⚠️ formInstanceId or appointmentId is null, skipping save');
-        return;
-      }
+  //     if (formInstanceId == null) {
+  //       kLog('⚠️ No formInstanceId in config, skipping progress save');
+  //       return;
+  //     }
 
-      // Check if FormsController is registered
-      if (!Get.isRegistered<FormsController>()) {
-        kLog('⚠️ FormsController not registered, skipping form progress save');
-        // Try to register it if not available
-        try {
-          Get.put(FormsController());
-          kLog('✅ Registered FormsController');
-        } catch (e) {
-          kLog('❌ Could not register FormsController: $e');
-          return;
+  //     // Get FormsController (registered via binding)
+  //     final formsController = Get.find<FormsController>();
+
+  //     // Save current form values
+  //     formsController.saveFormProgress(
+  //       formInstanceId,
+  //       Map<String, dynamic>.from(formValues),
+  //       appointmentId: appointmentId,
+  //     );
+  //   } catch (e) {
+  //     kLog('❌ Error saving form progress: $e');
+  //   }
+  // }
+
+  /// Initialize form values from API response data
+  /// This handles the structure returned by getFormResponseByNaturalKey
+  /// Matches field IDs from API response with template fields
+  void _initializeFormFromResponses() {
+    if (_responses == null) return;
+
+    kLog('🔄 Initializing form from ${_responses!.length} responses');
+    final sampleFieldIds = _responses!
+        .take(3)
+        .map((r) => r['fieldId'])
+        .toList();
+    kLog('📋 Sample response field IDs: $sampleFieldIds');
+
+    for (final response in _responses!) {
+      if (response is Map<String, dynamic>) {
+        final fieldId = response['fieldId'] as String?;
+        final value = response['value'];
+        final type = response['type'] as String?;
+
+        if (fieldId != null && value != null) {
+          final position = response['position'] as Map<String, dynamic>?;
+          final pageIndex = position?['page'] as int?;
+          kLog(
+            '📝 Processing field: $fieldId, type: $type, page: $pageIndex, value length: ${value.toString().length}',
+          );
+
+          // Handle different types based on the response
+          if (type == 'signature' || type == 'image') {
+            // For signature/image, value is already base64 data URL
+            if (value is String && value.startsWith('data:image')) {
+              formValues[fieldId] = value;
+              kLog(
+                '🖼️ Signature/Image: $fieldId (base64 length: ${value.length})',
+              );
+            } else if (value is String && !value.startsWith('data:image')) {
+              // Add data URL prefix if missing
+              formValues[fieldId] = 'data:image/png;base64,$value';
+              kLog('🖼️ Signature/Image: $fieldId (added prefix)');
+            } else {
+              formValues[fieldId] = value.toString();
+              kLog('🖼️ Signature/Image: $fieldId (converted to string)');
+            }
+          } else if (type == 'checkbox' || type == 'check') {
+            // Convert checkbox values
+            formValues[fieldId] =
+                value == true || value == 'true' || value == 1;
+          } else if (type == 'number') {
+            // Convert numeric values
+            if (value is num) {
+              formValues[fieldId] = value;
+            } else {
+              formValues[fieldId] = num.tryParse(value.toString()) ?? 0;
+            }
+          } else {
+            // Text, textarea, date, dropdown, radio, etc.
+            formValues[fieldId] = value.toString();
+          }
+          kLog(
+            '✅ Pre-populated field: $fieldId = ${formValues[fieldId] ?? value}',
+          );
         }
       }
-
-      final formsController = Get.find<FormsController>();
-
-      // Create a copy of current form values
-      final currentValues = Map<String, dynamic>.from(formValues);
-
-      // Save to Hive with appointmentId
-      await formsController.saveFormProgress(
-        formInstanceId,
-        currentValues,
-        appointmentId: appointmentId,
-      );
-      kLog('✅ Auto-saved form progress for appointmentId=$appointmentId, formInstanceId=$formInstanceId (${currentValues.length} fields)');
-    } catch (e) {
-      kLog('❌ Error saving form progress: $e');
     }
+    kLog('Total pre-populated fields: ${formValues.length}');
   }
 
   @override
   Widget build(BuildContext context) {
+    // Show loading indicator while data is being loaded from API
+    if (_isLoadingData) {
+      return Scaffold(
+        backgroundColor: WarmOrganicBlueTheme.warmGray,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: WarmOrganicBlueTheme.deepNavy),
+          title: Text(
+            _isReadOnly ? 'Submitted Form' : 'PDF Form',
+            style: WarmOrganicBlueTheme.headingMedium,
+          ),
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                'Loading form data...',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final formData = widget.config.containsKey('form')
         ? widget.config['form'] as Map<String, dynamic>
         : widget.config;
-    final fields = formData['fields'] as List? ?? [];
+
+    // Always use template fields for positioning, match IDs for values
+    var fields = formData['fields'] as List? ?? [];
+
+    // Fallback: if no template fields but have response fields, use those
+    if (fields.isEmpty && widget.config['formResponse'] != null) {
+      final formResponse =
+          widget.config['formResponse'] as Map<String, dynamic>;
+      final responses = formResponse['responses'] as List?;
+      if (responses != null && responses.isNotEmpty) {
+        // Convert response fields to template field format
+        fields = responses.map((r) {
+          final response = r as Map<String, dynamic>;
+          final position = response['position'] as Map<String, dynamic>?;
+          final fieldId = response['fieldId'] as String? ?? '';
+          final fieldPage = position?['page'] as int? ?? 0;
+          final fieldType = response['type'] as String? ?? '';
+          kLog(
+            '🔄 Converting field: $fieldId, type: $fieldType, page: $fieldPage',
+          );
+          return {
+            'id': response['fieldId'],
+            'type': response['type'],
+            'label': response['label'],
+            'position': response['position'],
+            'placeholder': response['label'],
+          };
+        }).toList();
+        kLog('✅ Using response fields as template: ${fields.length} fields');
+
+        // Count fields by page
+        final page0Count = fields
+            .where((f) => (f['position'] as Map?)?['page'] == 0)
+            .length;
+        final page1Count = fields
+            .where((f) => (f['position'] as Map?)?['page'] == 1)
+            .length;
+        kLog('📄 Page distribution: page 0: $page0Count, page 1: $page1Count');
+      }
+    }
+
     _formData = formData;
     _fields = fields;
+
+    kLog('🔍 Form fields count: ${fields.length}');
+    kLog('🔍 Form values count: ${formValues.length}');
+    kLog('🔍 Sample field IDs: ${fields.take(3).map((f) => f['id']).toList()}');
+    kLog('🔍 Sample value keys: ${formValues.keys.take(3).toList()}');
 
     return Scaffold(
       backgroundColor: WarmOrganicBlueTheme.warmGray,
@@ -1204,7 +1274,10 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: WarmOrganicBlueTheme.deepNavy),
-        title: Text('PDF Form', style: WarmOrganicBlueTheme.headingMedium),
+        title: Text(
+          _isReadOnly ? 'Submitted Form' : 'PDF Form',
+          style: WarmOrganicBlueTheme.headingMedium,
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.zoom_out),
@@ -1218,13 +1291,15 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
             icon: const Icon(Icons.zoom_in),
             onPressed: _currentZoom < 3.0 ? () => _zoom(0.25) : null,
           ),
-          IconButton(
-            onPressed: _submitForm,
-            icon: const Icon(
-              Icons.save,
-              color: WarmOrganicBlueTheme.primaryBlue,
+          // Show submit button only if not in read-only mode
+          if (!_isReadOnly)
+            IconButton(
+              onPressed: _submitForm,
+              icon: const Icon(
+                Icons.save,
+                color: WarmOrganicBlueTheme.primaryBlue,
+              ),
             ),
-          ),
         ],
       ),
       body: _buildWebView(),
@@ -1238,6 +1313,14 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
 
     final fieldsJson = _escapeJson(_fields ?? []);
     final smartFieldValuesJson = _escapeJson(_smartFieldValues ?? {});
+    // Pass formValues to JavaScript for pre-population
+    final formValuesJson = _escapeJson(formValues);
+    final isReadOnly = _isReadOnly;
+
+    kLog(
+      '🚀 Passing to JS: ${_fields?.length ?? 0} fields, ${formValues.length} values, isReadOnly=$isReadOnly',
+    );
+
     final html =
         '''
 <!DOCTYPE html>
@@ -1285,12 +1368,29 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
         .field-overlay .parts-table .btn-add { flex: 1; padding: 4px 8px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; }
         .field-overlay .parts-table .btn-add:disabled { background: #ccc; cursor: not-allowed; }
         .required-field::before { content: '*'; color: red; margin-right: 2px; }
+
+        /* Read-only mode styles */
+        .read-only input, .read-only textarea, .read-only select {
+            background: transparent;
+            border: none;
+            pointer-events: none;
+            color: #000;
+        }
+        .read-only .signature-area, .read-only .image-area {
+            border: none;
+            cursor: default;
+        }
+        .read-only .parts-table .btn-add, .read-only .parts-table .btn-delete {
+            display: none;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         const PDF_URL = 'data:application/pdf;base64,$_pdfBase64';
         const FIELDS = $fieldsJson;
         const SMART_FIELD_VALUES = $smartFieldValuesJson;
+        const FORM_VALUES = $formValuesJson;  // Pre-populated form values
+        const IS_READ_ONLY = $isReadOnly;      // Read-only mode flag
         let pdfDoc = null;
         let scale = 1.5;
 
@@ -1304,6 +1404,11 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
             if (!container) return;
 
             container.innerHTML = ''; // Clear existing content
+
+            // Apply read-only class to container if needed
+            if (IS_READ_ONLY) {
+                container.classList.add('read-only');
+            }
 
             for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                 const page = await pdfDoc.getPage(pageNum);
@@ -1321,6 +1426,61 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                 addFieldOverlays(pageContainer, pageNum - 1, viewport.width, viewport.height);
                 container.appendChild(pageContainer);
             }
+
+            // After rendering, pre-populate field values
+            setTimeout(populateFormValues, 100);
+        }
+
+        function populateFormValues() {
+            console.log('Starting to populate form values. FORM_VALUES:', FORM_VALUES);
+            console.log('Total fields in FORM_VALUES:', Object.keys(FORM_VALUES).length);
+
+            // Pre-populate fields from FORM_VALUES
+            Object.keys(FORM_VALUES).forEach(fieldId => {
+                const value = FORM_VALUES[fieldId];
+                console.log('Pre-populating field:', fieldId, '=', value);
+
+                // Find field definition
+                const field = FIELDS.find(f => f.id === fieldId);
+                if (!field) {
+                    console.warn('Field not found in template:', fieldId);
+                    return;
+                }
+
+                const type = field.type;
+                console.log('Field type:', type);
+
+                if (type === 'signature') {
+                    // Update signature image
+                    console.log('Updating signature for:', fieldId);
+                    updateSignatureImage(fieldId, value);
+                } else if (type === 'image') {
+                    // Update image field
+                    const imgField = document.querySelector('.image-area[data-field-id="' + fieldId + '"]');
+                    if (imgField && value && value.startsWith('data:image')) {
+                        imgField.innerHTML = '<img src="' + value + '" style="width:100%;height:100%;object-fit:contain;">';
+                        imgField.onclick = null;
+                    }
+                } else if (type === 'checkbox' || type === 'check') {
+                    // Update checkbox
+                    const checkbox = document.querySelector('input[data-field-id="' + fieldId + '"]');
+                    if (checkbox) {
+                        checkbox.checked = (value === true || value === 'true' || value === 1);
+                    }
+                } else if (type === 'radio') {
+                    // Update radio buttons
+                    const radios = document.querySelectorAll('input[name="' + fieldId + '"]');
+                    radios.forEach(radio => {
+                        radio.checked = (radio.value === value);
+                    });
+                } else {
+                    // Text, number, textarea, date, dropdown
+                    const input = document.querySelector('[data-field-id="' + fieldId + '"]');
+                    if (input && (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA' || input.tagName === 'SELECT')) {
+                        input.value = value;
+                    }
+                }
+            });
         }
 
         function addFieldOverlays(pageContainer, pageIndex, pageWidth, pageHeight) {
@@ -1345,13 +1505,24 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
             wrapper.style.height = '100%';
             if (field.required) wrapper.classList.add('required-field');
 
+            // Check if field has a pre-populated value by looking up in FORM_VALUES map
+            const prePopulatedValue = FORM_VALUES[field.id] !== undefined ? FORM_VALUES[field.id] : null;
+
+            console.log('Creating field:', field.id, 'type:', field.type, 'prePopulatedValue:', prePopulatedValue);
+
             switch (field.type) {
                 case 'text': {
                     const input = document.createElement('input');
                     input.type = 'text';
                     input.placeholder = field.placeholder || '';
                     input.dataset.fieldId = field.id;
-                    input.onchange = function() { updateFieldValue(field.id, this.value); };
+                    // Pre-populate value if available
+                    if (prePopulatedValue !== null) input.value = prePopulatedValue;
+                    if (!IS_READ_ONLY) {
+                        input.onchange = function() { updateFieldValue(field.id, this.value); };
+                    } else {
+                        input.readOnly = true;
+                    }
                     wrapper.appendChild(input);
                     break;
                 }
@@ -1360,7 +1531,13 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     input.type = 'number';
                     input.placeholder = field.placeholder || '';
                     input.dataset.fieldId = field.id;
-                    input.onchange = function() { updateFieldValue(field.id, this.value); };
+                    // Pre-populate value if available
+                    if (prePopulatedValue !== null) input.value = prePopulatedValue;
+                    if (!IS_READ_ONLY) {
+                        input.onchange = function() { updateFieldValue(field.id, this.value); };
+                    } else {
+                        input.readOnly = true;
+                    }
                     wrapper.appendChild(input);
                     break;
                 }
@@ -1368,7 +1545,13 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     const textarea = document.createElement('textarea');
                     textarea.placeholder = field.placeholder || '';
                     textarea.dataset.fieldId = field.id;
-                    textarea.onchange = function() { updateFieldValue(field.id, this.value); };
+                    // Pre-populate value if available
+                    if (prePopulatedValue !== null) textarea.value = prePopulatedValue;
+                    if (!IS_READ_ONLY) {
+                        textarea.onchange = function() { updateFieldValue(field.id, this.value); };
+                    } else {
+                        textarea.readOnly = true;
+                    }
                     wrapper.appendChild(textarea);
                     break;
                 }
@@ -1376,7 +1559,13 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     const input = document.createElement('input');
                     input.type = 'date';
                     input.dataset.fieldId = field.id;
-                    input.onchange = function() { updateFieldValue(field.id, this.value); };
+                    // Pre-populate value if available
+                    if (prePopulatedValue !== null) input.value = prePopulatedValue;
+                    if (!IS_READ_ONLY) {
+                        input.onchange = function() { updateFieldValue(field.id, this.value); };
+                    } else {
+                        input.readOnly = true;
+                    }
                     wrapper.appendChild(input);
                     break;
                 }
@@ -1384,7 +1573,13 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     const input = document.createElement('input');
                     input.type = 'checkbox';
                     input.dataset.fieldId = field.id;
-                    input.onchange = function() { updateFieldValue(field.id, this.checked); };
+                    // Pre-populate value if available
+                    if (prePopulatedValue !== null) input.checked = (prePopulatedValue === true || prePopulatedValue === 'true' || prePopulatedValue === 1);
+                    if (!IS_READ_ONLY) {
+                        input.onchange = function() { updateFieldValue(field.id, this.checked); };
+                    } else {
+                        input.disabled = true;
+                    }
                     wrapper.appendChild(input);
                     break;
                 }
@@ -1403,28 +1598,38 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     input.style.width = 'auto';
                     input.style.height = 'auto';
                     input.style.margin = '0';
+                    // Pre-populate value if available
+                    if (prePopulatedValue !== null) input.checked = (prePopulatedValue === true || prePopulatedValue === 'true' || prePopulatedValue === 1);
 
                     const label = document.createElement('label');
                     label.htmlFor = 'check_' + field.id;
                     label.textContent = field.header || field.label || field.placeholder || '';
                     label.style.flex = '1';
-                    label.style.cursor = 'pointer';
+                    label.style.cursor = IS_READ_ONLY ? 'default' : 'pointer';
                     label.style.fontSize = '12px';
                     label.style.whiteSpace = 'nowrap';
                     label.style.overflow = 'hidden';
                     label.style.textOverflow = 'ellipsis';
 
-                    input.onchange = function() {
-                        const value = this.checked ? 'true' : 'false';
-                        updateFieldValue(field.id, value);
-                    };
+                    if (!IS_READ_ONLY) {
+                        input.onchange = function() {
+                            const value = this.checked ? 'true' : 'false';
+                            updateFieldValue(field.id, value);
+                        };
+                    } else {
+                        input.disabled = true;
+                    }
 
                     checkContainer.appendChild(input);
                     checkContainer.appendChild(label);
                     wrapper.appendChild(checkContainer);
 
-                    // Set initial value to false
-                    updateFieldValue(field.id, 'false');
+                    // Update form values with initial state
+                    if (prePopulatedValue !== null) {
+                        updateFieldValue(field.id, input.checked ? 'true' : 'false');
+                    } else {
+                        updateFieldValue(field.id, 'false');
+                    }
                     break;
                 }
                 case 'radio': {
@@ -1440,27 +1645,37 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                         radio.name = field.id;
                         radio.value = option;
                         radio.dataset.fieldId = field.id;
-                        if (index === 0) radio.checked = true;
+                        // Pre-populate value if available
+                        if (prePopulatedValue !== null && prePopulatedValue === option) {
+                            radio.checked = true;
+                        } else if (index === 0 && prePopulatedValue === null) {
+                            radio.checked = true;
+                        }
 
                         const label = document.createElement('label');
                         label.textContent = option;
+                        label.style.cursor = IS_READ_ONLY ? 'default' : 'pointer';
 
                         radioItem.appendChild(radio);
                         radioItem.appendChild(label);
                         radioGroup.appendChild(radioItem);
 
-                        radio.onchange = function() {
-                            const selected = document.querySelector('input[name="' + field.id + '"]:checked');
-                            updateFieldValue(field.id, selected ? selected.value : '');
-                        };
+                        if (!IS_READ_ONLY) {
+                            radio.onchange = function() {
+                                const selected = document.querySelector('input[name="' + field.id + '"]:checked');
+                                updateFieldValue(field.id, selected ? selected.value : '');
+                            };
+                        } else {
+                            radio.disabled = true;
+                        }
                     });
 
                     wrapper.appendChild(radioGroup);
 
                     // Set initial value
-                    const firstRadio = radioGroup.querySelector('input[type="radio"]');
-                    if (firstRadio) {
-                        updateFieldValue(field.id, firstRadio.value);
+                    const selectedRadio = radioGroup.querySelector('input[type="radio"]:checked');
+                    if (selectedRadio) {
+                        updateFieldValue(field.id, selectedRadio.value);
                     }
                     break;
                 }
@@ -1473,18 +1688,26 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     defaultOption.value = '';
                     defaultOption.textContent = placeholder;
                     defaultOption.disabled = true;
-                    defaultOption.selected = true;
+                    if (prePopulatedValue === null) defaultOption.selected = true;
                     select.appendChild(defaultOption);
 
                     options.forEach(option => {
                         const opt = document.createElement('option');
                         opt.value = option;
                         opt.textContent = option;
+                        // Pre-populate value if available
+                        if (prePopulatedValue !== null && prePopulatedValue === option) {
+                            opt.selected = true;
+                        }
                         select.appendChild(opt);
                     });
 
                     select.dataset.fieldId = field.id;
-                    select.onchange = function() { updateFieldValue(field.id, this.value); };
+                    if (!IS_READ_ONLY) {
+                        select.onchange = function() { updateFieldValue(field.id, this.value); };
+                    } else {
+                        select.disabled = true;
+                    }
                     wrapper.appendChild(select);
                     break;
                 }
@@ -1492,8 +1715,16 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     const imageArea = document.createElement('div');
                     imageArea.className = 'image-area';
                     imageArea.dataset.fieldId = field.id;
-                    imageArea.innerHTML = '<div class="placeholder">' + (field.placeholder || 'Tap to add image') + '</div>';
-                    imageArea.onclick = function() { openImagePicker(field.id); };
+                    // Pre-populate image if available
+                    if (prePopulatedValue !== null && prePopulatedValue.startsWith('data:image')) {
+                        imageArea.innerHTML = '<img src="' + prePopulatedValue + '" style="width:100%;height:100%;object-fit:contain;">';
+                        imageArea.onclick = null;
+                    } else {
+                        imageArea.innerHTML = '<div class="placeholder">' + (field.placeholder || 'Tap to add image') + '</div>';
+                        if (!IS_READ_ONLY) {
+                            imageArea.onclick = function() { openImagePicker(field.id); };
+                        }
+                    }
                     wrapper.appendChild(imageArea);
                     break;
                 }
@@ -1501,8 +1732,16 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     const fileArea = document.createElement('div');
                     fileArea.className = 'file-area';
                     fileArea.dataset.fieldId = field.id;
-                    fileArea.innerHTML = '<div class="file-name">' + (field.placeholder || 'Tap to upload file') + '</div>';
-                    fileArea.onclick = function() { openFilePicker(field.id); };
+                    // Pre-populate file if available
+                    if (prePopulatedValue !== null && typeof prePopulatedValue === 'object' && prePopulatedValue.name) {
+                        fileArea.innerHTML = '<div class="file-name">📎 ' + prePopulatedValue.name + '</div>';
+                        fileArea.onclick = null;
+                    } else {
+                        fileArea.innerHTML = '<div class="file-name">' + (field.placeholder || 'Tap to upload file') + '</div>';
+                        if (!IS_READ_ONLY) {
+                            fileArea.onclick = function() { openFilePicker(field.id); };
+                        }
+                    }
                     wrapper.appendChild(fileArea);
                     break;
                 }
@@ -1510,8 +1749,30 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     const div = document.createElement('div');
                     div.className = 'signature-area';
                     div.dataset.fieldId = field.id;
-                    div.textContent = field.placeholder || 'Tap to Sign';
-                    div.onclick = function() { openSignature(field.id); };
+                    // Pre-populate signature if available
+                    if (prePopulatedValue !== null && prePopulatedValue.startsWith('data:image')) {
+                        const img = document.createElement('img');
+                        img.src = prePopulatedValue;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        img.style.cursor = IS_READ_ONLY ? 'default' : 'pointer';
+                        if (!IS_READ_ONLY) {
+                            img.onclick = function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                openSignature(field.id);
+                            };
+                        }
+                        div.textContent = '';
+                        div.appendChild(img);
+                        div.onclick = null;
+                    } else {
+                        div.textContent = field.placeholder || 'Tap to Sign';
+                        if (!IS_READ_ONLY) {
+                            div.onclick = function() { openSignature(field.id); };
+                        }
+                    }
                     wrapper.appendChild(div);
                     break;
                 }
@@ -1519,14 +1780,19 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     const div = document.createElement('div');
                     div.className = 'smartfield';
                     div.dataset.fieldId = field.id;
-                    div.textContent = field.placeholder || 'Loading...';
+                    // Pre-populate smartfield value if available
+                    if (prePopulatedValue !== null) {
+                        div.textContent = prePopulatedValue;
+                        updateFieldValue(field.id, prePopulatedValue);
+                    } else {
+                        div.textContent = field.placeholder || 'Loading...';
+                        // Load the actual value asynchronously
+                        getSmartFieldValue(field).then(value => {
+                            div.textContent = value;
+                            updateFieldValue(field.id, value);
+                        });
+                    }
                     wrapper.appendChild(div);
-
-                    // Load the actual value asynchronously
-                    getSmartFieldValue(field).then(value => {
-                        div.textContent = value;
-                        updateFieldValue(field.id, value);
-                    });
                     break;
                 }
                 case 'partstable': {
@@ -1559,12 +1825,21 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
                     addButton.className = 'btn-add';
                     addButton.type = 'button';
                     addButton.innerHTML = '<span>+</span> Add Row';
-                    addButton.onclick = function() { addPartsTableRow(field.id, maxRows); };
+                    if (!IS_READ_ONLY) {
+                        addButton.onclick = function() { addPartsTableRow(field.id, maxRows); };
+                    } else {
+                        addButton.disabled = true;
+                    }
                     footer.appendChild(addButton);
                     table.appendChild(footer);
 
-                    // Add initial empty row
-                    addPartsTableRow(field.id, maxRows);
+                    // Pre-populate parts table if available
+                    if (prePopulatedValue !== null && Array.isArray(prePopulatedValue)) {
+                        restorePartsTableData(field.id, prePopulatedValue);
+                    } else {
+                        // Add initial empty row
+                        addPartsTableRow(field.id, maxRows);
+                    }
 
                     wrapper.appendChild(table);
                     break;
@@ -1931,11 +2206,11 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
         if (args.length >= 2) {
           final fieldId = args[0] as String;
           final value = args[1];
-          setState(() => formValues[fieldId] = value);
+          formValues[fieldId] = value;
           kLog('Field updated: $fieldId = $value');
 
-          // Auto-save form progress to Hive
-          _saveFormProgress();
+          // Save form progress automatically when field changes
+          // _saveFormProgress();
         }
         return true;
       },
@@ -1985,13 +2260,11 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
 
             // Update the UI using the window object
             await controller.evaluateJavascript(
-              source: "if (typeof updateSignatureImage === 'function') { updateSignatureImage('$fieldId', window.__tempSignature); } delete window.__tempSignature;",
+              source:
+                  "if (typeof updateSignatureImage === 'function') { updateSignatureImage('$fieldId', window.__tempSignature); } delete window.__tempSignature;",
             );
 
             kLog('✅ Signature updated successfully');
-
-            // Auto-save form progress to Hive
-            await _saveFormProgress();
 
             return capturedSignatureData;
           } else {
@@ -2033,9 +2306,6 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
             setState(() => formValues[fieldId] = dataUrl);
             kLog('Image updated: $fieldId');
 
-            // Auto-save form progress to Hive
-            _saveFormProgress();
-
             return dataUrl;
           }
         }
@@ -2066,9 +2336,6 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
               },
             );
             kLog('File updated: $fieldId = $fileName');
-
-            // Auto-save form progress to Hive
-            _saveFormProgress();
 
             return fileName;
           }
@@ -2159,6 +2426,29 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
   }
 
   void _submitForm() async {
+    // Dismiss keyboard and force all WebView inputs to lose focus
+    // This ensures onchange events fire before we collect form values
+    FocusScope.of(context).unfocus();
+
+    // Force all focused elements in the WebView to blur
+    await _webViewController?.evaluateJavascript(
+      source: '''
+        if (document.activeElement) {
+          document.activeElement.blur();
+        }
+        // Also force all inputs to trigger their onchange handlers
+        const inputs = document.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+          if (input === document.activeElement) {
+            input.blur();
+          }
+        });
+      ''',
+    );
+
+    // Wait a moment for onchange events to fire and propagate to Flutter
+    await Future.delayed(const Duration(milliseconds: 300));
+
     if (formValues.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -2205,11 +2495,7 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
     );
 
     try {
-      // Get the FormsController
-      if (!Get.isRegistered<FormsController>()) {
-        Get.put(FormsController());
-        kLog('✅ Registered FormsController for form submission');
-      }
+      // Get the FormsController (registered via binding)
       final formsController = Get.find<FormsController>();
 
       // Build a FormQueueItem-like object for submission
@@ -2245,14 +2531,17 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
       Navigator.pop(context);
 
       if (success) {
+        // Clear saved form progress after successful submission
+        final formInstanceId = widget.config['formInstanceId'] as int?;
+        if (formInstanceId != null) {
+          formsController.clearFormProgress(formInstanceId);
+          kLog('🗑️ Cleared form progress for formInstanceId=$formInstanceId');
+        }
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Form submitted successfully')),
         );
-
-        // ✅ Keep saved form progress after submission
-        // The form data remains in Hive for future reference
-        kLog('✅ Form submitted - saved progress retained in Hive');
 
         // Navigate back
         if (!mounted) return;
@@ -2289,8 +2578,10 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
   }
 
   String _escapeJson(dynamic json) {
+    // Properly escape JSON for use in JavaScript
+    // jsonEncode already handles escaping, we just need to escape script tags
     final str = jsonEncode(json);
-    return str.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
+    return str.replaceAll('</', '<\\/'); // Only escape script closing tags
   }
 }
 

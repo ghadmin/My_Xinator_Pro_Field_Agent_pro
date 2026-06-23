@@ -48,6 +48,7 @@ class FormQueueItem {
   final bool sendToCustomerOnSubmit;
   final FormTemplate template;
   final String smartFieldData; // JSON string
+  final int? formResponseId; // Response ID after submission
 
   FormQueueItem({
     required this.queueId,
@@ -63,6 +64,7 @@ class FormQueueItem {
     required this.sendToCustomerOnSubmit,
     required this.template,
     required this.smartFieldData,
+    this.formResponseId,
   });
 
   factory FormQueueItem.fromJson(Map<String, dynamic> json) {
@@ -84,6 +86,7 @@ class FormQueueItem {
         Map<String, dynamic>.from(json['template'] as Map? ?? {}),
       ),
       smartFieldData: json['smartFieldData'] ?? '{}',
+      formResponseId: json['formResponseId'],
     );
   }
 
@@ -102,6 +105,7 @@ class FormQueueItem {
       'sendToCustomerOnSubmit': sendToCustomerOnSubmit,
       'template': template.toJson(),
       'smartFieldData': smartFieldData,
+      'formResponseId': formResponseId,
     };
   }
 }

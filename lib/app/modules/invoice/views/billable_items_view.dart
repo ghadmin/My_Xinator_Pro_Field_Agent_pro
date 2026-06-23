@@ -39,7 +39,7 @@ class BillableItemsView extends GetView<InvoiceController> {
                       onChanged: (newValue) {
                         controller.searchByType.value = newValue!;
                         // Reset specific filters when type changes
-                        controller.selectedGroup.value = "";
+                        controller.itemController.selectedItemGroup.value = null;
                         controller.selectedBundle.value = "";
                       },
                     ),
@@ -58,14 +58,12 @@ class BillableItemsView extends GetView<InvoiceController> {
                     decoration: const InputDecoration(
                       labelText: "Select Group",
                     ),
-                    value: controller.selectedGroup.value.isEmpty
-                        ? null
-                        : controller.selectedGroup.value,
-                    items: controller.groupList.map((group) {
-                      return DropdownMenuItem(value: group, child: Text(group));
+                    initialValue: controller.itemController.selectedItemGroup.value?.groupName,
+                    items: controller.itemController.itemGroups.map((group) {
+                      return DropdownMenuItem(value: group.groupName, child: Text(group.groupName ?? ""));
                     }).toList(),
                     onChanged: (val) {
-                      controller.selectedGroup.value = val!;
+                      controller.itemController.selectedItemGroup.value = controller.itemController.itemGroups.firstWhere((group) => group.groupName == val);
                       controller.itemController.sortItems();
                     },
                   ),

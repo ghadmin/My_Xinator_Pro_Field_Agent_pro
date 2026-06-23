@@ -9,6 +9,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -17,8 +19,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 // ─── Warm Organic Blue Design ───────────────────────────────────
 import '../../../../utils/url_launcher.dart';
-import '../../../../config/theme/warm_organic_blue_theme.dart';
-import '../../../service/REST/api_urls.dart';
+import '../../../utils/simple_phone_formatter.dart';
 import '../models/custom_field_model.dart';
 import 'widgets/warm_organic_components.dart';
 // ───────────────────────────────────────────────────────────────────
@@ -32,7 +33,6 @@ import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../modules/forms/controllers/forms_controller.dart';
 import '../../../routes/app_pages.dart';
-import '../../../utils/phone_number_formatter.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/custom_fields_controller.dart';
 import '../parts/image/controllers/image_controller.dart';
@@ -249,6 +249,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                         theme: Theme.of(context),
                                         textEditingController:
                                             controller.noteController,
+                                        textInputAction:
+                                            TextInputAction.newline,
+                                        textInputType: TextInputType.multiline,
                                         onChanged: (v) {
                                           controller.isTyping(true);
                                           controller.noteText(v);
@@ -672,7 +675,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                 child: _buildCompactInfoTile(
                   Icons.fingerprint_rounded,
                   'Appt ID',
-                  controller.selectedAppointment.value?.apptID?.toString() ??
+                  controller.selectedAppointment.value?.appoinmentUId
+                          ?.toString() ??
                       "N/A",
                 ),
               ),
@@ -775,9 +779,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                 child: _buildContactChip(
                   Icons.phone_rounded,
                   controller.mobileNumber.isNotEmpty
-                      ? controller.mobileNumber
+                      ? PhoneDisplayFormatter.format(controller.mobileNumber)
                       : controller.phoneNumber.isNotEmpty
-                      ? controller.phoneNumber
+                      ? PhoneDisplayFormatter.format(controller.phoneNumber)
                       : 'N/A',
                   () async {
                     try {
@@ -1173,11 +1177,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                     ),
                     child: Text(
                       controller.phoneNumber.isNotEmpty
-                          ? PhoneNumberFormatter.formatPhoneNumber(
-                              controller.phoneNumber,
-                            )
+                          ? PhoneDisplayFormatter.format(controller.phoneNumber)
                           : controller.mobileNumber.isNotEmpty
-                          ? PhoneNumberFormatter.formatPhoneNumber(
+                          ? PhoneDisplayFormatter.format(
                               controller.mobileNumber,
                             )
                           : "No Phone Number",
@@ -1297,6 +1299,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     }
   }
 }
+
 // ─────────────────────────────────────────────────────────────
 // GLOBAL HELPER FUNCTIONS (Preserved from Original)
 // ─────────────────────────────────────────────────────────────
@@ -2022,72 +2025,81 @@ void showSingleFilePickerBottomSheet(BuildContext context) {
 
   showModalBottomSheet(
     context: context,
-    builder: (sheetContext) => Container(
-      padding: EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.document_scanner),
-            title: Text("Pick Document"),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final result = await FilePicker.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
-                allowMultiple: false,
-              );
-              if (result != null &&
-                  result.files.isNotEmpty &&
-                  context.mounted) {
-                final validFiles = await _validateAndFilterFiles([
-                  File(result.files.single.path!),
-                ], context);
-                if (validFiles.isNotEmpty) {
-                  // Add files to upload list
-                  controller.fileUploadList.add(
-                    FileUploadItem(
-                      time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
-                      files: validFiles,
-                    ),
-                  );
-                  controller.update();
-                }
-              }
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.folder),
-            title: Text("Browse Files"),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final result = await FilePicker.pickFiles(
-                type: FileType.any,
-                allowMultiple: false,
-              );
-              if (result != null &&
-                  result.files.isNotEmpty &&
-                  context.mounted) {
-                final validFiles = await _validateAndFilterFiles([
-                  File(result.files.single.path!),
-                ], context);
-                if (validFiles.isNotEmpty) {
-                  // Upload file directly using FileController
-                  final appointment = controller.selectedAppointment.value;
-                  if (appointment != null) {
-                    await fileController.uploadFile(
-                      customerId: appointment.customerID?.toString() ?? '',
-                      siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
-                      file: validFiles.first,
-                      appointmentId: appointment.apptID.toString(),
-                      companyId: appointment.companyID,
+    builder: (sheetContext) => Material(
+      child: Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.document_scanner),
+              title: Text("Pick Document"),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await FilePicker.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: [
+                    'pdf',
+                    'doc',
+                    'docx',
+                    'txt',
+                    'xls',
+                    'xlsx',
+                  ],
+                  allowMultiple: false,
+                );
+                if (result != null &&
+                    result.files.isNotEmpty &&
+                    context.mounted) {
+                  final validFiles = await _validateAndFilterFiles([
+                    File(result.files.single.path!),
+                  ], context);
+                  if (validFiles.isNotEmpty) {
+                    // Add files to upload list
+                    controller.fileUploadList.add(
+                      FileUploadItem(
+                        time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
+                        files: validFiles,
+                      ),
                     );
+                    controller.update();
                   }
                 }
-              }
-            },
-          ),
-        ],
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.folder),
+              title: Text("Browse Files"),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await FilePicker.pickFiles(
+                  type: FileType.any,
+                  allowMultiple: false,
+                );
+                if (result != null &&
+                    result.files.isNotEmpty &&
+                    context.mounted) {
+                  final validFiles = await _validateAndFilterFiles([
+                    File(result.files.single.path!),
+                  ], context);
+                  if (validFiles.isNotEmpty) {
+                    // Upload file directly using FileController
+                    final appointment = controller.selectedAppointment.value;
+                    if (appointment != null) {
+                      await fileController.uploadFile(
+                        customerId: appointment.customerID?.toString() ?? '',
+                        siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+                        file: validFiles.first,
+                        appointmentId: appointment.apptID.toString(),
+                        companyId: appointment.companyID,
+                      );
+                    }
+                  }
+                }
+              },
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -2098,77 +2110,86 @@ void showFileBottomSheet(BuildContext context, int index) {
 
   showModalBottomSheet(
     context: context,
-    builder: (sheetContext) => Container(
-      padding: EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.document_scanner),
-            title: Text("Pick Document"),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final result = await FilePicker.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
-                allowMultiple: true,
-              );
-              if (result != null &&
-                  result.files.isNotEmpty &&
-                  context.mounted) {
-                final validFiles = await _validateAndFilterFiles(
-                  result.files.map((e) => File(e.path!)).toList(),
-                  context,
+    builder: (sheetContext) => Material(
+      child: Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.document_scanner),
+              title: Text("Pick Document"),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await FilePicker.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: [
+                    'pdf',
+                    'doc',
+                    'docx',
+                    'txt',
+                    'xls',
+                    'xlsx',
+                  ],
+                  allowMultiple: true,
                 );
-                if (validFiles.isNotEmpty) {
-                  if (index != -1) {
-                    controller.fileUploadList[index].files.addAll(validFiles);
-                  } else {
-                    controller.fileUploadList.add(
-                      FileUploadItem(
-                        time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
-                        files: validFiles,
-                      ),
-                    );
+                if (result != null &&
+                    result.files.isNotEmpty &&
+                    context.mounted) {
+                  final validFiles = await _validateAndFilterFiles(
+                    result.files.map((e) => File(e.path!)).toList(),
+                    context,
+                  );
+                  if (validFiles.isNotEmpty) {
+                    if (index != -1) {
+                      controller.fileUploadList[index].files.addAll(validFiles);
+                    } else {
+                      controller.fileUploadList.add(
+                        FileUploadItem(
+                          time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
+                          files: validFiles,
+                        ),
+                      );
+                    }
+                    controller.update();
                   }
-                  controller.update();
                 }
-              }
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.folder),
-            title: Text("Browse Files"),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final result = await FilePicker.pickFiles(
-                type: FileType.any,
-                allowMultiple: true,
-              );
-              if (result != null &&
-                  result.files.isNotEmpty &&
-                  context.mounted) {
-                final validFiles = await _validateAndFilterFiles(
-                  result.files.map((e) => File(e.path!)).toList(),
-                  context,
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.folder),
+              title: Text("Browse Files"),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await FilePicker.pickFiles(
+                  type: FileType.any,
+                  allowMultiple: true,
                 );
-                if (validFiles.isNotEmpty) {
-                  if (index != -1) {
-                    controller.fileUploadList[index].files.addAll(validFiles);
-                  } else {
-                    controller.fileUploadList.add(
-                      FileUploadItem(
-                        time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
-                        files: validFiles,
-                      ),
-                    );
+                if (result != null &&
+                    result.files.isNotEmpty &&
+                    context.mounted) {
+                  final validFiles = await _validateAndFilterFiles(
+                    result.files.map((e) => File(e.path!)).toList(),
+                    context,
+                  );
+                  if (validFiles.isNotEmpty) {
+                    if (index != -1) {
+                      controller.fileUploadList[index].files.addAll(validFiles);
+                    } else {
+                      controller.fileUploadList.add(
+                        FileUploadItem(
+                          time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
+                          files: validFiles,
+                        ),
+                      );
+                    }
+                    controller.update();
                   }
-                  controller.update();
                 }
-              }
-            },
-          ),
-        ],
+              },
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -2345,36 +2366,38 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
 
     case 'checklist':
       return Obx(
-        () => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              field.fieldName!,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            SizedBox(height: 10.h),
-            ...field.options!.map((option) {
-              return CheckboxListTile(
-                checkColor: Colors.white,
-                activeColor: Colors.blue,
-                tileColor: apptC.customFieldChecklistValues.contains(option)
-                    ? Colors.blue.withValues(alpha: 0.2)
-                    : Colors.grey.withValues(alpha: 0.2),
-                title: Text(option),
-                value: apptC.customFieldChecklistValues.contains(option),
-                onChanged: (isChecked) {
-                  if (isChecked == true) {
-                    apptC.customFieldChecklistValues.add(option);
-                    field.selectedOptions!.add(option);
-                  } else {
-                    apptC.customFieldChecklistValues.remove(option);
-                    field.selectedOptions!.remove(option);
-                  }
-                  apptC.update();
-                },
-              );
-            }),
-          ],
+        () => Material(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                field.fieldName!,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              SizedBox(height: 10.h),
+              ...field.options!.map((option) {
+                return CheckboxListTile(
+                  checkColor: Colors.white,
+                  activeColor: Colors.blue,
+                  tileColor: apptC.customFieldChecklistValues.contains(option)
+                      ? Colors.blue.withValues(alpha: 0.2)
+                      : Colors.grey.withValues(alpha: 0.2),
+                  title: Text(option),
+                  value: apptC.customFieldChecklistValues.contains(option),
+                  onChanged: (isChecked) {
+                    if (isChecked == true) {
+                      apptC.customFieldChecklistValues.add(option);
+                      field.selectedOptions!.add(option);
+                    } else {
+                      apptC.customFieldChecklistValues.remove(option);
+                      field.selectedOptions!.remove(option);
+                    }
+                    apptC.update();
+                  },
+                );
+              }),
+            ],
+          ),
         ),
       );
 

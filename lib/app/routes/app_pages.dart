@@ -107,7 +107,7 @@ class AppPages {
     GetPage(
       name: _Paths.FORMS_TAB,
       page: () => const FormsTabScreen(),
-      bindings: [AppointmentBinding(), CustomFieldsBinding()],
+      bindings: [AppointmentBinding(), CustomFieldsBinding(), FormBindings()],
     ),
     GetPage(
       name: _Paths.BILLABLE_ITEM_SCREEN,
@@ -265,6 +265,7 @@ class AppPages {
           },
         );
       },
+      binding: FormBindings(),
     ),
   ];
 }

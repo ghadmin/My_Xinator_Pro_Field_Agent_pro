@@ -185,6 +185,10 @@ class AppointmentView extends GetView<AppointmentController> {
                             return SplashContainer(
                               radius: 8,
                               color: Colors.white,
+                              border: Border.all(
+                                color: Colors.transparent,
+                                width: 0,
+                              ),
                               onPressed: () async {
                                 controller.isTyping(false);
                                 controller.selectedAptIndex.value = index;
@@ -429,7 +433,7 @@ class AppointmentView extends GetView<AppointmentController> {
             //   },
             //   child: Icon(Icons.psychology, color: Colors.white),
             // ),
-            SizedBox(height: 10.sp),
+            SizedBox(height: 20.sp),
             FloatingActionButton(
               heroTag: "twilio_support",
               backgroundColor: Colors.blue,

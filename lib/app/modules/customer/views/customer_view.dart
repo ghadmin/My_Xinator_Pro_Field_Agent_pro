@@ -10,6 +10,7 @@ import '../../../components/global-widgets/splash_container.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
 import '../../appointment/controllers/appointment_controller.dart';
+import '../../../utils/simple_phone_formatter.dart';
 import '../controllers/customer_controller.dart';
 
 class CustomerView extends GetView<CustomerController> {
@@ -19,12 +20,12 @@ class CustomerView extends GetView<CustomerController> {
     final appointmentC = Get.find<AppointmentController>();
     var theme = Theme.of(context);
     return Scaffold(
-      drawer: CustomDrawer(indexClicked: 4),
+      drawer: CustomDrawer(indexClicked: 2),
       appBar: AppBar(
         toolbarHeight: Platform.isAndroid
             ? kToolbarHeight
-            : kToolbarHeight + 60,
-        // title: const  TextWidget(text:'Customers'),
+            : kToolbarHeight + 10.sp,
+        title: const TextWidget(text: 'Customers'),
         actions: [
           // InkWell(
           //   onTap: () {},
@@ -60,13 +61,6 @@ class CustomerView extends GetView<CustomerController> {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextWidget(
-                        text: "Customers List",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontSize: 20.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: GeneralTextField(
@@ -138,43 +132,47 @@ class CustomerView extends GetView<CustomerController> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Flexible(
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    TextWidget(
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Expanded(
+                                                    child: TextWidget(
                                                       text:
                                                           "${customer.firstName ?? ""} ${customer.lastName ?? ""}",
                                                       style: theme
                                                           .textTheme
                                                           .headlineSmall
                                                           ?.copyWith(
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
                                                             fontWeight:
                                                                 FontWeight.w500,
                                                           ),
-                                                      maxLines: 1,
+                                                      maxLines: 2,
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
-                                                    if (selectedApp.isNotEmpty)
-                                                      Icon(
-                                                        Icons.event,
-                                                        size: 35.r,
-                                                        color:
-                                                            const Color.fromARGB(
-                                                              255,
-                                                              246,
-                                                              120,
-                                                              82,
-                                                            ),
-                                                      ),
-                                                  ],
-                                                ),
+                                                  ),
+                                                  // if (selectedApp.isNotEmpty)
+                                                  //   Padding(
+                                                  //     padding: EdgeInsets.only(
+                                                  //       left: 8.sp,
+                                                  //     ),
+                                                  //     child: Icon(
+                                                  //       Icons.event,
+                                                  //       size: 35.r,
+                                                  //       color:
+                                                  //           const Color.fromARGB(
+                                                  //             255,
+                                                  //             246,
+                                                  //             120,
+                                                  //             82,
+                                                  //           ),
+                                                  //     ),
+                                                  //   ),
+                                                ],
                                               ),
                                               SizedBox(height: 2.h),
                                               Row(
@@ -272,7 +270,7 @@ class CustomerView extends GetView<CustomerController> {
                                                         )
                                                       : TextWidget(
                                                           text:
-                                                              " ${customer.phone ?? " N/A"}",
+                                                              " ${PhoneDisplayFormatter.format(customer.phone ?? "")}",
                                                           style: theme
                                                               .textTheme
                                                               .bodyMedium!

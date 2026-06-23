@@ -1,15 +1,18 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/forms/models/forom_get_response_model.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/hive/my_hive.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../models/forms/forms_models.dart';
+import '../../../routes/app_pages.dart';
+import '../../../service/REST/api_urls.dart';
 import '../../../service/forms_api_service.dart';
 import '../../../service/handler/exception_handler.dart';
 import '../../../service/helper/network_connectivity.dart';
@@ -60,6 +63,27 @@ class FormsController extends GetxController with ExceptionHandler {
   /// Loading state for appointment forms
   final RxBool isLoadingAppointmentForms = false.obs;
 
+  // ============== EMAIL PROPERTIES ==============
+
+  /// Text controllers for email form
+  final TextEditingController toTextController = TextEditingController();
+  final TextEditingController ccTextController = TextEditingController();
+  final TextEditingController subjectTextController = TextEditingController();
+  final TextEditingController emailBodyTextController = TextEditingController();
+
+  /// Focus nodes for email form
+  final Rx<FocusNode> emailToFocusnode = FocusNode().obs;
+  final Rx<FocusNode> emailCcFocusnode = FocusNode().obs;
+  final Rx<FocusNode> emailSubjectFocusnode = FocusNode().obs;
+  final Rx<FocusNode> emailBodyFocusnode = FocusNode().obs;
+
+  /// Checkbox states for payment links
+  RxBool isSendXPayLink = false.obs;
+  RxBool isSendTuaPayLink = false.obs;
+
+  /// Currently selected form for email
+  final Rx<FormQueueItem?> selectedFormForEmail = Rx(null);
+
   // ============== API METHODS ==============
 
   /// Poll for pending forms
@@ -102,33 +126,26 @@ class FormsController extends GetxController with ExceptionHandler {
       if (response != null && response.success && response.items.isNotEmpty) {
         // Save API response to Hive FIRST
         // await MyHive.saveFormsData(resourceId.toString(), response.toJson());
-        // log('✅ Saved to Hive for resourceId: $resourceId');
+        // kLog('✅ Saved to Hive for resourceId: $resourceId');
 
         // Then acknowledge forms to remove from server queue
         if (response.count > 0) {
           final queueIds = response.items.map((item) => item.queueId).toList();
           if (queueIds.isNotEmpty) {
-            // final ackSuccess = await acknowledgeForms(queueIds);
-            // if (ackSuccess) {
-            //   log('✅ Successfully acknowledged ${queueIds.length} forms');
-            // } else {
-            //   log(
-            //     '⚠️ Failed to acknowledge forms - will remain in server queue',
-            //   );
-            // }
+            acknowledgeForms(queueIds);
           }
         }
 
         // Load from API directly to update UI (skip Hive)
         await _loadPendingFormsFromApi(response.items);
       } else {
-        log('⚠️ Poll returned no data');
+        kLog('⚠️ Poll returned no data');
         // Clear the pending forms list
         pendingForms.clear();
         hasPendingForms.value = false;
       }
     } catch (e) {
-      log('❌ Poll error: $e');
+      kLog('❌ Poll error: $e');
       errorMessage.value = "Failed to fetch forms: $e";
       handleError(e);
       // Try to load from Hive on error
@@ -149,9 +166,9 @@ class FormsController extends GetxController with ExceptionHandler {
 
       pendingForms.assignAll(forms);
       hasPendingForms.value = true;
-      log('✅ Loaded ${forms.length} forms from API');
+      kLog('✅ Loaded ${forms.length} forms from API');
     } catch (e) {
-      log('❌ Error loading forms from API: $e');
+      kLog('❌ Error loading forms from API: $e');
       pendingForms.clear();
       hasPendingForms.value = false;
     }
@@ -177,21 +194,21 @@ class FormsController extends GetxController with ExceptionHandler {
 
           pendingForms.assignAll(forms);
           hasPendingForms.value = true;
-          log(
+          kLog(
             '✅ Loaded ${forms.length} forms from Hive (resourceId: $resourceId)',
           );
         } else {
           pendingForms.clear();
           hasPendingForms.value = false;
-          log('✅ No forms in Hive for resourceId: $resourceId');
+          kLog('✅ No forms in Hive for resourceId: $resourceId');
         }
       } else {
         pendingForms.clear();
         hasPendingForms.value = false;
-        log('⚠️ No data found in Hive for resourceId: $resourceId');
+        kLog('⚠️ No data found in Hive for resourceId: $resourceId');
       }
     } catch (e) {
-      log('❌ Error loading from Hive: $e');
+      kLog('❌ Error loading from Hive: $e');
       // On error, clear to show empty state
       pendingForms.clear();
       hasPendingForms.value = false;
@@ -217,11 +234,11 @@ class FormsController extends GetxController with ExceptionHandler {
         fieldValues,
         appointmentId: appointmentId,
       );
-      log(
+      kLog(
         '✅ Saved form progress for appointmentId=$appointmentId, formInstanceId=$formInstanceId (${fieldValues.length} fields)',
       );
     } catch (e) {
-      log('❌ Error saving form progress: $e');
+      kLog('❌ Error saving form progress: $e');
     }
   }
 
@@ -242,7 +259,7 @@ class FormsController extends GetxController with ExceptionHandler {
         appointmentId: appointmentId,
       );
     } catch (e) {
-      log('❌ Error loading form progress: $e');
+      kLog('❌ Error loading form progress: $e');
       return {};
     }
   }
@@ -255,9 +272,9 @@ class FormsController extends GetxController with ExceptionHandler {
   Future<void> clearFormProgress(int formInstanceId) async {
     try {
       await MyHive.clearFormProgress(formInstanceId);
-      log('✅ Cleared form progress for formInstanceId=$formInstanceId');
+      kLog('✅ Cleared form progress for formInstanceId=$formInstanceId');
     } catch (e) {
-      log('❌ Error clearing form progress: $e');
+      kLog('❌ Error clearing form progress: $e');
     }
   }
 
@@ -270,7 +287,7 @@ class FormsController extends GetxController with ExceptionHandler {
     try {
       return MyHive.hasFormProgress(formInstanceId);
     } catch (e) {
-      log('❌ Error checking form progress: $e');
+      kLog('❌ Error checking form progress: $e');
       return false;
     }
   }
@@ -278,10 +295,10 @@ class FormsController extends GetxController with ExceptionHandler {
   /// Acknowledge downloaded forms
   ///
   /// Marks forms as downloaded so they won't be re-pushed
-  Future<bool> acknowledgeForms(List<int> queueIds) async {
+  Future<void> acknowledgeForms(List<int> queueIds) async {
     if (queueIds.isEmpty) {
-      log('⚠️ No queue IDs to acknowledge');
-      return false;
+      kLog('⚠️ No queue IDs to acknowledge');
+      return;
     }
 
     isAcknowledging.value = true;
@@ -291,52 +308,28 @@ class FormsController extends GetxController with ExceptionHandler {
       if (!await NetworkConnectivity.isNetworkAvailable()) {
         MySnackBar.showErrorToast(message: "No network connection!");
         isAcknowledging.value = false;
-        return false;
+        return;
       }
 
       final companyId = await MySharedPref.getCompanyID();
       if (companyId == null || companyId.isEmpty) {
         errorMessage.value = "Company ID not found";
         isAcknowledging.value = false;
-        return false;
+        return;
       }
 
       // Get device info for audit trail
       final deviceInfo = _getDeviceInfo();
 
-      final response = await _formsApiService.ackForms(
+      await _formsApiService.ackForms(
         companyId: companyId,
         queueIds: queueIds,
         deviceInfo: deviceInfo,
       );
-
-      if (response != null && response.success) {
-        log('✅ Acknowledged ${response.acked.length} forms');
-
-        // Move acknowledged forms from pending to acknowledged list
-        final acknowledgedItems = pendingForms
-            .where((form) => response.acked.contains(form.queueId))
-            .toList();
-
-        pendingForms.removeWhere(
-          (form) => response.acked.contains(form.queueId),
-        );
-        acknowledgedForms.addAll(acknowledgedItems);
-
-        if (pendingForms.isEmpty) {
-          hasPendingForms.value = false;
-        }
-
-        return true;
-      } else {
-        log('⚠️ Ack failed');
-        return false;
-      }
     } catch (e) {
-      log('❌ Ack error: $e');
+      kLog('❌ Ack error: $e');
       errorMessage.value = "Failed to acknowledge forms: $e";
       handleError(e);
-      return false;
     } finally {
       isAcknowledging.value = false;
     }
@@ -374,7 +367,7 @@ class FormsController extends GetxController with ExceptionHandler {
       // Get device info
       final deviceInfo = _getDeviceInfo();
 
-      log(
+      kLog(
         '📤 Submitting form: instanceId=$formInstanceId, responses=${responses.length}',
       );
 
@@ -391,19 +384,19 @@ class FormsController extends GetxController with ExceptionHandler {
 
       // Log the full API response
       if (response != null) {
-        log('📥 API Response: ${jsonEncode(response.toJson())}');
+        kLog('📥 API Response: ${jsonEncode(response.toJson())}');
       } else {
-        log('⚠️ API Response is null');
+        kLog('⚠️ API Response is null');
       }
 
       if (response != null && response.success) {
-        log(
+        kLog(
           '✅ Form submitted successfully: responseId=${response.formResponseId}',
         );
 
         // Check for stamp errors
         if (response.stampError != null) {
-          log('⚠️ PDF stamp error: ${response.stampError}');
+          kLog('⚠️ PDF stamp error: ${response.stampError}');
           MySnackBar.showErrorToast(
             message:
                 "Form saved but PDF generation failed: ${response.stampError}",
@@ -412,12 +405,12 @@ class FormsController extends GetxController with ExceptionHandler {
 
         // Check for email errors
         if (response.emailError != null) {
-          log('⚠️ Email error: ${response.emailError}');
+          kLog('⚠️ Email error: ${response.emailError}');
         }
 
         // Log stamped PDF URL if available
         if (response.stampedPdfUrl != null) {
-          log('📄 Stamped PDF URL: ${response.stampedPdfUrl}');
+          kLog('📄 Stamped PDF URL: ${response.stampedPdfUrl}');
         }
 
         // ✅ FIXED: Don't remove from pendingForms - update status instead
@@ -431,25 +424,51 @@ class FormsController extends GetxController with ExceptionHandler {
             );
 
         if (form != null) {
+          // Update form with formResponseId for viewing submitted responses
+          final updatedForm = FormQueueItem(
+            queueId: form.queueId,
+            formInstanceId: form.formInstanceId,
+            appointmentId: form.appointmentId,
+            templateId: form.templateId,
+            resourceId: form.resourceId,
+            action: form.action,
+            triggerId: form.triggerId,
+            createdDateTime: form.createdDateTime,
+            customerId: form.customerId,
+            instanceStatus: form.instanceStatus,
+            sendToCustomerOnSubmit: form.sendToCustomerOnSubmit,
+            template: form.template,
+            smartFieldData: form.smartFieldData,
+            formResponseId: response.formResponseId,
+          );
+
+          // Replace the form in pendingForms with the updated version
+          final index = pendingForms.indexWhere(
+            (f) => f.formInstanceId == formInstanceId,
+          );
+          if (index != -1) {
+            pendingForms[index] = updatedForm;
+          }
+
           // Add to completed forms list (for historical tracking)
-          completedForms.add(form);
+          completedForms.add(updatedForm);
 
           // Keep in pendingForms but update could be done to show completed status
           // The UI will show different status based on getFormStatus() method
-          log(
-            '✅ Form $formInstanceId submitted successfully, kept in pending list with completed status',
+          kLog(
+            '✅ Form $formInstanceId submitted successfully with formResponseId=${response.formResponseId}, kept in pending list with completed status',
           );
         }
 
         return true;
       } else {
-        log('⚠️ Submit failed - response was null or success=false');
+        kLog('⚠️ Submit failed - response was null or success=false');
         errorMessage.value = "Failed to submit form";
         isError.value = true;
         return false;
       }
     } catch (e) {
-      log('❌ Submit error: $e');
+      kLog('❌ Submit error: $e');
       errorMessage.value = "Failed to submit form: $e";
       handleError(e);
       return false;
@@ -471,7 +490,7 @@ class FormsController extends GetxController with ExceptionHandler {
         return null;
       }
 
-      log('📄 Downloading PDF: $pdfPath');
+      kLog('📄 Downloading PDF: $pdfPath');
 
       final success = await _formsApiService.downloadPdf(
         relativePath: pdfPath,
@@ -479,14 +498,14 @@ class FormsController extends GetxController with ExceptionHandler {
       );
 
       if (success) {
-        log('✅ PDF downloaded to: $savePath');
+        kLog('✅ PDF downloaded to: $savePath');
         return savePath;
       } else {
-        log('⚠️ PDF download failed');
+        kLog('⚠️ PDF download failed');
         return null;
       }
     } catch (e) {
-      log('❌ PDF download error: $e');
+      kLog('❌ PDF download error: $e');
       handleError(e);
       return null;
     }
@@ -528,19 +547,131 @@ class FormsController extends GetxController with ExceptionHandler {
         MySnackBar.showInfoToast(
           message: 'PDF sent to ${response['toEmail'] ?? 'customer'}',
         );
-        log('✅ PDF email sent successfully: ${response['toEmail']}');
+        kLog('✅ PDF email sent successfully: ${response['toEmail']}');
         return true;
       } else {
-        final error = response?['emailError'] ?? response?['error'] ?? 'Unknown error';
+        final error =
+            response?['emailError'] ?? response?['error'] ?? 'Unknown error';
         MySnackBar.showErrorToast(message: 'Failed to send email: $error');
-        log('❌ PDF email failed: $error');
+        kLog('❌ PDF email failed: $error');
         return false;
       }
     } catch (e) {
       hideLoading();
-      log('❌ Send PDF email error: $e');
+      kLog('❌ Send PDF email error: $e');
       MySnackBar.showErrorToast(message: 'Failed to send email: $e');
       handleError(e);
+      return false;
+    }
+  }
+
+  /// Send form via email
+  ///
+  /// Sends the form PDF to customer email using FaProSync sendEmail API
+  /// Allows custom subject, body, cc with optional PDF attachment
+  ///
+  /// Returns true if email sent successfully, false on error
+  Future<bool> sendFormEmail({required FormQueueItem form}) async {
+    try {
+      showLoading();
+
+      final companyId = await MySharedPref.getCompanyID();
+
+      if (companyId == null || companyId.isEmpty) {
+        MySnackBar.showErrorToast(message: "Company ID not found");
+        hideLoading();
+        return false;
+      }
+
+      // Validate required fields (to, subject, body are required per API spec)
+      if (toTextController.text.isEmpty) {
+        MySnackBar.showErrorToast(
+          message: "Please enter recipient email address",
+        );
+        hideLoading();
+        return false;
+      }
+
+      if (subjectTextController.text.isEmpty) {
+        MySnackBar.showErrorToast(message: "Please enter email subject");
+        hideLoading();
+        return false;
+      }
+
+      if (emailBodyTextController.text.isEmpty) {
+        MySnackBar.showErrorToast(message: "Please enter email body");
+        hideLoading();
+        return false;
+      }
+
+      // Prepare email fields
+      final subject = subjectTextController.text;
+      final body = emailBodyTextController.text;
+
+      // Use formResponseId if the form has been submitted, otherwise null
+      // If formResponseId is provided, the API will attach the stamped PDF
+      final formResponseId = form.formInstanceId > 0
+          ? form.formInstanceId
+          : null;
+
+      kLog(
+        '📧 Sending form email: to=${toTextController.text}, cc=${ccTextController.text}, formResponseId=$formResponseId',
+      );
+
+      final response = await _formsApiService.sendCustomEmail(
+        companyId: companyId,
+        to: toTextController.text,
+        subject: subject,
+        body: body,
+        cc: ccTextController.text.isNotEmpty ? ccTextController.text : null,
+        customerId: form.customerId,
+        formResponseId: formResponseId,
+      );
+
+      if (response == null) {
+        hideLoading();
+        MySnackBar.showErrorToast(message: "Failed to send email");
+        return false;
+      }
+
+      // Close loading dialog first
+      await hideLoading();
+
+      // Wait for dialog to fully close and overlays to reset
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // Check response and show appropriate message
+      // Per API spec: success is ONLY true when underlying pipeline returns "Sent"
+      if (response['success'] == true) {
+        final attached = response['attached'] == true;
+        final attachmentStatus = attached
+            ? "with PDF attached"
+            : "without PDF attachment";
+        MySnackBar.showToast(
+          message: "Email sent successfully $attachmentStatus",
+        );
+        kLog(
+          '✅ Email sent: to=${response['toEmail']}, subject=${response['subject']}, attached=$attached',
+        );
+        return true;
+      } else {
+        // Handle soft send failures (no exception, but provider rejected)
+        final emailStatus = response['emailStatus'] as String?;
+        final emailError = response['emailError'] as String?;
+        final generalError = response['error'] as String?;
+
+        final errorMessage =
+            emailError ?? generalError ?? emailStatus ?? 'Unknown error';
+        MySnackBar.showErrorToast(
+          message: "Failed to send email: $errorMessage",
+        );
+        kLog('⚠️ Email failed: status=$emailStatus, error=$errorMessage');
+        return false;
+      }
+    } catch (e) {
+      hideLoading();
+      kLog('❌ Send form email error: $e');
+      MySnackBar.showErrorToast(message: 'Failed to send email: $e');
       return false;
     }
   }
@@ -654,14 +785,102 @@ class FormsController extends GetxController with ExceptionHandler {
       );
 
       if (templateData != null) {
-        log('✅ Form template loaded for templateId=$templateId');
+        kLog('✅ Form template loaded for templateId=$templateId');
         return templateData;
       } else {
         throw Exception('Failed to load form template');
       }
     } catch (e) {
-      log('❌ Error loading form template: $e');
+      kLog('❌ Error loading form template: $e');
       rethrow;
+    }
+  }
+
+  /// Get form response by ID
+  ///
+  /// Fetches a previously submitted form response using its formResponseId
+  /// Returns the response data including field values and metadata
+  Future<FormGetResponseModel?> getFormResponse(int formResponseId) async {
+    try {
+      if (!await NetworkConnectivity.isNetworkAvailable()) {
+        MySnackBar.showErrorToast(message: "No network connection!");
+        return null;
+      }
+
+      final companyId = await MySharedPref.getCompanyID();
+      if (companyId == null || companyId.isEmpty) {
+        MySnackBar.showErrorToast(message: "Company ID not found");
+        return null;
+      }
+
+      kLog('📋 Fetching form response: formResponseId=$formResponseId');
+
+      final responseData = await _formsApiService.getResponse(
+        companyId: companyId,
+        formResponseId: formResponseId,
+      );
+
+      if (responseData != null) {
+        kLog('✅ Form response loaded for formResponseId=$formResponseId');
+        final formResponse = FormGetResponseModel.fromJson(responseData);
+
+        return formResponse;
+      } else {
+        kLog(
+          '⚠️ Form response not available for formResponseId=$formResponseId',
+        );
+        return null;
+      }
+    } catch (e) {
+      kLog('❌ Error fetching form response: $e');
+      MySnackBar.showErrorToast(message: 'Failed to fetch form response: $e');
+      return null;
+    }
+  }
+
+  /// Get form response by natural key (templateId + appointmentId + customerId)
+  ///
+  /// Fetches a previously submitted form response using natural key
+  /// This is used for viewing forms that were submitted from the poll queue
+  Future<FormGetResponseModel?> getFormResponseByNaturalKey({
+    required int templateId,
+    required String appointmentId,
+    required String customerId,
+  }) async {
+    try {
+      if (!await NetworkConnectivity.isNetworkAvailable()) {
+        MySnackBar.showErrorToast(message: "No network connection!");
+        return null;
+      }
+
+      final companyId = await MySharedPref.getCompanyID();
+      if (companyId == null || companyId.isEmpty) {
+        MySnackBar.showErrorToast(message: "Company ID not found");
+        return null;
+      }
+
+      kLog(
+        '📋 Fetching form response by natural key: templateId=$templateId, appointmentId=$appointmentId, customerId=$customerId',
+      );
+
+      final responseData = await _formsApiService.getResponseByNaturalKey(
+        companyId: companyId,
+        templateId: templateId,
+        appointmentId: appointmentId,
+        customerId: customerId,
+      );
+      kLog('📥 API Response d: ${jsonEncode(responseData)}');
+      if (responseData != null) {
+        kLog('✅ Form response loaded by natural key');
+        return FormGetResponseModel.fromJson(responseData);
+      } else {
+        kLog('⚠️ Form response not available by natural key');
+        return null;
+      }
+    } catch (e) {
+      kLog('❌ Error fetching form response: $e');
+      // MySnackBar.showErrorToast(message: 'Failed to fetch form response: $e');
+      return null;
     }
   }
 
@@ -683,16 +902,16 @@ class FormsController extends GetxController with ExceptionHandler {
       );
 
       if (pdfBytes != null) {
-        log(
+        kLog(
           '✅ PDF bytes loaded for templateId=$templateId (${pdfBytes.length} bytes)',
         );
         return pdfBytes;
       } else {
-        log('⚠️ PDF bytes not available for templateId=$templateId');
+        kLog('⚠️ PDF bytes not available for templateId=$templateId');
         return null;
       }
     } catch (e) {
-      log('❌ Error loading PDF bytes: $e');
+      kLog('❌ Error loading PDF bytes: $e');
       return null;
     }
   }
@@ -709,22 +928,22 @@ class FormsController extends GetxController with ExceptionHandler {
         throw Exception('No network connection');
       }
 
-      log('📄 Fetching PDF as base64: $pdfUrl');
+      kLog('📄 Fetching PDF as base64: $pdfUrl');
 
       final pdfBytes = await _formsApiService.fetchPdfBytes(pdfUrl);
 
       if (pdfBytes != null) {
         final base64 = base64Encode(pdfBytes);
-        log(
+        kLog(
           '✅ PDF fetched as base64 (${(pdfBytes.length / 1024).toStringAsFixed(2)} KB)',
         );
         return base64;
       } else {
-        log('⚠️ Failed to fetch PDF bytes');
+        kLog('⚠️ Failed to fetch PDF bytes');
         return null;
       }
     } catch (e) {
-      log('❌ Error fetching PDF as base64: $e');
+      kLog('❌ Error fetching PDF as base64: $e');
       return null;
     }
   }
@@ -741,9 +960,9 @@ class FormsController extends GetxController with ExceptionHandler {
   Future<void> saveFormProgress(int formInstanceId, Map<String, dynamic> fieldValues) async {
     try {
       await MyHive.saveFormProgress(formInstanceId, fieldValues);
-      log('✅ Saved form progress for formInstanceId=$formInstanceId (${fieldValues.length} fields)');
+      kLog('✅ Saved form progress for formInstanceId=$formInstanceId (${fieldValues.length} fields)');
     } catch (e) {
-      log('❌ Error saving form progress: $e');
+      kLog('❌ Error saving form progress: $e');
     }
   }
 
@@ -764,7 +983,7 @@ class FormsController extends GetxController with ExceptionHandler {
         appointmentId: appointmentId,
       );
     } catch (e) {
-      log('❌ Error loading form progress: $e');
+      kLog('❌ Error loading form progress: $e');
       return {};
     }
   }
@@ -777,9 +996,9 @@ class FormsController extends GetxController with ExceptionHandler {
   Future<void> clearFormProgress(int formInstanceId) async {
     try {
       await MyHive.clearFormProgress(formInstanceId);
-      log('✅ Cleared form progress for formInstanceId=$formInstanceId');
+      kLog('✅ Cleared form progress for formInstanceId=$formInstanceId');
     } catch (e) {
-      log('❌ Error clearing form progress: $e');
+      kLog('❌ Error clearing form progress: $e');
     }
   }
 
@@ -792,7 +1011,7 @@ class FormsController extends GetxController with ExceptionHandler {
     try {
       return MyHive.hasFormProgress(formInstanceId);
     } catch (e) {
-      log('❌ Error checking form progress: $e');
+      kLog('❌ Error checking form progress: $e');
       return false;
     }
   }
@@ -814,16 +1033,16 @@ class FormsController extends GetxController with ExceptionHandler {
   Map<String, dynamic> parseSmartFieldData(FormQueueItem form) {
     try {
       if (form.smartFieldData.isEmpty) {
-        log('⚠️ No smartFieldData provided for form ${form.formInstanceId}');
+        kLog('⚠️ No smartFieldData provided for form ${form.formInstanceId}');
         return {};
       }
 
       final smartFieldData =
           jsonDecode(form.smartFieldData) as Map<String, dynamic>;
-      log('✅ Parsed smartFieldData: ${smartFieldData.keys.toList()}');
+      kLog('✅ Parsed smartFieldData: ${smartFieldData.keys.toList()}');
       return smartFieldData;
     } catch (e) {
-      log('❌ Error parsing smartFieldData: $e');
+      kLog('❌ Error parsing smartFieldData: $e');
       return {};
     }
   }
@@ -835,7 +1054,7 @@ class FormsController extends GetxController with ExceptionHandler {
   Map<String, dynamic> parseTemplateStructure(FormQueueItem form) {
     try {
       if (form.template.structure.isEmpty) {
-        log(
+        kLog(
           '⚠️ No template structure provided for form ${form.formInstanceId}',
         );
         return {};
@@ -855,10 +1074,10 @@ class FormsController extends GetxController with ExceptionHandler {
         }
       }
 
-      log('✅ Parsed template structure: ${fieldMap.keys.length} fields');
+      kLog('✅ Parsed template structure: ${fieldMap.keys.length} fields');
       return fieldMap;
     } catch (e) {
-      log('❌ Error parsing template structure: $e');
+      kLog('❌ Error parsing template structure: $e');
       return {};
     }
   }
@@ -892,7 +1111,7 @@ class FormsController extends GetxController with ExceptionHandler {
       // Merge: API smart fields take precedence over app-level fields
       return {...appSmartFields, ...apiSmartFields};
     } catch (e) {
-      log('❌ Error getting smart field values: $e');
+      kLog('❌ Error getting smart field values: $e');
       return {};
     }
   }
@@ -913,7 +1132,7 @@ class FormsController extends GetxController with ExceptionHandler {
       // Convert field values to FieldResponse objects
       final responses = <FieldResponse>[];
 
-      log('📝 Processing ${fields.length} fields from template');
+      kLog('📝 Processing ${fields.length} fields from template');
 
       for (final fieldData in fields) {
         final field = fieldData as Map<String, dynamic>;
@@ -929,14 +1148,14 @@ class FormsController extends GetxController with ExceptionHandler {
         final value = fieldValues[fieldId];
 
         // Debug log for each field
-        log(
+        kLog(
           '📋 Field: $fieldId ($type) = ${value != null ? "${value.toString().substring(0, value.toString().length > 50 ? 50 : value.toString().length)}..." : "null"}',
         );
 
         if (value == null || value == '') {
           // Skip empty values except for checkboxes and checks (unchecked should still be sent)
           if (type != 'checkbox' && type != 'check') {
-            log('⏭️ Skipping empty field: $fieldId');
+            kLog('⏭️ Skipping empty field: $fieldId');
             continue;
           }
         }
@@ -1056,7 +1275,7 @@ class FormsController extends GetxController with ExceptionHandler {
         responses.add(response);
       }
 
-      log('📋 Prepared ${responses.length} field responses for submission');
+      kLog('📋 Prepared ${responses.length} field responses for submission');
 
       // Log the request body
       final requestBody = {
@@ -1067,7 +1286,7 @@ class FormsController extends GetxController with ExceptionHandler {
         'queueId': form.queueId,
         'responses': responses.map((r) => r.toJson()).toList(),
       };
-      log('📤 Request Body: ${jsonEncode(requestBody)}');
+      kLog('📤 Request Body: ${jsonEncode(requestBody)}');
 
       // Submit the form using existing submitForm method
       return await submitForm(
@@ -1079,7 +1298,7 @@ class FormsController extends GetxController with ExceptionHandler {
         queueId: form.queueId,
       );
     } catch (e) {
-      log('❌ Error submitting dynamic form: $e');
+      kLog('❌ Error submitting dynamic form: $e');
       errorMessage.value = "Failed to submit form: $e";
       handleError(e);
       return false;
@@ -1149,9 +1368,126 @@ class FormsController extends GetxController with ExceptionHandler {
     await _loadPendingFormsFromHive(resourceId);
   }
 
+  /// View and navigate to a form for viewing/editing
+  ///
+  /// Handles the complete flow of opening a form:
+  /// - Validates form template structure
+  /// - Loads form response data (if already submitted)
+  /// - Fetches PDF as base64
+  /// - Navigates to dynamic form screen
+  ///
+  /// [form] - The form queue item to view
+  /// [loadingController] - Optional controller for loading states (defaults to self)
+  Future<void> viewForm(FormQueueItem form) async {
+    kLog('selected form name ${form.template.name}');
+    final jsonData = form.template.structure != '';
+    if (!jsonData) {
+      return MySnackBar.showErrorToast(
+        message: "Form template structure is empty or invalid.",
+      );
+    }
+    final config = {
+      'form': jsonDecode(form.template.structure),
+      'formInstanceId': form.formInstanceId,
+      'templateId': form.templateId,
+      'appointmentId': form.appointmentId,
+      'customerId': form.customerId,
+      'queueId': form.queueId,
+      'formName': form.template.name,
+    };
+
+    if (form.smartFieldData.isNotEmpty) {
+      try {
+        final smartFieldValues =
+            jsonDecode(form.smartFieldData) as Map<String, dynamic>;
+        config['smartFieldValues'] = smartFieldValues;
+        kLog('SmartField values loaded: ${smartFieldValues.length} fields');
+      } catch (e) {
+        kLog('Error parsing smartFieldData: $e');
+      }
+    }
+
+    showLoading();
+    await Future.delayed(
+      const Duration(milliseconds: 200),
+    ); // Ensure loading shows
+    try {
+      // Check if form has been submitted and has a formResponseId
+      if (form.formResponseId != null && form.formResponseId! > 0) {
+        kLog(
+          'Fetching submitted form response: formResponseId=${form.formResponseId}',
+        );
+        final responseData = await getFormResponse(form.formResponseId!);
+
+        if (responseData != null) {
+          config['formResponse'] = responseData;
+          config['isReadOnly'] = true; // View-only mode for submitted forms
+          kLog('✅ Form response data loaded');
+        }
+      } else if (form.instanceStatus == 'Submitted') {
+        // For submitted forms from poll, use natural key (templateId + appointmentId + customerId)
+        kLog(
+          'Fetching submitted form by natural key: templateId=${form.templateId}, appointmentId=${form.appointmentId}, customerId=${form.customerId}',
+        );
+        final responseData = await getFormResponseByNaturalKey(
+          templateId: form.templateId,
+          appointmentId: form.appointmentId,
+          customerId: form.customerId,
+        );
+
+        if (responseData != null) {
+          config['formResponse'] = responseData;
+          config['isReadOnly'] = true; // View-only mode for submitted forms
+          kLog('✅ Form response data loaded by instance');
+        }
+      }
+
+      // Construct PDF URL using pdfBaseUrl + path from template
+      // Validate that pdfFile and path exist
+      final pdfFile = config['form']?['pdfFile'];
+      if (pdfFile == null || pdfFile['path'] == null) {
+        MySnackBar.showErrorToast(message: "Form data not found");
+        kLog('⚠️ Form data invalid: pdfFile or path is null');
+        Future.delayed(Duration.zero, () {
+          hideLoading();
+        });
+        return;
+      }
+
+      final pdfUrl = ApiUrl.pdfBaseUrl + pdfFile['path'];
+      final pdfBase64 = await getFormPdfAsBase64(pdfUrl);
+
+      hideLoading();
+
+      if (pdfBase64 == null) {
+        MySnackBar.showErrorToast(message: "Failed to load form PDF.");
+        return;
+      }
+
+      config['pdfBase64'] = pdfBase64;
+      Get.toNamed(Routes.PDF_DYNAMIC_FORM, arguments: config);
+    } catch (e, s) {
+      hideLoading();
+      kLog(e);
+      kLog(s);
+      MySnackBar.showErrorToast(
+        message: "Forms data not found - Error loading form: $e",
+      );
+    }
+  }
+
   @override
   void onClose() {
     clearSelection();
+    // Dispose email-related resources
+    toTextController.dispose();
+    ccTextController.dispose();
+    subjectTextController.dispose();
+    emailBodyTextController.dispose();
+    emailToFocusnode.value.dispose();
+    emailCcFocusnode.value.dispose();
+    emailSubjectFocusnode.value.dispose();
+    emailBodyFocusnode.value.dispose();
     super.onClose();
   }
 }

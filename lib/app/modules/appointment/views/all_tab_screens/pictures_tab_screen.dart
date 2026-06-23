@@ -348,123 +348,66 @@ class _PicturesTabScreenState extends State<PicturesTabScreen> {
                               onTap: () {
                                 showDialog(
                                   context: context,
-                                  builder: (_) => Dialog(
-                                    child: Stack(
-                                      children: [
-                                        CachedNetworkImage(
-                                          imageUrl: item.fileUrl,
-                                          fit: BoxFit.cover,
-                                          placeholder: (_, __) => const Center(
-                                            child: CircularProgressIndicator(),
+                                  builder: (_) => _NetworkImageDialog(
+                                    imageUrl: item.fileUrl,
+                                    pictureId: item.id.toString(),
+                                    onDelete: () async {
+                                      final appointment =
+                                          controller.selectedAppointment.value;
+                                      if (appointment == null) {
+                                        Get.snackbar(
+                                          'Error',
+                                          'No appointment selected',
+                                          snackPosition: SnackPosition.BOTTOM,
+                                        );
+                                        return false;
+                                      }
+
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (_) => AlertDialog(
+                                          title: const Text('Delete Picture'),
+                                          content: const Text(
+                                            'Are you sure you want to delete this picture?',
                                           ),
-                                          errorWidget: (_, __, ___) =>
-                                              const Center(
-                                                child: Icon(Icons.error),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              child: const Text(
+                                                'Delete',
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
                                               ),
-                                        ),
-                                        Positioned(
-                                          top: 8,
-                                          left: 8,
-                                          child: IconButton(
-                                            icon: const Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
                                             ),
-                                            onPressed: () async {
-                                              Navigator.pop(context);
-                                              final appointment = controller
-                                                  .selectedAppointment
-                                                  .value;
-                                              if (appointment == null) {
-                                                Get.snackbar(
-                                                  'Error',
-                                                  'No appointment selected',
-                                                  snackPosition:
-                                                      SnackPosition.BOTTOM,
-                                                );
-                                                return;
-                                              }
+                                          ],
+                                        ),
+                                      );
 
-                                              final confirmed =
-                                                  await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (_) => AlertDialog(
-                                                      title: const Text(
-                                                        'Delete Picture',
-                                                      ),
-                                                      content: const Text(
-                                                        'Are you sure you want to delete this picture?',
-                                                      ),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                context,
-                                                                false,
-                                                              ),
-                                                          child: const Text(
-                                                            'Cancel',
-                                                          ),
-                                                        ),
-                                                        TextButton(
-                                                          onPressed: () =>
-                                                              Navigator.pop(
-                                                                context,
-                                                                true,
-                                                              ),
-                                                          child: const Text(
-                                                            'Delete',
-                                                            style: TextStyle(
-                                                              color: Colors.red,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  );
-
-                                              if (confirmed == true) {
-                                                await imageController
-                                                    .deletePicture(
-                                                      pictureId: item.id,
-                                                      customerId:
-                                                          appointment.customerID
-                                                              ?.toString() ??
-                                                          '',
-                                                      siteId:
-                                                          int.tryParse(
-                                                            appointment
-                                                                    .siteID ??
-                                                                '',
-                                                          ) ??
-                                                          0,
-                                                      companyId:
-                                                          appointment.companyID,
-                                                    );
-                                              }
-                                            },
-                                            style: IconButton.styleFrom(
-                                              backgroundColor: Colors.black54,
-                                            ),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          top: 8,
-                                          right: 8,
-                                          child: IconButton(
-                                            icon: const Icon(
-                                              Icons.close,
-                                              color: Colors.white,
-                                            ),
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            style: IconButton.styleFrom(
-                                              backgroundColor: Colors.black54,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      if (confirmed == true) {
+                                        await imageController.deletePicture(
+                                          pictureId: item.id,
+                                          customerId:
+                                              appointment.customerID
+                                                  ?.toString() ??
+                                              '',
+                                          siteId:
+                                              int.tryParse(
+                                                appointment.siteID ?? '',
+                                              ) ??
+                                              0,
+                                          companyId: appointment.companyID,
+                                        );
+                                        return true;
+                                      }
+                                      return false;
+                                    },
                                   ),
                                 );
                               },
@@ -622,10 +565,123 @@ void showMediaDialog(BuildContext context, String path) {
   } else {
     showDialog(
       context: context,
-      builder: (_) => Dialog(
-        child: InteractiveViewer(
-          child: Image.file(File(path), fit: BoxFit.contain),
-        ),
+      builder: (_) => _ImageDialog(imagePath: path),
+    );
+  }
+}
+
+class _ImageDialog extends StatefulWidget {
+  final String imagePath;
+  const _ImageDialog({required this.imagePath});
+
+  @override
+  State<_ImageDialog> createState() => _ImageDialogState();
+}
+
+class _ImageDialogState extends State<_ImageDialog> {
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          // Image Viewer with Zoom and Pan
+          SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height * 0.8,
+            child: InteractiveViewer(
+              minScale: 1.0,
+              maxScale: 8.0,
+              child: Image.file(File(widget.imagePath), fit: BoxFit.contain),
+            ),
+          ),
+
+          // Top Bar - Close button
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+              style: IconButton.styleFrom(backgroundColor: Colors.black54),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NetworkImageDialog extends StatefulWidget {
+  final String imageUrl;
+  final String pictureId;
+  final Future<bool> Function() onDelete;
+
+  const _NetworkImageDialog({
+    required this.imageUrl,
+    required this.pictureId,
+    required this.onDelete,
+  });
+
+  @override
+  State<_NetworkImageDialog> createState() => _NetworkImageDialogState();
+}
+
+class _NetworkImageDialogState extends State<_NetworkImageDialog> {
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.black,
+      insetPadding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          // Image Viewer with Zoom and Pan
+          SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height * 0.8,
+            child: InteractiveViewer(
+              minScale: 1.0,
+              maxScale: 8.0,
+              child: CachedNetworkImage(
+                imageUrl: widget.imageUrl,
+                fit: BoxFit.contain,
+                placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+                errorWidget: (context, url, error) =>
+                    const Center(child: Icon(Icons.error, color: Colors.white)),
+              ),
+            ),
+          ),
+
+          // Top Left - Delete button
+          Positioned(
+            top: 8,
+            left: 8,
+            child: IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () async {
+                final shouldClose = await widget.onDelete();
+                if (shouldClose && context.mounted) {
+                  Navigator.pop(context);
+                }
+              },
+              style: IconButton.styleFrom(backgroundColor: Colors.black54),
+            ),
+          ),
+
+          // Top Right - Close button
+          Positioned(
+            top: 8,
+            right: 8,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+              style: IconButton.styleFrom(backgroundColor: Colors.black54),
+            ),
+          ),
+        ],
       ),
     );
   }

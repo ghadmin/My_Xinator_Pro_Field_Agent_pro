@@ -36,9 +36,14 @@ class FormValidator extends GetxController {
   String? validatePhoneNumber(String value) {
     if (value.isEmpty) {
       return 'Please enter your phone number';
-    } else if (!GetUtils.isPhoneNumber(value)) {
-      return 'Please enter a valid phone number';
     }
+
+    // Check if phone number matches xxx-xxx-xxxx format
+    final regex = RegExp(r'^\d{3}-\d{3}-\d{4}$');
+    if (!regex.hasMatch(value)) {
+      return 'Please enter a valid phone number (xxx-xxx-xxxx)';
+    }
+
     return null;
   }
 

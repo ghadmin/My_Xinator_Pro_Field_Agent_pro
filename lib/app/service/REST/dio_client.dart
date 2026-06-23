@@ -13,7 +13,7 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'api_header.dart';
 
 class DioClient {
-  static const int TIME_OUT_DURATION = 60;
+  static const int TIME_OUT_DURATION = 90; // Increased from 60 to 90 seconds
 
   final Dio _dio =
       Dio(
@@ -21,6 +21,11 @@ class DioClient {
             connectTimeout: Duration(seconds: TIME_OUT_DURATION),
             receiveTimeout: Duration(seconds: TIME_OUT_DURATION),
             sendTimeout: Duration(seconds: TIME_OUT_DURATION),
+            // Add validation settings for better error handling
+            validateStatus: (status) {
+              // Accept status codes in the 200-299 range and also handle some common error codes
+              return status != null && status >= 200 && status < 300;
+            },
           ),
         )
         ..interceptors.add(
@@ -94,7 +99,8 @@ class DioClient {
     Map<String, dynamic>? headers,
   }) async {
     try {
-      log(" params: $params");
+      log("GET Request URL: $url");
+      log("GET Request params: $params");
       var response = await _dio.get(
         url,
         options: Options(headers: headers),
@@ -102,10 +108,18 @@ class DioClient {
         // Don't encode query parameters to prevent double encoding issues
       );
 
+      log("GET Response Status: ${response.statusCode}");
       return response.data;
+    } on DioException catch (e, s) {
+      log("DioException in GET request: ${e.type}", name: "DioClient");
+      log("DioException message: ${e.message}", name: "DioClient");
+      log("DioException response: ${e.response}", name: "DioClient");
+      log("DioException error: ${e.error}", name: "DioClient");
+      log("Stack trace: $s", name: "DioClient");
+      rethrow; // Rethrow DioException instead of throwing regular Exception
     } catch (e, s) {
-      log("message: $e", name: "AuthController");
-      log("stack: $s", name: "AuthController");
+      log("General exception in GET request: $e", name: "DioClient");
+      log("Stack trace: $s", name: "DioClient");
       rethrow;
     }
   }
@@ -120,15 +134,27 @@ class DioClient {
   }) async {
     var payload = json.encode(body);
     try {
+      log("POST Request URL: $url");
+      log("POST Request params: $params");
       var response = await _dio.post(
         url,
         options: Options(headers: headers),
         queryParameters: params,
         data: payload,
       );
-      log("inside body $body \n response : $response params  $params");
+      log("POST Response Status: ${response.statusCode}");
+      log("POST Response data: ${response.data}");
       return response.data;
-    } catch (e) {
+    } on DioException catch (e, s) {
+      log("DioException in POST request: ${e.type}", name: "DioClient");
+      log("DioException message: ${e.message}", name: "DioClient");
+      log("DioException response: ${e.response}", name: "DioClient");
+      log("DioException error: ${e.error}", name: "DioClient");
+      log("Stack trace: $s", name: "DioClient");
+      rethrow; // Rethrow DioException instead of throwing regular Exception
+    } catch (e, s) {
+      log("General exception in POST request: $e", name: "DioClient");
+      log("Stack trace: $s", name: "DioClient");
       rethrow;
     }
   }

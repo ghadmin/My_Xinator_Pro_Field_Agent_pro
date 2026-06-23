@@ -2,10 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_cropper/image_cropper.dart';
+// import 'package:image_cropper/image_cropper.dart'; // Temporarily disabled due to SPM dependency conflict
 import 'package:image_picker/image_picker.dart';
-
-import '../config/theme/light_theme_colors.dart';
 
 class CustomImagePicker {
   Rx<File?> pickedImage = Rx<File?>(null);
@@ -46,46 +44,55 @@ class CustomImagePicker {
     }
   }
 
-  /// Crop Image
-  cropImage(File croppedImage) async {
-    final croppedFile = await ImageCropper().cropImage(
-      sourcePath: croppedImage.path,
-      compressQuality: 50,
-      compressFormat: ImageCompressFormat.jpg,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Cropper',
-          toolbarColor: LightThemeColors.primaryColor,
-          toolbarWidgetColor: Colors.white,
-          initAspectRatio: CropAspectRatioPreset.original,
-          lockAspectRatio: false,
-          cropStyle: CropStyle.circle,
-          aspectRatioPresets: [
-            CropAspectRatioPreset.square,
-            CropAspectRatioPreset.ratio3x2,
-            CropAspectRatioPreset.original,
-            CropAspectRatioPreset.ratio4x3,
-            CropAspectRatioPreset.ratio16x9
-          ],
-        ),
-        IOSUiSettings(
-          title: 'Cropper',
-          cropStyle: CropStyle.circle,
-          aspectRatioPresets: [
-            CropAspectRatioPreset.square,
-            CropAspectRatioPreset.ratio3x2,
-            CropAspectRatioPreset.original,
-            CropAspectRatioPreset.ratio4x3,
-            CropAspectRatioPreset.ratio16x9
-          ],
-        ),
-      ],
-    );
-    if (croppedFile != null) {
-      imageCache.clear();
-      return File(croppedFile.path);
-    }
-    return null;
+  /// Crop Image (Temporarily disabled due to SPM dependency conflict)
+  Future<File> cropImage(File croppedImage) async {
+    // Image cropper is temporarily disabled due to Swift Package Manager dependency conflict
+    // TODO: Re-enable when image_cropper package is updated to support SPM
+    // or when an alternative solution is found.
+
+    // Original implementation (commented out):
+    // final croppedFile = await ImageCropper().cropImage(
+    //   sourcePath: croppedImage.path,
+    //   compressQuality: 50,
+    //   compressFormat: ImageCompressFormat.jpg,
+    //   uiSettings: [
+    //     AndroidUiSettings(
+    //       toolbarTitle: 'Cropper',
+    //       toolbarColor: LightThemeColors.primaryColor,
+    //       toolbarWidgetColor: Colors.white,
+    //       initAspectRatio: CropAspectRatioPreset.original,
+    //       lockAspectRatio: false,
+    //       cropStyle: CropStyle.circle,
+    //       aspectRatioPresets: [
+    //         CropAspectRatioPreset.square,
+    //         CropAspectRatioPreset.ratio3x2,
+    //         CropAspectRatioPreset.original,
+    //         CropAspectRatioPreset.ratio4x3,
+    //         CropAspectRatioPreset.ratio16x9
+    //       ],
+    //     ),
+    //     IOSUiSettings(
+    //       title: 'Cropper',
+    //       cropStyle: CropStyle.circle,
+    //       aspectRatioPresets: [
+    //         CropAspectRatioPreset.square,
+    //         CropAspectRatioPreset.ratio3x2,
+    //         CropAspectRatioPreset.original,
+    //         CropAspectRatioPreset.ratio4x3,
+    //         CropAspectRatioPreset.ratio16x9
+    //       ],
+    //     ),
+    //   ],
+    // );
+    // if (croppedFile != null) {
+    //   imageCache.clear();
+    //   return File(croppedFile.path);
+    // }
+    // return null;
+
+    // Temporary solution: Return the original image without cropping
+    imageCache.clear();
+    return croppedImage;
   }
 
   /// Get the size of the file in MB

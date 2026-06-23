@@ -13,6 +13,7 @@ import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/splash_container.dart';
+import '../../../utils/simple_phone_formatter.dart';
 import '../controllers/invoice_controller.dart';
 import '../models/qbo_class_dropdown_model.dart';
 import '../models/qbo_location_dropdown_model.dart';
@@ -166,11 +167,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                         : InkWell(
                                             onTap: () async {
                                               await UrlLauncher.phoneCall(
-                                                controller.createCustomerPhone,
+                                                SimplePhoneFormatter.clean(controller.createCustomerPhone),
                                               );
                                             },
                                             child: Text(
-                                              controller.createCustomerPhone,
+                                              PhoneDisplayFormatter.format(controller.createCustomerPhone),
                                               style: theme.textTheme.bodySmall
                                                   ?.copyWith(
                                                     color: LightThemeColors
