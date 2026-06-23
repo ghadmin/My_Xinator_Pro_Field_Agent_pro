@@ -16,8 +16,5 @@
         ".vscode/.swift-format",
         "${file}"
     ],
-    "[swift]": {
-        "editor.defaultFormatter": "sweetpad.sweetpad",
-        "editor.formatOnSave": true
-    }
+    "dart.flutterSdkPath": "/Users/hridoy/Public/Documents/flutter"
 }

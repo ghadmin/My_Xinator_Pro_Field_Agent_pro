@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill -f \"python.*main.py\")",
+      "Bash(pkill -f \"uvicorn.*main:app\")",
+      "Bash(chmod +x /Users/hridoy/StudioProjects/My_Xinator_Pro_Field_Agent_pro/rag-api/appointments-rag/start_server.sh)",
+      "Bash(lsof -ti:8000)",
+      "Bash(python main.py)",
+      "Bash(curl -s -X POST http://localhost:8000/api/query -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(python3 -c \"import sys, json; data = json.load\\(sys.stdin\\); print\\('Answer:', data.get\\('answer', ''\\)[:200]\\); print\\('Sources:', len\\(data.get\\('sources', []\\)\\)\\); print\\('Confidence:', data.get\\('confidence', 0\\)\\)\")",
+      "Bash(python3 -c \"import sys, json; data = json.load\\(sys.stdin\\); print\\('Answer:', data.get\\('answer', ''\\)[:300]\\); print\\('\\\\nSources:', len\\(data.get\\('sources', []\\)\\)\\)\")",
+      "Bash(python3 -c \"import sys, json; data = json.load\\(sys.stdin\\); print\\('Answer:', data.get\\('answer', ''\\)[:400]\\); print\\('\\\\nSources:', len\\(data.get\\('sources', []\\)\\); print\\('Confidence:', data.get\\('confidence', 0\\)\\)\")",
+      "Bash(python3 -c \"import sys, json; data = json.load\\(sys.stdin\\); print\\('Sources:', data.get\\('sources', []\\)\\); print\\('Answer preview:', data.get\\('answer', ''\\)[:200]\\)\")",
+      "Bash(wait)",
+      "Bash(./venv/bin/python -u main.py)",
+      "Bash(python3 -c \"import sys, json; data = json.load\\(sys.stdin\\); print\\('Sources:', data.get\\('sources', []\\)\\); print\\('Answer:', data.get\\('answer', ''\\)[:300]\\)\")",
+      "Bash(python3 -c \"import sys, json; data = json.load\\(sys.stdin\\); print\\(data.get\\('answer', ''\\)[:150]\\)\")",
+      "Bash(flutter analyze *)",
+      "Bash(xargs grep -n \"\\\\${.*\\\\.toStringAsFixed\\(2\\)}\")",
+      "Bash(xargs grep -n \"\\\\${.*}.*toStringAsFixed\\(1\\)\")",
+      "Bash(xargs grep -n \"\\\\${.*}.*toStringAsFixed\\(0\\)\")",
+      "Bash(xargs grep -n \"\\\\${.*}\\\\.toStringAsFixed\\(2\\)\")",
+      "Bash(grep -n '\\\\$ ' /Users/hridoy/StudioProjects/My_Xinator_Pro_Field_Agent_pro/lib/app/modules/invoice/views/payment_by_cash_view.dart)"
+    ]
+  }
+}

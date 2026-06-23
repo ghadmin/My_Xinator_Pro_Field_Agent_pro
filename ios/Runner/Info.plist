@@ -63,6 +63,10 @@
 	<string>
 	This app needs access to your photo library to select and upload images when required.
 	</string>
+	<key>NSCameraUsageDescription</key>
+	<string>
+	This app needs access to your camera to take photos for appointment documentation.
+	</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

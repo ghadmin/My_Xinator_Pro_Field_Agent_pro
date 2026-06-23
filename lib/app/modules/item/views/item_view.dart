@@ -22,26 +22,22 @@ class ItemView extends GetView<ItemController> {
     var theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight:
-            Platform.isAndroid ? kToolbarHeight : kToolbarHeight + 60,
+        toolbarHeight: Platform.isAndroid
+            ? kToolbarHeight
+            : kToolbarHeight + 10.sp,
         title: const TextWidget(text: 'Items'),
         actions: [
-          InkWell(
-            onTap: () {
-              //  Get.toNamed(Routes.SETTINGS);
-            },
-            child: Padding(
-              padding: EdgeInsets.only(right: 18.sp),
-              child: SizedBox(
-                width: 35.sp, // Specify the width and height you want
-                height: 35.sp,
-                child: CircleAvatar(
-                  child: ClipOval(
-                    child: AssetImageBox(
-                      height: 35.sp,
-                      width: 35.sp,
-                      assetImage: AppImages.kDemoUser,
-                    ),
+          Padding(
+            padding: EdgeInsets.only(right: 18.sp),
+            child: SizedBox(
+              width: 35.sp, // Specify the width and height you want
+              height: 35.sp,
+              child: CircleAvatar(
+                child: ClipOval(
+                  child: AssetImageBox(
+                    height: 35.sp,
+                    width: 35.sp,
+                    assetImage: AppImages.kDemoUser,
                   ),
                 ),
               ),
@@ -49,7 +45,7 @@ class ItemView extends GetView<ItemController> {
           ),
         ],
       ),
-      drawer: CustomDrawer(indexClicked: 3),
+      drawer: CustomDrawer(indexClicked: 1),
       body: Obx(
         () => Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
@@ -69,13 +65,6 @@ class ItemView extends GetView<ItemController> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            TextWidget(
-                              text: "Item List",
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontSize: 20.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
                             // TextWidget(
                             //   text: "Create  items now",
                             //   style: theme.textTheme.bodyLarge?.copyWith(
@@ -174,10 +163,11 @@ class ItemView extends GetView<ItemController> {
                                             TextWidget(
                                               text: item.name ?? "",
                                               style: theme
-                                                  .textTheme.headlineSmall
+                                                  .textTheme
+                                                  .headlineSmall
                                                   ?.copyWith(
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -191,8 +181,8 @@ class ItemView extends GetView<ItemController> {
                                                 bottom: 2.sp,
                                               ),
                                               child: TextWidget(
-                                                text: item.description !=
-                                                            null &&
+                                                text:
+                                                    item.description != null &&
                                                         item.description != ''
                                                     ? item.description!
                                                     : "N/A",
@@ -222,10 +212,11 @@ class ItemView extends GetView<ItemController> {
                                               text:
                                                   "\$${item.price?.toStringAsFixed(2) ?? ""}",
                                               style: theme
-                                                  .textTheme.headlineSmall
+                                                  .textTheme
+                                                  .headlineSmall
                                                   ?.copyWith(
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),

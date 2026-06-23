@@ -80,18 +80,18 @@ class CustomDrawer extends StatelessWidget {
                   ),
                   SizedBox(height: 10.h),
 
-                  _drawerItem(
-                    icon: SideBar.formIcon,
-                    text: 'Forms',
-                    indexNumber: 1,
-                    onTap: () => Get.toNamed(Routes.FORMS),
-                  ),
+                  // _drawerItem(
+                  //   icon: SideBar.formIcon,
+                  //   text: 'Forms',
+                  //   indexNumber: 1,
+                  //   onTap: () => Get.toNamed(Routes.FORMS),
+                  // ),
                   SizedBox(height: 10.h),
 
                   _drawerItem(
                     icon: SideBar.itemsIcon,
                     text: 'Items',
-                    indexNumber: 3,
+                    indexNumber: 1,
                     onTap: () => Get.toNamed(Routes.ITEM),
                   ),
                   SizedBox(height: 10.h),
@@ -99,7 +99,7 @@ class CustomDrawer extends StatelessWidget {
                   _drawerItem(
                     icon: SideBar.customerServiceIcon,
                     text: 'Customers',
-                    indexNumber: 4,
+                    indexNumber: 2,
                     onTap: () => Get.toNamed(Routes.CUSTOMER),
                   ),
                   SizedBox(height: 10.h),
@@ -108,7 +108,7 @@ class CustomDrawer extends StatelessWidget {
                   _drawerItem(
                     icon: SideBar.logoutIcon,
                     text: 'Log out',
-                    indexNumber: 5,
+                    indexNumber: 3,
                     onTap: () async {
                       Get.back();
                       showAdaptiveDialog(
@@ -164,11 +164,12 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Widget _drawerItem(
-      {required String icon,
-      required String text,
-      required int indexNumber,
-      required GestureTapCallback onTap}) {
+  Widget _drawerItem({
+    required String icon,
+    required String text,
+    required int indexNumber,
+    required GestureTapCallback onTap,
+  }) {
     return ListTile(
       selected: indexClicked == indexNumber,
       selectedTileColor: Colors.white,

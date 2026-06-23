@@ -9,7 +9,10 @@ class DioExceptions implements Exception {
   String message = "";
 
   DioExceptions.fromDioError(DioException dioException) {
-    log("message: ${dioException.message}", name: "DioExceptions");
+    log("DioException type: ${dioException.type}", name: "DioExceptions");
+    log("DioException message: ${dioException.message}", name: "DioExceptions");
+    log("DioException error: ${dioException.error}", name: "DioExceptions");
+
     switch (dioException.type) {
       case DioExceptionType.cancel:
         message = Strings.requestCanceled.tr;
@@ -29,8 +32,16 @@ class DioExceptions implements Exception {
           dioException.response!.data,
         );
         break;
-
+      case DioExceptionType.unknown:
+        log("DioExceptionType.unknown occurred", name: "DioExceptions");
+        message = "Network connection failed. Please check your internet connection and try again.";
+        break;
+      case DioExceptionType.connectionError:
+        log("DioExceptionType.connectionError occurred", name: "DioExceptions");
+        message = "Unable to connect to server. Please check your internet connection.";
+        break;
       default:
+        log("Unhandled DioException type: ${dioException.type}", name: "DioExceptions");
         message = Strings.somethingWrong.tr;
         break;
     }

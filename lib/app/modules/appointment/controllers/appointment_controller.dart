@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'package:mime/mime.dart';
-import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/custom_fields_controller.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/image/models/picture_model.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
@@ -21,22 +20,17 @@ import '../../../data/local/my_shared_pref.dart';
 import '../../../service/REST/api_urls.dart';
 import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
-import '../../../service/helper/dialog_helper.dart';
 import '../../../service/helper/network_connectivity.dart';
 import '../../customer/controllers/customer_controller.dart';
-import '../../forms/controllers/form_controller.dart';
 import '../../invoice/controllers/invoice_controller.dart';
 import '../../item/models/item_list_model.dart';
 import '../../settings/controllers/settings_controller.dart';
 import '../models/appointment_model.dart';
-import '../models/equipment_model.dart';
 import '../models/equipment_type_model.dart';
 import '../models/file_model.dart';
-import '../models/image_list_model.dart';
 import '../models/note_model.dart';
 import '../models/site_model.dart';
 import '../models/tag_model.dart';
-import '../views/appointment_details_view.dart';
 
 class MediaModel {
   String time;
@@ -81,7 +75,6 @@ class AppointmentController extends GetxController
   final noteText = RxString("");
   final settingController = Get.put(SettingsController());
   final customFieldsController = Get.put(CustomFieldsController());
-  final formC = Get.put(FormController());
   final invoiceController = Get.put(InvoiceController());
   final customerController = Get.put(CustomerController());
   final TextEditingController sortTextController = TextEditingController();
@@ -97,12 +90,6 @@ class AppointmentController extends GetxController
   final customFieldTextController = Rx<TextEditingController>(
     TextEditingController(),
   );
-  List<ResourceItem> resources = [
-    ResourceItem(title: "Fill Gas"),
-    ResourceItem(title: "Wash Indoor"),
-    ResourceItem(title: "Wash Outdoor"),
-    ResourceItem(title: "Check Circuit"),
-  ];
 
   String appointmentID = "";
   String companyId = "";
@@ -129,21 +116,18 @@ class AppointmentController extends GetxController
   RxInt selectedAptIndex = 0.obs;
   final selectedSite = Rx<SiteModel?>(null);
   RxBool isAppointmentEmpty = false.obs;
+  final selectedDateRange = Rx<DateTimeRange?>(null);
 
   RxInt selectedStatusValue = 0.obs; //khel
   RxInt selectedTicketStatusValue = 0.obs; //khel
   RxString selectedTabOption = "Appointment".obs;
   final noteList = RxList<NoteModel>([]);
-  final equipmentList = RxList<EquipmentModel>([]);
-  final equipmentTypeList = RxList<EquipmentTypeModel>([]);
-  final selectedEquipmentTypeList = RxList<EquipmentTypeModel>([]);
 
   /// API ///
   final appointments = RxList<Appointments>();
   final extendedAppointments = RxList<Appointments>();
   final sortedAppointments = RxList<Appointments>();
   final selectedDateString = RxString('');
-  final isBasicExpanded = RxBool(false);
   final isEquipmentExpanded = RxBool(false);
 
   final selectedAppointment = Rx<Appointments?>(null);
@@ -152,7 +136,11 @@ class AppointmentController extends GetxController
 
   Future<void> getAllNotes({bool showLoader = true}) async {
     try {
-      if (showLoader) showLoading();
+      kLog('getAllNotes showLoader: $showLoader');
+      if (showLoader) {
+        kLog('getAllNotes calling showLoading');
+        showLoading();
+      }
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
         var companyID = await MySharedPref.getCompanyID();
@@ -202,7 +190,11 @@ class AppointmentController extends GetxController
   /// Get customer site details using siteId from selected appointment
   Future<void> getCustomerSite({bool showLoader = true}) async {
     try {
-      if (showLoader) showLoading();
+      kLog('getCustomerSite showLoader: $showLoader');
+      if (showLoader) {
+        kLog('getCustomerSite calling showLoading');
+        showLoading();
+      }
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
         final appointment = selectedAppointment.value;
@@ -237,7 +229,7 @@ class AppointmentController extends GetxController
           return;
         }
 
-        log("getCustomerSite response: $response");
+        // log("getCustomerSite response: $response");
 
         // Parse response - API returns an array
         if (response is List && response.isNotEmpty) {
@@ -306,14 +298,29 @@ class AppointmentController extends GetxController
       await customFieldsController.getAttachedCustomFields(
         appointmentId: appointment.apptID!,
       );
-
-      await getCustomerSite(showLoader: false);
+      noteController.text = appointment.note ?? "";
+      await getCustomerSite(showLoader: true);
       contactName =
           "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
-      address =
-          "${appointment.customer?.address1}, "
-          "${appointment.customer?.city}, "
-          "${appointment.customer?.state}, ";
+
+      // Build address from site or customer data
+      // if (selectedSite.value != null) {
+      //   final site = selectedSite.value!;
+      //   address = _buildAddressString(
+      //     address: c.address,
+      //     city: "",
+      //     state: site.state ?? "",
+      //     zipCode: site.zip ?? "",
+      //     country: site.country ?? "",
+      //   );
+      // } else {
+      address = _buildAddressString(
+        address: appointment.customer?.address1 ?? "",
+        city: appointment.customer?.city ?? "",
+        state: appointment.customer?.state ?? "",
+        zipCode: appointment.customer?.zipCode ?? "",
+        country: "",
+      );
       mobileNumber = appointment.customer?.mobile ?? "";
       phoneNumber = appointment.customer?.phone ?? "";
       customerTitle =
@@ -483,6 +490,7 @@ class AppointmentController extends GetxController
 
       if (range != null) {
         selectedDate.value = null;
+        selectedDateRange.value = range;
         selectedDateString(
           '${DateFormat("MM/dd/yyyy").format(range.start)} - ${DateFormat("MM/dd/yyyy").format(range.end)}',
         );
@@ -496,7 +504,12 @@ class AppointmentController extends GetxController
 
     final list = appointments.where((p0) {
       final date = DateFormat("yyyy/MM/dd hh:mm a").parse(p0.startDateTime!);
-      return date.isAfter(range.start.subtract(const Duration(days: 1))) &&
+      // Filter out Pending and Scheduled status appointments
+      final validStatus =
+          p0.status?.statusName != "Pending" &&
+          p0.status?.statusName != "Scheduled";
+      return validStatus &&
+          date.isAfter(range.start.subtract(const Duration(days: 1))) &&
           date.isBefore(range.end.add(const Duration(days: 1)));
     }).toList();
 
@@ -608,138 +621,10 @@ class AppointmentController extends GetxController
   //   }
   // }
 
-  Future<void> uploadImages({
-    required String tagName,
-    // List of image file paths
-    required String description,
-  }) async {
-    showLoading();
-    await Future.delayed(Duration.zero); // <- give UI a chance to render
-
-    // Convert image files to Base64
-    // final List<Map<String, dynamic>> imageList = [];
-    // for (final path in mediaList.first.images) {
-    //   final file = File(path);
-    //   if (!file.existsSync()) continue;
-
-    //   final bytes = await file.readAsBytes();
-    //   final base64Image = base64Encode(bytes);
-
-    //   imageList.add({
-    //     "ImageName": file.uri.pathSegments.last,
-    //     "ImageBase64": base64Image,
-    //     "Description": description,
-    //     "CreatedAt": DateFormat("yyyy/MM/dd").format(DateTime.now()),
-    //   });
-    // }
-
-    // var userID = await MySharedPref.getUserName();
-    // final requestBody = {
-    //   "requestPeram": {
-    //     "CustomerId": customerID,
-    //     "AppointmentId": appointmentID,
-    //     "CSLId": 0,
-    //     "UploadedBy": userID,
-    //     "CompanyId": companyId,
-    //     "TagName": tagName,
-    //     "ImageList": imageList,
-    //   },
-    // };
-
-    // ============================================
-    // NEW REQUEST BODY STRUCTURE (Kept for reference)
-    // ============================================
-    final List<Map<String, dynamic>> pictures = [];
-    var userID = await MySharedPref.getUserName();
-    final sharedPrefCompanyId = await MySharedPref.getCompanyID();
-    for (final path in mediaList.first.images) {
-      // Use helper method to convert image to base64
-      final base64Image = await _convertImageToBase64(path);
-      if (base64Image == null) continue; // Skip if conversion failed
-
-      final file = File(path);
-
-      pictures.add({
-        "Id": mediaList.first.images.indexOf(
-          path,
-        ), // Will be generated by server
-        "CompanyID": sharedPrefCompanyId,
-        "CustomerID": customerID,
-        "SiteId": selectedSite.value?.id ?? 0, // Add siteId if available
-        "FileName": file.uri.pathSegments.last,
-        "FileContent": base64Image, "UploadDate": mediaList.first.time,
-        "UploadedBy": userID,
-        "AppointmentId": int.tryParse(appointmentID) ?? 0,
-        "Reference": description, // Using tagName as reference
-      });
-    }
-
-    // Prepare request body with new structure
-    final requestBody = {"pictures": pictures};
-    // ============================================
-
-    log("uploadImages body: ${jsonEncode(requestBody)}");
-
-    // Send request
-    final response = await DioClient()
-        .post(url: ApiUrl.saveImageUrl, body: requestBody)
-        .catchError(handleError);
-
-    log("uploadImages response: $response");
-    hideLoading();
-
-    if (response == null) {
-      MySnackBar.showErrorToast(message: "Upload failed: No response");
-    } else {
-      MySnackBar.showToast(message: "Images uploaded successfully!");
-      mediaList.clear();
-    }
-    getImageList(false);
-  }
-
-  // Helper method to convert image file to base64 using isolate
-  Future<String?> _convertImageToBase64(String imagePath) async {
-    try {
-      final file = File(imagePath);
-      if (!file.existsSync()) {
-        debugPrint('Image file does not exist: $imagePath');
-        return null;
-      }
-
-      // Read file bytes
-      final bytes = await file.readAsBytes();
-
-      // Use isolate for heavy base64 encoding
-      final base64Image = await compute(_encodeBytesToBase64, bytes);
-
-      return base64Image;
-    } catch (e) {
-      debugPrint('Error converting image to base64: $e');
-      return null;
-    }
-  }
-
-  // ============================================
-  // OLD IMAGE LIST DECLARATION (Kept for reference)
-  // ============================================
-  // final imageList = RxList<ImageListModel>([]);
-  // ============================================
-
   // Image list now stores ImageList objects directly from API array response
-  final imageList = RxList<ImageList>([]);
+  final imageList = RxList<Picture>([]);
 
   // Group images by upload date
-  Map<String, List<ImageList>> get imagesGroupedByDate {
-    final Map<String, List<ImageList>> grouped = {};
-    for (var image in imageList) {
-      final date = image.uploadDate ?? 'Unknown Date';
-      if (!grouped.containsKey(date)) {
-        grouped[date] = [];
-      }
-      grouped[date]!.add(image);
-    }
-    return grouped;
-  }
 
   Future<void> getImageList(bool isFromTab) async {
     showLoading();
@@ -781,8 +666,8 @@ class AppointmentController extends GetxController
       if (response == null) {
         MySnackBar.showErrorToast(message: "Failed to load images");
       } else {
-        final List<ImageList> fetchedImages = (response as List)
-            .map((e) => ImageList.fromJson(e))
+        final List<Picture> fetchedImages = (response as List)
+            .map((e) => Picture.fromJson(e))
             .toList();
         imageList.clear();
         imageList.addAll(fetchedImages);
@@ -819,15 +704,35 @@ class AppointmentController extends GetxController
     update();
   }
 
+  /// Remove file upload item at index
+  void removeFileUploadItem(int index) {
+    if (index >= 0 && index < fileUploadList.length) {
+      fileUploadList.removeAt(index);
+    }
+  }
+
   // Group files by upload date
   Map<String, List<FileModel>> get filesGroupedByDate {
     final Map<String, List<FileModel>> grouped = {};
     for (var file in fileList) {
-      final date = file.uploadDate ?? 'Unknown Date';
-      if (!grouped.containsKey(date)) {
-        grouped[date] = [];
+      final dateStr = file.uploadDate ?? 'Unknown Date';
+      try {
+        final dateTime = DateTime.parse(dateStr);
+        final formattedDate = DateFormat(
+          'MMMM dd, yyyy HH:mm:ss',
+        ).format(dateTime);
+
+        if (!grouped.containsKey(formattedDate)) {
+          grouped[formattedDate] = [];
+        }
+        grouped[formattedDate]!.add(file);
+      } catch (e) {
+        // If parsing fails, use original date
+        if (!grouped.containsKey(dateStr)) {
+          grouped[dateStr] = [];
+        }
+        grouped[dateStr]!.add(file);
       }
-      grouped[date]!.add(file);
     }
     return grouped;
   }
@@ -879,152 +784,6 @@ class AppointmentController extends GetxController
     }
   }
 
-  /// Upload files to the server
-  Future<void> uploadFiles({
-    required String tagName,
-    // List of image file paths
-    required String description,
-  }) async {
-    // Show upload progress dialog
-    DialogHelper.showUploadProgressDialog();
-
-    var userID = await MySharedPref.getUserName();
-    final sharedPrefCompanyId = await MySharedPref.getCompanyID();
-
-    // Count total files first for progress tracking
-    int totalFiles = 0;
-    for (final uploadItem in fileUploadList) {
-      totalFiles += uploadItem.files.length;
-    }
-
-    if (totalFiles == 0) {
-      DialogHelper.hideLoading();
-      MySnackBar.showErrorToast(message: "No files to upload");
-      return;
-    }
-
-    int uploadedCount = 0;
-    int failedCount = 0;
-
-    // Process files one at a time - convert AND upload immediately
-    for (final uploadItem in fileUploadList) {
-      for (final file in uploadItem.files) {
-        uploadedCount++;
-
-        final fileName = file.uri.pathSegments.last;
-
-        // Update progress - preparing
-        DialogHelper.updateUploadProgress(
-          "Preparing ($uploadedCount/$totalFiles):\n$fileName",
-        );
-
-        // Convert to base64 (with isolate for heavy lifting)
-        final base64File = await _convertFileToBase64(file);
-        if (base64File == null) {
-          failedCount++;
-          continue;
-        }
-
-        // Prepare upload data
-        final uploadData = {
-          "CompanyID": sharedPrefCompanyId,
-          "CustomerID": customerID,
-          "FileType": lookupMimeType(file.path) ?? 'application/octet-stream',
-          "SiteId":
-              selectedSite.value?.id ?? selectedAppointment.value?.siteID ?? 0,
-          "FileName": fileName,
-          "FileSize": await file.length(),
-          "FileContent": base64File,
-          "UploadedBy": userID,
-          "AppointmentId": int.tryParse(appointmentID) ?? 0,
-          "Reference": "desc",
-        };
-        kLog("Prepared upload data for $fileName: ${jsonEncode(uploadData)}");
-        // Update progress - uploading
-        DialogHelper.updateUploadProgress(
-          "Uploading ($uploadedCount/$totalFiles):\n$fileName",
-        );
-
-        // Upload immediately after conversion
-        final response = await DioClient()
-            .post(url: ApiUrl.saveFilesUrl, body: {"file": uploadData})
-            .catchError(handleError);
-
-        log("uploadFiles response: $response");
-
-        if (response == null) {
-          failedCount++;
-        }
-
-        // Clear base64 from memory to free up space
-        uploadData["FileContent"] = null;
-      }
-    }
-
-    // Update dialog with final status
-    if (failedCount == 0) {
-      DialogHelper.updateUploadProgress("All files uploaded successfully!");
-      fileUploadList.clear();
-    } else if (failedCount < totalFiles) {
-      DialogHelper.updateUploadProgress(
-        "Uploaded ${totalFiles - failedCount}/$totalFiles files",
-      );
-    } else {
-      DialogHelper.updateUploadProgress("All files failed to upload");
-    }
-
-    // Wait a moment to show the final message
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Hide dialog
-    DialogHelper.hideLoading();
-
-    getFileList(showLoader: false);
-  }
-
-  // Helper method to convert file to base64 using isolate
-  Future<String?> _convertFileToBase64(File file) async {
-    try {
-      if (!file.existsSync()) {
-        debugPrint('File does not exist: ${file.path}');
-        return null;
-      }
-
-      // Read file bytes first (can't pass File to isolate)
-      final bytes = await file.readAsBytes();
-
-      // Use isolate for heavy base64 encoding
-      final base64File = await compute(_encodeBytesToBase64, bytes);
-
-      return base64File;
-    } catch (e) {
-      debugPrint('Error converting file to base64: $e');
-      return null;
-    }
-  }
-
-  // Static function for isolate - must be top-level or static
-  static String _encodeBytesToBase64(List<int> bytes) {
-    return base64Encode(bytes);
-  }
-
-  /// Add files to the upload list
-  void addFilesToUploadList(List<File> files) {
-    final now = DateTime.now();
-    final timeString = DateFormat("yyyy-MM-dd HH:mm:ss").format(now);
-
-    final uploadItem = FileUploadItem(time: timeString, files: files);
-
-    fileUploadList.add(uploadItem);
-  }
-
-  /// Remove a file upload item from the list
-  void removeFileUploadItem(int index) {
-    if (index >= 0 && index < fileUploadList.length) {
-      fileUploadList.removeAt(index);
-    }
-  }
-
   Timer? _pollingTimer;
   final isSelectSingleNeedToCall = RxBool(false);
   Future<void> startPeriodic() async {
@@ -1052,86 +811,111 @@ class AppointmentController extends GetxController
   }
 
   Future<void> getAppointments({bool showLoader = true}) async {
-    if (showLoader) showLoading();
+    try {
+      if (showLoader) showLoading();
 
-    // showLoading();
-    if (showLoader) isAppointmentEmpty.value = false;
-    if (await NetworkConnectivity.isNetworkAvailable()) {
-      var companyID = await MySharedPref.getCompanyID();
-      var userID = await MySharedPref.getUserName();
-      var currentDateTime = DateTime.now();
+      // showLoading();
+      if (showLoader) isAppointmentEmpty.value = false;
+      if (await NetworkConnectivity.isNetworkAvailable()) {
+        var companyID = await MySharedPref.getCompanyID();
+        var userID = await MySharedPref.getUserName();
+        var currentDateTime = DateTime.now();
 
-      var response = await DioClient()
-          .get(
-            url: ApiUrl.getAppointment,
-            params: {
-              "appointmentTypeStatus": 2,
-              "appointmentDate": dateTimeConverter(
-                inputTime: currentDateTime.toString(),
-                outputFormat: "yyyy/MM/dd",
-              ),
-              "CompanyId": companyID,
-              "userId": userID,
-            },
-          )
-          .catchError(!showLoader ? handleError : () {});
-      log("refreshing appointments ${jsonEncode(response)}");
-      if (response == null) {
+        var response = await DioClient()
+            .get(
+              url: ApiUrl.getAppointment,
+              params: {
+                "appointmentTypeStatus": 2,
+                "appointmentDate": dateTimeConverter(
+                  inputTime: currentDateTime.toString(),
+                  outputFormat: "yyyy/MM/dd",
+                ),
+                "CompanyId": companyID,
+                "userId": userID,
+              },
+            )
+            .catchError(!showLoader ? handleError : () {});
+        log("refreshing appointments ${jsonEncode(response)}");
+        if (response == null) {
+          hideLoading();
+          showEmptyWidget();
+          return;
+        }
+
+        if (response.isEmpty) {
+          appointments.clear();
+          if (showLoader) hideLoading();
+          showEmptyWidget();
+          return;
+        }
+
+        appointments.assignAll(
+          (response as List)
+              .map((e) => Appointments.fromJson(e))
+              .where(
+                (apt) =>
+                    apt.status?.statusName != "Pending" &&
+                    apt.status?.statusName != "Scheduled",
+              )
+              .toList(),
+        );
+
+        sortedAppointments.assignAll(
+          response
+              .map((e) => Appointments.fromJson(e))
+              .where(
+                (apt) =>
+                    apt.status?.statusName != "Pending" &&
+                    apt.status?.statusName != "Scheduled",
+              )
+              .toList()
+            ..sort((a, b) {
+              final aDate = DateFormat(
+                "yyyy/MM/dd hh:mm a",
+              ).parse(a.startDateTime!);
+              final bDate = DateFormat(
+                "yyyy/MM/dd hh:mm a",
+              ).parse(b.startDateTime!);
+              return aDate.compareTo(bDate);
+            }),
+        );
+        if (sortTextController.text.isNotEmpty) {
+          sortAppointmentsText(); // re-apply text filter after refresh
+        } else if (selectedDateRange.value != null) {
+          sortAppointmentsInRange(selectedDateRange.value!); // re-apply date range filter after refresh
+        } else if (selectedDate.value != null) {
+          sortAppointmentsDate(); // re-apply single date filter after refresh
+        }
+
+        await MyHive.saveAllAppointments(appointments);
         hideLoading();
-        showEmptyWidget();
-        return;
-      }
 
-      if (response.isEmpty) {
-        appointments.clear();
-        if (showLoader) hideLoading();
-        showEmptyWidget();
-        return;
-      }
-
-      appointments.assignAll(
-        (response as List).map((e) => Appointments.fromJson(e)).toList(),
-      );
-
-      sortedAppointments.assignAll(
-        (response).map((e) => Appointments.fromJson(e)).toList()..sort((a, b) {
-          final aDate = DateFormat(
-            "yyyy/MM/dd hh:mm a",
-          ).parse(a.startDateTime!);
-          final bDate = DateFormat(
-            "yyyy/MM/dd hh:mm a",
-          ).parse(b.startDateTime!);
-          return aDate.compareTo(bDate);
-        }),
-      );
-      if (sortTextController.text.isNotEmpty) {
-        sortAppointmentsText(); // re-apply filter after refresh
-      }
-      formC.getAttachedForms(isFromPeriodic: showLoader);
-
-      await MyHive.saveAllAppointments(appointments);
-      hideLoading();
-
-      if (appointments.isEmpty) {
-        showEmptyWidget();
-      }
-    } else {
-      var savedAppointments = MyHive.getAllAppointments();
-
-      if (savedAppointments.isNotEmpty) {
-        appointments.assignAll(savedAppointments);
-        savedAppointments.assignAll(savedAppointments);
-        //hideLoading();
-        MySnackBar.showErrorToast(message: "No network!");
-        NetworkConnectivity.connectionChangeCount = 1;
+        if (appointments.isEmpty) {
+          showEmptyWidget();
+        }
       } else {
-        appointments.clear();
-        savedAppointments.clear();
-        isError.value = true;
-        NetworkConnectivity.connectionChangeCount = 1;
-        // hideLoading();
-        showEmptyWidget();
+        var savedAppointments = MyHive.getAllAppointments();
+
+        if (savedAppointments.isNotEmpty) {
+          appointments.assignAll(savedAppointments);
+          savedAppointments.assignAll(savedAppointments);
+          //hideLoading();
+          MySnackBar.showErrorToast(message: "No network!");
+          NetworkConnectivity.connectionChangeCount = 1;
+        } else {
+          appointments.clear();
+          savedAppointments.clear();
+          isError.value = true;
+          NetworkConnectivity.connectionChangeCount = 1;
+          // hideLoading();
+          showEmptyWidget();
+        }
       }
+    } catch (e, s) {
+      hideLoading();
+      kLog(e);
+      kLog(s);
+      MySnackBar.showErrorToast(message: "$e");
     }
   }
 
@@ -1166,7 +950,18 @@ class AppointmentController extends GetxController
       }
 
       extendedAppointments.assignAll(
-        (response as List).map((e) => Appointments.fromJson(e)).toList(),
+        ((response as List).map((e) => Appointments.fromJson(e)).toList()
+              ..where(
+                (apt) =>
+                    apt.status?.statusName != "Pending" &&
+                    apt.status?.statusName != "Scheduled",
+              ))
+            .where(
+              (apt) =>
+                  apt.status?.statusName != "Pending" &&
+                  apt.status?.statusName != "Scheduled",
+            )
+            .toList(),
       );
 
       hideLoading();
@@ -1175,6 +970,7 @@ class AppointmentController extends GetxController
 
   void clearSort() {
     selectedDate(null);
+    selectedDateRange(null);
     selectedDateString('');
     sortedAppointments.clear();
     sortedAppointments.addAll(appointments);
@@ -1308,7 +1104,11 @@ class AppointmentController extends GetxController
         final formattedSelectedDate = DateFormat(
           "yyyy/MM/dd",
         ).format(selectedDate.value!);
-        return formattedDate == formattedSelectedDate;
+        // Filter out Pending and Scheduled status appointments
+        final validStatus =
+            p0.status?.statusName != "Pending" &&
+            p0.status?.statusName != "Scheduled";
+        return validStatus && formattedDate == formattedSelectedDate;
       }).toList();
       sortedAppointments.clear();
       if (list.isEmpty) {
@@ -1325,6 +1125,11 @@ class AppointmentController extends GetxController
     showLoading();
     var companyID = await MySharedPref.getCompanyID();
     var userID = await MySharedPref.getUserName();
+    kLog(
+      "body ${{
+        "appointment": {"CompanyID": companyID, "ApptID": appointmentID, "AppoinmentUId": appointmentUID, "CustomerID": customerID, "ServiceType": serviceType, "ServiceTypeId": serviceTypeID, "ResourceID": resourceID, "TimeSlotId": timeSlotID, "ApptDateTime": dateTimeConverter(inputTime: requestDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "StartDateTime": dateTimeConverter(inputTime: startDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "EndDateTime": dateTimeConverter(inputTime: endDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "CreatedDateTime": dateTimeConverter(inputTime: requestDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "TimeSlot": timeSlot, "Note": noteText.value, "PromoCode": promoCode, "StatusId": selectedStatusValue.value, "TicketStatusId": selectedTicketStatusValue.value, "UserID": userID, "CreatedBy": createdBy},
+      }}",
+    );
     var response = await DioClient()
         .post(
           url: ApiUrl.updateAppointment,
@@ -1433,230 +1238,13 @@ class AppointmentController extends GetxController
     }
   }
 
-  /// Save Equipment to server
-  Future<void> saveEquipment() async {
-    showLoading();
-
-    var companyID = await MySharedPref.getCompanyID();
-    final site = selectedSite.value;
-
-    var response = await DioClient()
-        .post(
-          url: ApiUrl.saveEquipmentUrl,
-          body: {
-            "equipments": selectedEquipmentTypeList
-                .map(
-                  (e) => {
-                    "Id": 0,
-                    "CompanyID": companyID,
-                    "CustomerID": int.parse(customerID),
-                    "CustomerGuid": "",
-                    "SiteId": site?.id ?? 0,
-                    "Model": "",
-                    "Make": "",
-                    "SerialNumber": "",
-                    "Barcode": "",
-                    "EquipmentTypeID": e.equipmentTypeId,
-                    "Notes": "",
-                    "WarrantyStart": "",
-                    "WarrantyEnd": "",
-                    "LaborWarrantyStart": "",
-                    "LaborWarrantyEnd": "",
-                    "InstallDate": "",
-                    "CreatedDateTime": DateFormat(
-                      'MM/dd/yyyy HH:mm:ss',
-                    ).format(DateTime.now()),
-                  },
-                )
-                .toList(),
-          },
-        )
-        .catchError(handleError);
-
-    if (response == null) {
-      hideLoading();
-      return;
-    }
-
-    // Fetch equipment list after successful save
-    await getEquipment(showLoader: false);
-
-    hideLoading();
-
-    selectedEquipmentTypeList.clear();
-    MySnackBar.showToast(message: 'Equipment saved successfully');
-  }
-
-  /// Update Equipment to server
-  Future<void> updateEquipment(EquipmentModel equipment) async {
-    showLoading();
-
-    var companyID = await MySharedPref.getCompanyID();
-
-    var response = await DioClient()
-        .post(
-          url: ApiUrl.updateEquipmentUrl,
-          body: {
-            "equipments": [
-              {
-                "Id": int.parse(equipment.id ?? "0"), // Include ID for update
-                "CompanyID": companyID,
-                "CustomerID": customerID,
-                "CustomerGuid": selectedSite.value != null
-                    ? selectedSite.value!.customerGuid
-                    : "",
-                "SiteId": selectedSite.value != null
-                    ? selectedSite.value!.id
-                    : 0,
-                "Model": equipment.model ?? "",
-                "Make": equipment.make ?? "",
-                "SerialNumber": equipment.serialNumber,
-                "Barcode": equipment.sku ?? "",
-                "EquipmentType": equipment.type,
-                "Notes": equipment.notes ?? "",
-                "WarrantyStart": formatDate(equipment.warrantyStart),
-                "WarrantyEnd": formatDate(equipment.warrantyEnd),
-                "LaborWarrantyStart": formatDate(equipment.laborWarrantyStart),
-                "LaborWarrantyEnd": formatDate(equipment.laborWarrantyEnd),
-                "InstallDate": formatDate(equipment.installDate),
-                "CreatedDateTime": equipment.createdAt != null
-                    ? DateFormat(
-                        'MM/dd/yyyy HH:mm:ss',
-                      ).format(DateTime.parse(equipment.createdAt!))
-                    : DateFormat('MM/dd/yyyy HH:mm:ss').format(DateTime.now()),
-              },
-            ],
-          },
-        )
-        .catchError(handleError);
-
-    if (response == null) {
-      hideLoading();
-      Get.back();
-      return;
-    }
-
-    // Fetch equipment list after successful update
-    await getEquipment(showLoader: false);
-
-    hideLoading();
-    MySnackBar.showToast(message: 'Equipment updated successfully');
-    Get.back();
-  }
-
-  /// Get equipment list from server
-  Future<void> getEquipment({bool showLoader = true}) async {
-    try {
-      if (showLoader) showLoading();
-
-      if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
-        final site = selectedSite.value;
-
-        var response = await DioClient()
-            .get(
-              url: ApiUrl.getEquipmentUrl,
-              params: {
-                "companyId": companyID,
-                "siteId": site?.id ?? 0,
-                "customerId": customerID,
-              },
-            )
-            .catchError(showLoader ? handleError : (e) => null);
-
-        if (response == null) {
-          if (showLoader) hideLoading();
-          return;
-        }
-
-        log("getEquipment response: $response");
-
-        // Parse response - API returns an array
-        if (response is List && response.isNotEmpty) {
-          final equipments = response
-              .map((e) => EquipmentModel.fromJsonServer(e))
-              .toList();
-
-          // Map equipmentTypeId to type description
-          for (var equipment in equipments) {
-            if (equipment.equipmentTypeId != null) {
-              final type = equipmentTypeList.firstWhereOrNull(
-                (t) => t.equipmentTypeId == equipment.equipmentTypeId,
-              );
-              if (type != null) {
-                // Update the equipment with the type description
-                final index = equipments.indexWhere(
-                  (e) => e.id == equipment.id,
-                );
-                if (index != -1) {
-                  equipments[index] = equipment.copyWith(
-                    type: type.equipmentTypeDesc,
-                  );
-                }
-              }
-            }
-          }
-
-          equipmentList.assignAll(equipments);
-        } else {
-          equipmentList.clear();
-        }
-
-        if (showLoader) hideLoading();
-      }
-    } catch (e, s) {
-      kLog(e.toString());
-      kLog(s.toString());
-      if (showLoader) hideLoading();
-    }
-  }
-
   void showEmptyWidget() {
     isAppointmentEmpty.value = true;
   }
 
-  /// Get equipment type list from server
-  Future<void> getEquipmentTypes({bool showLoader = true}) async {
-    try {
-      if (showLoader) showLoading();
-
-      if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
-
-        var response = await DioClient()
-            .get(
-              url: ApiUrl.getEquipmentTypeUrl,
-              params: {"companyId": companyID},
-            )
-            .catchError(showLoader ? handleError : (e) => null);
-
-        if (response == null) {
-          if (showLoader) hideLoading();
-          return;
-        }
-
-        log("getEquipmentType response: $response");
-
-        // Parse response - API returns an array
-        if (response is List && response.isNotEmpty) {
-          equipmentTypeList.assignAll(
-            response.map((e) => EquipmentTypeModel.fromJson(e)).toList(),
-          );
-        } else {
-          equipmentTypeList.clear();
-        }
-
-        if (showLoader) hideLoading();
-      }
-    } catch (e, s) {
-      kLog(e.toString());
-      kLog(s.toString());
-      if (showLoader) hideLoading();
-    }
-  }
-
   @override
   void onReady() async {
+    kLog('onReady called - showing loader');
     showLoading();
     await getAppointments();
     await settingController.getAppointmentStatus();
@@ -1665,5 +1253,21 @@ class AppointmentController extends GetxController
 
     hideLoading();
     super.onReady();
+  }
+
+  String _buildAddressString({
+    required String address,
+    required String city,
+    required String state,
+    required String zipCode,
+    required String country,
+  }) {
+    final parts = <String>[];
+    if (address.isNotEmpty) parts.add(address);
+    if (city.isNotEmpty) parts.add(city);
+    if (state.isNotEmpty) parts.add(state);
+    if (zipCode.isNotEmpty) parts.add(zipCode);
+    if (country.isNotEmpty) parts.add(country);
+    return parts.join(', ');
   }
 }

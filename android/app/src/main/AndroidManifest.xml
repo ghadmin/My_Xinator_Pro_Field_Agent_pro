@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"/>
 
+    <!-- Camera permission for taking photos -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+
     <application
         android:label="myxinator_pro_field_agent_pro"
         android:name="${applicationName}"

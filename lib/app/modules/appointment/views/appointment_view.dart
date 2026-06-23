@@ -185,6 +185,10 @@ class AppointmentView extends GetView<AppointmentController> {
                             return SplashContainer(
                               radius: 8,
                               color: Colors.white,
+                              border: Border.all(
+                                color: Colors.transparent,
+                                width: 0,
+                              ),
                               onPressed: () async {
                                 controller.isTyping(false);
                                 controller.selectedAptIndex.value = index;
@@ -281,8 +285,7 @@ class AppointmentView extends GetView<AppointmentController> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      SizedBox(
-                                        width: 170.sp,
+                                      Expanded(
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -422,6 +425,15 @@ class AppointmentView extends GetView<AppointmentController> {
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // FloatingActionButton(
+            //   heroTag: "rag_chat",
+            //   backgroundColor: Colors.deepPurple,
+            //   onPressed: () {
+            //     Get.toNamed(Routes.RAG_CHAT);
+            //   },
+            //   child: Icon(Icons.psychology, color: Colors.white),
+            // ),
+            SizedBox(height: 20.sp),
             FloatingActionButton(
               heroTag: "twilio_support",
               backgroundColor: Colors.blue,

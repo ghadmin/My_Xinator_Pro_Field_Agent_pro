@@ -14,6 +14,7 @@ import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/splash_container.dart'
     show SplashContainer;
 import '../../../routes/app_pages.dart';
+import '../../../utils/simple_phone_formatter.dart';
 import '../../appointment/controllers/appointment_controller.dart';
 import '../controllers/invoice_controller.dart';
 import '../models/qbo_class_dropdown_model.dart';
@@ -59,8 +60,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           child: SafeArea(
             child: Obx(
               () => Padding(
-                padding:
-                    EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 20.sp,
+                  vertical: 20.sp,
+                ),
                 child: SingleChildScrollView(
                   physics: BouncingScrollPhysics(),
                   child: Column(
@@ -77,14 +80,15 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           color: controller.type.value == "Invoice"
                               ? theme.primaryColor
                               : controller.type.value == "Estimate" &&
-                                      controller.isConverted.value == true
-                                  ? Colors.green
-                                  : Colors.yellow,
+                                    controller.isConverted.value == true
+                              ? Colors.green
+                              : Colors.yellow,
                         ),
                         child: Text(
                           "${controller.type.value}: ${controller.invoiceNumber}",
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: controller.type.value == "Estimate" &&
+                            color:
+                                controller.type.value == "Estimate" &&
                                     controller.isConverted.value == false
                                 ? Colors.black
                                 : Colors.white,
@@ -95,7 +99,61 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       ),
                       SizedBox(height: 8.sp),
                       estimateDetails(theme),
-                      SizedBox(height: 20.sp),
+                      // SizedBox(height: 20.sp),
+                      // Padding(
+                      //   padding: EdgeInsets.only(left: 10.0.sp),
+                      //   child: Text(
+                      //     "Billable Items",
+                      //     style: theme.textTheme.headlineSmall?.copyWith(
+                      //       fontWeight: FontWeight.w500,
+                      //       fontSize: 18.sp,
+                      //     ),
+                      //   ),
+                      // ),
+                      // SizedBox(height: 8.sp),
+                      // itemsList(theme),
+                      SizedBox(height: 15.sp),
+                      Align(
+                        alignment: Alignment.center,
+                        child: SizedBox(
+                          height: 52.h,
+                          child: SecondaryButtonWithIcon(
+                            title: "Add Item",
+                            iconData: Icons.add_circle_outline,
+                            onPressed: () {
+                              controller.invoiceDetailsNoteFocusnode.value
+                                  .unfocus();
+                              controller.invoiceDetailsEmailToFocusnode.value
+                                  .unfocus();
+                              controller.invoiceDetailsEmailBccFocusnode.value
+                                  .unfocus();
+                              controller
+                                  .invoiceDetailsEmailSubjectFocusnode
+                                  .value
+                                  .unfocus();
+                              controller.invoiceDetailsEmailBodyFocusnode.value
+                                  .unfocus();
+                              controller.invoiceDetailsSearchFocusnode.value
+                                  .unfocus();
+                              controller
+                                  .invoiceDetailsEditDiscountFocusnode
+                                  .value
+                                  .unfocus();
+                              controller
+                                  .invoiceDetailsDepositRateFocusnode
+                                  .value
+                                  .unfocus();
+                              controller.itemController.sortTextController
+                                  .clear();
+                              controller.itemController.sortItems();
+                              // return _showAddItemDialog(context, theme);
+                              Get.toNamed(Routes.BILLABLE_ITEM_SCREEN);
+                            },
+                            inactive: false,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 15.sp),
                       Padding(
                         padding: EdgeInsets.only(left: 10.0.sp),
                         child: Text(
@@ -107,36 +165,912 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         ),
                       ),
                       SizedBox(height: 8.sp),
-                      itemsList(theme),
-                      SizedBox(height: 15.sp),
-                      SizedBox(
-                        height: 48.sp,
-                        child: SecondaryButtonWithIcon(
-                          title: "Add Item",
-                          iconData: Icons.add_circle_outline,
-                          onPressed: () {
-                            controller.invoiceDetailsNoteFocusnode.value
-                                .unfocus();
-                            controller.invoiceDetailsEmailToFocusnode.value
-                                .unfocus();
-                            controller.invoiceDetailsEmailBccFocusnode.value
-                                .unfocus();
-                            controller.invoiceDetailsEmailSubjectFocusnode.value
-                                .unfocus();
-                            controller.invoiceDetailsEmailBodyFocusnode.value
-                                .unfocus();
-                            controller.invoiceDetailsSearchFocusnode.value
-                                .unfocus();
-                            controller.invoiceDetailsEditDiscountFocusnode.value
-                                .unfocus();
-                            controller.invoiceDetailsDepositRateFocusnode.value
-                                .unfocus();
-                            controller.itemController.sortTextController
-                                .clear();
-                            controller.itemController.sortItems();
-                            return _showAddItemDialog(context, theme);
-                          },
-                          inactive: false,
+                      Card(
+                        color: Colors.white,
+                        elevation: 0,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: RawScrollbar(
+                            thumbVisibility: true,
+                            trackVisibility: true,
+                            interactive: true,
+                            thickness: 5.sp,
+                            radius: Radius.circular(100.r),
+                            thumbColor: theme.primaryColor,
+                            trackColor: Colors.grey.shade400,
+                            trackRadius: Radius.circular(8.r),
+                            controller:
+                                controller.billableItemsScrollController,
+                            child: SingleChildScrollView(
+                              controller:
+                                  controller.billableItemsScrollController,
+                              scrollDirection: Axis.horizontal,
+                              child: SizedBox(
+                                width: 790.sp,
+                                child: Theme(
+                                  data: theme.copyWith(
+                                    canvasColor: Colors.white,
+                                  ),
+                                  child: ReorderableListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    proxyDecorator: (child, index, animation) {
+                                      return AnimatedBuilder(
+                                        animation: animation,
+                                        builder: (context, child) {
+                                          return Transform.scale(
+                                            scale: 1.0,
+                                            child: child,
+                                          );
+                                        },
+                                        child: child,
+                                      );
+                                    },
+                                    buildDefaultDragHandles: false,
+                                    onReorder: (oldIndex, newIndex) {
+                                      controller.reorderBillableItems(
+                                        oldIndex,
+                                        newIndex,
+                                      );
+                                    },
+                                    itemCount:
+                                        controller.selectedItemList.length,
+                                    itemBuilder: (context, index) {
+                                      final item =
+                                          controller.selectedItemList[index];
+                                      final qty =
+                                          controller
+                                              .editQuantityControllers[index]
+                                              .text
+                                              .isEmpty
+                                          ? 1
+                                          : double.tryParse(
+                                                  controller
+                                                      .editQuantityControllers[index]
+                                                      .text,
+                                                ) ??
+                                                1;
+                                      final price =
+                                          double.tryParse(
+                                            controller
+                                                .editAmountControllers[index]
+                                                .text,
+                                          ) ??
+                                          0.0;
+                                      final total = qty * price;
+
+                                      if (index == 0) {
+                                        return Column(
+                                          key: Key(
+                                            'billable_item_row_${item.id ?? 'new'}_$index',
+                                          ),
+                                          children: [
+                                            // Header Row
+                                            Container(
+                                              height: 40.sp,
+                                              decoration: BoxDecoration(
+                                                color: theme.primaryColor,
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  SizedBox(
+                                                    width: 40.sp,
+                                                  ), // Drag handle
+                                                  SizedBox(
+                                                    width: 150.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "Item",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    width: 200.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "Description",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    width: 60.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "Qty",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    width: 80.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "Price",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.right,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    width: 80.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "Total",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.right,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    width: 60.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "Taxable",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    width: 50.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "PO",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // Removed the duplicate "Taxable" SizedBox(width: 50.sp) here
+                                                  SizedBox(
+                                                    width: 70.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "Actions",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ), // Data Row
+                                            Container(
+                                              height: 50.sp,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                border: Border(
+                                                  bottom: BorderSide(
+                                                    color: Colors.grey.shade300,
+                                                    width: 0.5,
+                                                  ),
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  // Drag handle
+                                                  SizedBox(
+                                                    width: 40.sp,
+                                                    child: Center(
+                                                      child:
+                                                          ReorderableDragStartListener(
+                                                            index: index,
+                                                            child: Icon(
+                                                              Icons.drag_handle,
+                                                              color: theme
+                                                                  .primaryColor,
+                                                            ),
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  // Item
+                                                  SizedBox(
+                                                    width: 150.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        item.name ?? "",
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyMedium
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        maxLines: 1,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // Description
+                                                  SizedBox(
+                                                    width: 200.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        item.description ?? "",
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodySmall,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        maxLines: 2,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // Qty
+                                                  SizedBox(
+                                                    width: 60.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        qty.toString(),
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyMedium,
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // Price
+                                                  SizedBox(
+                                                    width: 80.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "\$${price.toStringAsFixed(2)}",
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyMedium,
+                                                        textAlign:
+                                                            TextAlign.right,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // Total
+                                                  SizedBox(
+                                                    width: 80.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        "\$${total.toStringAsFixed(2)}",
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyMedium
+                                                            ?.copyWith(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color: theme
+                                                                  .primaryColor,
+                                                            ),
+                                                        textAlign:
+                                                            TextAlign.right,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // Taxable
+                                                  SizedBox(
+                                                    width: 60.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Text(
+                                                        item.isTaxable == true
+                                                            ? "Yes"
+                                                            : "No",
+                                                        style: theme
+                                                            .textTheme
+                                                            .bodyMedium,
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // PO Checkbox
+                                                  SizedBox(
+                                                    width: 50.sp,
+                                                    child: Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.sp,
+                                                      ),
+                                                      child: Checkbox(
+                                                        value: false,
+                                                        onChanged: (value) {},
+                                                        activeColor:
+                                                            theme.primaryColor,
+                                                        materialTapTargetSize:
+                                                            MaterialTapTargetSize
+                                                                .shrinkWrap,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  // Actions
+                                                  SizedBox(
+                                                    width: 70.sp,
+                                                    child: Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        // Edit Button
+                                                        IconButton(
+                                                          icon: Icon(
+                                                            Remix.edit_2_line,
+                                                            size: 18,
+                                                          ),
+                                                          onPressed: () {
+                                                            controller
+                                                                .invoiceDetailsNoteFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEmailToFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEmailBccFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEmailSubjectFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEmailBodyFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsSearchFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEditDiscountFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsDepositRateFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            showAdaptiveDialog(
+                                                              context: context,
+                                                              barrierDismissible:
+                                                                  false,
+                                                              builder: (context) {
+                                                                return Dialog(
+                                                                  insetPadding:
+                                                                      EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            16.sp,
+                                                                      ),
+                                                                  child: ConstrainedBox(
+                                                                    constraints:
+                                                                        BoxConstraints(
+                                                                          maxWidth:
+                                                                              1.sw,
+                                                                        ),
+                                                                    child: Column(
+                                                                      mainAxisSize:
+                                                                          MainAxisSize
+                                                                              .min,
+                                                                      children: [
+                                                                        Padding(
+                                                                          padding: EdgeInsets.all(
+                                                                            16.sp,
+                                                                          ),
+                                                                          child: Text(
+                                                                            'Edit Item',
+                                                                            style: theme.textTheme.bodyLarge?.copyWith(
+                                                                              color: theme.primaryColor,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        Padding(
+                                                                          padding: EdgeInsets.symmetric(
+                                                                            horizontal:
+                                                                                16.sp,
+                                                                          ),
+                                                                          child: Column(
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            children: [
+                                                                              Row(
+                                                                                children: [
+                                                                                  Text(
+                                                                                    "Description",
+                                                                                    style: theme.textTheme.bodyLarge,
+                                                                                  ),
+                                                                                  SizedBox(
+                                                                                    width: 10.sp,
+                                                                                  ),
+                                                                                  Expanded(
+                                                                                    child: GeneralTextField(
+                                                                                      hint: "Description",
+                                                                                      theme: theme,
+                                                                                      maxLine: 4,
+                                                                                      textEditingController: controller.editDescriptionControllers[index],
+                                                                                      onChanged:
+                                                                                          (
+                                                                                            v,
+                                                                                          ) {
+                                                                                            controller.selectedItemList[index].description = v;
+                                                                                            controller.markAsDirty();
+                                                                                          },
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              SizedBox(
+                                                                                height: 10.sp,
+                                                                              ),
+                                                                              Row(
+                                                                                children: [
+                                                                                  Text(
+                                                                                    "Amount: \$",
+                                                                                    style: theme.textTheme.bodyLarge,
+                                                                                  ),
+                                                                                  SizedBox(
+                                                                                    width: 18.sp,
+                                                                                  ),
+                                                                                  Expanded(
+                                                                                    child: GeneralTextField(
+                                                                                      hint: "Amount",
+                                                                                      textInputType: TextInputType.numberWithOptions(
+                                                                                        decimal: true,
+                                                                                      ),
+                                                                                      theme: theme,
+                                                                                      textEditingController: controller.editAmountControllers[index],
+                                                                                      onChanged:
+                                                                                          (
+                                                                                            value,
+                                                                                          ) {
+                                                                                            controller.selectedItemList[index].price =
+                                                                                                double.tryParse(
+                                                                                                  value,
+                                                                                                ) ??
+                                                                                                0.00;
+                                                                                            controller.markAsDirty();
+                                                                                            controller.createTotalForEdit();
+                                                                                            controller.updateRequestedDepositAmount();
+                                                                                          },
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              SizedBox(
+                                                                                height: 10.sp,
+                                                                              ),
+                                                                              Row(
+                                                                                children: [
+                                                                                  Text(
+                                                                                    "Quantity:",
+                                                                                    style: theme.textTheme.bodyLarge,
+                                                                                  ),
+                                                                                  SizedBox(
+                                                                                    width: 25.sp,
+                                                                                  ),
+                                                                                  Expanded(
+                                                                                    child: GeneralTextField(
+                                                                                      hint: '1',
+                                                                                      textInputType: TextInputType.numberWithOptions(
+                                                                                        decimal: true,
+                                                                                        signed: false,
+                                                                                      ),
+                                                                                      theme: theme,
+                                                                                      textEditingController: controller.editQuantityControllers[index],
+                                                                                      onChanged:
+                                                                                          (
+                                                                                            value,
+                                                                                          ) {
+                                                                                            controller.markAsDirty();
+                                                                                            controller.createTotalForEdit();
+                                                                                            controller.updateRequestedDepositAmount();
+                                                                                          },
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              SizedBox(
+                                                                                height: 10.sp,
+                                                                              ),
+                                                                              Row(
+                                                                                children: [
+                                                                                  Text(
+                                                                                    "Taxable:",
+                                                                                    style: theme.textTheme.bodyLarge,
+                                                                                  ),
+                                                                                  SizedBox(
+                                                                                    width: 30.sp,
+                                                                                  ),
+                                                                                  Obx(
+                                                                                    () =>
+                                                                                        DropdownButton<
+                                                                                          bool
+                                                                                        >(
+                                                                                          value:
+                                                                                              controller.selectedItemList[index].isTaxable ??
+                                                                                              true,
+                                                                                          dropdownColor: Colors.white,
+                                                                                          items: [
+                                                                                            DropdownMenuItem(
+                                                                                              value: true,
+                                                                                              child: Text(
+                                                                                                "Yes",
+                                                                                              ),
+                                                                                            ),
+                                                                                            DropdownMenuItem(
+                                                                                              value: false,
+                                                                                              child: Text(
+                                                                                                "No",
+                                                                                              ),
+                                                                                            ),
+                                                                                          ],
+                                                                                          onChanged:
+                                                                                              (
+                                                                                                value,
+                                                                                              ) {
+                                                                                                controller.markAsDirty();
+                                                                                                controller.selectedItemList[index].isTaxable = value;
+                                                                                                controller.createTotalForEdit();
+                                                                                                controller.selectedItemList.refresh();
+                                                                                                controller.updateRequestedDepositAmount();
+                                                                                              },
+                                                                                        ),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                        SizedBox(
+                                                                          height:
+                                                                              15.sp,
+                                                                        ),
+                                                                        Padding(
+                                                                          padding: EdgeInsets.all(
+                                                                            16.sp,
+                                                                          ),
+                                                                          child: SizedBox(
+                                                                            height:
+                                                                                50.sp,
+                                                                            width:
+                                                                                .5.sw,
+                                                                            child: PrimaryButton(
+                                                                              title: "Close",
+                                                                              onPressed: () {
+                                                                                Get.back();
+                                                                              },
+                                                                              inactive: false,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                            );
+                                                          },
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          constraints:
+                                                              BoxConstraints(),
+                                                        ),
+                                                        // Delete Button
+                                                        IconButton(
+                                                          icon: Icon(
+                                                            Remix
+                                                                .delete_bin_2_line,
+                                                            color: Colors.red,
+                                                            size: 18,
+                                                          ),
+                                                          onPressed: () {
+                                                            controller
+                                                                .invoiceDetailsNoteFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEmailToFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEmailBccFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEmailSubjectFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEmailBodyFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsSearchFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsEditDiscountFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            controller
+                                                                .invoiceDetailsDepositRateFocusnode
+                                                                .value
+                                                                .unfocus();
+                                                            showAdaptiveDialog(
+                                                              context: context,
+                                                              builder: (context) => AlertDialog(
+                                                                title: Text(
+                                                                  "Delete Item",
+                                                                  style: TextStyle(
+                                                                    color: Colors
+                                                                        .red,
+                                                                  ),
+                                                                ),
+                                                                content: Text(
+                                                                  "Are you sure you want to delete this item?",
+                                                                ),
+                                                                actions: [
+                                                                  TextButton(
+                                                                    onPressed:
+                                                                        Get.back,
+                                                                    child: Text(
+                                                                      "Cancel",
+                                                                    ),
+                                                                  ),
+                                                                  TextButton(
+                                                                    onPressed: () {
+                                                                      controller
+                                                                          .markAsDirty();
+                                                                      controller
+                                                                          .removeItemFromEdit(
+                                                                            index,
+                                                                          );
+                                                                      Get.back();
+                                                                    },
+                                                                    child: Text(
+                                                                      "Delete",
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            );
+                                                          },
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          constraints:
+                                                              BoxConstraints(),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }
+
+                                      return Container(
+                                        key: Key(
+                                          'billable_item_row_${item.id ?? 'new'}_$index',
+                                        ),
+                                        height: 50.sp,
+                                        decoration: BoxDecoration(
+                                          color: index % 2 == 0
+                                              ? Colors.grey.shade50
+                                              : Colors.white,
+                                          border: Border(
+                                            bottom: BorderSide(
+                                              color: Colors.grey.shade300,
+                                              width: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            // Drag handle
+                                            SizedBox(
+                                              width: 40.sp,
+                                              child: Center(
+                                                child:
+                                                    ReorderableDragStartListener(
+                                                      index: index,
+                                                      child: Icon(
+                                                        Icons.drag_handle,
+                                                        color:
+                                                            theme.primaryColor,
+                                                      ),
+                                                    ),
+                                              ),
+                                            ),
+                                            // Item
+                                            SizedBox(
+                                              width: 150.sp,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.sp),
+                                                child: Text(
+                                                  item.name ?? "",
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 1,
+                                                ),
+                                              ),
+                                            ),
+                                            // Description
+                                            SizedBox(
+                                              width: 200.sp,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.sp),
+                                                child: Text(
+                                                  item.description ?? "",
+                                                  style:
+                                                      theme.textTheme.bodySmall,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 2,
+                                                ),
+                                              ),
+                                            ),
+                                            // Qty
+                                            SizedBox(
+                                              width: 60.sp,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.sp),
+                                                child: Text(
+                                                  qty.toString(),
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodyMedium,
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ),
+                                            ),
+                                            // Price
+                                            SizedBox(
+                                              width: 80.sp,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.sp),
+                                                child: Text(
+                                                  "\$${price.toStringAsFixed(2)}",
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodyMedium,
+                                                  textAlign: TextAlign.right,
+                                                ),
+                                              ),
+                                            ),
+                                            // Total
+                                            SizedBox(
+                                              width: 80.sp,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.sp),
+                                                child: Text(
+                                                  "\$${total.toStringAsFixed(2)}",
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color:
+                                                            theme.primaryColor,
+                                                      ),
+                                                  textAlign: TextAlign.right,
+                                                ),
+                                              ),
+                                            ),
+                                            // PO
+                                            SizedBox(
+                                              width: 80.sp,
+                                              child: Padding(
+                                                padding: EdgeInsets.all(8.sp),
+                                                child: Text(
+                                                  "PO",
+                                                  style:
+                                                      theme.textTheme.bodySmall,
+                                                  textAlign: TextAlign.center,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 1,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(height: 20.sp),
@@ -226,25 +1160,37 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     ),
                                   ]
                                 : classList.isEmpty
-                                    ? [
-                                        const DropdownMenuItem(
-                                          value: null,
-                                          enabled: false,
-                                          child: Text("No data available"),
-                                        ),
-                                      ]
-                                    : classList.map((cls) {
-                                        return DropdownMenuItem(
-                                          value: cls,
-                                          child: Text(cls.name),
-                                        );
-                                      }).toList(),
+                                ? [
+                                    const DropdownMenuItem(
+                                      value: null,
+                                      enabled: false,
+                                      child: Text("No data available"),
+                                    ),
+                                  ]
+                                : classList.map((cls) {
+                                    return DropdownMenuItem(
+                                      value: cls,
+                                      child: Text(cls.name),
+                                    );
+                                  }).toList(),
                             onChanged: (val) {
                               controller.selectedQboClass.value = val;
                             },
                           );
                         }),
-                      SizedBox(height: 5.sp),
+                      SizedBox(height: 15.sp),
+                      Padding(
+                        padding: EdgeInsets.only(left: 10.0.sp),
+                        child: Text(
+                          "Payments Details",
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 18.sp,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 8.sp),
+                      paymentDetails(theme, context), SizedBox(height: 15.sp),
                       Padding(
                         padding: EdgeInsets.only(left: 10.0.sp),
                         child: Text(
@@ -315,19 +1261,6 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 15.sp),
-                      Padding(
-                        padding: EdgeInsets.only(left: 10.0.sp),
-                        child: Text(
-                          "Payments Details",
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 18.sp,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 8.sp),
-                      paymentDetails(theme, context),
                     ],
                   ),
                 ),
@@ -390,18 +1323,22 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 controller.invoiceDetailsEmailBccFocusnode.value
                                     .unfocus();
                                 controller
-                                    .invoiceDetailsEmailSubjectFocusnode.value
+                                    .invoiceDetailsEmailSubjectFocusnode
+                                    .value
                                     .unfocus();
                                 controller
-                                    .invoiceDetailsEmailBodyFocusnode.value
+                                    .invoiceDetailsEmailBodyFocusnode
+                                    .value
                                     .unfocus();
                                 controller.invoiceDetailsSearchFocusnode.value
                                     .unfocus();
                                 controller
-                                    .invoiceDetailsEditDiscountFocusnode.value
+                                    .invoiceDetailsEditDiscountFocusnode
+                                    .value
                                     .unfocus();
                                 controller
-                                    .invoiceDetailsDepositRateFocusnode.value
+                                    .invoiceDetailsDepositRateFocusnode
+                                    .value
                                     .unfocus();
                               },
                               child: Container(
@@ -418,11 +1355,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     children: [
                                       Text(
                                         "Send Email",
-                                        style:
-                                            theme.textTheme.bodyLarge?.copyWith(
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                              fontSize: 18.sp,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                       SizedBox(height: 15.sp),
                                       GeneralTextField(
@@ -491,7 +1428,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 width: 1.sp,
                                               ),
                                               value: controller
-                                                  .isSendXPayLink.value,
+                                                  .isSendXPayLink
+                                                  .value,
                                               onChanged: (value) {
                                                 controller
                                                     .invoiceDetailsNoteFocusnode
@@ -517,8 +1455,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                     .invoiceDetailsSearchFocusnode
                                                     .value
                                                     .unfocus();
-                                                controller.isSendXPayLink
-                                                    .value = value!;
+                                                controller
+                                                        .isSendXPayLink
+                                                        .value =
+                                                    value!;
                                               },
                                             ),
                                           ),
@@ -526,11 +1466,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                             "Send XPayLink",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              color: LightThemeColors
-                                                  .hintTextColor,
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                                  color: LightThemeColors
+                                                      .hintTextColor,
+                                                  fontSize: 14.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ],
                                       ),
@@ -551,7 +1491,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 width: 1.sp,
                                               ),
                                               value: controller
-                                                  .isSendTuaPayLink.value,
+                                                  .isSendTuaPayLink
+                                                  .value,
                                               onChanged: (value) {
                                                 controller
                                                     .invoiceDetailsNoteFocusnode
@@ -577,8 +1518,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                     .invoiceDetailsSearchFocusnode
                                                     .value
                                                     .unfocus();
-                                                controller.isSendTuaPayLink
-                                                    .value = value!;
+                                                controller
+                                                        .isSendTuaPayLink
+                                                        .value =
+                                                    value!;
                                               },
                                             ),
                                           ),
@@ -586,62 +1529,70 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                             "Send TUA PAY Link",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              color: LightThemeColors
-                                                  .hintTextColor,
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                                  color: LightThemeColors
+                                                      .hintTextColor,
+                                                  fontSize: 14.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                         ],
                                       ),
-                                      Obx(() => SizedBox(
-                                            height: controller
-                                                        .selectedFiles.length <
-                                                    5
-                                                ? controller
-                                                        .selectedFiles.length *
+                                      Obx(
+                                        () => SizedBox(
+                                          height:
+                                              controller.selectedFiles.length <
+                                                  5
+                                              ? controller
+                                                        .selectedFiles
+                                                        .length *
                                                     50.sp
-                                                : 200.sp,
-                                            child: ListView.builder(
-                                              shrinkWrap: true,
-                                              physics: controller.selectedFiles
-                                                          .length <
-                                                      4
-                                                  ? NeverScrollableScrollPhysics()
-                                                  : BouncingScrollPhysics(),
-                                              itemCount: controller
-                                                  .selectedFiles.length,
-                                              itemBuilder: (context, index) {
-                                                return ListTile(
-                                                  leading: Icon(
-                                                    Remix.file_2_line,
-                                                    color: Colors.green,
-                                                    size: 16.sp,
-                                                  ),
-                                                  title: Text(controller
-                                                      .selectedFiles[index].path
+                                              : 200.sp,
+                                          child: ListView.builder(
+                                            shrinkWrap: true,
+                                            physics:
+                                                controller
+                                                        .selectedFiles
+                                                        .length <
+                                                    4
+                                                ? NeverScrollableScrollPhysics()
+                                                : BouncingScrollPhysics(),
+                                            itemCount:
+                                                controller.selectedFiles.length,
+                                            itemBuilder: (context, index) {
+                                              return ListTile(
+                                                leading: Icon(
+                                                  Remix.file_2_line,
+                                                  color: Colors.green,
+                                                  size: 16.sp,
+                                                ),
+                                                title: Text(
+                                                  controller
+                                                      .selectedFiles[index]
+                                                      .path
                                                       .split('/')
-                                                      .last),
-                                                  trailing: IconButton(
-                                                    icon: Icon(
-                                                      Icons.remove_circle,
-                                                      color:
-                                                          Colors.red.shade300,
-                                                    ),
-                                                    onPressed: () {
-                                                      controller.selectedFiles
-                                                          .removeAt(index);
-                                                      controller.docFileList =
-                                                          RxList.from(controller
-                                                              .selectedFiles); // Update docFileList for upload
-                                                    },
+                                                      .last,
+                                                ),
+                                                trailing: IconButton(
+                                                  icon: Icon(
+                                                    Icons.remove_circle,
+                                                    color: Colors.red.shade300,
                                                   ),
-                                                );
-                                              },
-                                            ),
-                                          )),
+                                                  onPressed: () {
+                                                    controller.selectedFiles
+                                                        .removeAt(index);
+                                                    controller
+                                                        .docFileList = RxList.from(
+                                                      controller.selectedFiles,
+                                                    ); // Update docFileList for upload
+                                                  },
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
                                       // SizedBox(
-                                      //   height: 48.sp,
+                                      //   height: 52.h,
                                       //   child: SecondaryButtonWithIcon(
                                       //       title: "Add Attachment",
                                       //       onPressed: () async {
@@ -655,7 +1606,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                         children: [
                                           Expanded(
                                             child: SizedBox(
-                                              height: 48.sp,
+                                              height: 52.h,
                                               child: SecondaryButton(
                                                 title: "Cancel",
                                                 onPressed: () {
@@ -670,7 +1621,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                           SizedBox(width: 10.sp),
                                           Expanded(
                                             child: SizedBox(
-                                              height: 48.sp,
+                                              height: 52.h,
                                               child: PrimaryButton(
                                                 title: "Send",
                                                 onPressed: () async {
@@ -683,11 +1634,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                         controller.type.value,
                                                   );
                                                   if (controller
-                                                      .isSendTuaPayLink.value) {
+                                                      .isSendTuaPayLink
+                                                      .value) {
                                                     _showTuaPayLinkDialog(
-                                                        context,
-                                                        theme,
-                                                        controller);
+                                                      context,
+                                                      theme,
+                                                      controller,
+                                                    );
                                                   }
                                                 },
                                                 inactive: false,
@@ -769,20 +1722,24 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     controller.invoiceDetailsNoteFocusnode.value
                                         .unfocus();
                                     controller
-                                        .invoiceDetailsEmailToFocusnode.value
+                                        .invoiceDetailsEmailToFocusnode
+                                        .value
                                         .unfocus();
                                     controller
-                                        .invoiceDetailsEmailBccFocusnode.value
+                                        .invoiceDetailsEmailBccFocusnode
+                                        .value
                                         .unfocus();
                                     controller
                                         .invoiceDetailsEmailSubjectFocusnode
                                         .value
                                         .unfocus();
                                     controller
-                                        .invoiceDetailsEmailBodyFocusnode.value
+                                        .invoiceDetailsEmailBodyFocusnode
+                                        .value
                                         .unfocus();
                                     controller
-                                        .invoiceDetailsSearchFocusnode.value
+                                        .invoiceDetailsSearchFocusnode
+                                        .value
                                         .unfocus();
                                     controller
                                         .invoiceDetailsEditDiscountFocusnode
@@ -809,9 +1766,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                             "Send Email",
                                             style: theme.textTheme.bodyLarge
                                                 ?.copyWith(
-                                              fontSize: 18.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                                  fontSize: 18.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                           ),
                                           SizedBox(height: 15.sp),
                                           GeneralTextField(
@@ -875,8 +1832,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                      4.r,
-                                                    ),
+                                                          4.r,
+                                                        ),
                                                   ),
                                                   side: BorderSide(
                                                     color: LightThemeColors
@@ -884,10 +1841,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                     width: 1.sp,
                                                   ),
                                                   value: controller
-                                                      .isSendXPayLink.value,
+                                                      .isSendXPayLink
+                                                      .value,
                                                   onChanged: (value) {
-                                                    controller.isSendXPayLink
-                                                        .value = value!;
+                                                    controller
+                                                            .isSendXPayLink
+                                                            .value =
+                                                        value!;
                                                   },
                                                 ),
                                               ),
@@ -895,11 +1855,12 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 "Send XPayLink",
                                                 style: theme.textTheme.bodyLarge
                                                     ?.copyWith(
-                                                  color: LightThemeColors
-                                                      .hintTextColor,
-                                                  fontSize: 14.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
+                                                      color: LightThemeColors
+                                                          .hintTextColor,
+                                                      fontSize: 14.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -914,8 +1875,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                      4.r,
-                                                    ),
+                                                          4.r,
+                                                        ),
                                                   ),
                                                   side: BorderSide(
                                                     color: LightThemeColors
@@ -923,10 +1884,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                     width: 1.sp,
                                                   ),
                                                   value: controller
-                                                      .isSendTuaPayLink.value,
+                                                      .isSendTuaPayLink
+                                                      .value,
                                                   onChanged: (value) {
-                                                    controller.isSendTuaPayLink
-                                                        .value = value!;
+                                                    controller
+                                                            .isSendTuaPayLink
+                                                            .value =
+                                                        value!;
                                                   },
                                                 ),
                                               ),
@@ -934,11 +1898,12 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 "Send TUA PAY Link",
                                                 style: theme.textTheme.bodyLarge
                                                     ?.copyWith(
-                                                  color: LightThemeColors
-                                                      .hintTextColor,
-                                                  fontSize: 14.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
+                                                      color: LightThemeColors
+                                                          .hintTextColor,
+                                                      fontSize: 14.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -984,7 +1949,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                           //       ),
                                           //     )),
                                           // SizedBox(
-                                          //   height: 48.sp,
+                                          //   height: 52.h,
                                           //   child: SecondaryButtonWithIcon(
                                           //       title: "Add Attachment",
                                           //       onPressed: () async {
@@ -998,7 +1963,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                             children: [
                                               Expanded(
                                                 child: SizedBox(
-                                                  height: 48.sp,
+                                                  height: 52.h,
                                                   child: SecondaryButton(
                                                     title: "Cancel",
                                                     onPressed: () {
@@ -1013,7 +1978,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                               SizedBox(width: 10.sp),
                                               Expanded(
                                                 child: SizedBox(
-                                                  height: 48.sp,
+                                                  height: 52.h,
                                                   child: PrimaryButton(
                                                     title: "Send",
                                                     onPressed: () async {
@@ -1022,17 +1987,22 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                           .isSendTuaPayLink
                                                           .value) {
                                                         _showTuaPayLinkDialog(
-                                                            context,
-                                                            theme,
-                                                            controller);
+                                                          context,
+                                                          theme,
+                                                          controller,
+                                                        );
                                                       } else {
                                                         await controller
                                                             .sendEmail(
-                                                          pdfType: controller
-                                                              .type.value,
-                                                          emailType: controller
-                                                              .type.value,
-                                                        );
+                                                              pdfType:
+                                                                  controller
+                                                                      .type
+                                                                      .value,
+                                                              emailType:
+                                                                  controller
+                                                                      .type
+                                                                      .value,
+                                                            );
                                                       }
                                                     },
                                                     inactive: false,
@@ -1215,8 +2185,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   style: theme.textTheme.bodyLarge,
                                 ),
                                 SizedBox(height: 4.sp),
-                                controller.editDescriptionControllers[index]
-                                        .text.isEmpty
+                                controller
+                                        .editDescriptionControllers[index]
+                                        .text
+                                        .isEmpty
                                     ? SizedBox.shrink()
                                     : Text(
                                         controller
@@ -1249,24 +2221,30 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   controller.invoiceDetailsNoteFocusnode.value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailToFocusnode.value
+                                      .invoiceDetailsEmailToFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailBccFocusnode.value
+                                      .invoiceDetailsEmailBccFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailSubjectFocusnode.value
+                                      .invoiceDetailsEmailSubjectFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailBodyFocusnode.value
+                                      .invoiceDetailsEmailBodyFocusnode
+                                      .value
                                       .unfocus();
                                   controller.invoiceDetailsSearchFocusnode.value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEditDiscountFocusnode.value
+                                      .invoiceDetailsEditDiscountFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsDepositRateFocusnode.value
+                                      .invoiceDetailsDepositRateFocusnode
+                                      .value
                                       .unfocus();
                                   showAdaptiveDialog(
                                     context: context,
@@ -1289,10 +2267,12 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                 child: Text(
                                                   'Edit Item',
                                                   style: theme
-                                                      .textTheme.bodyLarge
+                                                      .textTheme
+                                                      .bodyLarge
                                                       ?.copyWith(
-                                                    color: theme.primaryColor,
-                                                  ),
+                                                        color:
+                                                            theme.primaryColor,
+                                                      ),
                                                 ),
                                               ),
 
@@ -1309,25 +2289,24 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Description",
-                                                          style: theme.textTheme
+                                                          style: theme
+                                                              .textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 10.sp),
                                                         Expanded(
-                                                          child:
-                                                              GeneralTextField(
+                                                          child: GeneralTextField(
                                                             hint: "Description",
                                                             theme: theme,
                                                             maxLine: 4,
                                                             textEditingController:
                                                                 controller
-                                                                        .editDescriptionControllers[
-                                                                    index],
+                                                                    .editDescriptionControllers[index],
                                                             onChanged: (v) {
                                                               controller
-                                                                  .selectedItemList[
-                                                                      index]
-                                                                  .description = v;
+                                                                      .selectedItemList[index]
+                                                                      .description =
+                                                                  v;
                                                               controller
                                                                   .markAsDirty();
                                                             },
@@ -1340,31 +2319,29 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Amount: \$",
-                                                          style: theme.textTheme
+                                                          style: theme
+                                                              .textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 18.sp),
                                                         Expanded(
-                                                          child:
-                                                              GeneralTextField(
+                                                          child: GeneralTextField(
                                                             hint: "Amount",
                                                             textInputType:
-                                                                TextInputType
-                                                                    .numberWithOptions(
-                                                              decimal: true,
-                                                            ),
+                                                                TextInputType.numberWithOptions(
+                                                                  decimal: true,
+                                                                ),
                                                             theme: theme,
                                                             textEditingController:
                                                                 controller
-                                                                        .editAmountControllers[
-                                                                    index],
+                                                                    .editAmountControllers[index],
                                                             onChanged: (value) {
                                                               controller
-                                                                  .selectedItemList[
-                                                                      index]
-                                                                  .price = double
-                                                                      .tryParse(
-                                                                          value) ??
+                                                                      .selectedItemList[index]
+                                                                      .price =
+                                                                  double.tryParse(
+                                                                    value,
+                                                                  ) ??
                                                                   0.00;
 
                                                               controller
@@ -1384,25 +2361,23 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Quantity:",
-                                                          style: theme.textTheme
+                                                          style: theme
+                                                              .textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 25.sp),
                                                         Expanded(
-                                                          child:
-                                                              GeneralTextField(
+                                                          child: GeneralTextField(
                                                             hint: '1',
                                                             textInputType:
-                                                                TextInputType
-                                                                    .numberWithOptions(
-                                                              decimal: true,
-                                                              signed: false,
-                                                            ),
+                                                                TextInputType.numberWithOptions(
+                                                                  decimal: true,
+                                                                  signed: false,
+                                                                ),
                                                             theme: theme,
                                                             textEditingController:
                                                                 controller
-                                                                        .editQuantityControllers[
-                                                                    index],
+                                                                    .editQuantityControllers[index],
                                                             onChanged: (value) {
                                                               controller
                                                                   .markAsDirty();
@@ -1420,16 +2395,16 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                       children: [
                                                         Text(
                                                           "Taxable:",
-                                                          style: theme.textTheme
+                                                          style: theme
+                                                              .textTheme
                                                               .bodyLarge,
                                                         ),
                                                         SizedBox(width: 30.sp),
                                                         Obx(
-                                                          () => DropdownButton<
-                                                              bool>(
-                                                            value: controller
-                                                                    .selectedItemList[
-                                                                        index]
+                                                          () => DropdownButton<bool>(
+                                                            value:
+                                                                controller
+                                                                    .selectedItemList[index]
                                                                     .isTaxable ??
                                                                 true,
                                                             dropdownColor:
@@ -1452,9 +2427,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                                               controller
                                                                   .markAsDirty();
                                                               controller
-                                                                  .selectedItemList[
-                                                                      index]
-                                                                  .isTaxable = value;
+                                                                      .selectedItemList[index]
+                                                                      .isTaxable =
+                                                                  value;
 
                                                               controller
                                                                   .createTotalForEdit();
@@ -1477,8 +2452,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                               Padding(
                                                 padding: EdgeInsets.all(16.sp),
                                                 child: SizedBox(
-                                                  height: 45.sp,
-                                                  width: .4.sw,
+                                                  height: 50.sp,
+                                                  width: .5.sw,
                                                   child: PrimaryButton(
                                                     title: "Close",
                                                     onPressed: () {
@@ -1505,24 +2480,30 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   controller.invoiceDetailsNoteFocusnode.value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailToFocusnode.value
+                                      .invoiceDetailsEmailToFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailBccFocusnode.value
+                                      .invoiceDetailsEmailBccFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailSubjectFocusnode.value
+                                      .invoiceDetailsEmailSubjectFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEmailBodyFocusnode.value
+                                      .invoiceDetailsEmailBodyFocusnode
+                                      .value
                                       .unfocus();
                                   controller.invoiceDetailsSearchFocusnode.value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsEditDiscountFocusnode.value
+                                      .invoiceDetailsEditDiscountFocusnode
+                                      .value
                                       .unfocus();
                                   controller
-                                      .invoiceDetailsDepositRateFocusnode.value
+                                      .invoiceDetailsDepositRateFocusnode
+                                      .value
                                       .unfocus();
                                   showAdaptiveDialog(
                                     context: context,
@@ -1604,18 +2585,16 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 children: [
                   Builder(
                     builder: (context) {
-                      return SplashContainer(
-                        color: Colors.white,
-                        radius: 8,
-                        onPressed: () {
+                      return GestureDetector(
+                        onTap: () {
                           RenderBox renderBox =
                               context.findRenderObject() as RenderBox;
                           Offset offset = renderBox.localToGlobal(
                             Offset(0, 32.sp),
                           );
-                          final RenderBox overlay = Overlay.of(context)
-                              .context
-                              .findRenderObject() as RenderBox;
+                          final RenderBox overlay =
+                              Overlay.of(context).context.findRenderObject()
+                                  as RenderBox;
                           showMenu(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.all(
@@ -1641,34 +2620,43 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                             }).toList(),
                           ).then((selectedValue) {
                             if (selectedValue != null) {
-                              FocusScope.of(context).unfocus();
-                              controller.invoiceDetailsNoteFocusnode.value
-                                  .unfocus();
-                              controller.invoiceDetailsEmailToFocusnode.value
-                                  .unfocus();
-                              controller.invoiceDetailsEmailBccFocusnode.value
-                                  .unfocus();
-                              controller
-                                  .invoiceDetailsEmailSubjectFocusnode.value
-                                  .unfocus();
-                              controller.invoiceDetailsEmailBodyFocusnode.value
-                                  .unfocus();
-                              controller.invoiceDetailsSearchFocusnode.value
-                                  .unfocus();
-                              controller
-                                  .invoiceDetailsEditDiscountFocusnode.value
-                                  .unfocus();
-                              controller
-                                  .invoiceDetailsDepositRateFocusnode.value
-                                  .unfocus();
-                              controller.markAsDirty();
-                              final selectedDiscount =
-                                  controller.discountOptions.firstWhere(
-                                (element) => element["value"] == selectedValue,
-                              );
-                              controller.selectedDiscountOption.value =
-                                  selectedDiscount["value"];
-                              controller.createTotalForEdit();
+                              if (context.mounted) {
+                                FocusScope.of(context).unfocus();
+                                controller.invoiceDetailsNoteFocusnode.value
+                                    .unfocus();
+                                controller.invoiceDetailsEmailToFocusnode.value
+                                    .unfocus();
+                                controller.invoiceDetailsEmailBccFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsEmailSubjectFocusnode
+                                    .value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsEmailBodyFocusnode
+                                    .value
+                                    .unfocus();
+                                controller.invoiceDetailsSearchFocusnode.value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsEditDiscountFocusnode
+                                    .value
+                                    .unfocus();
+                                controller
+                                    .invoiceDetailsDepositRateFocusnode
+                                    .value
+                                    .unfocus();
+                                controller.markAsDirty();
+                                final selectedDiscount = controller
+                                    .discountOptions
+                                    .firstWhere(
+                                      (element) =>
+                                          element["value"] == selectedValue,
+                                    );
+                                controller.selectedDiscountOption.value =
+                                    selectedDiscount["value"];
+                                controller.createTotalForEdit();
+                              }
                             }
                           });
                         },
@@ -1735,7 +2723,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           theme: theme,
                           textAlignment: TextAlign.end,
                           focusNode: controller
-                              .invoiceDetailsEditDiscountFocusnode.value,
+                              .invoiceDetailsEditDiscountFocusnode
+                              .value,
                           textEditingController:
                               controller.editDiscountTextController,
                           onChanged: (value) {
@@ -1866,139 +2855,177 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 ),
               ],
             ),
-            ListTile(
-              title: Builder(
-                builder: (context) {
-                  return SplashContainer(
-                    color: Colors.white,
-                    radius: 8,
-                    onPressed: () {
-                      // Dismiss keyboard when opening dropdowns
+            Obx(
+              () => ListTile(
+                title: Builder(
+                  builder: (context) {
+                    final allNonTaxable = controller.areAllItemsNonTaxable;
+                    return SplashContainer(
+                      color: allNonTaxable
+                          ? Colors.grey.shade200
+                          : Colors.white,
+                      radius: 8,
+                      onPressed: allNonTaxable
+                          ? () {}
+                          : () {
+                              // Dismiss keyboard when opening dropdowns
 
-                      FocusScope.of(context).unfocus();
+                              FocusScope.of(context).unfocus();
 
-                      RenderBox renderBox =
-                          context.findRenderObject() as RenderBox;
-                      Offset offset = renderBox.localToGlobal(Offset(0, 32.sp));
-                      final RenderBox overlay = Overlay.of(context)
-                          .context
-                          .findRenderObject() as RenderBox;
-                      showMenu(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(8.r)),
+                              RenderBox renderBox =
+                                  context.findRenderObject() as RenderBox;
+                              Offset offset = renderBox.localToGlobal(
+                                Offset(0, 32.sp),
+                              );
+                              final RenderBox overlay =
+                                  Overlay.of(context).context.findRenderObject()
+                                      as RenderBox;
+                              showMenu(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(8.r),
+                                  ),
+                                ),
+                                context: context,
+                                position: RelativeRect.fromRect(
+                                  offset &
+                                      Size(
+                                        32.sp,
+                                        32.sp,
+                                      ), // smaller rect, the touch area
+                                  Offset.zero &
+                                      overlay
+                                          .size, // Bigger rect, the entire screen
+                                ),
+                                items: [
+                                  PopupMenuItem(
+                                    value: "",
+                                    child: Text(
+                                      "NO TAX",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+
+                                  ...controller.taxes.map((tax) {
+                                    return PopupMenuItem(
+                                      value: tax.id,
+                                      child: Text(tax.name ?? ""),
+                                    );
+                                  }),
+                                ],
+                              ).then((selectedTaxID) async {
+                                if (selectedTaxID != null) {
+                                  FocusScope.of(context).unfocus();
+                                  controller.invoiceDetailsNoteFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailToFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailBccFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailSubjectFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEmailBodyFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller.invoiceDetailsSearchFocusnode.value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsEditDiscountFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller
+                                      .invoiceDetailsDepositRateFocusnode
+                                      .value
+                                      .unfocus();
+                                  controller.markAsDirty();
+                                  if (selectedTaxID == "") {
+                                    controller.selectedTaxName.value = "NO TAX";
+                                    controller.tax.value = "0.00";
+                                    controller.selectedTaxID.value = "";
+                                    controller.createTotalForEdit();
+                                  } else if (selectedTaxID == -1) {
+                                    _showManualTaxDialog(context);
+                                  } else {
+                                    final selectedTax = controller.taxes
+                                        .firstWhereOrNull(
+                                          (tax) => tax.id == selectedTaxID,
+                                        );
+                                    if (selectedTax != null) {
+                                      controller.selectedTaxName.value =
+                                          selectedTax.name ?? "";
+                                      controller.tax.value =
+                                          selectedTax.rate?.toStringAsFixed(
+                                            2,
+                                          ) ??
+                                          "0.00";
+                                      controller.selectedTaxID.value =
+                                          selectedTax.id.toString();
+                                      controller.createTotalForEdit();
+                                      controller.updateRequestedDepositAmount();
+                                    }
+                                  }
+                                }
+                              });
+                            },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.sp,
+                          vertical: 5.sp,
                         ),
-                        context: context,
-                        position: RelativeRect.fromRect(
-                          offset &
-                              Size(
-                                32.sp,
-                                32.sp,
-                              ), // smaller rect, the touch area
-                          Offset.zero &
-                              overlay.size, // Bigger rect, the entire screen
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.r),
+                          border: Border.all(
+                            color: allNonTaxable
+                                ? Colors.grey
+                                : LightThemeColors.primaryColor,
+                            width: 1.sp,
+                          ),
                         ),
-                        items: [
-                          PopupMenuItem(
-                            value: "",
-                            child: Text(
-                              "NO TAX",
-                              style: TextStyle(color: Colors.red),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Tax Rate",
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: allNonTaxable
+                                    ? Colors.grey
+                                    : LightThemeColors.hintTextColor,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          ...controller.taxes.map((tax) {
-                            return PopupMenuItem(
-                              value: tax.id,
-                              child: Text(tax.name ?? ""),
-                            );
-                          }),
-                        ],
-                      ).then((selectedTaxID) async {
-                        if (selectedTaxID != null) {
-                          FocusScope.of(context).unfocus();
-                          controller.invoiceDetailsNoteFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEmailToFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEmailBccFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEmailSubjectFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEmailBodyFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsSearchFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsEditDiscountFocusnode.value
-                              .unfocus();
-                          controller.invoiceDetailsDepositRateFocusnode.value
-                              .unfocus();
-                          controller.markAsDirty();
-                          if (selectedTaxID == "") {
-                            controller.selectedTaxName.value = "NO TAX";
-                            controller.tax.value = "0.00";
-                            controller.selectedTaxID.value = "";
-                            controller.initialTaxID.value = "";
-                            controller.createTotalForEdit();
-                          } else {
-                            final selectedTax = controller.taxes.firstWhere(
-                              (tax) => tax.id == selectedTaxID,
-                            );
-                            controller.selectedTaxName.value =
-                                selectedTax.name ?? "";
-                            controller.tax.value =
-                                selectedTax.rate?.toStringAsFixed(2) ?? "0.00";
-                            controller.selectedTaxID.value =
-                                selectedTax.id.toString();
-                            controller.initialTaxID.value =
-                                selectedTax.id.toString();
-                            controller.createTotalForEdit();
-                            controller.updateRequestedDepositAmount();
-                          }
-                        }
-                      });
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.sp,
-                        vertical: 5.sp,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5.r),
-                        border: Border.all(
-                          color: LightThemeColors.primaryColor,
-                          width: 1.sp,
+                            SizedBox(width: 5.sp),
+                            Icon(
+                              allNonTaxable
+                                  ? Icons.block
+                                  : Icons.arrow_drop_down,
+                              color: allNonTaxable
+                                  ? Colors.grey
+                                  : LightThemeColors.primaryColor,
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "Tax Rate",
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(width: 5.sp),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: LightThemeColors.primaryColor,
-                          ),
-                        ],
-                      ),
+                    );
+                  },
+                ),
+                trailing: SizedBox(
+                  width: screenWidth > 374 ? 150.sp : 165.sp,
+                  child: Text(
+                    "\$${(controller.discountedTaxableTotalInEdit.value).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
                     ),
-                  );
-                },
-              ),
-              trailing: SizedBox(
-                width: screenWidth > 374 ? 150.sp : 165.sp,
-                child: Text(
-                  "\$${(controller.discountedTaxableTotalInEdit.value).toStringAsFixed(2)} x ${double.parse(controller.tax.value).toStringAsFixed(2)}%",
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
+                    textAlign: TextAlign.end,
                   ),
-                  textAlign: TextAlign.end,
                 ),
               ),
             ),
@@ -2138,7 +3165,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "\$ ${controller.depositAmount.value}",
+                    "\$${controller.depositAmount.value}",
                     style: theme.textTheme.bodyLarge!.copyWith(
                       color: Colors.green,
                     ),
@@ -2161,7 +3188,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 Padding(
                   padding: EdgeInsets.only(right: 12.sp),
                   child: Text(
-                    "\$ ${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}",
+                    "\$${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}",
                     style: theme.textTheme.bodyLarge!.copyWith(
                       color: Colors.red,
                     ),
@@ -2204,57 +3231,53 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             controller.type.value == "Invoice"
                 ? SizedBox.shrink()
                 : controller.isConverted.value
-                    ? SizedBox.shrink()
-                    : Row(
-                        children: [
-                          Obx(
-                            () => Checkbox(
-                              activeColor: theme.primaryColor,
-                              checkColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4.r),
-                              ),
-                              side: BorderSide(
-                                color: LightThemeColors.primaryColor,
-                                width: 1.sp,
-                              ),
-                              value: controller.convertToInvoice.value,
-                              onChanged: (value) {
-                                controller.invoiceDetailsNoteFocusnode.value
-                                    .unfocus();
-                                controller.invoiceDetailsEmailToFocusnode.value
-                                    .unfocus();
-                                controller.invoiceDetailsEmailBccFocusnode.value
-                                    .unfocus();
-                                controller
-                                    .invoiceDetailsEmailSubjectFocusnode.value
-                                    .unfocus();
-                                controller
-                                    .invoiceDetailsEmailBodyFocusnode.value
-                                    .unfocus();
-                                controller.invoiceDetailsSearchFocusnode.value
-                                    .unfocus();
-                                controller
-                                    .invoiceDetailsEditDiscountFocusnode.value
-                                    .unfocus();
-                                controller
-                                    .invoiceDetailsDepositRateFocusnode.value
-                                    .unfocus();
-                                controller.convertToInvoice.value = value!;
-                                controller.markAsDirty();
-                              },
-                            ),
+                ? SizedBox.shrink()
+                : Row(
+                    children: [
+                      Obx(
+                        () => Checkbox(
+                          activeColor: theme.primaryColor,
+                          checkColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4.r),
                           ),
-                          Text(
-                            "Convert to Invoice",
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: LightThemeColors.hintTextColor,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          side: BorderSide(
+                            color: LightThemeColors.primaryColor,
+                            width: 1.sp,
                           ),
-                        ],
+                          value: controller.convertToInvoice.value,
+                          onChanged: (value) {
+                            controller.invoiceDetailsNoteFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailToFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailBccFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailSubjectFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEmailBodyFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsSearchFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsEditDiscountFocusnode.value
+                                .unfocus();
+                            controller.invoiceDetailsDepositRateFocusnode.value
+                                .unfocus();
+                            controller.convertToInvoice.value = value!;
+                            controller.markAsDirty();
+                          },
+                        ),
                       ),
+                      Text(
+                        "Convert to Invoice",
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: LightThemeColors.hintTextColor,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
             MainDivider(),
             SizedBox(height: 20.sp),
             Padding(
@@ -2272,9 +3295,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       RenderBox renderBox =
                           context.findRenderObject() as RenderBox;
                       Offset offset = renderBox.localToGlobal(Offset(0, 36.sp));
-                      final RenderBox overlay = Overlay.of(context)
-                          .context
-                          .findRenderObject() as RenderBox;
+                      final RenderBox overlay =
+                          Overlay.of(context).context.findRenderObject()
+                              as RenderBox;
                       showMenu(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(8.r)),
@@ -2297,9 +3320,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                     e["name"] == "Requested Deposit Amount:(%)"
                                         ? "Requested Payment Amount:(%)"
                                         : e["name"] ==
-                                                "Requested Deposit Amount:(\$)"
-                                            ? "Requested Payment Amount:(\$)"
-                                            : e["name"],
+                                              "Requested Deposit Amount:(\$)"
+                                        ? "Requested Payment Amount:(\$)"
+                                        : e["name"],
                                   )
                                 : Text(e["name"] ?? ""),
                           );
@@ -2328,10 +3351,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               .clear();
                           controller.requestDepositRateEditTextController
                               .clear();
-                          final selectedDeposit =
-                              controller.depositRequestOptions.firstWhere(
-                            (element) => element["value"] == selectedValue,
-                          );
+                          final selectedDeposit = controller
+                              .depositRequestOptions
+                              .firstWhere(
+                                (element) => element["value"] == selectedValue,
+                              );
                           controller.selectedDepositRequestOption.value =
                               selectedDeposit["value"];
                           controller.selectedDepositRequestOptionName.value =
@@ -2357,17 +3381,19 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         children: [
                           controller.type.value == "Invoice"
                               ? Text(
-                                  controller.selectedDepositRequestOptionName
+                                  controller
+                                              .selectedDepositRequestOptionName
                                               .value ==
                                           "Requested Deposit Amount:(%)"
                                       ? "Requested Payment Amount:(%)"
-                                      : controller.selectedDepositRequestOptionName
-                                                  .value ==
-                                              "Requested Deposit Amount:(\$)"
-                                          ? "Requested Payment Amount:(\$)"
-                                          : controller
-                                              .selectedDepositRequestOptionName
-                                              .value,
+                                      : controller
+                                                .selectedDepositRequestOptionName
+                                                .value ==
+                                            "Requested Deposit Amount:(\$)"
+                                      ? "Requested Payment Amount:(\$)"
+                                      : controller
+                                            .selectedDepositRequestOptionName
+                                            .value,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color:
                                         LightThemeColors.bodyTextSecondaryColor,
@@ -2376,7 +3402,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                 )
                               : Text(
                                   controller
-                                      .selectedDepositRequestOptionName.value,
+                                      .selectedDepositRequestOptionName
+                                      .value,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color:
                                         LightThemeColors.bodyTextSecondaryColor,
@@ -2413,33 +3440,39 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                             hint: "0.00",
                             theme: theme,
                             focusNode: controller
-                                .invoiceDetailsDepositRateFocusnode.value,
+                                .invoiceDetailsDepositRateFocusnode
+                                .value,
                             textInputType: TextInputType.numberWithOptions(
                               decimal: true,
                             ),
                             onChanged: (v) {
                               controller.markAsDirty();
                               final rate = double.tryParse(v) ?? 0.0;
-                              final total = ((controller.invoiceSubtotal.value -
+                              final total =
+                                  ((controller.invoiceSubtotal.value -
                                               controller
-                                                  .invoiceDiscount.value) -
+                                                  .invoiceDiscount
+                                                  .value) -
                                           controller
-                                              .nonTaxableTotalInDetails.value) *
+                                              .nonTaxableTotalInDetails
+                                              .value) *
                                       (double.tryParse(controller.tax.value) ??
                                           0) /
                                       100 +
                                   ((controller.invoiceSubtotal.value) -
                                       (controller.invoiceDiscount.value));
-                              final depositAmount = ((total -
-                                          double.parse(
-                                            controller.depositAmount.value,
-                                          )) *
-                                      rate /
-                                      100)
-                                  .toStringAsFixed(2);
+                              final depositAmount =
+                                  ((total -
+                                              double.parse(
+                                                controller.depositAmount.value,
+                                              )) *
+                                          rate /
+                                          100)
+                                      .toStringAsFixed(2);
                               controller
-                                  .requestedDepositAmountEditTextController
-                                  .text = depositAmount;
+                                      .requestedDepositAmountEditTextController
+                                      .text =
+                                  depositAmount;
                             },
                             textEditingController:
                                 controller.requestDepositRateEditTextController,
@@ -2485,9 +3518,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           ),
                         ),
                       ),
-                      keyboardType:
-                          TextInputType.numberWithOptions(decimal: true),
-                      readOnly: controller.selectedDepositRequestOption.value ==
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      readOnly:
+                          controller.selectedDepositRequestOption.value ==
                                   "1" ||
                               controller.selectedDepositRequestOption.value ==
                                   "0"
@@ -2508,7 +3543,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             MainDivider(),
             SizedBox(height: 5.sp),
             SizedBox(
-              height: 48.sp,
+              height: 52.h,
               width: double.infinity,
               child: PrimaryButton(
                 title: "Save",
@@ -2526,7 +3561,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             SizedBox(height: 10.sp),
             controller.selectedDepositRequestOption.value == "0"
                 ? SizedBox(
-                    height: 48.sp,
+                    height: 52.h,
                     width: double.infinity,
                     child: PrimaryButton(
                       title: "Pay Now",
@@ -2535,16 +3570,18 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                           _showUnsavedChangesDialog(context, () {
                             // User confirms to proceed
                             controller.depositRequestPay.value = false;
-                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
-                                .then((_) {
+                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!.then((
+                              _,
+                            ) {
                               // Refresh invoice data when returning from payment
                               controller.getInvoiceName();
                             });
                           });
                         } else {
                           controller.depositRequestPay.value = false;
-                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
-                              .then((_) {
+                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!.then((
+                            _,
+                          ) {
                             // Refresh invoice data when returning from payment
                             controller.getInvoiceName();
                           });
@@ -2554,7 +3591,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     ),
                   )
                 : SizedBox(
-                    height: 48.sp,
+                    height: 52.h,
                     width: double.infinity,
                     child: PrimaryButton(
                       backgroundColor: Colors.black87,
@@ -2566,16 +3603,18 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         if (controller.isDirty.value) {
                           _showUnsavedChangesDialog(context, () {
                             controller.depositRequestPay.value = true;
-                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
-                                .then((_) {
+                            Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!.then((
+                              _,
+                            ) {
                               // Refresh invoice data when returning from payment
                               controller.getInvoiceName();
                             });
                           });
                         } else {
                           controller.depositRequestPay.value = true;
-                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!
-                              .then((_) {
+                          Get.toNamed(Routes.PAYMENT_METHOD_SELECTION)!.then((
+                            _,
+                          ) {
                             // Refresh invoice data when returning from payment
                             controller.getInvoiceName();
                           });
@@ -2653,10 +3692,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                               controller.createTotalForEdit();
                               controller.updateRequestedDepositAmount();
                             } else if (checked == false && alreadySelected) {
-                              final index =
-                                  controller.selectedItemList.indexWhere(
-                                (selected) => selected.id == item.id,
-                              );
+                              final index = controller.selectedItemList
+                                  .indexWhere(
+                                    (selected) => selected.id == item.id,
+                                  );
                               if (index != -1) {
                                 controller.selectedItemList.removeAt(index);
                                 controller.editAmountControllers.removeAt(
@@ -2738,7 +3777,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 ),
                 SizedBox(height: 20.sp),
                 SizedBox(
-                  height: 42.sp,
+                  height: 50.sp,
                   width: 150.sp,
                   child: PrimaryButton(
                     title: "Close",
@@ -2819,6 +3858,60 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
     );
   }
 
+  void _showManualTaxDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final TextEditingController taxController = TextEditingController(
+      text: controller.selectedTaxID.value == "-1" ? controller.tax.value : "",
+    );
+
+    showAdaptiveDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Tax Rate", style: theme.textTheme.titleLarge),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Enter tax percentage:"),
+            SizedBox(height: 10),
+            TextField(
+              controller: taxController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                hintText: "8.25",
+                suffixText: "%",
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text("Cancel")),
+          TextButton(
+            onPressed: () {
+              final input = taxController.text.trim();
+              final taxRate = double.tryParse(input);
+              if (taxRate == null || taxRate < 0) {
+                Get.snackbar(
+                  "Invalid Input",
+                  "Please enter a valid tax percentage",
+                );
+                return;
+              }
+              controller.selectedTaxName.value = "Manual";
+              controller.tax.value = taxRate.toStringAsFixed(2);
+              controller.selectedTaxID.value = "-1";
+              controller.createTotalForEdit();
+              controller.updateRequestedDepositAmount();
+              Get.back();
+            },
+            child: Text("Apply"),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showTuaPayLinkDialog(
     BuildContext context,
     ThemeData theme,
@@ -2826,13 +3919,15 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   ) {
     final apptC = Get.find<AppointmentController>();
     // Calculate base amount (invoice total after discount but before payments)
-    final payAmount = (double.parse(controller.invoiceTotal.value) -
-            double.parse(controller.depositAmount.value))
-        .toStringAsFixed(2);
+    final payAmount =
+        (double.parse(controller.invoiceTotal.value) -
+                double.parse(controller.depositAmount.value))
+            .toStringAsFixed(2);
 
     // Pre-fill base amount
-    controller.tuaBaseAmountController.text =
-        double.parse(controller.invoiceTotal.value).toStringAsFixed(2);
+    controller.tuaBaseAmountController.text = double.parse(
+      controller.invoiceTotal.value,
+    ).toStringAsFixed(2);
     controller.tuaRemainAmountController.text = payAmount;
 
     // Pre-fill customer information if available
@@ -2860,9 +3955,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           borderRadius: BorderRadius.circular(20.r),
         ),
         child: Container(
-          constraints: BoxConstraints(
-            maxHeight: .85.sh,
-          ),
+          constraints: BoxConstraints(maxHeight: .85.sh),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -2899,12 +3992,13 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                       _buildSectionTitle("Amount Details", theme),
                       SizedBox(height: 12.sp),
                       _buildAmountField(
-                          label: "Base Amount",
-                          prefix: "\$",
-                          controller: controller.tuaBaseAmountController,
-                          readOnly: true,
-                          theme: theme,
-                          invoiceController: controller),
+                        label: "Base Amount",
+                        prefix: "\$",
+                        controller: controller.tuaBaseAmountController,
+                        readOnly: true,
+                        theme: theme,
+                        invoiceController: controller,
+                      ),
                       SizedBox(height: 12.sp),
                       _buildAmountField(
                         label: "Request Amount",
@@ -2955,6 +4049,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         theme: theme,
                         textEditingController: controller.tuaMobileController,
                         textInputType: TextInputType.phone,
+                        inputFormatters: [PhoneInputFormatter()],
                       ),
                       SizedBox(height: 12.sp),
                       GeneralTextField(
@@ -3003,7 +4098,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                         hint: "Invoice Number",
                         theme: theme,
                         textEditingController: TextEditingController(
-                            text: controller.invoiceNumber),
+                          text: controller.invoiceNumber,
+                        ),
                         readOnly: true,
                       ),
 
@@ -3021,8 +4117,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   color: Colors.white,
                   border: Border(
                     top: BorderSide(
-                      color:
-                          LightThemeColors.buttonBorderColor.withOpacity(0.3),
+                      color: LightThemeColors.buttonBorderColor.withValues(
+                        alpha: 0.3,
+                      ),
                       width: 1,
                     ),
                   ),
@@ -3031,29 +4128,33 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                   children: [
                     SizedBox(
                       width: double.infinity,
-                      height: 48.sp,
+                      height: 52.h,
                       child: PrimaryButton(
                         title: "Submit",
                         onPressed: () async {
                           // Validate required fields
                           if (controller.tuaEmailController.text.isEmpty) {
                             MySnackBar.showToast(
-                                message: "Please enter email address");
+                              message: "Please enter email address",
+                            );
                             return;
                           }
                           if (controller.tuaFirstNameController.text.isEmpty) {
                             MySnackBar.showToast(
-                                message: "Please enter first name");
+                              message: "Please enter first name",
+                            );
                             return;
                           }
                           if (controller.tuaLastNameController.text.isEmpty) {
                             MySnackBar.showToast(
-                                message: "Please enter last name");
+                              message: "Please enter last name",
+                            );
                             return;
                           }
                           if (controller.tuaZipCodeController.text.isEmpty) {
                             MySnackBar.showToast(
-                                message: "Please enter zip code");
+                              message: "Please enter zip code",
+                            );
                             return;
                           }
 
@@ -3073,7 +4174,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                     SizedBox(height: 12.sp),
                     SizedBox(
                       width: double.infinity,
-                      height: 48.sp,
+                      height: 52.h,
                       child: SecondaryButton(
                         title: "Cancel",
                         onPressed: () {
@@ -3125,17 +4226,18 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   Widget _buildDivider() {
     return Divider(
       height: 1,
-      color: LightThemeColors.buttonBorderColor.withOpacity(0.3),
+      color: LightThemeColors.buttonBorderColor.withValues(alpha: 0.3),
     );
   }
 
-  Widget _buildAmountField(
-      {required String label,
-      required String prefix,
-      required TextEditingController controller,
-      required bool readOnly,
-      required ThemeData theme,
-      required InvoiceController invoiceController}) {
+  Widget _buildAmountField({
+    required String label,
+    required String prefix,
+    required TextEditingController controller,
+    required bool readOnly,
+    required ThemeData theme,
+    required InvoiceController invoiceController,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3151,12 +4253,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
         Container(
           decoration: BoxDecoration(
             color: readOnly
-                ? LightThemeColors.bodyTextSecondaryColor.withOpacity(0.1)
+                ? LightThemeColors.bodyTextSecondaryColor.withValues(alpha: 0.1)
                 : LightThemeColors.fillColor,
             borderRadius: BorderRadius.circular(10.r),
-            border: Border.all(
-              color: LightThemeColors.buttonBorderColor,
-            ),
+            border: Border.all(color: LightThemeColors.buttonBorderColor),
           ),
           child: Row(
             children: [

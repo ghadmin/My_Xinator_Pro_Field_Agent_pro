@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'dart:typed_data';
+import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/image/models/picture_model.dart';
 
 class ImageListModel {
   int? customerId;
@@ -7,7 +6,7 @@ class ImageListModel {
   int? cSLId;
   String? companyId;
   String? tagName;
-  List<ImageList>? imageList;
+  List<Picture>? imageList;
 
   ImageListModel({
     this.customerId,
@@ -25,9 +24,9 @@ class ImageListModel {
     companyId = json['CompanyId'];
     tagName = json['TagName'];
     if (json['ImageList'] != null) {
-      imageList = <ImageList>[];
+      imageList = <Picture>[];
       json['ImageList'].forEach((v) {
-        imageList!.add(ImageList.fromJson(v));
+        imageList!.add(Picture.fromJson(v));
       });
     }
   }
@@ -46,97 +45,97 @@ class ImageListModel {
   }
 }
 
-class ImageList {
-  // ============================================
-  // OLD FIELD STRUCTURE (Kept for reference)
-  // ============================================
-  // String? imageName;
-  // String? imageBase64;
-  // Uint8List? bytes;
-  // String? createdAt;
-  // String? description;
-  // ============================================
+// class ImageList {
+//   // ============================================
+//   // OLD FIELD STRUCTURE (Kept for reference)
+//   // ============================================
+//   // String? imageName;
+//   // String? imageBase64;
+//   // Uint8List? bytes;
+//   // String? createdAt;
+//   // String? description;
+//   // ============================================
 
-  // New field structure matching API response
-  int? id;
-  String? companyId;
-  String? customerId;
-  int? siteId;
-  String? fileName;
-  String? fileContent;
-  String? pictureURL; // Network URL for images from API
-  String? uploadDate;
-  String? uploadedBy;
-  int? appointmentId;
-  String? reference;
+//   // New field structure matching API response
+//   int? id;
+//   String? companyId;
+//   String? customerId;
+//   int? siteId;
+//   String? fileName;
+//   String? fileContent;
+//   String? pictureURL; // Network URL for images from API
+//   String? uploadDate;
+//   String? uploadedBy;
+//   int? appointmentId;
+//   String? reference;
 
-  Uint8List? bytes; // Cached decoded bytes
+//   Uint8List? bytes; // Cached decoded bytes
 
-  ImageList({this.fileName, this.fileContent, this.pictureURL}) {
-    // Only decode base64 if we have fileContent (for locally uploaded images)
-    if (fileContent != null && fileContent!.isNotEmpty) {
-      bytes = base64Decode(fileContent!);
-    }
-  }
+//   ImageList({this.fileName, this.fileContent, this.pictureURL}) {
+//     // Only decode base64 if we have fileContent (for locally uploaded images)
+//     if (fileContent != null && fileContent!.isNotEmpty) {
+//       bytes = base64Decode(fileContent!);
+//     }
+//   }
 
-  // ============================================
-  // OLD FROM JSON (Kept for reference)
-  // ============================================
-  // ImageList.fromJson(Map<String, dynamic> json) {
-  //   imageName = json['ImageName'];
-  //   imageBase64 = json['ImageBase64'];
-  //   createdAt = json['CreatedAt'];
-  //   description = json['Description'];
-  //   if (imageBase64 != null) {
-  //     bytes = base64Decode(imageBase64!); // decode once when parsing
-  //   }
-  // }
-  // ============================================
+//   // ============================================
+//   // OLD FROM JSON (Kept for reference)
+//   // ============================================
+//   // ImageList.fromJson(Map<String, dynamic> json) {
+//   //   imageName = json['ImageName'];
+//   //   imageBase64 = json['ImageBase64'];
+//   //   createdAt = json['CreatedAt'];
+//   //   description = json['Description'];
+//   //   if (imageBase64 != null) {
+//   //     bytes = base64Decode(imageBase64!); // decode once when parsing
+//   //   }
+//   // }
+//   // ============================================
 
-  ImageList.fromJson(Map<String, dynamic> json) {
-    id = json['Id'];
-    companyId = json['companyId']?.toString() ?? json['CompanyID']?.toString();
-    customerId = json['customerId']?.toString() ?? json['CustomerID']?.toString();
-    siteId = json['siteId'] ?? json['SiteId'];
-    fileName = json['fileName'] ?? json['FileName'];
-    fileContent = json['fileContent'] ?? json['FileContent'];
-    pictureURL = json['pictureURL'] ?? json['PictureURL'];
-    uploadDate = json['uploadDate'] ?? json['UploadDate'];
-    uploadedBy = json['uploadedBy'] ?? json['UploadedBy'];
-    appointmentId = json['appointmentId'] ?? json['AppointmentId'];
-    reference = json['reference'] ?? json['Reference'];
-    // Only decode base64 if we have fileContent (for locally uploaded images)
-    if (fileContent != null && fileContent!.isNotEmpty) {
-      bytes = base64Decode(fileContent!);
-    }
-  }
+//   ImageList.fromJson(Map<String, dynamic> json) {
+//     id = json['Id'];
+//     companyId = json['companyId']?.toString() ?? json['CompanyID']?.toString();
+//     customerId = json['customerId']?.toString() ?? json['CustomerID']?.toString();
+//     siteId = json['siteId'] ?? json['SiteId'];
+//     fileName = json['fileName'] ?? json['FileName'];
+//     fileContent = json['fileContent'] ?? json['FileContent'];
+//     pictureURL = json['pictureURL'] ?? json['PictureURL'];
+//     uploadDate = json['uploadDate'] ?? json['UploadDate'];
+//     uploadedBy = json['uploadedBy'] ?? json['UploadedBy'];
+//     appointmentId = json['appointmentId'] ?? json['AppointmentId'];
+//     reference = json['reference'] ?? json['Reference'];
+//     // Only decode base64 if we have fileContent (for locally uploaded images)
+//     if (fileContent != null && fileContent!.isNotEmpty) {
+//       bytes = base64Decode(fileContent!);
+//     }
+//   }
 
-  // ============================================
-  // OLD TO JSON (Kept for reference)
-  // ============================================
-  // Map<String, dynamic> toJson() {
-  //   final Map<String, dynamic> data = {};
-  //   data['ImageName'] = imageName;
-  //   data['ImageBase64'] = imageBase64;
-  //   data['CreatedAt'] = createdAt;
-  //   data['Description'] = description;
-  //   return data;
-  // }
-  // ============================================
+//   // ============================================
+//   // OLD TO JSON (Kept for reference)
+//   // ============================================
+//   // Map<String, dynamic> toJson() {
+//   //   final Map<String, dynamic> data = {};
+//   //   data['ImageName'] = imageName;
+//   //   data['ImageBase64'] = imageBase64;
+//   //   data['CreatedAt'] = createdAt;
+//   //   data['Description'] = description;
+//   //   return data;
+//   // }
+//   // ============================================
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {};
-    data['Id'] = id;
-    data['companyId'] = companyId;
-    data['customerId'] = customerId;
-    data['siteId'] = siteId;
-    data['fileName'] = fileName;
-    data['fileContent'] = fileContent;
-    data['pictureURL'] = pictureURL;
-    data['uploadDate'] = uploadDate;
-    data['uploadedBy'] = uploadedBy;
-    data['appointmentId'] = appointmentId;
-    data['reference'] = reference;
-    return data;
-  }
-}
+//   Map<String, dynamic> toJson() {
+//     final Map<String, dynamic> data = {};
+//     data['Id'] = id;
+//     data['companyId'] = companyId;
+//     data['customerId'] = customerId;
+//     data['siteId'] = siteId;
+//     data['fileName'] = fileName;
+//     data['fileContent'] = fileContent;
+//     data['pictureURL'] = pictureURL;
+//     data['uploadDate'] = uploadDate;
+//     data['uploadedBy'] = uploadedBy;
+//     data['appointmentId'] = appointmentId;
+//     data['reference'] = reference;
+//     return data;
+//   }
+// }

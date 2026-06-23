@@ -400,6 +400,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/url_launcher.dart';
+import '../../../utils/simple_phone_formatter.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/text_widget.dart';
@@ -432,9 +433,9 @@ class CustomerDetailsView extends GetView<CustomerController> {
                   children: [
                     _buildCustomerInfoCard(theme),
                     SizedBox(height: 20.h),
-                    _buildCreateAppointmentButton(theme, context),
-                    SizedBox(height: 25.h),
-                    _buildAppointmentSection(theme),
+                    // _buildCreateAppointmentButton(theme, context),
+                    // SizedBox(height: 25.h),
+                    // _buildAppointmentSection(theme),
                   ],
                 ),
               ),
@@ -449,23 +450,68 @@ class CustomerDetailsView extends GetView<CustomerController> {
   // CUSTOMER INFO SECTION
   // ---------------------------------------------------------------------------
   Widget _buildCustomerInfoCard(ThemeData theme) {
+    final customer = controller.selectedCustomer.value;
+
     return Card(
       elevation: 0,
       color: Colors.white,
       child: Column(
         children: [
+          // User ID
+          _tile(
+            "User ID",
+            customer?.customerID != null && customer!.customerID!.isNotEmpty
+                ? customer.customerID!
+                : "N/A",
+            theme,
+          ),
+          MainDivider(),
+
+          // First Name
+          _tile(
+            "First Name",
+            customer?.firstName != null && customer!.firstName!.isNotEmpty
+                ? customer.firstName!
+                : "N/A",
+            theme,
+          ),
+          MainDivider(),
+
+          // Last Name
+          _tile(
+            "Last Name",
+            customer?.lastName != null && customer!.lastName!.isNotEmpty
+                ? customer.lastName!
+                : "N/A",
+            theme,
+          ),
+          MainDivider(),
+
+          // Email
+          _emailTile(
+            "Email",
+            controller.email != '' ? controller.email : "N/A",
+            theme,
+          ),
+          MainDivider(),
+
+          // Created Date
+          _tile(
+            "Created Date",
+            _formatCreatedDate(customer?.createdDateTime),
+            theme,
+          ),
+          MainDivider(),
+
+          // Business Name
           _tile(
             "Business Name",
             controller.businessName != '' ? controller.businessName : "N/A",
             theme,
           ),
           MainDivider(),
-          _tile(
-            "Title",
-            controller.title != '' ? controller.title : "N/A",
-            theme,
-          ),
-          MainDivider(),
+
+          // Address
           _tile(
             "Address",
             controller.address != '' ? controller.address : "N/A",
@@ -473,36 +519,51 @@ class CustomerDetailsView extends GetView<CustomerController> {
             multiLine: true,
           ),
           MainDivider(),
+
+          // Mobile
           _callTile(
             "Mobile",
-            controller.mobileNumber != '' ? controller.mobileNumber : "N/A",
+            controller.mobileNumber != '' ? PhoneDisplayFormatter.format(controller.mobileNumber) : "N/A",
             theme,
           ),
           MainDivider(),
+
+          // Phone
           _callTile(
             "Phone",
-            controller.phoneNumber != '' ? controller.phoneNumber : "N/A",
+            controller.phoneNumber != '' ? PhoneDisplayFormatter.format(controller.phoneNumber) : "N/A",
             theme,
           ),
-          MainDivider(),
-          _emailTile(
-            "Email",
-            controller.email != '' ? controller.email : "N/A",
-            theme,
-          ),
-          // MainDivider(),
-          // _navTile("Invoices", "See Invoices >", theme),
-          // MainDivider(),
-          // _navTile("Estimates", "See Estimates >", theme),
-          // MainDivider(),
-          // _navTile("Appointments", "See Appointments >", theme),
-          // MainDivider(),
-          // _navTile("Files", "View Files >", theme),
-          // MainDivider(),
-          // _navTile("Email History", "See History >", theme),
         ],
       ),
     );
+  }
+
+  String _formatCreatedDate(dynamic createdDateTime) {
+    if (createdDateTime == null) return "N/A";
+
+    try {
+      DateTime dateTime;
+
+      if (createdDateTime is String) {
+        dateTime = DateTime.parse(createdDateTime);
+      } else if (createdDateTime is DateTime) {
+        dateTime = createdDateTime;
+      } else {
+        return "N/A";
+      }
+
+      // Format: M/d/yyyy h:mm:ss a
+      return '${dateTime.month}/${dateTime.day}/${dateTime.year} ${_formatHour(dateTime.hour)}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')} ${dateTime.hour >= 12 ? "PM" : "AM"}';
+    } catch (e) {
+      return "N/A";
+    }
+  }
+
+  String _formatHour(int hour) {
+    if (hour == 0) return '12';
+    if (hour > 12) return (hour - 12).toString();
+    return hour.toString();
   }
 
   Widget _tile(
@@ -570,7 +631,7 @@ class CustomerDetailsView extends GetView<CustomerController> {
         ),
       ),
       trailing: InkWell(
-        onTap: () => UrlLauncher.email(email),
+        onTap: () => email != "N/A" ? UrlLauncher.email(email) : null,
         child: SizedBox(
           width: 220.sp,
           child: TextWidget(
@@ -588,26 +649,26 @@ class CustomerDetailsView extends GetView<CustomerController> {
     );
   }
 
-  Widget _navTile(String title, String buttonText, ThemeData theme) {
-    return ListTile(
-      title: TextWidget(
-        text: title,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: LightThemeColors.hintTextColor,
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      trailing: TextWidget(
-        text: buttonText,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          fontSize: 14.sp,
-          fontWeight: FontWeight.w500,
-          color: theme.primaryColor,
-        ),
-      ),
-    );
-  }
+  // Widget _navTile(String title, String buttonText, ThemeData theme) {
+  //   return ListTile(
+  //     title: TextWidget(
+  //       text: title,
+  //       style: theme.textTheme.bodyLarge?.copyWith(
+  //         color: LightThemeColors.hintTextColor,
+  //         fontSize: 14.sp,
+  //         fontWeight: FontWeight.w500,
+  //       ),
+  //     ),
+  //     trailing: TextWidget(
+  //       text: buttonText,
+  //       style: theme.textTheme.bodyLarge?.copyWith(
+  //         fontSize: 14.sp,
+  //         fontWeight: FontWeight.w500,
+  //         color: theme.primaryColor,
+  //       ),
+  //     ),
+  //   );
+  // }
 
   // ---------------------------------------------------------------------------
   // CREATE APPOINTMENT BUTTON
@@ -623,94 +684,95 @@ class CustomerDetailsView extends GetView<CustomerController> {
       ),
     );
   }
-
-  Widget _buildCreateAppointmentButton(ThemeData theme, BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () => openCreateAppointmentPopup(context),
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.symmetric(vertical: 14.sp),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-        child: TextWidget(
-          text: "Create Appointment",
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // APPOINTMENTS SECTION
-  // ---------------------------------------------------------------------------
-  Widget _buildAppointmentSection(ThemeData theme) {
-    // final list = controller.appointments;
-    final list = [];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextWidget(
-          text: "Appointments",
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: 10.h),
-
-        /// No Appointments
-        if (list.isEmpty)
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 20.h),
-            child: Center(
-              child: TextWidget(
-                text: "No appointment found",
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontSize: 15.sp,
-                  color: Colors.grey,
-                ),
-              ),
-            ),
-          )
-        else
-          SizedBox(
-            height: 350.h,
-            child: ListView.separated(
-              physics: BouncingScrollPhysics(),
-              itemCount: list.length,
-              separatorBuilder: (_, __) => MainDivider(),
-              itemBuilder: (_, index) {
-                final appt = list[index];
-                return ListTile(
-                  title: TextWidget(
-                    text: appt.title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: TextWidget(
-                    text: appt.date,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontSize: 13.sp,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  trailing: Icon(Icons.arrow_forward_ios, size: 14),
-                );
-              },
-            ),
-          ),
-      ],
-    );
-  }
 }
+
+// Widget _buildCreateAppointmentButton(ThemeData theme, BuildContext context) {
+//   return SizedBox(
+//     width: double.infinity,
+//     child: ElevatedButton(
+//       onPressed: () => openCreateAppointmentPopup(context),
+//       style: ElevatedButton.styleFrom(
+//         padding: EdgeInsets.symmetric(vertical: 14.sp),
+//         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+//       ),
+//       child: TextWidget(
+//         text: "Create Appointment",
+//         style: theme.textTheme.bodyLarge?.copyWith(
+//           fontSize: 16.sp,
+//           fontWeight: FontWeight.w600,
+//           color: Colors.white,
+//         ),
+//       ),
+//     ),
+//   );
+// }
+
+// ---------------------------------------------------------------------------
+// APPOINTMENTS SECTION
+// ---------------------------------------------------------------------------
+//   Widget _buildAppointmentSection(ThemeData theme) {
+//     // final list = controller.appointments;
+//     final list = [];
+
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         TextWidget(
+//           text: "Appointments",
+//           style: theme.textTheme.titleMedium?.copyWith(
+//             fontSize: 18.sp,
+//             fontWeight: FontWeight.bold,
+//           ),
+//         ),
+//         SizedBox(height: 10.h),
+
+//         /// No Appointments
+//         if (list.isEmpty)
+//           Padding(
+//             padding: EdgeInsets.symmetric(vertical: 20.h),
+//             child: Center(
+//               child: TextWidget(
+//                 text: "No appointment found",
+//                 style: theme.textTheme.bodyLarge?.copyWith(
+//                   fontSize: 15.sp,
+//                   color: Colors.grey,
+//                 ),
+//               ),
+//             ),
+//           )
+//         else
+//           SizedBox(
+//             height: 350.h,
+//             child: ListView.separated(
+//               physics: BouncingScrollPhysics(),
+//               itemCount: list.length,
+//               separatorBuilder: (_, __) => MainDivider(),
+//               itemBuilder: (_, index) {
+//                 final appt = list[index];
+//                 return ListTile(
+//                   title: TextWidget(
+//                     text: appt.title,
+//                     style: theme.textTheme.bodyLarge?.copyWith(
+//                       fontSize: 15.sp,
+//                       fontWeight: FontWeight.w600,
+//                     ),
+//                   ),
+//                   subtitle: TextWidget(
+//                     text: appt.date,
+//                     style: theme.textTheme.bodyLarge?.copyWith(
+//                       fontSize: 13.sp,
+//                       color: Colors.grey,
+//                     ),
+//                   ),
+//                   trailing: Icon(Icons.arrow_forward_ios, size: 14),
+//                 );
+//               },
+//             ),
+//           ),
+//       ],
+//     );
+//   }
+// }
 
 class CreateAppointmentSheet extends StatefulWidget {
   const CreateAppointmentSheet({super.key});

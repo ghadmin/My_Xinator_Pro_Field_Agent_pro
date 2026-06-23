@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -173,44 +175,51 @@ class DialogHelper {
 
   ///show loading
   static Future<void> showLoading() async {
-    Get.dialog(
-      barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: .1),
-      // barrierColor: LightThemeColors.bodyTextColor,
-      Center(
-        child: Container(
-          height: 80.h,
-          decoration: const BoxDecoration(
-            color: Colors.transparent,
-            shape: BoxShape.circle,
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // App Icon
-              Container(
-                height: 50.sp,
-                width: 50.sp,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: AssetImage(
-                      AppImages.kLoaderIcon,
+    final completer = Completer<void>();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      Get.dialog(
+        barrierDismissible: false,
+        barrierColor: Colors.black.withValues(alpha: .1),
+        // barrierColor: LightThemeColors.bodyTextColor,
+        Center(
+          child: Container(
+            height: 80.h,
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
+              shape: BoxShape.circle,
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // App Icon
+                Container(
+                  height: 50.sp,
+                  width: 50.sp,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: AssetImage(
+                        AppImages.kLoaderIcon,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              // Loader
-              SizedBox(
-                height: 60.sp,
-                width: 60.sp,
-                child: const CircularProgressIndicator(),
-              ),
-            ],
+                // Loader
+                SizedBox(
+                  height: 60.sp,
+                  width: 60.sp,
+                  child: const CircularProgressIndicator(),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+      // Complete after dialog is shown
+      await Future.delayed(const Duration(milliseconds: 50));
+      completer.complete();
+    });
+    return completer.future;
   }
 
   ///hide loading

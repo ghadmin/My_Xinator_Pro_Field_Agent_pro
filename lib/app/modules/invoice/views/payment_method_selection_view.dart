@@ -32,13 +32,13 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
             ),
             SizedBox(height: 16.sp),
             Container(
-              height: 180.sp,
+              height: 185.sp,
               color: Colors.transparent,
               child: Stack(
                 children: [
                   Container(
                     width: double.infinity,
-                    height: 180.sp,
+                    height: 185.sp,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -64,7 +64,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                         ),
                         Text(
                           controller.type.value == "Invoice"
-                              ? '\$${(double.parse(controller.total.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}'
+                              ? '\$${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}'
                               : '\$${double.parse(controller.total.value).toStringAsFixed(2)}',
                           style: TextStyle(
                             color: Colors.white,
@@ -72,7 +72,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 6.sp),
+                        SizedBox(height: 4.sp),
                         controller.depositRequestPay.value
                             ? Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +110,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                                   ),
                                 ],
                               ),
-                        SizedBox(height: 3.sp),
+                        SizedBox(height: 2.sp),
                         TextWidget(
                           text:
                               'Due by ${dateTimeConverter(inputTime: DateTime.now().toString(), outputFormat: "MM/dd/yyyy")}',
@@ -180,11 +180,13 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                               .toStringAsFixed(2);
                       await controller.initializeWebController(
                         controller
-                            .requestedDepositAmountEditTextController.text,
+                            .requestedDepositAmountEditTextController
+                            .text,
                       );
-                      Get.toNamed(Routes.MANUAL_PAYMENT, arguments: {
-                        'invoiceId': controller.invoiceID.value,
-                      });
+                      Get.toNamed(
+                        Routes.MANUAL_PAYMENT,
+                        arguments: {'invoiceId': controller.invoiceID.value},
+                      );
                     },
                   )
                 : PaymentOption(
@@ -198,9 +200,10 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                       await controller.initializeWebController(
                         controller.finalCollectionAmount.value,
                       );
-                      Get.toNamed(Routes.MANUAL_PAYMENT, arguments: {
-                        'invoiceId': controller.invoiceID.value,
-                      });
+                      Get.toNamed(
+                        Routes.MANUAL_PAYMENT,
+                        arguments: {'invoiceId': controller.invoiceID.value},
+                      );
                     },
                   ),
             SizedBox(height: 8.sp),

@@ -37,6 +37,9 @@ class ItemListModel extends HiveObject {
   @HiveField(10)
   int? qboId;
 
+  @HiveField(11)
+  int? quantityOnHand;
+
   ItemListModel({
     this.id,
     this.name,
@@ -49,6 +52,7 @@ class ItemListModel extends HiveObject {
     this.companyId,
     this.isDeleted,
     this.qboId,
+    this.quantityOnHand,
   });
 
   ItemListModel.fromJson(dynamic json) {
@@ -63,6 +67,7 @@ class ItemListModel extends HiveObject {
     companyId = json['CompanyId'];
     isDeleted = json['IsDeleted'];
     qboId = json['QboId'];
+    quantityOnHand = json['QtyOnHand'];
   }
 
   Map<String, dynamic> toJson() {
@@ -78,6 +83,7 @@ class ItemListModel extends HiveObject {
     map['CompanyId'] = companyId;
     map['IsDeleted'] = isDeleted;
     map['QboId'] = qboId;
+    map['QtyOnHand'] = quantityOnHand;
     return map;
   }
 }

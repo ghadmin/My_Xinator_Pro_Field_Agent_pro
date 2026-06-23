@@ -13,6 +13,7 @@ import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/splash_container.dart';
+import '../../../utils/simple_phone_formatter.dart';
 import '../controllers/invoice_controller.dart';
 import '../models/qbo_class_dropdown_model.dart';
 import '../models/qbo_location_dropdown_model.dart';
@@ -132,8 +133,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: 220.sp,
+                              Flexible(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -167,11 +167,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                         : InkWell(
                                             onTap: () async {
                                               await UrlLauncher.phoneCall(
-                                                controller.createCustomerPhone,
+                                                SimplePhoneFormatter.clean(controller.createCustomerPhone),
                                               );
                                             },
                                             child: Text(
-                                              controller.createCustomerPhone,
+                                              PhoneDisplayFormatter.format(controller.createCustomerPhone),
                                               style: theme.textTheme.bodySmall
                                                   ?.copyWith(
                                                     color: LightThemeColors
@@ -718,7 +718,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                                                         value,
                                                                                       ) {
                                                                                         controller.selectedItemList[index].isTaxable = value;
-
+                                                                                        controller.resetTaxIfNonTaxableItems();
                                                                                         controller.createTotal();
                                                                                         controller.selectedItemList.refresh();
                                                                                       },
@@ -998,7 +998,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                             ),
                                             SizedBox(height: 16.sp),
                                             SizedBox(
-                                              height: 42.sp,
+                                              height: 42.h,
                                               width: double.infinity,
                                               child: PrimaryButton(
                                                 title: "Close",
@@ -1549,6 +1549,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                             controller.tax.value = "0.00";
                                             controller.selectedTaxID.value = "";
                                             controller.createTotal();
+                                          } else if (selectedValue == -1) {
+                                            _showManualTaxDialog(context);
                                           } else {
                                             final selectedTax = controller.taxes
                                                 .firstWhere(
@@ -1570,7 +1572,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                     },
                                     child: Container(
                                       padding: EdgeInsets.symmetric(
-                                        horizontal: 10.sp,
+                                        horizontal: 8.sp,
                                         vertical: 5.sp,
                                       ),
                                       decoration: BoxDecoration(
@@ -2204,5 +2206,58 @@ class CreateInvoiceView extends GetView<InvoiceController> {
               ),
             ),
           );
+  }
+
+  void _showManualTaxDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final TextEditingController taxController = TextEditingController(
+      text: controller.selectedTaxID.value == "-1" ? controller.tax.value : "",
+    );
+
+    showAdaptiveDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Tax Rate", style: theme.textTheme.titleLarge),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Enter tax percentage:"),
+            SizedBox(height: 10),
+            TextField(
+              controller: taxController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                hintText: "8.25",
+                suffixText: "%",
+                border: OutlineInputBorder(),
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text("Cancel")),
+          TextButton(
+            onPressed: () {
+              final input = taxController.text.trim();
+              final taxRate = double.tryParse(input);
+              if (taxRate == null || taxRate < 0) {
+                Get.snackbar(
+                  "Invalid Input",
+                  "Please enter a valid tax percentage",
+                );
+                return;
+              }
+              controller.selectedTaxName.value = "Manual";
+              controller.tax.value = taxRate.toStringAsFixed(2);
+              controller.selectedTaxID.value = "-1";
+              controller.createTotal();
+              Get.back();
+            },
+            child: Text("Apply"),
+          ),
+        ],
+      ),
+    );
   }
 }

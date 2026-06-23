@@ -54,7 +54,7 @@ class PaymentByCashView extends GetView<InvoiceController> {
                 children: [
                   Text("Total Amount"),
                   Spacer(),
-                  Text("\$ ${controller.total.value}"),
+                  Text("\$${controller.total.value}"),
                 ],
               ),
               SizedBox(height: 8.sp),
@@ -63,7 +63,7 @@ class PaymentByCashView extends GetView<InvoiceController> {
                   Text("Paid Amount"),
                   Spacer(),
                   Text(
-                    "- \$ ${double.parse(controller.depositAmount.value).toStringAsFixed(2)}",
+                    "-\$${double.parse(controller.depositAmount.value).toStringAsFixed(2)}",
                   ),
                 ],
               ),
@@ -73,7 +73,7 @@ class PaymentByCashView extends GetView<InvoiceController> {
                       children: [
                         Text('Due Amount'),
                         Spacer(),
-                        Text("\$ ${controller.finalCollectionAmount.value}"),
+                        Text("\$${controller.finalCollectionAmount.value}"),
                       ],
                     )
                   : Row(
@@ -150,8 +150,9 @@ class PaymentByCashView extends GetView<InvoiceController> {
               Row(
                 children: [
                   Expanded(
+                    flex: 2,
                     child: SizedBox(
-                      height: 42.sp,
+                      height: 48.h,
                       child: SecondaryButton(
                         onPressed: () {
                           Get.back();
@@ -161,12 +162,12 @@ class PaymentByCashView extends GetView<InvoiceController> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 30.sp),
+                  SizedBox(width: 10.sp),
                   controller.depositRequestPay.value
                       ? Expanded(
-                          flex: 2,
+                          flex: 3,
                           child: SizedBox(
-                            height: 42.sp,
+                            height: 48.h,
                             child: PrimaryButton(
                               backgroundColor: Colors.black87,
                               foregroundColor: Colors.white,
@@ -214,9 +215,9 @@ class PaymentByCashView extends GetView<InvoiceController> {
                           ),
                         )
                       : Expanded(
-                          flex: 2,
+                          flex: 3,
                           child: SizedBox(
-                            height: 42.sp,
+                            height: 48.h,
                             child: PrimaryButton(
                               onPressed: () async {
                                 if (controller

@@ -24,6 +24,7 @@ class MySharedPref {
   static const String _companyIDKey = 'company_id';
   static const String _companyNameKey = 'company_name';
   static const String _companyTypeKey = 'company_tag';
+  static const String _resourceIDKey = 'resource_id';
   static const String _currentLocalKey = 'current_local';
   static const String _lightThemeKey = 'is_theme_light';
 
@@ -73,6 +74,17 @@ class MySharedPref {
   /// get company_tag
   static String? getCompanyType() =>
       _sharedPreferences!.getString(_companyTypeKey);
+
+  /// set resource_id
+  static setResourceID(int resourceID) =>
+      _sharedPreferences!.setInt(_resourceIDKey, resourceID);
+
+  /// get resource_id
+  static int? getResourceID() => _sharedPreferences!.getInt(_resourceIDKey);
+
+  /// remove resource_id
+  static Future<bool> removeResourceID() =>
+      _sharedPreferences!.remove(_resourceIDKey);
 
   /// remove company_name
   static Future<bool> removeCompanyName() =>

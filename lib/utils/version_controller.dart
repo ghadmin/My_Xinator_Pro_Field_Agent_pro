@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class VersionController extends GetxController {
@@ -27,7 +28,7 @@ class VersionController extends GetxController {
       // print('App Version: ${appVersion.value}');
       // print('Build Number: ${buildNumber.value}');
     } catch (e) {
-      print('Error getting app info: $e');
+      kLog('Error getting app info: $e');
     }
   }
 }

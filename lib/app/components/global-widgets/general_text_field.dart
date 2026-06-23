@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
@@ -27,7 +28,8 @@ class GeneralTextField extends StatelessWidget {
       this.minLine,
       this.textAlignment,
       this.isEnabled = true,
-      this.onEditingComplete});
+      this.onEditingComplete,
+      this.inputFormatters});
 
   final FocusNode? focusNode;
   final FocusNode? nextFocusNode;
@@ -47,6 +49,7 @@ class GeneralTextField extends StatelessWidget {
   final int? minLine;
   final TextAlign? textAlignment;
   final bool isEnabled;
+  final List<TextInputFormatter>? inputFormatters;
   @override
   Widget build(BuildContext context) {
     return TextFormField(
@@ -77,6 +80,7 @@ class GeneralTextField extends StatelessWidget {
         textEditingController.text = value!;
       },
       onFieldSubmitted: submit,
+      inputFormatters: inputFormatters,
       validator: (value) {
         if (fieldName?.toLowerCase() != "website url" &&
             textEditingController.text.isEmpty) {

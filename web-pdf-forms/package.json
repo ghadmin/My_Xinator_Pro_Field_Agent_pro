@@ -1,0 +1,23 @@
+{
+  "name": "smart-field-pdf-forms",
+  "version": "1.0.0",
+  "description": "Web-based Smart Field PDF Form Filling System following PDF specifications",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 8080 -o",
+    "dev": "npx http-server . -p 8080 -o -c-1",
+    "serve": "npx http-server . -p 8080"
+  },
+  "keywords": [
+    "pdf",
+    "forms",
+    "smart-fields",
+    "field-agent",
+    "form-filling"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

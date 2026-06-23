@@ -1075,7 +1075,7 @@ class LoginView extends GetView<AuthController> {
                       // Sign In Button
                       SizedBox(
                         width: double.infinity,
-                        height: 45.sp,
+                        height: 52.h,
                         child: PrimaryButton(
                           title: "Sign in",
                           onPressed: () async {
@@ -1087,7 +1087,7 @@ class LoginView extends GetView<AuthController> {
                                 controller.emailLoginTextController.text;
                             final password =
                                 controller.passwordLoginTextController.text;
-                            if (email.isNotEmpty && password.length > 5) {
+                            if (email.isNotEmpty && password.isNotEmpty) {
                               controller.emailValidator.value = '';
                               controller.passwordValidator.value = '';
                               await controller.login(email, password);
@@ -1096,8 +1096,8 @@ class LoginView extends GetView<AuthController> {
                                   ? "Email address is not valid!"
                                   : '';
                               controller.passwordValidator.value =
-                                  password.length < 6
-                                  ? "Password should be at least 6 characters long!"
+                                  password.isEmpty
+                                  ? "Password is required!"
                                   : '';
                             }
                           },

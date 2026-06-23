@@ -1130,7 +1130,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mime/mime.dart';
-import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../utils/date_converter.dart';
 import 'package:intl/intl.dart';
@@ -1199,12 +1198,47 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final Rx<FocusNode> createInvoiceEmailSubjectFocusnode = FocusNode().obs;
   final Rx<FocusNode> createInvoiceEmailBodyFocusnode = FocusNode().obs;
 
+  // Search and Filter logic
+  final RxString searchByType = "Name".obs;
+  final List<String> searchOptions = ["Name", "Group", "Bundle"];
+
+  final RxList<String> bundleList = <String>[
+    'Bundle 1',
+    'Bundle 2',
+    'Bundle 3',
+  ].obs; // To be populated by API
+  final RxString selectedBundle = "".obs;
+
   @override
   void onInit() async {
     super.onInit();
-    await Future.delayed(Duration(seconds: 1), () {});
-    getQBOClasses();
-    getQBOLocations();
+    try {
+      log("=== Starting Invoice Controller Initialization ===");
+      await Future.delayed(Duration(seconds: 1), () {});
+      log("=== Loading QBO Data ===");
+
+      // Load QBO data sequentially to better track errors
+      try {
+        await getQBOClasses();
+        log("✓ QBO Classes loaded successfully");
+      } catch (e) {
+        log("✗ QBO Classes failed: $e");
+      }
+
+      try {
+        await getQBOLocations();
+        log("✓ QBO Locations loaded successfully");
+      } catch (e) {
+        log("✗ QBO Locations failed: $e");
+      }
+
+      log("=== QBO Data Loading Complete ===");
+    } catch (e, stackTrace) {
+      log("Error in onInit: $e");
+      log("Stack trace: $stackTrace");
+      // Continue execution even if QBO calls fail
+    }
+    // _populateDemoFilterOptions(); // Populate demo options
     // Load immediately when controller is created
   }
 
@@ -1389,7 +1423,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxDouble invoiceSubtotal = 0.00.obs;
   RxDouble discountedTaxableTotalInEdit = 0.00.obs;
   RxDouble discountedTaxableTotalInCreate = 0.00.obs;
-
+  ScrollController billableItemsScrollController = ScrollController();
   // Customer signature (Base64 encoded string)
   String customerSignature = "";
 
@@ -1437,6 +1471,57 @@ class InvoiceController extends GetxController with ExceptionHandler {
     }
   }
 
+  // Check if all items are taxable (used to determine if tax can be selected)
+  bool get areAllItemsTaxable {
+    if (selectedItemList.isEmpty) return true;
+    return selectedItemList.every((item) => item.isTaxable == true);
+  }
+
+  /// Reorders billable items and keeps their corresponding controllers in sync
+  void reorderBillableItems(int oldIndex, int newIndex) {
+    // Adjust newIndex when moving an item down the list
+    // ReorderableListView reports the index after the item would be removed,
+    // so we need to subtract 1 when moving down to get the correct position
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+
+    // Reorder the item in the list
+    final item = selectedItemList.removeAt(oldIndex);
+    selectedItemList.insert(newIndex, item);
+
+    // Keep controllers in sync with the reordered items
+    final amountController = editAmountControllers.removeAt(oldIndex);
+    editAmountControllers.insert(newIndex, amountController);
+
+    final descriptionController = editDescriptionControllers.removeAt(oldIndex);
+    editDescriptionControllers.insert(newIndex, descriptionController);
+
+    final quantityController = editQuantityControllers.removeAt(oldIndex);
+    editQuantityControllers.insert(newIndex, quantityController);
+
+    // Mark form as dirty since order changed
+    markAsDirty();
+
+    // Refresh the list to update the UI
+    selectedItemList.refresh();
+  }
+
+  // Check if all items are non-taxable (used to disable tax dropdown)
+  bool get areAllItemsNonTaxable {
+    if (selectedItemList.isEmpty) return false;
+    return selectedItemList.every((item) => item.isTaxable == false);
+  }
+
+  // Reset tax to NO TAX if all items are non-taxable
+  void resetTaxIfNonTaxableItems() {
+    if (areAllItemsNonTaxable) {
+      selectedTaxName.value = "NO TAX";
+      tax.value = "0.00";
+      selectedTaxID.value = "";
+    }
+  }
+
   // ============================================
   // SURCHARGE FEATURE (Commented out for now)
   // ============================================
@@ -1452,60 +1537,121 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final isLoadingQboLocation = RxBool(false);
   Future<void> getQBOLocations() async {
     try {
+      isLoadingQboLocation.value = true;
       var companyID = MySharedPref.getCompanyID();
+
+      log("=== Getting QBO Locations ===");
+      log("Company ID: $companyID");
+      log("API URL: ${ApiUrl.getQBOLocationsUrl}");
 
       var response = await DioClient()
           .get(url: ApiUrl.getQBOLocationsUrl, params: {"companyId": companyID})
-          .catchError(handleError);
-      if (response == null) return;
+          .catchError((error) {
+            log("DioClient error in getQBOLocations: $error");
+            handleError(error);
+            throw error;
+          });
 
-      log("qbo locations response: $response");
-      // Ensure the response is a list
-      if (response is List && response.isNotEmpty) {
-        qboLocationList.value = response
-            .map((e) => QboLocationModel.fromJson(e))
-            .toList();
-      } else {
+      if (response == null) {
+        log("QBO Locations: Response is null");
         qboLocationList.value = [];
-        // Get.showSnackbar(GetSnackBar(
-        //   title: "No QBO Classes found",
-        //   message: '',
-        // ));
+        return;
       }
-    } catch (e) {
-      // Get.showSnackbar(GetSnackBar(
-      //   title: "No QBO Classes found",
-      //   message: '',
-      // ));
+
+      log("QBO Locations Response Type: ${response.runtimeType}");
+      log("QBO Locations Response: $response");
+
+      // Handle different response formats
+      if (response is List) {
+        if (response.isNotEmpty) {
+          try {
+            qboLocationList.value = response
+                .map((e) => QboLocationModel.fromJson(e))
+                .toList();
+            log("✓ Successfully loaded ${qboLocationList.length} QBO locations");
+          } catch (e) {
+            log("Error parsing QBO Location data: $e");
+            qboLocationList.value = [];
+          }
+        } else {
+          qboLocationList.value = [];
+          log("No QBO Locations found (empty array)");
+        }
+      } else {
+        log("Unexpected response format: ${response.runtimeType}");
+        qboLocationList.value = [];
+      }
+    } catch (e, stackTrace) {
+      log("❌ Error getting QBO Locations: $e");
+      log("Stack trace: $stackTrace");
+      qboLocationList.value = [];
+      // Don't show toast for initialization errors to avoid spam
+      if (isLoadingQboLocation.value) {
+        MySnackBar.showErrorToast(message: "Failed to load QBO Locations. Please check your connection.");
+      }
+    } finally {
+      isLoadingQboLocation.value = false;
+      log("=== getQBOLocations Complete ===");
     }
   }
 
   Future<void> getQBOClasses() async {
     try {
+      isLoadingQboClass.value = true;
       var companyID = MySharedPref.getCompanyID();
+
+      log("=== Getting QBO Classes ===");
+      log("Company ID: $companyID");
+      log("API URL: ${ApiUrl.getQBOClassesUrl}");
 
       var response = await DioClient()
           .get(url: ApiUrl.getQBOClassesUrl, params: {"companyId": companyID})
-          .catchError(handleError);
-      if (response == null) return;
-      log("qbo class response: $response");
-      // Ensure the response is a list
-      if (response is List && response.isNotEmpty) {
-        qboClassList.value = response
-            .map((e) => QboClassModel.fromJson(e))
-            .toList();
-      } else {
+          .catchError((error) {
+            log("DioClient error in getQBOClasses: $error");
+            handleError(error);
+            throw error;
+          });
+
+      if (response == null) {
+        log("QBO Classes: Response is null");
         qboClassList.value = [];
-        // Get.showSnackbar(GetSnackBar(
-        //   title: "No QBO Classes found",
-        //   message: '',
-        // ));
+        return;
       }
-    } catch (e) {
-      // Get.showSnackbar(GetSnackBar(
-      //   title: "No QBO Classes found",
-      //   message: '',
-      // ));
+
+      log("QBO Classes Response Type: ${response.runtimeType}");
+      log("QBO Classes Response: $response");
+
+      // Handle different response formats
+      if (response is List) {
+        if (response.isNotEmpty) {
+          try {
+            qboClassList.value = response
+                .map((e) => QboClassModel.fromJson(e))
+                .toList();
+            log("✓ Successfully loaded ${qboClassList.length} QBO classes");
+          } catch (e) {
+            log("Error parsing QBO Class data: $e");
+            qboClassList.value = [];
+          }
+        } else {
+          qboClassList.value = [];
+          log("No QBO Classes found (empty array)");
+        }
+      } else {
+        log("Unexpected response format: ${response.runtimeType}");
+        qboClassList.value = [];
+      }
+    } catch (e, stackTrace) {
+      log("❌ Error getting QBO Classes: $e");
+      log("Stack trace: $stackTrace");
+      qboClassList.value = [];
+      // Don't show toast for initialization errors to avoid spam
+      if (isLoadingQboClass.value) {
+        MySnackBar.showErrorToast(message: "Failed to load QBO Classes. Please check your connection.");
+      }
+    } finally {
+      isLoadingQboClass.value = false;
+      log("=== getQBOClasses Complete ===");
     }
   }
 
@@ -1636,6 +1782,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     descriptionControllers.removeAt(index);
     quantityControllers.removeAt(index);
 
+    resetTaxIfNonTaxableItems();
     createTotal();
   }
 
@@ -1652,6 +1799,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     editDescriptionControllers.removeAt(index);
     editQuantityControllers.removeAt(index);
 
+    resetTaxIfNonTaxableItems();
     createTotalForEdit();
     updateRequestedDepositAmount();
   }
@@ -1782,19 +1930,47 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
   final taxes = RxList<TaxModel>();
   Future<void> getTax() async {
-    var companyID = MySharedPref.getCompanyID();
-    var response = await DioClient()
-        .get(url: ApiUrl.getTax, params: {"CompanyId": companyID})
-        .catchError(handleError);
+    try {
+      var companyID = MySharedPref.getCompanyID();
+      log("Getting Tax data for company: $companyID");
 
-    if (response == null) return;
+      var response = await DioClient()
+          .get(url: ApiUrl.getTax, params: {"CompanyId": companyID})
+          .catchError(handleError);
 
-    taxes.assignAll(
-      (response as List).map((e) => TaxModel.fromJson(e)).toList(),
-    );
-    await MyHive.saveTax(taxes);
-    var savedTax = MyHive.getAllTax();
-    taxes.assignAll(savedTax);
+      if (response == null) {
+        log("Tax data: Response is null");
+        return;
+      }
+
+      taxes.assignAll(
+        (response as List).map((e) => TaxModel.fromJson(e)).toList(),
+      );
+      taxes.add(TaxModel(id: -1, name: "Manual", rate: 0));
+      await MyHive.saveTax(taxes);
+      var savedTax = MyHive.getAllTax();
+      taxes.assignAll(savedTax);
+      log("Successfully loaded ${taxes.length} tax rates");
+    } catch (e, stackTrace) {
+      log("Error getting tax data: $e");
+      log("Stack trace: $stackTrace");
+      // Load from cache if API fails
+      try {
+        var savedTax = MyHive.getAllTax();
+        if (savedTax.isNotEmpty) {
+          taxes.assignAll(savedTax);
+          log("Loaded tax data from cache");
+        } else {
+          // Add manual tax option if no cache available
+          taxes.clear();
+          taxes.add(TaxModel(id: -1, name: "Manual", rate: 0));
+        }
+      } catch (cacheError) {
+        log("Error loading from cache: $cacheError");
+        taxes.clear();
+        taxes.add(TaxModel(id: -1, name: "Manual", rate: 0));
+      }
+    }
   }
 
   RxString invoiceName = "".obs;
@@ -1835,6 +2011,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
   void selectItem(ItemListModel item) {
     selectedItemList.add(item);
+    resetTaxIfNonTaxableItems();
   }
 
   RxBool isInvoiceSaved = false.obs;
@@ -1960,9 +2137,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxList<File> docFileList = <File>[].obs;
 
   Future<void> pickFiles() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-    );
+    FilePickerResult? result = await FilePicker.pickFiles(allowMultiple: true);
 
     if (result != null) {
       List<File> files = result.paths.map((path) => File(path!)).toList();
@@ -2379,6 +2554,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
         );
       }
     }
+    invoiceController.resetTaxIfNonTaxableItems();
     invoiceController.createTotalForEdit();
     await 0.5.delay();
     invoiceController.selectedQboClass(
@@ -2589,6 +2765,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
         );
       }
     }
+    invoiceController.resetTaxIfNonTaxableItems();
     invoiceController.createTotalForEdit();
     await 0.5.delay();
     invoiceController.selectedQboClass(

@@ -39,5 +39,36 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # Ensure all pods have minimum iOS 13.0 deployment target for Task/MainActor support
+    target.build_configurations.each do |config|
+      if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 13.0
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      end
+    end
+
+    # Fix AVKeyValueStatus deprecation warning in DKPhotoGallery
+    if target.name == 'DKPhotoGallery'
+      player_view_path = File.join(installer.sandbox.root, 'DKPhotoGallery/DKPhotoGallery/Preview/PlayerPreview/DKPlayerView.swift')
+      if File.exist?(player_view_path)
+        content = File.read(player_view_path)
+
+        # Add helper extension if not present
+        unless content.include?('func loadValuesAsynchronously(forKeys keys: [String]) async')
+          helper_extension = "\n// Helper extension for backward compatibility\n@available(iOS 13.0, *)\nextension AVAsset {\n    func loadValuesAsynchronously(forKeys keys: [String]) async {\n        await withCheckedContinuation { continuation in\n            self.loadValuesAsynchronously(forKeys: keys) {\n                continuation.resume()\n            }\n        }\n    }\n}\n"
+          content = content.sub(/^import AVFoundation\n/, "import AVFoundation\n#{helper_extension}")
+        end
+
+        # Replace deprecated API with new async/await implementation
+        old_code = "            if let newValue = self.asset {\n                self.bufferingIndicator.startAnimating()\n                newValue.loadValuesAsynchronously(forKeys: [\"duration\", \"tracks\"], completionHandler: {\n                    if newValue == self.asset {\n                        var error: NSError?\n                        let loadStatus = newValue.statusOfValue(forKey: \"duration\", error: &error)\n                        var item: AVPlayerItem?\n                        if loadStatus == .loaded {\n                            item = AVPlayerItem(asset: newValue)\n                        } else if loadStatus == .failed {\n                            self.error = error\n                        }\n                        \n                        DispatchQueue.main.async {\n                            if newValue == self.asset {\n                                self.bufferingIndicator.stopAnimating()\n                                \n                                if let item = item {\n                                    self.playerItem = item\n                                } else if let error = self.error, self.autoPlayOrShowErrorOnce {\n                                    self.showPlayError(error.localizedDescription)\n                                }\n                            }\n                        }\n                    }\n                })\n            }"
+
+        new_code = "            if let newValue = self.asset {\n                self.bufferingIndicator.startAnimating()\n                Task {\n                    do {\n                        if #available(iOS 16.0, *) {\n                            // Use new async API for iOS 16+\n                            _ = try await newValue.load(.duration)\n                            _ = try await newValue.load(.tracks)\n                        } else {\n                            // Fallback to old API for earlier versions\n                            await newValue.loadValuesAsynchronously(forKeys: [\"duration\", \"tracks\"])\n                            var error: NSError?\n                            let status = newValue.statusOfValue(forKey: \"duration\", error: &error)\n                            if status != .loaded {\n                                throw error ?? NSError(domain: \"DKPlayerView\", code: -1, userInfo: nil)\n                            }\n                        }\n\n                        await MainActor.run {\n                            if newValue == self.asset {\n                                self.bufferingIndicator.stopAnimating()\n                                let item = AVPlayerItem(asset: newValue)\n                                self.playerItem = item\n                            }\n                        }\n                    } catch {\n                        await MainActor.run {\n                            if newValue == self.asset {\n                                self.bufferingIndicator.stopAnimating()\n                                self.error = error as NSError\n                                if self.autoPlayOrShowErrorOnce {\n                                    self.showPlayError(error.localizedDescription)\n                                }\n                            }\n                        }\n                    }\n                }\n            }"
+
+        content = content.sub(old_code, new_code)
+
+        File.write(player_view_path, content)
+        puts "✅ Patched DKPlayerView.swift for iOS 16+ compatibility"
+      end
+    end
   end
 end

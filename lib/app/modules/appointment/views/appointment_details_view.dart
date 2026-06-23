@@ -1,11 +1,6 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -14,38 +9,36 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:open_filex/open_filex.dart';
+import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../../../config/theme/light_theme_colors.dart';
-import '../../../../utils/date_converter.dart';
-import '../../../../utils/klog.dart';
+
+// ─── Warm Organic Blue Design ───────────────────────────────────
 import '../../../../utils/url_launcher.dart';
+import '../../../utils/simple_phone_formatter.dart';
+import '../models/custom_field_model.dart';
+import 'widgets/warm_organic_components.dart';
+// ───────────────────────────────────────────────────────────────────
+
+import '../../../../config/theme/light_theme_colors.dart';
+import '../../../../utils/klog.dart';
 import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/general_text_field.dart';
-import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
-import '../../../components/global-widgets/splash_container.dart';
 import '../../../components/global-widgets/text_widget.dart';
-import '../../../data/local/my_shared_pref.dart';
+import '../../../modules/forms/controllers/forms_controller.dart';
 import '../../../routes/app_pages.dart';
-import '../../../service/helper/dialog_helper.dart';
-import '../../../utils/phone_number_formatter.dart';
-import '../../forms/controllers/form_controller.dart';
-import '../../forms/models/form_model.dart';
-import '../../item/models/item_list_model.dart';
-import '../../settings/controllers/settings_controller.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/custom_fields_controller.dart';
-import '../models/custom_field_model.dart';
-import '../models/equipment_model.dart';
-import 'widgets/equipment_form_modal.dart';
-import '../models/file_model.dart';
-import '../models/note_model.dart';
+import '../parts/image/controllers/image_controller.dart';
+import '../parts/file/controllers/file_controller.dart';
+import '../parts/notes/controllers/notes_controller.dart';
+import '../parts/equipment/controllers/equipment_controller.dart';
 
 class AppointmentDetailsView extends StatefulWidget {
   const AppointmentDetailsView({super.key});
@@ -56,5991 +49,1266 @@ class AppointmentDetailsView extends StatefulWidget {
 
 class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     with TickerProviderStateMixin {
-  late TabController _tabController;
-  late TabController _tabController1;
-  int _previousTabIndex = 0;
-
+  FormsController? formsController;
   @override
   void initState() {
     super.initState();
 
-    _tabController = TabController(length: 8, vsync: this);
-    _tabController1 = TabController(length: 2, vsync: this);
-    _tabController1.addListener(() {
-      if (_tabController1.index == 0) {
-        // forms  tab index
+    // Controllers are now registered via AppointmentBinding
+    // Using Get.find() to get the lazy-loaded instances
+    imageController = Get.find<ImageController>();
+    fileController = Get.find<FileController>();
+    notesController = Get.find<NotesController>();
 
-        formC.selectAttachedForms();
-      }
-    });
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return; // ignore swipe animation
-      if (_tabController.index == _previousTabIndex) {
-        return; // ignore duplicate calls
-      }
-
-      _previousTabIndex = _tabController.index;
-      kLog("tabController index: ${_tabController.index}");
-      // formC.selectedFormsIdList.clear();
-      if (_tabController.index == 0) {
-        // Info tab - Load saved custom fields
-        _loadSavedCustomFields();
-        setState(() {});
-      }
-      if (_tabController.index == 1) {
-        controller.getCustomerSite(showLoader: true);
-        Future.delayed(Duration(seconds: 7));
-        controller.isBasicExpanded(true);
-        setState(() {});
-      }
-      if (_tabController.index == 2) {
-        // forms  tab index
-        formC.formModels.clear();
-        formC.fetchTemplates();
-        setState(() {});
-
-        formC.selectAttachedForms();
-      }
-
-      if (_tabController.index == 4) {
-        // Pictures tab index
-
-        controller.getImageList(true);
-        setState(() {});
-      }
-      if (_tabController.index == 3) {
-        // Pictures tab index
-
-        controller.getInvoiceList(showLoader: true);
-        setState(() {});
-      }
-      if (_tabController.index == 5) {
-        // Equipment tab index
-        controller.getCustomerSite(showLoader: true);
-        controller.getEquipment(showLoader: true);
-        controller.getEquipmentTypes(showLoader: true);
-        setState(() {});
-      }
-      if (_tabController.index == 6) {
-        // Pictures tab index
-
-        controller.getFileList(showLoader: true);
-        setState(() {});
-      }
-      if (_tabController.index == 7) {
-        // Pictures tab index
-
-        controller.getAllNotes(showLoader: true);
-        setState(() {});
-      }
-    });
-  }
-
-  /// Load saved custom fields and populate them with values
-  Future<void> _loadSavedCustomFields() async {
-    try {
-      final appointmentId = controller.selectedAppointment.value?.apptID;
-      if (appointmentId == null) return;
-
-      log("📥 Loading saved custom fields for appointment: $appointmentId");
-
-      // Call the new API to get attached custom fields
-      await customFieldsController.getAttachedCustomFields(
-        appointmentId: appointmentId,
-      );
-
-      // If there are attached fields, populate selectedCustomFields
-      if (customFieldsController.attachedCustomFields.isNotEmpty) {
-        // Clear previously selected fields
-        customFieldsController.selectedCustomFields.clear();
-
-        // Process each attached field
-        for (var attachedField in customFieldsController.attachedCustomFields) {
-          // Find matching field definition from allCustomFields
-          var fieldDef = customFieldsController.allCustomFields
-              .firstWhereOrNull((f) => f.fieldID == attachedField.fieldID);
-
-          if (fieldDef != null) {
-            // Create a new instance of the field
-            var newField = CustomFieldModel(
-              fieldID: fieldDef.fieldID,
-              fieldName: fieldDef.fieldName,
-              fieldType: fieldDef.fieldType,
-              fieldOptions: fieldDef.fieldOptions,
-              isActive: fieldDef.isActive,
-              options: fieldDef.options,
-            );
-
-            // Set the value based on field type and attached field value
-            switch (fieldDef.fieldType) {
-              case 'text':
-                newField.textValue = attachedField.fieldValue;
-                break;
-              case 'number':
-                newField.numberValue = attachedField.fieldValue;
-                break;
-              case 'dropdown':
-                newField.selectedValue = attachedField.fieldValue;
-                break;
-              case 'checklist':
-                // For checklist, FieldValue is a JSON array string like "[\"option1\",\"option2\"]"
-                newField.selectedOptions = attachedField.getFieldValueAsList();
-                break;
-            }
-
-            // Add to selected fields
-            customFieldsController.selectedCustomFields.add(newField);
-          }
-        }
-
-        log(
-          "✅ Loaded ${customFieldsController.selectedCustomFields.length} saved custom fields",
-        );
-        setState(() {}); // Refresh UI
-      } else {
-        log(
-          "ℹ️ No attached custom fields found for appointment: $appointmentId",
-        );
-      }
-    } catch (e) {
-      log("❌ Error loading saved custom fields: $e");
+    // Check if FormsController exists, if not create it
+    if (Get.isRegistered<FormsController>()) {
+      formsController = Get.find<FormsController>();
+    } else {
+      log("Creating new FormsController");
+      formsController = Get.put(FormsController());
     }
+
+    // _tabController = TabController(length: 7, vsync: this);
+    // _tabController.addListener(() {
+    //   if (_tabController.indexIsChanging) return;
+    //   if (_tabController.index == _previousTabIndex) return;
+
+    //   _previousTabIndex = _tabController.index;
+    //   kLog("tabController index: ${_tabController.index}");
+
+    //   // Navigate to dedicated pages
+    //   if (_tabController.index == 0) {
+    //     // CSL - Navigate to CSL view
+    //     controller.getCustomerSite(showLoader: true);
+    //     Future.delayed(Duration(seconds: 7));
+    //     controller.isBasicExpanded(true);
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 1) {
+    //     // Forms - Navigate to Forms page
+    //     Get.toNamed(Routes.FORMS);
+    //     // Reset to CSL tab after navigation
+    //     Future.delayed(Duration(milliseconds: 500), () {
+    //       if (_tabController.index == 1) {
+    //         _tabController.animateTo(0);
+    //       }
+    //     });
+    //   }
+    //   if (_tabController.index == 2) {
+    //     // Estimate - Navigate to Invoice page
+    //     controller.getInvoiceList(showLoader: true);
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 3) {
+    //     // Pictures - Navigate to pictures page (if exists)
+    //     final appointment = controller.selectedAppointment.value;
+    //     if (appointment != null) {
+    //       imageController.fetchPictures(
+    //         customerId: appointment.customerID?.toString() ?? '',
+    //         siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+    //       );
+    //     }
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 4) {
+    //     // Equipment - Show equipment section
+    //     controller.getCustomerSite(showLoader: true);
+    //     final appointment = controller.selectedAppointment.value;
+    //     if (appointment != null) {
+    //       equipmentController.fetchEquipment(
+    //         customerGuid: appointment.customer?.customerGuid ?? '',
+    //         siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+    //         companyId: appointment.companyID,
+    //       );
+    //       equipmentController.fetchEquipmentTypes(
+    //         companyId: appointment.companyID,
+    //       );
+    //     }
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 5) {
+    //     // Files - Show files section
+    //     final appointment = controller.selectedAppointment.value;
+    //     if (appointment != null) {
+    //       fileController.fetchFiles(
+    //         customerId: appointment.customerID?.toString() ?? '',
+    //         siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+    //       );
+    //     }
+    //     setState(() {});
+    //   }
+    //   if (_tabController.index == 6) {
+    //     // Notes - Show notes section
+    //     final appointment = controller.selectedAppointment.value;
+    //     if (appointment != null) {
+    //       notesController.fetchNotes(
+    //         customerId: appointment.customerID?.toString() ?? '',
+    //         siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+    //         companyId: appointment.companyID,
+    //       );
+    //     }
+    //     setState(() {});
+    //   }
+    // });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    // _tabController.dispose();
     super.dispose();
   }
 
-  AppointmentController controller = Get.find<AppointmentController>();
-  CustomFieldsController customFieldsController =
+  final AppointmentController controller = Get.find<AppointmentController>();
+  final CustomFieldsController customFieldsController =
       Get.find<CustomFieldsController>();
+  late final ImageController imageController;
+  late final FileController fileController;
+  late final NotesController notesController;
+  final EquipmentController equipmentController =
+      Get.find<EquipmentController>();
 
-  FormController formC = Get.find<FormController>();
+  // ─────────────────────────────────────────────────────────────
+  // MAIN BUILD — REDESIGNED WITH WARM ORGANIC BLUE THEME
+  // ─────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
-
-    return Obx(
-      () => Scaffold(
-        floatingActionButton: SizedBox(
-          height:
-              (_tabController1.index == 1 &&
-                  formC.selectedFormsIdList.isNotEmpty)
-              ? 80.h
-              : 70.h,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Forms tab FAB (tabController1 index 1)
-              if (_tabController1.index == 1 &&
-                  formC.selectedFormsIdList.isNotEmpty)
-                SizedBox(height: 10),
-              if (_tabController1.index == 1 &&
-                  formC.selectedFormsIdList.isNotEmpty)
-                FloatingActionButton(
-                  backgroundColor: Colors.blue,
-                  heroTag: "assign_forms",
-                  onPressed: () async {
-                    await formC.assignFormsToAppointment(
-                      controller
-                          .selectedAppointment
-                          .value!
-                          .customer!
-                          .customerID!,
-                      controller.selectedAppointment.value!.apptID.toString(),
-                    );
-                  },
-                  child: Icon(Icons.add, color: Colors.white),
-                ),
-
-              SizedBox(height: 10.h),
-              SizedBox(height: 10.sp),
-              FloatingActionButton(
-                heroTag: "send_message",
-                onPressed: () async {
-                  // Unfocus and wait for keyboard to dismiss
-                  FocusScope.of(context).unfocus();
-                  controller.appointmentDetailsNoteFocusnode.value.unfocus();
-                  controller.appointmentDetailsMessageFocusnode.value.unfocus();
-                  await Future.delayed(Duration(milliseconds: 100));
-
-                  showModalBottomSheet(
-                    context: context,
-                    showDragHandle: true,
-                    isScrollControlled: true,
-                    useSafeArea: true,
-                    enableDrag: true,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                    ),
-                    builder: (BuildContext context) {
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          bottom: MediaQuery.of(context).viewInsets.bottom,
-                        ),
-                        child: Container(
-                          padding: EdgeInsets.only(
-                            left: 20.sp,
-                            right: 20.sp,
-                            bottom: 20.sp,
-                            top: 5.sp,
-                          ),
-                          child: SingleChildScrollView(
-                            physics: BouncingScrollPhysics(),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Center(
-                                  child: Text(
-                                    "Send Message",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 18.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 15.sp),
-                                Text("Phone"),
-                                SizedBox(height: 4.sp),
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 10.sp,
-                                    vertical: 6.sp,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5.r),
-                                    color: Colors.grey.shade50,
-                                  ),
-                                  child: Text(
-                                    controller.phoneNumber.isNotEmpty
-                                        ? PhoneNumberFormatter.formatPhoneNumber(
-                                            controller.phoneNumber,
-                                          )
-                                        : controller.mobileNumber.isNotEmpty
-                                        ? PhoneNumberFormatter.formatPhoneNumber(
-                                            controller.mobileNumber,
-                                          )
-                                        : "No Phone Number",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors
-                                          .bodyTextSecondaryColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 10.sp),
-                                Text('Message'),
-                                SizedBox(height: 4.sp),
-                                GeneralTextField(
-                                  hint: "",
-                                  theme: theme,
-                                  maxLine: 5,
-                                  minLine: 1,
-                                  focusNode: controller
-                                      .appointmentDetailsNoteFocusnode
-                                      .value,
-                                  textInputType: TextInputType.multiline,
-                                  textInputAction: TextInputAction.newline,
-                                  textEditingController:
-                                      controller.smsController,
-                                ),
-                                SizedBox(height: 15.sp),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 1,
-                                      child: SizedBox(
-                                        height: 48.sp,
-                                        child: SecondaryButton(
-                                          title: "Cancel",
-                                          onPressed: () {
-                                            controller.smsController.clear();
-                                            FocusScope.of(context).unfocus();
-                                            controller
-                                                .appointmentDetailsNoteFocusnode
-                                                .value
-                                                .unfocus();
-                                            controller
-                                                .appointmentDetailsMessageFocusnode
-                                                .value
-                                                .unfocus();
-                                            Get.back();
-                                          },
-                                          inactive: false,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(width: 10.sp),
-                                    Expanded(
-                                      flex: 2,
-                                      child: SizedBox(
-                                        height: 48.sp,
-                                        child: PrimaryButton(
-                                          title: "Send",
-                                          onPressed: () async {
-                                            FocusScope.of(context).unfocus();
-                                            controller
-                                                .appointmentDetailsNoteFocusnode
-                                                .value
-                                                .unfocus();
-                                            controller
-                                                .appointmentDetailsMessageFocusnode
-                                                .value
-                                                .unfocus();
-                                            Get.back();
-                                            if (controller
-                                                    .mobileNumber
-                                                    .isEmpty &&
-                                                controller
-                                                    .phoneNumber
-                                                    .isEmpty) {
-                                              MySnackBar.showErrorToast(
-                                                message:
-                                                    "No phone number found for this customer.",
-                                              );
-                                              return;
-                                            }
-                                            await 1.delay();
-                                            await controller.sendSMS();
-                                          },
-                                          inactive: false,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 50.sp),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-                backgroundColor: theme.primaryColor,
-                tooltip: 'Chat',
-                child: Icon(Icons.chat, color: Colors.white),
-              ),
-            ],
-          ),
-        ),
-        resizeToAvoidBottomInset: false,
+    return Theme(
+      data: WarmOrganicBlueTheme.themeData,
+      child: Scaffold(
         appBar: Get.size.width <= 440
-            ? AppBar(
-                leading: GestureDetector(
-                  onTap: () {
-                    Get.back();
-                  },
-                  child: Icon(
-                    Icons.arrow_back_ios,
-                    color: Colors.blue,
-                    size: 15.sp,
-                  ),
-                ),
-                automaticallyImplyLeading: false,
-                title: Text("Appointment Details"),
-                centerTitle: false,
-              )
+            ? AppBar(elevation: 1, title: Text("Appointment Details"))
             : PreferredSize(
                 preferredSize: Size.fromHeight(40.sp),
                 child: Padding(
                   padding: EdgeInsets.only(top: 15.sp),
                   child: AppBar(
-                    leading: GestureDetector(
-                      onTap: () {
-                        Get.back();
-                      },
-                      child: Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.blue,
-                        size: 15.sp,
+                    elevation: 1,
+                    title: Padding(
+                      padding: EdgeInsets.only(top: 8.sp),
+                      child: Text(
+                        "Appointment Details",
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.sp,
+                        ),
                       ),
                     ),
-                    automaticallyImplyLeading: false,
-                    title: Text("Appointment Details"),
-                    centerTitle: false,
                   ),
                 ),
               ),
-        body: controller.selectedAppointment.value == null
-            ? Center(
-                child: EmptyWidget(
-                  isRefreshShown: false,
-                  title: "No appointments",
-                  onPressed: () {
-                    Get.back();
-                  },
+
+        // Contact Name (tappable) this thing add to appbar. ),
+        backgroundColor: WarmOrganicBlueTheme.warmGray,
+        body: Obx(
+          () => controller.selectedAppointment.value == null
+              ? Center(
+                  child: EmptyWidget(
+                    isRefreshShown: false,
+                    title: "No appointments",
+                    onPressed: () => Get.back(),
+                  ),
+                )
+              : SafeArea(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Column(
+                            children: [
+                              // _buildGradientHeader(context),
+                              _buildTimeCard(),
+                              // _buildGradientHeader(context),
+                              SizedBox(height: 5.h),
+
+                              // Notes Card
+                              OrganicCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Any Details',
+                                      style: WarmOrganicBlueTheme.headingSmall,
+                                    ),
+                                    SizedBox(height: 8.h),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.all(14.r),
+                                      decoration: BoxDecoration(
+                                        color: WarmOrganicBlueTheme.warmGray,
+                                        borderRadius: BorderRadius.circular(
+                                          WarmOrganicBlueTheme.radiusMd,
+                                        ),
+                                      ),
+                                      child: GeneralTextField(
+                                        maxLine: 4,
+                                        hint: "Add a note here..",
+                                        theme: Theme.of(context),
+                                        textEditingController:
+                                            controller.noteController,
+                                        textInputAction:
+                                            TextInputAction.newline,
+                                        textInputType: TextInputType.multiline,
+                                        onChanged: (v) {
+                                          controller.isTyping(true);
+                                          controller.noteText(v);
+                                        },
+                                        onEditingComplete: () =>
+                                            controller.isTyping(false),
+                                      ),
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    OrganicPrimaryButton(
+                                      text: 'Save Notes',
+                                      height: 40.h,
+                                      onPressed: () async =>
+                                          await controller.updateAppointment(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 12.h),
+
+                              // Custom Fields Card
+                              OrganicCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Custom Fields',
+                                      style: WarmOrganicBlueTheme.headingSmall,
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    DropdownButton<CustomFieldModel>(
+                                      isExpanded: true,
+                                      icon: Icon(
+                                        Icons.add,
+                                        color: WarmOrganicBlueTheme.primaryBlue,
+                                      ),
+                                      value: null,
+                                      items: customFieldsController
+                                          .allCustomFields
+                                          .map((field) {
+                                            return DropdownMenuItem<
+                                              CustomFieldModel
+                                            >(
+                                              value: field,
+                                              child: Text(
+                                                field.fieldName!,
+                                                softWrap: true,
+                                              ),
+                                            );
+                                          })
+                                          .toList(),
+                                      onChanged: (value) {
+                                        kLog("value: ${value?.fieldName}");
+                                        if (value != null) {
+                                          customFieldsController
+                                              .saveCustomField(value);
+                                        }
+                                      },
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    Obx(
+                                      () => ListView.separated(
+                                        shrinkWrap: true,
+                                        physics: NeverScrollableScrollPhysics(),
+                                        itemCount: customFieldsController
+                                            .selectedCustomFields
+                                            .length,
+                                        separatorBuilder: (context, index) =>
+                                            Divider(
+                                              color: WarmOrganicBlueTheme
+                                                  .warmSilver,
+                                              thickness: 1,
+                                              height: 24.h,
+                                            ),
+                                        itemBuilder: (context, index) {
+                                          final field = customFieldsController
+                                              .selectedCustomFields[index];
+                                          return Stack(
+                                            children: [
+                                              Padding(
+                                                padding: EdgeInsets.only(
+                                                  right: 30.w,
+                                                ),
+                                                child: buildCustomFieldWidget(
+                                                  field,
+                                                  context,
+                                                ),
+                                              ),
+                                              Positioned(
+                                                top: 0,
+                                                right: 0,
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    customFieldsController
+                                                        .selectedCustomFields
+                                                        .removeAt(index);
+                                                    setState(() {});
+                                                  },
+                                                  child: Container(
+                                                    padding: EdgeInsets.all(
+                                                      8.r,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red
+                                                          .withValues(
+                                                            alpha: 0.1,
+                                                          ),
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.close,
+                                                      color: Colors.red,
+                                                      size: 20.sp,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    Obx(
+                                      () =>
+                                          customFieldsController
+                                              .selectedCustomFields
+                                              .isNotEmpty
+                                          ? Padding(
+                                              padding: EdgeInsets.only(
+                                                top: 12.h,
+                                              ),
+                                              child: OrganicPrimaryButton(
+                                                text: "Save Custom Fields",
+                                                onPressed: () async {
+                                                  await customFieldsController
+                                                      .saveAttachedCustomFields(
+                                                        appointmentId: controller
+                                                            .selectedAppointment
+                                                            .value!
+                                                            .apptID,
+                                                      );
+                                                },
+                                              ),
+                                            )
+                                          : const SizedBox.shrink(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 12.h),
+
+                              _buildTabsGrid(),
+                              SizedBox(height: 70.h),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              )
-            : Padding(
-                padding: EdgeInsets.all(20.sp),
+        ),
+        floatingActionButton: _buildFAB(context),
+      ),
+    );
+  }
+
+  Widget _buildTimeCard() {
+    // Parse the start date to get time and date information
+    String displayTime = 'N/A';
+    String displayDate = '';
+
+    try {
+      if (controller.startDate.isNotEmpty) {
+        final dateTime = DateFormat(
+          'MM/dd/yyyy hh:mm a',
+        ).parse(controller.startDate);
+        displayTime = DateFormat('hh:mm a').format(dateTime);
+        displayDate = DateFormat('MMM dd, yyyy').format(dateTime);
+      }
+    } catch (e) {
+      kLog('Error parsing start date: $e');
+    }
+
+    final customerName = controller.contactName;
+
+    return Container(
+      margin: EdgeInsets.only(left: 20.w, right: 20.w, top: 12.h, bottom: 8.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Time section with pulsing dot
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      // padding: EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          GestureDetector(
-                            onTap: () async {
-                              controller.showLoading();
-                              await controller.customerController
-                                  .getCustomers();
-                              controller.customerController.businessName =
-                                  controller.contactName;
-                              controller.customerController.title =
-                                  controller.customerTitle;
-                              controller.customerController.address =
-                                  controller.address;
-                              controller.customerController.phoneNumber =
-                                  controller.phoneNumber;
-                              controller.customerController.mobileNumber =
-                                  controller.mobileNumber;
-                              controller.customerController.email =
-                                  controller.email;
-
-                              controller.hideLoading();
-
-                              Get.toNamed(Routes.CUSTOMER_DETAILS);
-                            },
-                            child: TextWidget(
-                              text: controller.contactName,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.bold,
-                                color: theme.primaryColor,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 3.h),
-                          MainDivider(),
-                          SizedBox(height: 6.h),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 1,
-                                child: InkWell(
-                                  onTap: () {
-                                    showDialogScheduled(context, controller);
-                                  },
-                                  child: Obx(
-                                    () => Column(
-                                      children: [
-                                        SizedBox(
-                                          height: 30.h,
-                                          width: 30.w,
-                                          child: Material(
-                                            shape: const CircleBorder(),
-                                            color: LightThemeColors.primaryColor
-                                                .withValues(alpha: .3),
-                                            elevation: 6,
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(
-                                                6,
-                                              ), // Reduced padding
-                                              child: CircleAvatar(
-                                                backgroundColor: getStatusColor(
-                                                  controller
-                                                          .settingController
-                                                          .selectedAppointmentsStatus
-                                                          .value
-                                                          ?.statusName ??
-                                                      "",
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(height: 10.h),
-                                        TextWidget(
-                                          text:
-                                              controller
-                                                  .settingController
-                                                  .selectedAppointmentsStatus
-                                                  .value
-                                                  ?.statusName ??
-                                              "",
-                                          maxLines: 2,
-                                          textAlign: TextAlign.center,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black,
-                                            fontSize: 10.sp,
-                                          ),
-                                        ),
-                                        SizedBox(height: 10.h),
-                                        InkWell(
-                                          onTap: () {
-                                            showDialogTicketStatus(
-                                              context,
-                                              controller,
-                                            );
-                                          },
-                                          child: Obx(
-                                            () => Column(
-                                              children: [
-                                                SizedBox(
-                                                  height: 30.h,
-                                                  width: 30.w,
-                                                  child: Material(
-                                                    shape: const CircleBorder(),
-                                                    color: LightThemeColors
-                                                        .primaryColor
-                                                        .withValues(alpha: .5),
-                                                    elevation: 6,
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                            6,
-                                                          ), // Reduced padding
-                                                      child: CircleAvatar(
-                                                        backgroundColor:
-                                                            controller
-                                                                    .settingController
-                                                                    .selectedTicket
-                                                                    .value
-                                                                    ?.statusName!
-                                                                    .toLowerCase() ==
-                                                                "Installation in Progress"
-                                                                    .toLowerCase()
-                                                            ? Color(0xffE98862)
-                                                            : controller
-                                                                      .settingController
-                                                                      .selectedTicket
-                                                                      .value
-                                                                      ?.statusName!
-                                                                      .toLowerCase() ==
-                                                                  "On Hold"
-                                                                      .toLowerCase()
-                                                            ? Color.fromARGB(
-                                                                255,
-                                                                243,
-                                                                18,
-                                                                18,
-                                                              )
-                                                            : controller
-                                                                      .settingController
-                                                                      .selectedTicket
-                                                                      .value
-                                                                      ?.statusName!
-                                                                      .toLowerCase() ==
-                                                                  "Parts on Order"
-                                                                      .toLowerCase()
-                                                            ? Color.fromARGB(
-                                                                255,
-                                                                21,
-                                                                234,
-                                                                242,
-                                                              )
-                                                            : controller
-                                                                      .settingController
-                                                                      .selectedTicket
-                                                                      .value
-                                                                      ?.statusName!
-                                                                      .toLowerCase() ==
-                                                                  "Completed"
-                                                                      .toLowerCase()
-                                                            ? Color.fromARGB(
-                                                                255,
-                                                                11,
-                                                                197,
-                                                                145,
-                                                              )
-                                                            : Colors.red,
-                                                        foregroundColor:
-                                                            LightThemeColors
-                                                                .primaryColor
-                                                                .withValues(
-                                                                  alpha: .5,
-                                                                ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                SizedBox(height: 10.h),
-                                                TextWidget(
-                                                  text:
-                                                      (controller
-                                                                  .settingController
-                                                                  .selectedTicket
-                                                                  .value
-                                                                  ?.statusName !=
-                                                              null &&
-                                                          controller
-                                                                  .settingController
-                                                                  .selectedTicket
-                                                                  .value
-                                                                  ?.statusName !=
-                                                              "")
-                                                      ? controller
-                                                                .settingController
-                                                                .selectedTicket
-                                                                .value
-                                                                ?.statusName ??
-                                                            "N/A"
-                                                      : "N/A",
-                                                  maxLines: 2,
-                                                  textAlign: TextAlign.center,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.black,
-                                                    fontSize: 10.sp,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(height: 5.h),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          size: 15.sp,
-                                          Icons.location_on_outlined,
-                                          color: LightThemeColors.primaryColor,
-                                        ),
-                                        SizedBox(width: 5),
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () async {
-                                              await controller
-                                                  .initializeWebController();
-                                              showDialog(
-                                                barrierDismissible: true,
-                                                context: context,
-                                                builder: (BuildContext context) {
-                                                  return Dialog(
-                                                    // Make dialog full width
-                                                    child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
-                                                      children: [
-                                                        Expanded(
-                                                          child: Container(
-                                                            width: double
-                                                                .infinity, // ← This makes it full width
-                                                            padding:
-                                                                const EdgeInsets.all(
-                                                                  20,
-                                                                ),
-                                                            decoration:
-                                                                BoxDecoration(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        15.r,
-                                                                      ),
-                                                                ),
-                                                            child: Padding(
-                                                              padding:
-                                                                  EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        12.sp,
-                                                                  ),
-                                                              child: Obx(
-                                                                () => Stack(
-                                                                  children: [
-                                                                    ClipRRect(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                            12.sp,
-                                                                          ),
-                                                                      child: WebViewWidget(
-                                                                        controller:
-                                                                            controller.webController!,
-                                                                      ),
-                                                                    ),
-                                                                    if (controller
-                                                                        .isLoading
-                                                                        .value)
-                                                                      const Center(
-                                                                        child: CircularProgressIndicator(
-                                                                          color:
-                                                                              Colors.blue,
-                                                                        ),
-                                                                      ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        SizedBox(height: 10.sp),
-                                                        SizedBox(
-                                                          height: 45.sp,
-                                                          width: 120.sp,
-                                                          child: PrimaryButton(
-                                                            title: "Done",
-                                                            onPressed: () =>
-                                                                Get.back(),
-                                                            inactive: false,
-                                                          ),
-                                                        ),
-                                                        SizedBox(height: 25.sp),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                              );
-
-                                              // await openMapWithRoute(
-                                              //     "mohakhali dhaka bangladesh");
-                                            },
-                                            child: TextWidget(
-                                              text: controller.address,
-                                              style: theme.textTheme.bodyLarge
-                                                  ?.copyWith(
-                                                    fontSize: 12.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                              textAlign: TextAlign.start,
-                                              overflow: TextOverflow.visible,
-                                              maxLines: 5,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 10.h),
-                                    InkWell(
-                                      onTap: controller.mobileNumber == ""
-                                          ? () {}
-                                          : () async {
-                                              await UrlLauncher.phoneCall(
-                                                controller.mobileNumber,
-                                              );
-                                            },
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            size: 15.sp,
-                                            Icons.phone_android_rounded,
-                                            color:
-                                                LightThemeColors.primaryColor,
-                                          ),
-                                          SizedBox(width: 5),
-                                          Expanded(
-                                            child: TextWidget(
-                                              text:
-                                                  controller.mobileNumber == ""
-                                                  ? "N/A"
-                                                  : controller.mobileNumber,
-                                              style: theme.textTheme.bodyLarge
-                                                  ?.copyWith(
-                                                    fontSize: 12.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(height: 10.h),
-                                    InkWell(
-                                      onTap: controller.phoneNumber == ""
-                                          ? () {}
-                                          : () async {
-                                              await UrlLauncher.phoneCall(
-                                                controller.phoneNumber,
-                                              );
-                                            },
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            size: 15.sp,
-                                            Icons.call,
-                                            color:
-                                                LightThemeColors.primaryColor,
-                                          ),
-                                          SizedBox(width: 5),
-                                          Expanded(
-                                            child: TextWidget(
-                                              text: controller.phoneNumber == ""
-                                                  ? "N/A"
-                                                  : controller.phoneNumber,
-                                              style: theme.textTheme.bodyLarge
-                                                  ?.copyWith(
-                                                    fontSize: 12.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(height: 10.h),
-                                    InkWell(
-                                      onTap: controller.email == ""
-                                          ? () {}
-                                          : () async {
-                                              await UrlLauncher.email(
-                                                controller.email,
-                                              );
-                                            },
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.email,
-                                            size: 15.sp,
-                                            color:
-                                                LightThemeColors.primaryColor,
-                                          ),
-                                          SizedBox(width: 5),
-                                          Expanded(
-                                            child: TextWidget(
-                                              text: controller.email == ""
-                                                  ? "N/A"
-                                                  : controller.email,
-                                              maxLines: 2,
-                                              style: theme.textTheme.bodyLarge
-                                                  ?.copyWith(
-                                                    fontSize: 12.sp,
-                                                    overflow:
-                                                        TextOverflow.visible,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10.h),
-                          MainDivider(),
-                          SizedBox(height: 10.h),
-                          SizedBox(height: 10.h),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Icon(Icons.arrow_back, color: Colors.grey),
-                              Icon(Icons.arrow_forward, color: Colors.grey),
-                            ],
-                          ),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: TabBar(
-                              isScrollable: true,
-
-                              dividerColor: LightThemeColors
-                                  .primaryColor, // for line under tabs
-                              indicatorColor: LightThemeColors
-                                  .primaryColor, // underline indicator color
-                              labelColor: LightThemeColors
-                                  .primaryColor, // selected tab text/icon color
-                              unselectedLabelColor:
-                                  Colors.grey, // unselected tab text/icon color
-                              indicatorWeight: 3.0,
-                              controller: _tabController,
-                              tabs: [
-                                // index 0
-                                TextWidget(
-                                  text: "Info",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                    fontSize: 10.sp,
-                                  ),
-                                ),
-                                // index 1
-                                TextWidget(
-                                  text: "CSL",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                    fontSize: 10.sp,
-                                  ),
-                                ),
-
-                                // index 2
-                                TextWidget(
-                                  text: "Forms",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                    fontSize: 10.sp,
-                                  ),
-                                ),
-                                //index 3
-                                TextWidget(
-                                  text: "Estimate/Invoice",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                    fontSize: 10.sp,
-                                  ),
-                                ),
-                                //index 4
-                                TextWidget(
-                                  text: "Pictures",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                    fontSize: 10.sp,
-                                  ),
-                                ),
-                                //index 5
-                                TextWidget(
-                                  text: "Equipment",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                    fontSize: 10.sp,
-                                  ),
-                                ),
-                                //index 6
-                                TextWidget(
-                                  text: "Files",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                    fontSize: 10.sp,
-                                  ),
-                                ),
-                                //index 7
-                                TextWidget(
-                                  text: "Notes",
-                                  maxLines: 2,
-                                  textAlign: TextAlign.center,
-                                  overflow: TextOverflow.visible,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                    fontSize: 10.sp,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                    Text(
+                      displayTime,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1C1C1E),
+                        letterSpacing: -1.2,
+                        height: 1.1,
                       ),
                     ),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          //********************************* Tab One Info*********************************/
-                          SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(height: 10.h),
-                                MainDivider(),
-                                ListTile(
-                                  title: TextWidget(
-                                    text: "Request Date",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors.hintTextColor,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  trailing: TextWidget(
-                                    text: controller.requestDate,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                MainDivider(),
-                                ListTile(
-                                  title: TextWidget(
-                                    text: "Start Date",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors.hintTextColor,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  trailing: TextWidget(
-                                    text: controller.startDate,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                MainDivider(),
-                                ListTile(
-                                  title: TextWidget(
-                                    text: "End Date",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors.hintTextColor,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  trailing: TextWidget(
-                                    text: controller.endDate,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                MainDivider(),
-                                ListTile(
-                                  title: TextWidget(
-                                    text: "Time Slot",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors.hintTextColor,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  trailing: TextWidget(
-                                    text: controller.timeSlot,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                MainDivider(),
-                                ListTile(
-                                  title: TextWidget(
-                                    text: "Service Type",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors.hintTextColor,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  trailing: TextWidget(
-                                    text: controller.serviceType,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                MainDivider(),
-                                ListTile(
-                                  title: TextWidget(
-                                    text: "Resource",
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: LightThemeColors.hintTextColor,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  trailing: TextWidget(
-                                    text: controller.resource,
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                MainDivider(),
-                                ListTile(
-                                  title: Row(
-                                    children: [
-                                      TextWidget(
-                                        text: "Notes: ",
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
-                                              color: LightThemeColors
-                                                  .hintTextColor,
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                      ),
-                                      SizedBox(width: 40.w),
-                                      Expanded(
-                                        child: TextWidget(
-                                          text:
-                                              controller
-                                                  .noteController
-                                                  .text
-                                                  .isNotEmpty
-                                              ? controller.noteController.text
-                                              : "No notes added",
-                                          style: theme.textTheme.bodyMedium,
-                                          overflow: TextOverflow.visible,
-                                          maxLines: 10,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(
-                                          Icons.edit,
-                                          size: 18.sp,
-                                          color: theme.primaryColor,
-                                        ),
-                                        onPressed: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (ctx) => Dialog(
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: Padding(
-                                                padding: EdgeInsets.all(12.sp),
-                                                child: Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    TextWidget(
-                                                      text: "Notes",
-                                                      style: theme
-                                                          .textTheme
-                                                          .bodyLarge
-                                                          ?.copyWith(
-                                                            color: LightThemeColors
-                                                                .hintTextColor,
-                                                            fontSize: 10.sp,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                    ),
-                                                    SizedBox(height: 10.h),
-                                                    GeneralTextField(
-                                                      maxLine: 4,
-                                                      minLine: 1,
-                                                      textInputType:
-                                                          TextInputType
-                                                              .multiline,
-                                                      textInputAction:
-                                                          TextInputAction
-                                                              .newline,
-                                                      isEnabled: true,
-                                                      hint: "Add a note here..",
-                                                      theme: theme,
-                                                      textEditingController:
-                                                          controller
-                                                              .noteController,
-                                                      onChanged: (v) {
-                                                        controller.isTyping(
-                                                          true,
-                                                        );
-                                                        controller.noteText(v);
-                                                      },
-                                                      onEditingComplete: () {
-                                                        controller.isTyping(
-                                                          false,
-                                                        );
-                                                      },
-                                                    ),
-                                                    SizedBox(height: 20.h),
-                                                    SizedBox(
-                                                      width: double.infinity,
-                                                      height: 48.sp,
-                                                      child: PrimaryButton(
-                                                        title: "Update",
-                                                        onPressed: () async {
-                                                          await controller
-                                                              .updateAppointment();
-                                                          // Navigator.pop(
-                                                          //     ctx); // close dialog after update
-                                                        },
-                                                        inactive: false,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                MainDivider(),
-                                SizedBox(height: 10),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 15.0,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      TextWidget(
-                                        text: "Custom Fields: ",
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
-                                              color: LightThemeColors
-                                                  .hintTextColor,
-                                              fontSize: 14.sp,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                      ),
-                                      SizedBox(width: 10),
-                                      //     // Make dropdown take remaining space
-                                      Expanded(
-                                        child: DropdownButton<CustomFieldModel>(
-                                          isExpanded: true,
-                                          iconSize: 20.sp, // important!
-                                          icon: Icon(
-                                            Icons.add,
-                                            color: theme.primaryColor,
-                                          ),
-                                          underline: SizedBox(),
-                                          value: null,
-                                          items: customFieldsController
-                                              .allCustomFields
-                                              .map((field) {
-                                                return DropdownMenuItem<
-                                                  CustomFieldModel
-                                                >(
-                                                  value: field,
-                                                  child: Text(
-                                                    field.fieldName!,
-                                                    softWrap:
-                                                        true, // wrap text instead of ellipsis
-                                                  ),
-                                                );
-                                              })
-                                              .toList(),
-                                          onChanged: (value) {
-                                            if (value != null) {
-                                              customFieldsController
-                                                  .saveCustomField(value);
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                MainDivider(),
-                                ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  itemCount: customFieldsController
-                                      .selectedCustomFields
-                                      .length,
-                                  itemBuilder: (context, index) {
-                                    final field = customFieldsController
-                                        .selectedCustomFields[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 8.0,
-                                      ),
-                                      child: Container(
-                                        padding: EdgeInsets.all(10.r),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                        ),
-                                        child: Stack(
-                                          children: [
-                                            // Custom field content
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                right: 30.w,
-                                              ), // Space for remove button
-                                              child: buildCustomFieldWidget(
-                                                field,
-                                                context,
-                                              ),
-                                            ),
-                                            // Remove button
-                                            Positioned(
-                                              top: 0,
-                                              right: 0,
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  customFieldsController
-                                                      .selectedCustomFields
-                                                      .removeAt(index);
-                                                  setState(() {});
-                                                },
-                                                child: Container(
-                                                  padding: EdgeInsets.all(8.r),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.red
-                                                        .withValues(alpha: 0.1),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.close,
-                                                    color: Colors.red,
-                                                    size: 20.sp,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                // Save Custom Fields Button
-                                if (customFieldsController
-                                    .selectedCustomFields
-                                    .isNotEmpty)
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 16.w,
-                                    ),
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      height: 48.sp,
-                                      child: PrimaryButton(
-                                        title: "Save Custom Fields",
-                                        onPressed: () async {
-                                          await customFieldsController
-                                              .saveAttachedCustomFields(
-                                                appointmentId: controller
-                                                    .selectedAppointment
-                                                    .value!
-                                                    .apptID,
-                                              );
-                                        },
-                                        inactive: false,
-                                      ),
-                                    ),
-                                  ),
-                                SizedBox(height: 80.h),
-                              ],
-                            ),
-                          ),
-                          //********************************* Tab Two CSL *********************************/
-                          Obx(
-                            () => SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      left: 10.w,
-                                      right: 10.w,
-                                      top: 10.h,
-                                    ),
-                                    child: Card(
-                                      color: LightThemeColors.primaryColor
-                                          .withValues(alpha: 0.8),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          12.r,
-                                        ),
-                                      ),
-                                      elevation: 2,
-                                      child: ListTile(
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 16.w,
-                                          vertical: 8.h,
-                                        ),
-                                        title: Text(
-                                          "Basic Information",
-                                          style: TextStyle(
-                                            fontSize: 16.sp,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        trailing: Icon(
-                                          controller.isBasicExpanded.value
-                                              ? Icons.arrow_downward
-                                              : Icons.arrow_upward,
-                                          size: 18.sp,
-                                          color: Colors.white,
-                                        ),
-                                        onTap: () {
-                                          controller.isBasicExpanded(
-                                            !controller.isBasicExpanded.value,
-                                          );
-                                        }, // you can navigate or expand on tap
-                                      ),
-                                    ),
-                                  ),
-                                  if (controller.isBasicExpanded.value)
-                                    Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 16.w,
-                                        vertical: 5.h,
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // Customer Name / Site Contact Name
-                                          Obx(() {
-                                            final site =
-                                                controller.selectedSite.value;
-                                            final customer = controller
-                                                .selectedAppointment
-                                                .value
-                                                ?.customer;
-
-                                            // Get name from site contact or customer
-                                            String displayName = "";
-                                            if (site?.firstName != null ||
-                                                site?.lastName != null) {
-                                              displayName =
-                                                  "${site?.firstName ?? ""} ${site?.lastName ?? ""}"
-                                                      .trim();
-                                            }
-                                            if (displayName.isEmpty &&
-                                                customer != null) {
-                                              displayName =
-                                                  "${customer.firstName ?? ""} ${customer.lastName ?? ""}"
-                                                      .trim();
-                                            }
-
-                                            return _buildRow(
-                                              "Customer Name",
-                                              displayName.isNotEmpty
-                                                  ? displayName
-                                                  : "N/A",
-                                            );
-                                          }),
-                                          // Site Information
-                                          Obx(() {
-                                            final site =
-                                                controller.selectedSite.value;
-                                            if (site != null) {
-                                              return Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  if (site.siteName != null &&
-                                                      site.siteName!.isNotEmpty)
-                                                    _buildRow(
-                                                      "Site Name",
-                                                      site.siteName ?? "",
-                                                      icon: Icons.location_on,
-                                                      valueColor:
-                                                          LightThemeColors
-                                                              .primaryColor,
-                                                    ),
-                                                  if (site.address != null &&
-                                                      site.address!.isNotEmpty)
-                                                    _buildRow(
-                                                      "Site Address",
-                                                      "${site.address}${site.state != null ? ", ${site.state}" : ""}${site.zip != null ? " ${site.zip}" : ""}",
-                                                      icon: Icons.place,
-                                                    ),
-                                                  if (site.contact != null &&
-                                                          site
-                                                              .contact!
-                                                              .isNotEmpty ||
-                                                      site.firstName != null ||
-                                                      site.lastName != null)
-                                                    _buildRow(
-                                                      "Site Contact",
-                                                      "${site.contact ?? ""} ${site.firstName ?? ""} ${site.lastName ?? ""}"
-                                                          .trim(),
-                                                      icon: Icons.person,
-                                                    ),
-                                                  if (site.phoneNumber !=
-                                                          null &&
-                                                      site
-                                                          .phoneNumber!
-                                                          .isNotEmpty)
-                                                    _buildRow(
-                                                      "Site Phone",
-                                                      site.phoneNumber ?? "",
-                                                      icon: Icons.phone,
-                                                    ),
-                                                  if (site.email != null &&
-                                                      site.email!.isNotEmpty)
-                                                    _buildRow(
-                                                      "Site Email",
-                                                      site.email ?? "",
-                                                      icon: Icons.email,
-                                                      valueColor: Colors.blue,
-                                                    ),
-                                                  if (site.note != null &&
-                                                      site.note!.isNotEmpty)
-                                                    _buildRow(
-                                                      "Site Note",
-                                                      site.note ?? "",
-                                                      icon: Icons.note,
-                                                      valueColor: Colors.orange,
-                                                    ),
-                                                ],
-                                              );
-                                            }
-                                            return const SizedBox.shrink();
-                                          }),
-                                          // Fallback to customer info if no site
-                                          Obx(() {
-                                            final site =
-                                                controller.selectedSite.value;
-                                            if (site == null) {
-                                              return Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  _buildRow(
-                                                    "Contact",
-                                                    "Phone: ${controller.selectedAppointment.value?.customer!.phone ?? "N/A"}\nMobile: ${controller.selectedAppointment.value?.customer!.mobile ?? "N/A"}",
-                                                    icon: Icons.phone,
-                                                  ),
-                                                  _buildRow(
-                                                    "Email",
-                                                    controller
-                                                            .selectedAppointment
-                                                            .value
-                                                            ?.customer!
-                                                            .email ??
-                                                        "N/A",
-                                                    valueColor: Colors.blue,
-                                                  ),
-                                                  _buildRow(
-                                                    "Address",
-                                                    " ${controller.selectedAppointment.value?.customer!.address1 ?? ""}  ${controller.selectedAppointment.value?.customer!.address2 ?? ""} ${controller.selectedAppointment.value?.customer!.city ?? ""} ${controller.selectedAppointment.value?.customer!.state ?? ""} ${controller.selectedAppointment.value?.customer!.zipCode ?? ""}",
-                                                  ),
-                                                ],
-                                              );
-                                            }
-                                            return const SizedBox.shrink();
-                                          }),
-                                          _buildRow(
-                                            "Created On",
-                                            " ${controller.selectedAppointment.value?.customer!.createdDateTime ?? "N/A"}",
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  SizedBox(height: 10.h),
-                                  // Padding(
-                                  //   padding: EdgeInsets.only(
-                                  //       left: 10.w, right: 10.w, top: 10.h),
-                                  //   child: Card(
-                                  //     color: LightThemeColors.primaryColor
-                                  //         .withValues(alpha: 0.8),
-                                  //     shape: RoundedRectangleBorder(
-                                  //       borderRadius: BorderRadius.circular(12.r),
-                                  //     ),
-                                  //     elevation: 2,
-                                  //     child: ListTile(
-                                  //       contentPadding: EdgeInsets.symmetric(
-                                  //           horizontal: 16.w, vertical: 8.h),
-                                  //       title: Text(
-                                  //         "Equipment",
-                                  //         style: TextStyle(
-                                  //           fontSize: 16.sp,
-                                  //           fontWeight: FontWeight.bold,
-                                  //           color: Colors.white,
-                                  //         ),
-                                  //       ),
-                                  //       trailing: Icon(
-                                  //         controller.isEquipmentExpanded.value
-                                  //             ? Icons.arrow_downward
-                                  //             : Icons.arrow_upward,
-                                  //         size: 18.sp,
-                                  //         color: Colors.white,
-                                  //       ),
-                                  //       onTap: () {
-                                  //         controller.isEquipmentExpanded(
-                                  //             !controller.isEquipmentExpanded.value);
-                                  //       }, // you can navigate or expand on tap
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                  // if (controller.isEquipmentExpanded.value)
-                                  //   Padding(
-                                  //     padding: EdgeInsets.symmetric(horizontal: 16.w),
-                                  //     child: Container(
-                                  //       padding: EdgeInsets.all(8),
-                                  //       decoration: BoxDecoration(
-                                  //         color: Colors.white,
-                                  //       ),
-                                  //       child: Column(
-                                  //         crossAxisAlignment:
-                                  //             CrossAxisAlignment.start,
-                                  //         children: [
-                                  //           // Search Box
-                                  //           SizedBox(
-                                  //             height: 15.h,
-                                  //           ),
-                                  //           TextField(
-                                  //             decoration: InputDecoration(
-                                  //               hintText: "Search equipment...",
-                                  //               hintStyle: TextStyle(
-                                  //                   fontSize: 14.sp,
-                                  //                   color: Colors.grey),
-                                  //               contentPadding: EdgeInsets.symmetric(
-                                  //                   horizontal: 12.w, vertical: 12.h),
-                                  //               border: OutlineInputBorder(
-                                  //                 borderRadius:
-                                  //                     BorderRadius.circular(8.r),
-                                  //                 borderSide: BorderSide(
-                                  //                     color: Colors.grey.shade300),
-                                  //               ),
-                                  //               focusedBorder: OutlineInputBorder(
-                                  //                 borderRadius:
-                                  //                     BorderRadius.circular(8.r),
-                                  //                 borderSide: BorderSide(
-                                  //                     color: Colors.blue, width: 1.5),
-                                  //               ),
-                                  //             ),
-                                  //           ),
-                                  //           SizedBox(height: 12.h),
-
-                                  //           // Add Equipment Button
-                                  //           SizedBox(
-                                  //             width: 60.w,
-                                  //             child: ElevatedButton(
-                                  //               onPressed: () {},
-                                  //               style: ElevatedButton.styleFrom(
-                                  //                 padding: EdgeInsets.symmetric(
-                                  //                     vertical: 12.h),
-                                  //                 backgroundColor: Colors.blueAccent,
-                                  //                 shape: RoundedRectangleBorder(
-                                  //                   borderRadius:
-                                  //                       BorderRadius.circular(8.r),
-                                  //                 ),
-                                  //               ),
-                                  //               child: Text(
-                                  //                 "Add",
-                                  //                 style: TextStyle(
-                                  //                     fontSize: 14.sp,
-                                  //                     color: Colors.white),
-                                  //               ),
-                                  //             ),
-                                  //           ),
-                                  //           SizedBox(height: 16.h),
-
-                                  //           SizedBox(
-                                  //             height: 120
-                                  //                 .h, // give a fixed height instead of Expanded
-                                  //             child: Container(
-                                  //               width: double.infinity,
-                                  //               padding: EdgeInsets.all(16.w),
-                                  //               decoration: BoxDecoration(
-                                  //                 border: Border.all(
-                                  //                     color: Colors.grey.shade300),
-                                  //                 borderRadius: BorderRadius.vertical(
-                                  //                   bottom: Radius.circular(8.r),
-                                  //                 ),
-                                  //               ),
-                                  //               child: Center(
-                                  //                 child: Text(
-                                  //                   "No equipment found.",
-                                  //                   style: TextStyle(
-                                  //                     fontSize: 14.sp,
-                                  //                     color: Colors.grey[600],
-                                  //                   ),
-                                  //                 ),
-                                  //               ),
-                                  //             ),
-                                  //           ),
-                                  //         ],
-                                  //       ),
-                                  //     ),
-                                  //   ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          //********************************* Tab Three Forms *********************************/
-                          Column(
-                            children: [
-                              SizedBox(height: 10.h),
-                              TabBar(
-                                isScrollable: false,
-                                dividerColor: LightThemeColors.primaryColor,
-                                indicatorColor: LightThemeColors.primaryColor,
-                                labelColor: LightThemeColors.primaryColor,
-                                unselectedLabelColor: Colors.grey,
-                                indicatorWeight: 3.0,
-                                controller: _tabController1,
-                                tabs: [
-                                  // First tab
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Container(
-                                      padding: EdgeInsets.all(8),
-                                      color: Colors.greenAccent,
-                                      width: double.infinity,
-                                      child: TextWidget(
-                                        text: "Attached Forms",
-                                        maxLines: 2,
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.visible,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                          fontSize: 10.sp,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  // Second tab
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Container(
-                                      padding: EdgeInsets.all(8),
-                                      color: Colors.blueAccent,
-                                      width: double.infinity,
-                                      child: TextWidget(
-                                        text: "Add Forms",
-                                        maxLines: 2,
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.visible,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                          fontSize: 10.sp,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  if (_tabController1.index == 0) {
-                                    formC.seeAllForms.assignAll(
-                                      formC.filteredTemplates,
-                                    );
-                                  } else {
-                                    formC.seeAllForms.assignAll(
-                                      formC.formModels,
-                                    );
-                                  }
-
-                                  Get.toNamed(
-                                    Routes.SEEALLFORMS,
-                                    arguments: {
-                                      "tabIndex": _tabController1.index,
-                                    },
-                                  );
-                                },
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextWidget(text: "See All"),
-                                ),
-                              ),
-                              Expanded(
-                                child: TabBarView(
-                                  controller: _tabController1,
-                                  children: [
-                                    Obx(() {
-                                      formC.filteredTemplates.value = formC
-                                          .formModels
-                                          .where(
-                                            (template) => formC
-                                                .selectedFormsIdList
-                                                .contains(template.id),
-                                          )
-                                          .toList();
-                                      log(
-                                        "filterd ${formC.formModels.where((template) => formC.selectedFormsIdList.contains(template.id)).toList()}",
-                                      );
-                                      // Handle empty or null case
-                                      if (formC.filteredTemplates.isEmpty) {
-                                        return EmptyWidget(
-                                          onPressed: () {
-                                            formC.getAttachedForms(
-                                              isRefreshed: true,
-                                            );
-                                          },
-                                          isRefreshShown: true,
-                                          title: "No forms attached yet",
-                                        );
-                                      }
-
-                                      return Column(
-                                        children: [
-                                          SizedBox(height: 5.h),
-                                          Expanded(
-                                            child: ListView.builder(
-                                              itemCount: formC
-                                                  .filteredTemplates
-                                                  .length,
-                                              itemBuilder: (context, index) {
-                                                final template = formC
-                                                    .filteredTemplates[index];
-
-                                                return Card(
-                                                  margin: EdgeInsets.only(
-                                                    bottom: 12.h,
-                                                  ),
-                                                  elevation: 2,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8.r,
-                                                        ),
-                                                  ),
-                                                  child: Padding(
-                                                    padding: EdgeInsets.all(
-                                                      12.w,
-                                                    ),
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Row(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            /// ✅ Checkbox for selection
-                                                            Expanded(
-                                                              child: TextWidget(
-                                                                text:
-                                                                    template
-                                                                        .templateName ??
-                                                                    "",
-                                                                maxLines: 1,
-                                                                overflow:
-                                                                    TextOverflow
-                                                                        .ellipsis,
-                                                                style: TextStyle(
-                                                                  fontSize:
-                                                                      18.sp,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            SizedBox(
-                                                              width: 5.w,
-                                                            ),
-                                                            Container(
-                                                              padding:
-                                                                  EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        8.w,
-                                                                    vertical:
-                                                                        4.h,
-                                                                  ),
-                                                              decoration: BoxDecoration(
-                                                                color:
-                                                                    template
-                                                                        .isActive!
-                                                                    ? Colors
-                                                                          .green
-                                                                    : Colors
-                                                                          .orange,
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      12.r,
-                                                                    ),
-                                                              ),
-                                                              child: Text(
-                                                                template.isActive!
-                                                                    ? "Active"
-                                                                    : "Inactive",
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize:
-                                                                      12.sp,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        SizedBox(height: 4.h),
-                                                        TextWidget(
-                                                          text:
-                                                              template
-                                                                  .description ??
-                                                              "",
-                                                          maxLines: 3,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style: TextStyle(
-                                                            fontSize: 14.sp,
-                                                            color: Colors.grey,
-                                                          ),
-                                                        ),
-                                                        SizedBox(height: 8.h),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                              "Category: ${template.category}",
-                                                              style: TextStyle(
-                                                                fontSize: 13.sp,
-                                                              ),
-                                                            ),
-                                                            SizedBox(
-                                                              height: 4.h,
-                                                            ),
-                                                            Row(
-                                                              children: [
-                                                                Text(
-                                                                  "Signature: ",
-                                                                  style: TextStyle(
-                                                                    fontSize:
-                                                                        13.sp,
-                                                                  ),
-                                                                ),
-                                                                Icon(
-                                                                  template.requireSignature!
-                                                                      ? Icons
-                                                                            .check_circle
-                                                                      : Icons
-                                                                            .cancel,
-                                                                  color:
-                                                                      template
-                                                                          .requireSignature!
-                                                                      ? Colors
-                                                                            .green
-                                                                      : Colors
-                                                                            .red,
-                                                                  size: 18.sp,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            SizedBox(
-                                                              height: 4.h,
-                                                            ),
-                                                            Text(
-                                                              "Auto-Assign: ${template.isAutoAssignEnabled! ? "Yes" : "No"}",
-                                                              style: TextStyle(
-                                                                fontSize: 13.sp,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    }),
-                                    Obx(() {
-                                      final filteredTemplates =
-                                          formC.searchQuery.value.isEmpty
-                                          ? formC.formModels
-                                          : formC.formModels
-                                                .where(
-                                                  (template) =>
-                                                      template.templateName
-                                                          ?.toLowerCase()
-                                                          .contains(
-                                                            formC
-                                                                .searchQuery
-                                                                .value
-                                                                .toLowerCase(),
-                                                          ) ??
-                                                      false,
-                                                )
-                                                .toList();
-
-                                      return Column(
-                                        children: [
-                                          SizedBox(height: 20.h),
-                                          Padding(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 15.w,
-                                            ),
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(8.r),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.grey
-                                                        .withValues(alpha: 0.1),
-                                                    blurRadius: 6,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: TextField(
-                                                autofocus: false,
-                                                decoration: InputDecoration(
-                                                  hintText:
-                                                      "Search templates...",
-                                                  hintStyle: TextStyle(
-                                                    color: Colors.grey[500],
-                                                    fontSize: 14.sp,
-                                                  ),
-                                                  prefixIcon: Padding(
-                                                    padding: EdgeInsets.only(
-                                                      left: 12.w,
-                                                      right: 8.w,
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.search,
-                                                      size: 20.sp,
-                                                      color: Colors.grey[600],
-                                                    ),
-                                                  ),
-                                                  border: InputBorder.none,
-                                                  enabledBorder:
-                                                      InputBorder.none,
-                                                  focusedBorder:
-                                                      InputBorder.none,
-                                                  contentPadding:
-                                                      EdgeInsets.symmetric(
-                                                        horizontal: 16.w,
-                                                        vertical: 14.h,
-                                                      ),
-                                                  fillColor: Colors.white,
-                                                  filled: true,
-                                                ),
-                                                style: TextStyle(
-                                                  fontSize: 14.sp,
-                                                  color: Colors.black,
-                                                ),
-                                                onChanged: (value) {
-                                                  formC.updateSearchQuery(
-                                                    value,
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(height: 20.h),
-                                          Expanded(
-                                            child: ListView.builder(
-                                              itemCount:
-                                                  filteredTemplates.length,
-                                              itemBuilder: (context, index) {
-                                                final template =
-                                                    filteredTemplates[index];
-
-                                                return GestureDetector(
-                                                  onTap: () {
-                                                    showDetailsForms(
-                                                      context: context,
-                                                      formC: formC,
-                                                      data: template,
-                                                    );
-                                                  },
-                                                  child: Card(
-                                                    margin: EdgeInsets.only(
-                                                      bottom: 12.h,
-                                                    ),
-                                                    elevation: 2,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8.r,
-                                                          ),
-                                                    ),
-                                                    child: Padding(
-                                                      padding: EdgeInsets.all(
-                                                        12.w,
-                                                      ),
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Row(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              /// ✅ Checkbox for selection
-                                                              Obx(
-                                                                () => Checkbox(
-                                                                  activeColor:
-                                                                      Colors
-                                                                          .blue,
-                                                                  value: formC
-                                                                      .selectedFormsIdList
-                                                                      .contains(
-                                                                        template
-                                                                            .id,
-                                                                      ),
-                                                                  onChanged: (value) {
-                                                                    formC.updateSelectedForms(
-                                                                      template
-                                                                          .id!,
-                                                                    );
-                                                                  },
-                                                                ),
-                                                              ),
-                                                              Expanded(
-                                                                child: TextWidget(
-                                                                  text:
-                                                                      template
-                                                                          .templateName ??
-                                                                      "",
-                                                                  maxLines: 1,
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .ellipsis,
-                                                                  style: TextStyle(
-                                                                    fontSize:
-                                                                        18.sp,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                width: 5.w,
-                                                              ),
-                                                              Container(
-                                                                padding:
-                                                                    EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          8.w,
-                                                                      vertical:
-                                                                          4.h,
-                                                                    ),
-                                                                decoration: BoxDecoration(
-                                                                  color:
-                                                                      template
-                                                                          .isActive!
-                                                                      ? Colors
-                                                                            .green
-                                                                      : Colors
-                                                                            .orange,
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        12.r,
-                                                                      ),
-                                                                ),
-                                                                child: Text(
-                                                                  template.isActive!
-                                                                      ? "Active"
-                                                                      : "Inactive",
-                                                                  style: TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontSize:
-                                                                        12.sp,
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          SizedBox(height: 4.h),
-                                                          TextWidget(
-                                                            text:
-                                                                template
-                                                                    .description ??
-                                                                "",
-                                                            maxLines: 3,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            style: TextStyle(
-                                                              fontSize: 14.sp,
-                                                              color:
-                                                                  Colors.grey,
-                                                            ),
-                                                          ),
-                                                          SizedBox(height: 8.h),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              Text(
-                                                                "Category: ${template.category}",
-                                                                style:
-                                                                    TextStyle(
-                                                                      fontSize:
-                                                                          13.sp,
-                                                                    ),
-                                                              ),
-                                                              SizedBox(
-                                                                height: 4.h,
-                                                              ),
-                                                              Row(
-                                                                children: [
-                                                                  Text(
-                                                                    "Signature: ",
-                                                                    style: TextStyle(
-                                                                      fontSize:
-                                                                          13.sp,
-                                                                    ),
-                                                                  ),
-                                                                  Icon(
-                                                                    template.requireSignature!
-                                                                        ? Icons
-                                                                              .check_circle
-                                                                        : Icons
-                                                                              .cancel,
-                                                                    color:
-                                                                        template
-                                                                            .requireSignature!
-                                                                        ? Colors
-                                                                              .green
-                                                                        : Colors
-                                                                              .red,
-                                                                    size: 18.sp,
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                              SizedBox(
-                                                                height: 4.h,
-                                                              ),
-                                                              Text(
-                                                                "Auto-Assign: ${template.isAutoAssignEnabled! ? "Yes" : "No"}",
-                                                                style:
-                                                                    TextStyle(
-                                                                      fontSize:
-                                                                          13.sp,
-                                                                    ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    }),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          //********************************* Tab Four Estimate/Invoice *********************************/
-                          SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                SizedBox(height: 20.h),
-                                // ElevatedButton(
-                                //     onPressed: () {
-                                //       showProductDialog(context);
-                                //     },
-                                //     child: Padding(
-                                //       padding: const EdgeInsets.all(2.0),
-                                //       child: Text("Store locator "),
-                                //     )),
-                                SizedBox(height: 10.h),
-                                Padding(
-                                  padding: EdgeInsets.only(left: 10.0.sp),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Center(
-                                        child: TextWidget(
-                                          text: "Estimate/Invoice Details",
-                                          style: theme.textTheme.headlineSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 18.sp,
-                                              ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 10.sp),
-                                      Builder(
-                                        builder: (context) {
-                                          return SplashContainer(
-                                            height: 45.sp,
-                                            width: 150.sp,
-                                            radius: 5,
-                                            color: theme.primaryColor,
-                                            onPressed: () {
-                                              RenderBox renderBox =
-                                                  context.findRenderObject()
-                                                      as RenderBox;
-                                              Offset offset = renderBox
-                                                  .localToGlobal(
-                                                    Offset(32.sp, 40.sp),
-                                                  );
-                                              final RenderBox overlay =
-                                                  Overlay.of(context).context
-                                                          .findRenderObject()
-                                                      as RenderBox;
-                                              showMenu(
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.all(
-                                                        Radius.circular(8.r),
-                                                      ),
-                                                ),
-                                                context: context,
-                                                position: RelativeRect.fromRect(
-                                                  offset &
-                                                      Size(
-                                                        32.sp,
-                                                        32.sp,
-                                                      ), // smaller rect, the touch area
-                                                  Offset.zero &
-                                                      overlay
-                                                          .size, // Bigger rect, the entire screen
-                                                ),
-                                                items: controller
-                                                    .invoiceController
-                                                    .createTypes
-                                                    .map((e) {
-                                                      return PopupMenuItem(
-                                                        value: e["name"],
-                                                        child: TextWidget(
-                                                          text: "${e["name"]}",
-                                                        ),
-                                                      );
-                                                    })
-                                                    .toList(),
-                                              ).then((v) async {
-                                                if (v != null) {
-                                                  controller.invoiceController
-                                                      .clearAllItems();
-                                                  controller
-                                                          .invoiceController
-                                                          .selectedCreateType
-                                                          .value =
-                                                      v;
-
-                                                  final x =
-                                                      MySharedPref.getCompanyType() ??
-                                                      '';
-                                                  controller
-                                                          .invoiceController
-                                                          .isLocAndClassShow
-                                                          .value =
-                                                      x == 'IsPcs';
-                                                  if (v == "Invoice") {
-                                                    controller
-                                                            .invoiceController
-                                                            .createCustomerName =
-                                                        controller.contactName;
-                                                    controller
-                                                            .invoiceController
-                                                            .createCustomerAddress =
-                                                        controller.address;
-                                                    controller
-                                                            .invoiceController
-                                                            .createCustomerPhone =
-                                                        controller.mobileNumber;
-                                                    controller
-                                                            .invoiceController
-                                                            .createCustomerEmail =
-                                                        controller.email;
-                                                    controller
-                                                            .invoiceController
-                                                            .customerID
-                                                            .value =
-                                                        controller.customerID;
-                                                    controller
-                                                            .invoiceController
-                                                            .appointmentID =
-                                                        controller
-                                                            .appointmentID;
-                                                    controller
-                                                            .invoiceController
-                                                            .selectedTaxID
-                                                            .value =
-                                                        "";
-                                                    controller
-                                                        .invoiceController
-                                                        .createDiscountTextController
-                                                        .clear();
-                                                    await controller
-                                                        .invoiceController
-                                                        .getInvoiceName();
-                                                    Get.toNamed(
-                                                      Routes.INVOICE_CREATE,
-                                                    );
-                                                  } else {
-                                                    controller
-                                                            .invoiceController
-                                                            .createCustomerName =
-                                                        controller.contactName;
-                                                    controller
-                                                            .invoiceController
-                                                            .createCustomerAddress =
-                                                        controller.address;
-                                                    controller
-                                                            .invoiceController
-                                                            .createCustomerPhone =
-                                                        controller.mobileNumber;
-                                                    controller
-                                                            .invoiceController
-                                                            .createCustomerEmail =
-                                                        controller.email;
-                                                    controller
-                                                            .invoiceController
-                                                            .customerID
-                                                            .value =
-                                                        controller.customerID;
-
-                                                    controller
-                                                            .invoiceController
-                                                            .appointmentID =
-                                                        controller
-                                                            .appointmentID;
-                                                    controller
-                                                            .invoiceController
-                                                            .selectedTaxID
-                                                            .value =
-                                                        "";
-                                                    controller
-                                                        .invoiceController
-                                                        .createDiscountTextController
-                                                        .clear();
-                                                    await controller
-                                                        .invoiceController
-                                                        .getInvoiceName();
-                                                    // controller.invoiceController
-                                                    //     .isNoneSelected(false);
-                                                    Get.toNamed(
-                                                      Routes.INVOICE_CREATE,
-                                                    );
-                                                  }
-                                                }
-                                              });
-                                            },
-                                            child: Center(
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(
-                                                    Icons.add_circle_outline,
-                                                    color: Colors.white,
-                                                    size: 18.sp,
-                                                  ),
-                                                  SizedBox(width: 5.sp),
-                                                  TextWidget(
-                                                    text: "Create New",
-                                                    style: theme
-                                                        .textTheme
-                                                        .bodyLarge
-                                                        ?.copyWith(
-                                                          color: Colors.white,
-                                                          fontSize: 16.sp,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(height: 15.sp),
-                                Obx(
-                                  () => Column(
-                                    children: [
-                                      ListView.separated(
-                                        itemBuilder: (context, index) {
-                                          final proposal = controller
-                                              .sortedAppointments[controller
-                                                  .selectedAptIndex
-                                                  .value]
-                                              .invoices![index];
-
-                                          return GestureDetector(
-                                            onTap: () async {
-                                              controller.showLoading();
-                                              controller
-                                                      .invoiceController
-                                                      .isExternalInvoice
-                                                      .value =
-                                                  false;
-                                              // Save backup if we were in "new" mode before switching to "existing"
-                                              if (controller
-                                                      .invoiceController
-                                                      .existingItemType
-                                                      .value ==
-                                                  SelectedItemCategory.newOne) {
-                                                controller.invoiceController
-                                                    .saveBackup("new");
-                                              }
-
-                                              controller.invoiceController
-                                                  .existingItemType(
-                                                    SelectedItemCategory
-                                                        .existingOne,
-                                                  );
-
-                                              // Clear previous selection if needed
-                                              controller
-                                                  .invoiceController
-                                                  .selectedItemList
-                                                  .clear();
-                                              for (var c
-                                                  in controller
-                                                      .invoiceController
-                                                      .editAmountControllers) {
-                                                c.dispose();
-                                              }
-                                              for (var c
-                                                  in controller
-                                                      .invoiceController
-                                                      .editDescriptionControllers) {
-                                                c.dispose();
-                                              }
-                                              for (var c
-                                                  in controller
-                                                      .invoiceController
-                                                      .editQuantityControllers) {
-                                                c.dispose();
-                                              }
-                                              controller
-                                                  .invoiceController
-                                                  .editAmountControllers
-                                                  .clear();
-                                              controller
-                                                  .invoiceController
-                                                  .editDescriptionControllers
-                                                  .clear();
-                                              controller
-                                                  .invoiceController
-                                                  .editQuantityControllers
-                                                  .clear();
-                                              controller
-                                                  .invoiceController
-                                                  .editNoteTextController
-                                                  .clear();
-                                              controller
-                                                  .invoiceController
-                                                  .editDiscountTextController
-                                                  .clear();
-                                              controller
-                                                      .invoiceController
-                                                      .initialTaxID
-                                                      .value =
-                                                  "";
-
-                                              // Set basic info
-
-                                              controller
-                                                      .invoiceController
-                                                      .invoiceItemList
-                                                      .value =
-                                                  proposal.items ?? [];
-                                              controller
-                                                      .invoiceController
-                                                      .depositList
-                                                      .value =
-                                                  proposal.paymentList ?? [];
-                                              controller
-                                                      .invoiceController
-                                                      .selectedDiscountOption
-                                                      .value =
-                                                  proposal.discountOption ??
-                                                  "2";
-                                              controller
-                                                      .invoiceController
-                                                      .invoiceNumber =
-                                                  proposal.number ?? "";
-                                              controller
-                                                      .invoiceController
-                                                      .isConverted
-                                                      .value =
-                                                  proposal.isConverted ?? false;
-                                              controller
-                                                      .invoiceController
-                                                      .customerName =
-                                                  proposal.fullName ?? "";
-                                              controller
-                                                      .invoiceController
-                                                      .address =
-                                                  "${proposal.city}, ";
-                                              controller
-                                                      .invoiceController
-                                                      .depositAmount
-                                                      .value =
-                                                  proposal.depositAmount
-                                                      ?.toStringAsFixed(2) ??
-                                                  "0.00";
-                                              controller
-                                                  .invoiceController
-                                                  .invoiceID
-                                                  .value = proposal.invoiceID
-                                                  .toString();
-                                              controller
-                                                  .invoiceController
-                                                  .date = dateTimeConverter(
-                                                inputFormat: "yyyy/MM/dd",
-                                                inputTime: proposal.invoiceDate
-                                                    .toString(),
-                                                outputFormat: "MM/dd/yyyy",
-                                              );
-                                              controller
-                                                      .invoiceController
-                                                      .subtotal =
-                                                  proposal.subtotal
-                                                      ?.toStringAsFixed(2) ??
-                                                  "";
-                                              controller
-                                                      .invoiceController
-                                                      .customerID
-                                                      .value =
-                                                  proposal.customerId ?? "";
-                                              controller
-                                                      .invoiceController
-                                                      .status =
-                                                  proposal.status ?? "";
-                                              controller
-                                                      .invoiceController
-                                                      .type
-                                                      .value =
-                                                  proposal.type ?? "";
-                                              controller
-                                                      .invoiceController
-                                                      .total
-                                                      .value =
-                                                  proposal.total
-                                                      ?.toStringAsFixed(2) ??
-                                                  "";
-                                              if (proposal
-                                                      .requestedAmountType ==
-                                                  2) {
-                                                // type = fixed
-                                                controller
-                                                        .invoiceController
-                                                        .selectedDepositRequestOption
-                                                        .value =
-                                                    "2";
-                                                controller
-                                                        .invoiceController
-                                                        .requestedDepositAmountEditTextController
-                                                        .text =
-                                                    proposal
-                                                        .requestedDepositAmount ??
-                                                    "0.00";
-                                                controller
-                                                    .invoiceController
-                                                    .selectedDepositRequestOptionName
-                                                    .value = controller
-                                                    .invoiceController
-                                                    .depositRequestOptions[2]["name"];
-                                              }
-                                              if (proposal
-                                                      .requestedAmountType ==
-                                                  1) {
-                                                // type = percentage
-                                                controller
-                                                        .invoiceController
-                                                        .selectedDepositRequestOption
-                                                        .value =
-                                                    "1";
-                                                controller
-                                                        .invoiceController
-                                                        .requestDepositRateEditTextController
-                                                        .text =
-                                                    proposal
-                                                        .requestedDepositPercentage ??
-                                                    "0.00";
-                                                controller
-                                                        .invoiceController
-                                                        .requestedDepositAmountEditTextController
-                                                        .text =
-                                                    proposal
-                                                        .requestedDepositAmount ??
-                                                    "0.00";
-                                                controller
-                                                    .invoiceController
-                                                    .selectedDepositRequestOptionName
-                                                    .value = controller
-                                                    .invoiceController
-                                                    .depositRequestOptions[1]["name"];
-                                              }
-                                              if (proposal
-                                                      .requestedAmountType ==
-                                                  0) {
-                                                // type = null
-                                                controller
-                                                        .invoiceController
-                                                        .selectedDepositRequestOption
-                                                        .value =
-                                                    "0";
-                                                controller
-                                                        .invoiceController
-                                                        .requestDepositRateEditTextController
-                                                        .text =
-                                                    proposal
-                                                        .requestedDepositPercentage ??
-                                                    "0.00";
-                                                controller
-                                                        .invoiceController
-                                                        .requestedDepositAmountEditTextController
-                                                        .text =
-                                                    proposal
-                                                        .requestedDepositAmount ??
-                                                    "0.00";
-                                                controller
-                                                    .invoiceController
-                                                    .selectedDepositRequestOptionName
-                                                    .value = controller
-                                                    .invoiceController
-                                                    .depositRequestOptions[0]["name"];
-                                              }
-                                              controller
-                                                      .invoiceController
-                                                      .notes =
-                                                  proposal.note ?? "";
-                                              controller
-                                                      .invoiceController
-                                                      .editNoteTextController
-                                                      .text =
-                                                  proposal.note ?? "";
-                                              controller.invoiceController.due =
-                                                  proposal.due ?? "";
-                                              controller
-                                                  .invoiceController
-                                                  .showingDate
-                                                  .value = dateTimeConverter(
-                                                inputFormat:
-                                                    "yyyy/MM/dd hh:mm a",
-                                                inputTime: proposal.invoiceDate
-                                                    .toString(),
-                                                outputFormat: "MM/dd/yyyy",
-                                              );
-                                              if (proposal.taxType != "") {
-                                                controller
-                                                        .invoiceController
-                                                        .initialTaxID
-                                                        .value =
-                                                    proposal.taxType ?? "";
-                                              }
-
-                                              // Set discount values
-                                              controller
-                                                      .invoiceController
-                                                      .invoiceDiscountDetails
-                                                      .value =
-                                                  proposal.discount ?? 0.00;
-                                              if (proposal.discountOption ==
-                                                  "1") {
-                                                controller
-                                                        .invoiceController
-                                                        .editDiscountTextController
-                                                        .text =
-                                                    (((double.parse(
-                                                                  proposal.discount
-                                                                          ?.toString() ??
-                                                                      "0.00",
-                                                                )) *
-                                                                100) /
-                                                            double.parse(
-                                                              proposal.subtotal
-                                                                      ?.toStringAsFixed(
-                                                                        2,
-                                                                      ) ??
-                                                                  "0.00",
-                                                            ))
-                                                        .toStringAsFixed(2);
-                                              } else {
-                                                controller
-                                                    .invoiceController
-                                                    .editDiscountTextController
-                                                    .text = double.parse(
-                                                  proposal.discount
-                                                          ?.toString() ??
-                                                      "0.00",
-                                                ).toStringAsFixed(2);
-                                              }
-
-                                              // Set tax values
-
-                                              controller
-                                                      .invoiceController
-                                                      .tax
-                                                      .value =
-                                                  controller
-                                                      .invoiceController
-                                                      .taxes
-                                                      .firstWhereOrNull(
-                                                        (tax) =>
-                                                            tax.id ==
-                                                            int.tryParse(
-                                                              controller
-                                                                  .invoiceController
-                                                                  .initialTaxID
-                                                                  .value,
-                                                            ),
-                                                      )
-                                                      ?.rate
-                                                      ?.toStringAsFixed(2) ??
-                                                  "0.00";
-                                              controller
-                                                      .invoiceController
-                                                      .selectedTaxName
-                                                      .value =
-                                                  controller
-                                                      .invoiceController
-                                                      .taxes
-                                                      .firstWhereOrNull(
-                                                        (tax) =>
-                                                            tax.id ==
-                                                            int.tryParse(
-                                                              controller
-                                                                  .invoiceController
-                                                                  .initialTaxID
-                                                                  .value,
-                                                            ),
-                                                      )
-                                                      ?.name ??
-                                                  "";
-
-                                              // Populate selectedItemList and initialize controllers
-                                              if (proposal.items != null &&
-                                                  proposal.items!.isNotEmpty) {
-                                                for (var item
-                                                    in proposal.items!) {
-                                                  controller
-                                                      .invoiceController
-                                                      .selectedItemList
-                                                      .add(
-                                                        ItemListModel(
-                                                          id: item.itemId,
-                                                          name: item.name,
-                                                          description:
-                                                              item.description,
-                                                          price: double.tryParse(
-                                                            item.unitPrice ??
-                                                                "0.00",
-                                                          ),
-                                                          isTaxable:
-                                                              item.isTaxable ==
-                                                                  "TAX"
-                                                              ? true
-                                                              : false,
-                                                          // itemTypeId: int.parse(item.itemTyId!),
-                                                        ),
-                                                      );
-
-                                                  // Initialize controllers with existing values
-                                                  controller
-                                                      .invoiceController
-                                                      .editAmountControllers
-                                                      .add(
-                                                        TextEditingController(
-                                                          text:
-                                                              item.unitPrice ??
-                                                              "0.00",
-                                                        ),
-                                                      );
-
-                                                  controller
-                                                      .invoiceController
-                                                      .editDescriptionControllers
-                                                      .add(
-                                                        TextEditingController(
-                                                          text:
-                                                              item.description ??
-                                                              "",
-                                                        ),
-                                                      );
-
-                                                  controller
-                                                      .invoiceController
-                                                      .editQuantityControllers
-                                                      .add(
-                                                        TextEditingController(
-                                                          text:
-                                                              item.quantity ??
-                                                              "1",
-                                                        ),
-                                                      );
-                                                }
-                                              }
-                                              controller.invoiceController
-                                                  .createTotalForEdit();
-                                              await 0.5.delay();
-                                              controller.invoiceController
-                                                  .selectedQboClass(
-                                                    controller
-                                                        .invoiceController
-                                                        .qboClassList
-                                                        .where(
-                                                          (e) =>
-                                                              e.qboClassId
-                                                                  .toString() ==
-                                                              proposal
-                                                                  .qboClassId,
-                                                        )
-                                                        .firstOrNull,
-                                                  );
-                                              controller.invoiceController
-                                                  .selectedQboLocation(
-                                                    controller
-                                                        .invoiceController
-                                                        .qboLocationList
-                                                        .where(
-                                                          (e) =>
-                                                              e.qboLocationId
-                                                                  .toString() ==
-                                                              proposal
-                                                                  .qboLocationId,
-                                                        )
-                                                        .firstOrNull,
-                                                  );
-                                              controller
-                                                  .invoiceController
-                                                  .removedList
-                                                  .clear(); // Optional small delay before navigation
-                                              controller.hideLoading();
-                                              final x =
-                                                  MySharedPref.getCompanyType() ??
-                                                  '';
-                                              controller
-                                                      .invoiceController
-                                                      .isLocAndClassShow
-                                                      .value =
-                                                  x == 'PCS';
-                                              controller
-                                                      .invoiceController
-                                                      .selectedInvoice
-                                                      .value =
-                                                  proposal;
-                                              Get.toNamed(
-                                                Routes.INVOICE_DETAILS,
-                                              );
-                                            },
-                                            child: Card(
-                                              elevation: 0,
-                                              color: Colors.white,
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  ListTile(
-                                                    title: TextWidget(
-                                                      text:
-                                                          "${proposal.type ?? ""} Number",
-                                                      style: theme
-                                                          .textTheme
-                                                          .bodyLarge
-                                                          ?.copyWith(
-                                                            color: LightThemeColors
-                                                                .hintTextColor,
-                                                            fontSize: 12.sp,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                    ),
-                                                    trailing: Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                            horizontal: 8.sp,
-                                                            vertical: 2.sp,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              5.r,
-                                                            ),
-                                                        color:
-                                                            proposal.type ==
-                                                                "Invoice"
-                                                            ? theme.primaryColor
-                                                            : proposal.type ==
-                                                                      "Estimate" &&
-                                                                  proposal.isConverted ==
-                                                                      true
-                                                            ? Colors.green
-                                                            : Colors.yellow,
-                                                      ),
-                                                      child: TextWidget(
-                                                        text:
-                                                            proposal.number ??
-                                                            "",
-                                                        style: theme
-                                                            .textTheme
-                                                            .bodyLarge
-                                                            ?.copyWith(
-                                                              fontSize: 12.sp,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                              color:
-                                                                  proposal.type ==
-                                                                          "Estimate" &&
-                                                                      proposal.isConverted ==
-                                                                          false
-                                                                  ? Colors.black
-                                                                  : Colors
-                                                                        .white,
-                                                            ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  MainDivider(),
-                                                  ListTile(
-                                                    title: TextWidget(
-                                                      text: "Date",
-                                                      style: theme
-                                                          .textTheme
-                                                          .bodyLarge
-                                                          ?.copyWith(
-                                                            color: LightThemeColors
-                                                                .hintTextColor,
-                                                            fontSize: 14.sp,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                    ),
-                                                    trailing:
-                                                        proposal.invoiceDate !=
-                                                            ""
-                                                        ? TextWidget(
-                                                            text: dateTimeConverter(
-                                                              inputFormat:
-                                                                  "yyyy/MM/dd hh:mm a",
-                                                              inputTime: proposal
-                                                                  .invoiceDate
-                                                                  .toString(),
-                                                              outputFormat:
-                                                                  "MM/dd/yyyy",
-                                                            ),
-                                                            style: theme
-                                                                .textTheme
-                                                                .bodyLarge
-                                                                ?.copyWith(
-                                                                  fontSize:
-                                                                      14.sp,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                ),
-                                                          )
-                                                        : TextWidget(text: ""),
-                                                  ),
-                                                  MainDivider(),
-                                                  ListTile(
-                                                    title: TextWidget(
-                                                      text: "Required Amount",
-                                                      style: theme
-                                                          .textTheme
-                                                          .bodyLarge
-                                                          ?.copyWith(
-                                                            color: LightThemeColors
-                                                                .hintTextColor,
-                                                            fontSize: 14.sp,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                    ),
-                                                    trailing: TextWidget(
-                                                      text:
-                                                          "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
-                                                      style: theme
-                                                          .textTheme
-                                                          .bodyLarge
-                                                          ?.copyWith(
-                                                            fontSize: 14.sp,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  MainDivider(),
-                                                  ListTile(
-                                                    title: TextWidget(
-                                                      text: "Amount Received",
-                                                      style: theme
-                                                          .textTheme
-                                                          .bodyLarge
-                                                          ?.copyWith(
-                                                            color: LightThemeColors
-                                                                .hintTextColor,
-                                                            fontSize: 14.sp,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                    ),
-                                                    trailing: TextWidget(
-                                                      text:
-                                                          "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
-                                                      style: theme
-                                                          .textTheme
-                                                          .bodyLarge
-                                                          ?.copyWith(
-                                                            fontSize: 14.sp,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        separatorBuilder:
-                                            (BuildContext context, int index) =>
-                                                SizedBox(height: 8.sp),
-                                        itemCount: controller
-                                            .sortedAppointments[controller
-                                                .selectedAptIndex
-                                                .value]
-                                            .invoices!
-                                            .length,
-                                        shrinkWrap: true,
-                                        reverse: true,
-                                        physics: NeverScrollableScrollPhysics(),
-                                      ),
-
-                                      Divider(
-                                        thickness: 5,
-                                        color: LightThemeColors
-                                            .buttonDisabledColor,
-                                      ),
-                                      SizedBox(height: 10.sp),
-                                      // Text("Other Invoices for this Site"),
-                                      // SizedBox(height: 10.sp),
-                                      controller.extendedAppointments.isEmpty
-                                          ? SizedBox.shrink()
-                                          : ListView.separated(
-                                              itemBuilder: (context, i) {
-                                                final extendedAppt = controller
-                                                    .extendedAppointments[i];
-                                                return Column(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      "Appointment ID: ${extendedAppt.appoinmentUId}",
-                                                    ),
-                                                    SizedBox(height: 5.sp),
-                                                    ListView.builder(
-                                                      itemBuilder: (context, index) {
-                                                        final extendedProposal =
-                                                            extendedAppt
-                                                                .invoices![index];
-                                                        return GestureDetector(
-                                                          onTap: () async {
-                                                            controller
-                                                                .showLoading();
-                                                            controller
-                                                                    .invoiceController
-                                                                    .isExternalInvoice
-                                                                    .value =
-                                                                true;
-                                                            controller
-                                                                    .appointmentID =
-                                                                "${extendedAppt.apptID ?? ""}";
-
-                                                            // Save backup if we were in "new" mode before switching to "existing"
-                                                            if (controller
-                                                                    .invoiceController
-                                                                    .existingItemType
-                                                                    .value ==
-                                                                SelectedItemCategory
-                                                                    .newOne) {
-                                                              controller
-                                                                  .invoiceController
-                                                                  .saveBackup(
-                                                                    "new",
-                                                                  );
-                                                            }
-
-                                                            controller
-                                                                .invoiceController
-                                                                .existingItemType(
-                                                                  SelectedItemCategory
-                                                                      .existingOne,
-                                                                );
-
-                                                            // Clear previous selection if needed
-                                                            controller
-                                                                .invoiceController
-                                                                .selectedItemList
-                                                                .clear();
-                                                            for (var c
-                                                                in controller
-                                                                    .invoiceController
-                                                                    .editAmountControllers) {
-                                                              c.dispose();
-                                                            }
-                                                            for (var c
-                                                                in controller
-                                                                    .invoiceController
-                                                                    .editDescriptionControllers) {
-                                                              c.dispose();
-                                                            }
-                                                            for (var c
-                                                                in controller
-                                                                    .invoiceController
-                                                                    .editQuantityControllers) {
-                                                              c.dispose();
-                                                            }
-                                                            controller
-                                                                .invoiceController
-                                                                .editAmountControllers
-                                                                .clear();
-                                                            controller
-                                                                .invoiceController
-                                                                .editDescriptionControllers
-                                                                .clear();
-                                                            controller
-                                                                .invoiceController
-                                                                .editQuantityControllers
-                                                                .clear();
-                                                            controller
-                                                                .invoiceController
-                                                                .editNoteTextController
-                                                                .clear();
-                                                            controller
-                                                                .invoiceController
-                                                                .editDiscountTextController
-                                                                .clear();
-                                                            controller
-                                                                    .invoiceController
-                                                                    .initialTaxID
-                                                                    .value =
-                                                                "";
-
-                                                            // Set basic info
-
-                                                            controller
-                                                                    .invoiceController
-                                                                    .invoiceItemList
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .items ??
-                                                                [];
-                                                            controller
-                                                                    .invoiceController
-                                                                    .depositList
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .paymentList ??
-                                                                [];
-                                                            controller
-                                                                    .invoiceController
-                                                                    .selectedDiscountOption
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .discountOption ??
-                                                                "2";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .invoiceNumber =
-                                                                extendedProposal
-                                                                    .number ??
-                                                                "";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .isConverted
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .isConverted ??
-                                                                false;
-                                                            controller
-                                                                    .invoiceController
-                                                                    .customerName =
-                                                                extendedProposal
-                                                                    .fullName ??
-                                                                "";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .address =
-                                                                "${extendedProposal.city}, ";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .depositAmount
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .depositAmount
-                                                                    ?.toStringAsFixed(
-                                                                      2,
-                                                                    ) ??
-                                                                "0.00";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .invoiceID
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .invoiceID
-                                                                    .toString();
-                                                            controller
-                                                                .invoiceController
-                                                                .date = dateTimeConverter(
-                                                              inputFormat:
-                                                                  "yyyy/MM/dd",
-                                                              inputTime:
-                                                                  extendedProposal
-                                                                      .invoiceDate
-                                                                      .toString(),
-                                                              outputFormat:
-                                                                  "MM/dd/yyyy",
-                                                            );
-                                                            controller
-                                                                    .invoiceController
-                                                                    .subtotal =
-                                                                extendedProposal
-                                                                    .subtotal
-                                                                    ?.toStringAsFixed(
-                                                                      2,
-                                                                    ) ??
-                                                                "";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .customerID
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .customerId ??
-                                                                "";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .status =
-                                                                extendedProposal
-                                                                    .status ??
-                                                                "";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .type
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .type ??
-                                                                "";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .total
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .total
-                                                                    ?.toStringAsFixed(
-                                                                      2,
-                                                                    ) ??
-                                                                "";
-                                                            if (extendedProposal
-                                                                    .requestedAmountType ==
-                                                                2) {
-                                                              // type = fixed
-                                                              controller
-                                                                      .invoiceController
-                                                                      .selectedDepositRequestOption
-                                                                      .value =
-                                                                  "2";
-                                                              controller
-                                                                      .invoiceController
-                                                                      .requestedDepositAmountEditTextController
-                                                                      .text =
-                                                                  extendedProposal
-                                                                      .requestedDepositAmount ??
-                                                                  "0.00";
-                                                              controller
-                                                                  .invoiceController
-                                                                  .selectedDepositRequestOptionName
-                                                                  .value = controller
-                                                                  .invoiceController
-                                                                  .depositRequestOptions[2]["name"];
-                                                            }
-                                                            if (extendedProposal
-                                                                    .requestedAmountType ==
-                                                                1) {
-                                                              // type = percentage
-                                                              controller
-                                                                      .invoiceController
-                                                                      .selectedDepositRequestOption
-                                                                      .value =
-                                                                  "1";
-                                                              controller
-                                                                      .invoiceController
-                                                                      .requestDepositRateEditTextController
-                                                                      .text =
-                                                                  extendedProposal
-                                                                      .requestedDepositPercentage ??
-                                                                  "0.00";
-                                                              controller
-                                                                      .invoiceController
-                                                                      .requestedDepositAmountEditTextController
-                                                                      .text =
-                                                                  extendedProposal
-                                                                      .requestedDepositAmount ??
-                                                                  "0.00";
-                                                              controller
-                                                                  .invoiceController
-                                                                  .selectedDepositRequestOptionName
-                                                                  .value = controller
-                                                                  .invoiceController
-                                                                  .depositRequestOptions[1]["name"];
-                                                            }
-                                                            if (extendedProposal
-                                                                    .requestedAmountType ==
-                                                                0) {
-                                                              // type = null
-                                                              controller
-                                                                      .invoiceController
-                                                                      .selectedDepositRequestOption
-                                                                      .value =
-                                                                  "0";
-                                                              controller
-                                                                      .invoiceController
-                                                                      .requestDepositRateEditTextController
-                                                                      .text =
-                                                                  extendedProposal
-                                                                      .requestedDepositPercentage ??
-                                                                  "0.00";
-                                                              controller
-                                                                      .invoiceController
-                                                                      .requestedDepositAmountEditTextController
-                                                                      .text =
-                                                                  extendedProposal
-                                                                      .requestedDepositAmount ??
-                                                                  "0.00";
-                                                              controller
-                                                                  .invoiceController
-                                                                  .selectedDepositRequestOptionName
-                                                                  .value = controller
-                                                                  .invoiceController
-                                                                  .depositRequestOptions[0]["name"];
-                                                            }
-                                                            controller
-                                                                    .invoiceController
-                                                                    .notes =
-                                                                extendedProposal
-                                                                    .note ??
-                                                                "";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .editNoteTextController
-                                                                    .text =
-                                                                extendedProposal
-                                                                    .note ??
-                                                                "";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .due =
-                                                                extendedProposal
-                                                                    .due ??
-                                                                "";
-                                                            controller
-                                                                .invoiceController
-                                                                .showingDate
-                                                                .value = dateTimeConverter(
-                                                              inputFormat:
-                                                                  "yyyy/MM/dd hh:mm a",
-                                                              inputTime:
-                                                                  extendedProposal
-                                                                      .invoiceDate
-                                                                      .toString(),
-                                                              outputFormat:
-                                                                  "MM/dd/yyyy",
-                                                            );
-                                                            if (extendedProposal
-                                                                    .taxType !=
-                                                                "") {
-                                                              controller
-                                                                      .invoiceController
-                                                                      .initialTaxID
-                                                                      .value =
-                                                                  extendedProposal
-                                                                      .taxType ??
-                                                                  "";
-                                                            }
-
-                                                            // Set discount values
-                                                            controller
-                                                                    .invoiceController
-                                                                    .invoiceDiscountDetails
-                                                                    .value =
-                                                                extendedProposal
-                                                                    .discount ??
-                                                                0.00;
-                                                            if (extendedProposal
-                                                                    .discountOption ==
-                                                                "1") {
-                                                              controller
-                                                                      .invoiceController
-                                                                      .editDiscountTextController
-                                                                      .text =
-                                                                  (((double.parse(
-                                                                                extendedProposal.discount?.toString() ??
-                                                                                    "0.00",
-                                                                              )) *
-                                                                              100) /
-                                                                          double.parse(
-                                                                            extendedProposal.subtotal?.toStringAsFixed(2) ??
-                                                                                "0.00",
-                                                                          ))
-                                                                      .toStringAsFixed(
-                                                                        2,
-                                                                      );
-                                                            } else {
-                                                              controller
-                                                                  .invoiceController
-                                                                  .editDiscountTextController
-                                                                  .text = double.parse(
-                                                                extendedProposal
-                                                                        .discount
-                                                                        ?.toString() ??
-                                                                    "0.00",
-                                                              ).toStringAsFixed(2);
-                                                            }
-
-                                                            // Set tax values
-
-                                                            controller
-                                                                    .invoiceController
-                                                                    .tax
-                                                                    .value =
-                                                                controller
-                                                                    .invoiceController
-                                                                    .taxes
-                                                                    .firstWhereOrNull(
-                                                                      (tax) =>
-                                                                          tax.id ==
-                                                                          int.tryParse(
-                                                                            controller.invoiceController.initialTaxID.value,
-                                                                          ),
-                                                                    )
-                                                                    ?.rate
-                                                                    ?.toStringAsFixed(
-                                                                      2,
-                                                                    ) ??
-                                                                "0.00";
-                                                            controller
-                                                                    .invoiceController
-                                                                    .selectedTaxName
-                                                                    .value =
-                                                                controller
-                                                                    .invoiceController
-                                                                    .taxes
-                                                                    .firstWhereOrNull(
-                                                                      (tax) =>
-                                                                          tax.id ==
-                                                                          int.tryParse(
-                                                                            controller.invoiceController.initialTaxID.value,
-                                                                          ),
-                                                                    )
-                                                                    ?.name ??
-                                                                "";
-
-                                                            // Populate selectedItemList and initialize controllers
-                                                            if (extendedProposal
-                                                                        .items !=
-                                                                    null &&
-                                                                extendedProposal
-                                                                    .items!
-                                                                    .isNotEmpty) {
-                                                              for (var item
-                                                                  in extendedProposal
-                                                                      .items!) {
-                                                                controller.invoiceController.selectedItemList.add(
-                                                                  ItemListModel(
-                                                                    id: item
-                                                                        .itemId,
-                                                                    name: item
-                                                                        .name,
-                                                                    description:
-                                                                        item.description,
-                                                                    price: double.tryParse(
-                                                                      item.unitPrice ??
-                                                                          "0.00",
-                                                                    ),
-                                                                    isTaxable:
-                                                                        item.isTaxable ==
-                                                                            "TAX"
-                                                                        ? true
-                                                                        : false,
-                                                                    // itemTypeId: int.parse(item.itemTyId!),
-                                                                  ),
-                                                                );
-
-                                                                // Initialize controllers with existing values
-                                                                controller
-                                                                    .invoiceController
-                                                                    .editAmountControllers
-                                                                    .add(
-                                                                      TextEditingController(
-                                                                        text:
-                                                                            item.unitPrice ??
-                                                                            "0.00",
-                                                                      ),
-                                                                    );
-
-                                                                controller
-                                                                    .invoiceController
-                                                                    .editDescriptionControllers
-                                                                    .add(
-                                                                      TextEditingController(
-                                                                        text:
-                                                                            item.description ??
-                                                                            "",
-                                                                      ),
-                                                                    );
-
-                                                                controller
-                                                                    .invoiceController
-                                                                    .editQuantityControllers
-                                                                    .add(
-                                                                      TextEditingController(
-                                                                        text:
-                                                                            item.quantity ??
-                                                                            "1",
-                                                                      ),
-                                                                    );
-                                                              }
-                                                            }
-                                                            controller
-                                                                .invoiceController
-                                                                .createTotalForEdit();
-                                                            await 0.5.delay();
-                                                            controller.invoiceController.selectedQboClass(
-                                                              controller
-                                                                  .invoiceController
-                                                                  .qboClassList
-                                                                  .where(
-                                                                    (e) =>
-                                                                        e.qboClassId
-                                                                            .toString() ==
-                                                                        extendedProposal
-                                                                            .qboClassId,
-                                                                  )
-                                                                  .firstOrNull,
-                                                            );
-                                                            controller.invoiceController.selectedQboLocation(
-                                                              controller
-                                                                  .invoiceController
-                                                                  .qboLocationList
-                                                                  .where(
-                                                                    (e) =>
-                                                                        e.qboLocationId
-                                                                            .toString() ==
-                                                                        extendedProposal
-                                                                            .qboLocationId,
-                                                                  )
-                                                                  .firstOrNull,
-                                                            );
-                                                            controller
-                                                                .invoiceController
-                                                                .removedList
-                                                                .clear(); // Optional small delay before navigation
-                                                            controller
-                                                                .hideLoading();
-                                                            final x =
-                                                                MySharedPref.getCompanyType() ??
-                                                                '';
-                                                            controller
-                                                                    .invoiceController
-                                                                    .isLocAndClassShow
-                                                                    .value =
-                                                                x == 'PCS';
-                                                            controller
-                                                                    .invoiceController
-                                                                    .selectedInvoice
-                                                                    .value =
-                                                                extendedProposal;
-                                                            Get.toNamed(
-                                                              Routes
-                                                                  .INVOICE_DETAILS,
-                                                            );
-                                                          },
-                                                          child: Card(
-                                                            elevation: 0,
-                                                            color: Colors.white,
-                                                            child: Column(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: [
-                                                                ListTile(
-                                                                  title: TextWidget(
-                                                                    text:
-                                                                        "${extendedProposal.type ?? ""} Number",
-                                                                    style: theme
-                                                                        .textTheme
-                                                                        .bodyLarge
-                                                                        ?.copyWith(
-                                                                          color:
-                                                                              LightThemeColors.hintTextColor,
-                                                                          fontSize:
-                                                                              12.sp,
-                                                                          fontWeight:
-                                                                              FontWeight.w500,
-                                                                        ),
-                                                                  ),
-                                                                  trailing: Container(
-                                                                    padding: EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          8.sp,
-                                                                      vertical:
-                                                                          2.sp,
-                                                                    ),
-                                                                    decoration: BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                            5.r,
-                                                                          ),
-                                                                      color:
-                                                                          extendedProposal.type ==
-                                                                              "Invoice"
-                                                                          ? theme.primaryColor
-                                                                          : extendedProposal.type ==
-                                                                                    "Estimate" &&
-                                                                                extendedProposal.isConverted ==
-                                                                                    true
-                                                                          ? Colors.green
-                                                                          : Colors.yellow,
-                                                                    ),
-                                                                    child: TextWidget(
-                                                                      text:
-                                                                          extendedProposal
-                                                                              .number ??
-                                                                          "",
-                                                                      style: theme.textTheme.bodyLarge?.copyWith(
-                                                                        fontSize:
-                                                                            12.sp,
-                                                                        fontWeight:
-                                                                            FontWeight.w500,
-                                                                        color:
-                                                                            extendedProposal.type ==
-                                                                                    "Estimate" &&
-                                                                                extendedProposal.isConverted ==
-                                                                                    false
-                                                                            ? Colors.black
-                                                                            : Colors.white,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                                MainDivider(),
-                                                                ListTile(
-                                                                  title: TextWidget(
-                                                                    text:
-                                                                        "Date",
-                                                                    style: theme
-                                                                        .textTheme
-                                                                        .bodyLarge
-                                                                        ?.copyWith(
-                                                                          color:
-                                                                              LightThemeColors.hintTextColor,
-                                                                          fontSize:
-                                                                              14.sp,
-                                                                          fontWeight:
-                                                                              FontWeight.w500,
-                                                                        ),
-                                                                  ),
-                                                                  trailing:
-                                                                      extendedProposal
-                                                                              .invoiceDate !=
-                                                                          ""
-                                                                      ? TextWidget(
-                                                                          text: dateTimeConverter(
-                                                                            inputFormat:
-                                                                                "yyyy/MM/dd hh:mm a",
-                                                                            inputTime:
-                                                                                extendedProposal.invoiceDate.toString(),
-                                                                            outputFormat:
-                                                                                "MM/dd/yyyy",
-                                                                          ),
-                                                                          style: theme.textTheme.bodyLarge?.copyWith(
-                                                                            fontSize:
-                                                                                14.sp,
-                                                                            fontWeight:
-                                                                                FontWeight.w500,
-                                                                          ),
-                                                                        )
-                                                                      : TextWidget(
-                                                                          text:
-                                                                              "",
-                                                                        ),
-                                                                ),
-                                                                MainDivider(),
-                                                                ListTile(
-                                                                  title: TextWidget(
-                                                                    text:
-                                                                        "Required Amount",
-                                                                    style: theme
-                                                                        .textTheme
-                                                                        .bodyLarge
-                                                                        ?.copyWith(
-                                                                          color:
-                                                                              LightThemeColors.hintTextColor,
-                                                                          fontSize:
-                                                                              14.sp,
-                                                                          fontWeight:
-                                                                              FontWeight.w500,
-                                                                        ),
-                                                                  ),
-                                                                  trailing: TextWidget(
-                                                                    text:
-                                                                        "\$${extendedProposal.total?.toStringAsFixed(2) ?? ""}",
-                                                                    style: theme
-                                                                        .textTheme
-                                                                        .bodyLarge
-                                                                        ?.copyWith(
-                                                                          fontSize:
-                                                                              14.sp,
-                                                                          fontWeight:
-                                                                              FontWeight.w500,
-                                                                        ),
-                                                                  ),
-                                                                ),
-                                                                MainDivider(),
-                                                                ListTile(
-                                                                  title: TextWidget(
-                                                                    text:
-                                                                        "Amount Received",
-                                                                    style: theme
-                                                                        .textTheme
-                                                                        .bodyLarge
-                                                                        ?.copyWith(
-                                                                          color:
-                                                                              LightThemeColors.hintTextColor,
-                                                                          fontSize:
-                                                                              14.sp,
-                                                                          fontWeight:
-                                                                              FontWeight.w500,
-                                                                        ),
-                                                                  ),
-                                                                  trailing: TextWidget(
-                                                                    text:
-                                                                        "\$${extendedProposal.depositAmount?.toStringAsFixed(2) ?? ""}",
-                                                                    style: theme
-                                                                        .textTheme
-                                                                        .bodyLarge
-                                                                        ?.copyWith(
-                                                                          fontSize:
-                                                                              14.sp,
-                                                                          fontWeight:
-                                                                              FontWeight.w500,
-                                                                        ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                      itemCount: extendedAppt
-                                                          .invoices!
-                                                          .length,
-                                                      shrinkWrap: true,
-                                                      physics:
-                                                          NeverScrollableScrollPhysics(),
-                                                    ),
-                                                  ],
-                                                );
-                                              },
-                                              separatorBuilder:
-                                                  (
-                                                    BuildContext context,
-                                                    int index,
-                                                  ) => SizedBox(height: 8.sp),
-                                              itemCount: controller
-                                                  .extendedAppointments
-                                                  .length,
-                                              shrinkWrap: true,
-                                              reverse: true,
-                                              physics:
-                                                  NeverScrollableScrollPhysics(),
-                                            ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(height: 15.sp),
-                              ],
-                            ),
-                          ),
-
-                          //********************************* Tab Five Pictures *********************************/
-                          Obx(
-                            () => Column(
-                              children: [
-                                SizedBox(height: 15.sp),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: GestureDetector(
-                                    onTap: controller.mediaList.length == 1
-                                        ? () {}
-                                        : () {
-                                            showMediaBottomSheet(context, -1);
-                                          },
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        right: 8.0,
-                                      ),
-                                      child: DottedBorder(
-                                        options: RectDottedBorderOptions(
-                                          dashPattern: [3, 2],
-                                        ),
-                                        child: Icon(
-                                          Icons.add,
-                                          size: 25.sp,
-                                          color:
-                                              controller.mediaList.length == 1
-                                              ? Colors.grey
-                                              : theme.primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      children: [
-                                        controller.imageList.isEmpty &&
-                                                controller.mediaList.isEmpty
-                                            ? Center(
-                                                child: TextWidget(
-                                                  text: "Add Pictures",
-                                                ),
-                                              )
-                                            : ListView.separated(
-                                                itemBuilder: (context, index) {
-                                                  final item = controller
-                                                      .mediaList[index];
-                                                  return Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      TextWidget(
-                                                        text: item.time,
-                                                      ),
-                                                      SizedBox(height: 10.h),
-
-                                                      // ✅ Description TextField
-                                                      TextField(
-                                                        controller: item
-                                                            .descriptionController, // make sure each item has a controller
-                                                        decoration: InputDecoration(
-                                                          hintText:
-                                                              "Add description...",
-                                                          border: OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  8.r,
-                                                                ),
-                                                          ),
-                                                          contentPadding:
-                                                              EdgeInsets.symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 8,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      SizedBox(height: 10.h),
-
-                                                      SingleChildScrollView(
-                                                        scrollDirection:
-                                                            Axis.horizontal,
-                                                        child: Row(
-                                                          children: [
-                                                            ...item.images.map((
-                                                              e,
-                                                            ) {
-                                                              if (_isVideo(e)) {
-                                                                return GestureDetector(
-                                                                  onTap: () =>
-                                                                      showMediaDialog(
-                                                                        context,
-                                                                        e,
-                                                                      ),
-                                                                  child: Padding(
-                                                                    padding:
-                                                                        const EdgeInsets.only(
-                                                                          right:
-                                                                              8.0,
-                                                                        ),
-                                                                    child: FutureBuilder<String?>(
-                                                                      future:
-                                                                          generateVideoThumbnail(
-                                                                            e,
-                                                                          ),
-                                                                      builder:
-                                                                          (
-                                                                            context,
-                                                                            snapshot,
-                                                                          ) {
-                                                                            if (snapshot.connectionState ==
-                                                                                ConnectionState.waiting) {
-                                                                              return Container(
-                                                                                height: 150,
-                                                                                width: 150,
-                                                                                alignment: Alignment.center,
-                                                                                child: const CircularProgressIndicator(),
-                                                                              );
-                                                                            }
-                                                                            if (snapshot.hasData &&
-                                                                                snapshot.data !=
-                                                                                    null) {
-                                                                              return Stack(
-                                                                                children: [
-                                                                                  Container(
-                                                                                    height: 150,
-                                                                                    width: 150,
-                                                                                    decoration: BoxDecoration(
-                                                                                      borderRadius: BorderRadius.circular(
-                                                                                        10.r,
-                                                                                      ),
-                                                                                      image: DecorationImage(
-                                                                                        fit: BoxFit.fill,
-                                                                                        image: FileImage(
-                                                                                          File(
-                                                                                            snapshot.data!,
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                  const Positioned.fill(
-                                                                                    child: Center(
-                                                                                      child: Icon(
-                                                                                        Icons.play_circle_fill,
-                                                                                        size: 40,
-                                                                                        color: Colors.white,
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                ],
-                                                                              );
-                                                                            }
-                                                                            return Container(
-                                                                              height: 150,
-                                                                              width: 150,
-                                                                              color: Colors.grey[300],
-                                                                              child: const Icon(
-                                                                                Icons.play_circle_fill,
-                                                                              ),
-                                                                            );
-                                                                          },
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                              } else {
-                                                                return GestureDetector(
-                                                                  onTap: () =>
-                                                                      showMediaDialog(
-                                                                        context,
-                                                                        e,
-                                                                      ),
-                                                                  child: Container(
-                                                                    height: 150,
-                                                                    width: 150,
-                                                                    margin:
-                                                                        EdgeInsets.only(
-                                                                          right:
-                                                                              20,
-                                                                        ),
-                                                                    decoration: BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                            10.r,
-                                                                          ),
-                                                                      image: DecorationImage(
-                                                                        fit: BoxFit
-                                                                            .fill,
-                                                                        image: FileImage(
-                                                                          File(
-                                                                            e,
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                );
-                                                              }
-                                                            }),
-                                                            GestureDetector(
-                                                              onTap: () =>
-                                                                  showMediaBottomSheet(
-                                                                    context,
-                                                                    index,
-                                                                  ),
-                                                              child: Container(
-                                                                height: 150,
-                                                                width: 150,
-                                                                margin:
-                                                                    const EdgeInsets.only(
-                                                                      right: 8,
-                                                                    ),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors
-                                                                      .grey[200],
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        10.r,
-                                                                      ),
-                                                                  border: Border.all(
-                                                                    color: Colors
-                                                                        .grey,
-                                                                  ),
-                                                                ),
-                                                                child: const Icon(
-                                                                  Icons.add,
-                                                                  size: 40,
-                                                                  color: Colors
-                                                                      .grey,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      SizedBox(height: 10.h),
-
-                                                      SizedBox(
-                                                        width: double.infinity,
-                                                        child: ElevatedButton(
-                                                          onPressed: () async {
-                                                            await controller
-                                                                .uploadImages(
-                                                                  tagName: item
-                                                                      .time
-                                                                      .split(
-                                                                        " ",
-                                                                      )[0],
-                                                                  description: item
-                                                                      .descriptionController
-                                                                      .text,
-                                                                );
-                                                          },
-                                                          child: const Text(
-                                                            "Upload Images",
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                                separatorBuilder:
-                                                    (
-                                                      BuildContext context,
-                                                      int index,
-                                                    ) => SizedBox(height: 8.sp),
-                                                itemCount:
-                                                    controller.mediaList.length,
-                                                shrinkWrap: true,
-                                                physics:
-                                                    NeverScrollableScrollPhysics(),
-                                              ),
-
-                                        SizedBox(height: 20.h),
-                                        // Display images grouped by upload date
-                                        Obx(() {
-                                          final groupedImages =
-                                              controller.imagesGroupedByDate;
-                                          final sortedDates =
-                                              groupedImages.keys.toList()
-                                                ..sort();
-
-                                          if (sortedDates.isEmpty) {
-                                            return Center(
-                                              child: TextWidget(
-                                                text: "No pictures yet",
-                                              ),
-                                            );
-                                          }
-
-                                          return ListView.separated(
-                                            itemBuilder: (context, index) {
-                                              final date = sortedDates[index];
-                                              final images =
-                                                  groupedImages[date]!;
-
-                                              return Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  // Date header
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12.sp,
-                                                          vertical: 8.h,
-                                                        ),
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.calendar_today,
-                                                          color:
-                                                              Colors.blueGrey,
-                                                          size: 16.sp,
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        TextWidget(
-                                                          text: date,
-                                                          style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            fontSize: 16.sp,
-                                                            color:
-                                                                Colors.black87,
-                                                          ),
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        Container(
-                                                          padding:
-                                                              EdgeInsets.symmetric(
-                                                                horizontal:
-                                                                    8.sp,
-                                                                vertical: 4.h,
-                                                              ),
-                                                          decoration: BoxDecoration(
-                                                            color: theme
-                                                                .primaryColor
-                                                                .withValues(
-                                                                  alpha: 0.1,
-                                                                ),
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12.r,
-                                                                ),
-                                                          ),
-                                                          child: TextWidget(
-                                                            text:
-                                                                "${images.length} ${images.length == 1 ? 'image' : 'images'}",
-                                                            style: TextStyle(
-                                                              fontSize: 12.sp,
-                                                              color: theme
-                                                                  .primaryColor,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-
-                                                  SizedBox(height: 10.h),
-
-                                                  // Horizontal scrollable images
-                                                  SingleChildScrollView(
-                                                    scrollDirection:
-                                                        Axis.horizontal,
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12.sp,
-                                                        ),
-                                                    child: Row(
-                                                      children: images
-                                                          .map(
-                                                            (
-                                                              item,
-                                                            ) => GestureDetector(
-                                                              onTap: () {
-                                                                showDialog(
-                                                                  context:
-                                                                      context,
-                                                                  builder: (_) => Dialog(
-                                                                    child:
-                                                                        item.pictureURL !=
-                                                                            null
-                                                                        ? CachedNetworkImage(
-                                                                            imageUrl:
-                                                                                item.pictureURL!,
-                                                                            fit:
-                                                                                BoxFit.cover,
-                                                                            placeholder:
-                                                                                (
-                                                                                  _,
-                                                                                  __,
-                                                                                ) => const Center(
-                                                                                  child: CircularProgressIndicator(),
-                                                                                ),
-                                                                            errorWidget:
-                                                                                (
-                                                                                  context,
-                                                                                  error,
-                                                                                  stackTrace,
-                                                                                ) {
-                                                                                  return const Center(
-                                                                                    child: Icon(
-                                                                                      Icons.error,
-                                                                                    ),
-                                                                                  );
-                                                                                },
-                                                                          )
-                                                                        : Image.memory(
-                                                                            item.bytes!,
-                                                                            fit:
-                                                                                BoxFit.cover,
-                                                                            gaplessPlayback:
-                                                                                true,
-                                                                          ),
-                                                                  ),
-                                                                );
-                                                              },
-                                                              child: Container(
-                                                                height: 150,
-                                                                width: 150,
-                                                                margin:
-                                                                    EdgeInsets.only(
-                                                                      right:
-                                                                          12.sp,
-                                                                    ),
-                                                                decoration: BoxDecoration(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        10.r,
-                                                                      ),
-                                                                ),
-                                                                child: ClipRRect(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        10.r,
-                                                                      ),
-                                                                  child:
-                                                                      item.pictureURL !=
-                                                                          null
-                                                                      ? CachedNetworkImage(
-                                                                          imageUrl:
-                                                                              item.pictureURL!,
-                                                                          fit: BoxFit
-                                                                              .fill,
-                                                                          placeholder: (_, __) => Container(
-                                                                            color:
-                                                                                Colors.grey[200],
-                                                                            child: const Center(
-                                                                              child: CircularProgressIndicator(),
-                                                                            ),
-                                                                          ),
-                                                                          errorWidget:
-                                                                              (
-                                                                                _,
-                                                                                __,
-                                                                                ___,
-                                                                              ) => Container(
-                                                                                color: Colors.grey[300],
-                                                                                child: const Icon(
-                                                                                  Icons.error,
-                                                                                ),
-                                                                              ),
-                                                                        )
-                                                                      : Image.memory(
-                                                                          item.bytes!,
-                                                                          fit: BoxFit
-                                                                              .fill,
-                                                                        ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          )
-                                                          .toList(),
-                                                    ),
-                                                  ),
-
-                                                  SizedBox(height: 10.h),
-                                                  Divider(
-                                                    height: 10,
-                                                    thickness: 1,
-                                                    color: Colors
-                                                        .blueGrey
-                                                        .shade200,
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                            separatorBuilder: (_, __) =>
-                                                SizedBox(height: 8.sp),
-                                            itemCount: sortedDates.length,
-                                            shrinkWrap: true,
-                                            physics:
-                                                const NeverScrollableScrollPhysics(),
-                                          );
-                                        }),
-                                        SizedBox(height: 15.sp),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          //********************************* Tab Six Equipment *********************************/
-                          Obx(
-                            () => Column(
-                              children: [
-                                SizedBox(height: 15.sp),
-
-                                // Add button and equipment list
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16.w,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      // Filter dropdown
-                                      Expanded(
-                                        child:
-                                            controller
-                                                .equipmentTypeList
-                                                .isNotEmpty
-                                            ? InkWell(
-                                                onTap:
-                                                    _showEquipmentTypeFilterBottomSheet,
-                                                borderRadius:
-                                                    BorderRadius.circular(12.r),
-                                                child: Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 16.w,
-                                                    vertical: 12.h,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.grey[100],
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12.r,
-                                                        ),
-                                                    border: Border.all(
-                                                      color:
-                                                          controller
-                                                              .selectedEquipmentTypeList
-                                                              .isNotEmpty
-                                                          ? theme.primaryColor
-                                                          : Colors.transparent,
-                                                      width:
-                                                          controller
-                                                              .selectedEquipmentTypeList
-                                                              .isNotEmpty
-                                                          ? 2
-                                                          : 0,
-                                                    ),
-                                                  ),
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.filter_list,
-                                                        size: 20.sp,
-                                                        color:
-                                                            controller
-                                                                .selectedEquipmentTypeList
-                                                                .isNotEmpty
-                                                            ? theme.primaryColor
-                                                            : Colors.grey[600],
-                                                      ),
-                                                      SizedBox(width: 12.w),
-                                                      Expanded(
-                                                        child: Text(
-                                                          controller
-                                                                  .selectedEquipmentTypeList
-                                                                  .isNotEmpty
-                                                              ? '${controller.selectedEquipmentTypeList.length} Item${controller.selectedEquipmentTypeList.length > 1 ? 's' : ''} selected'
-                                                              : 'Select Equipment',
-                                                          style: TextStyle(
-                                                            fontSize: 15.sp,
-                                                            color:
-                                                                controller
-                                                                    .selectedEquipmentTypeList
-                                                                    .isNotEmpty
-                                                                ? Colors.black87
-                                                                : Colors
-                                                                      .grey[600],
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Icon(
-                                                        Icons.arrow_drop_down,
-                                                        size: 24.sp,
-                                                        color: Colors.grey[600],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              )
-                                            : Container(
-                                                alignment: Alignment.center,
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 16.w,
-                                                  vertical: 12.h,
-                                                ),
-                                                child: TextWidget(
-                                                  text:
-                                                      'No equipment types available',
-                                                  style: TextStyle(
-                                                    fontSize: 14.sp,
-                                                    color: Colors.grey[500],
-                                                  ),
-                                                ),
-                                              ),
-                                      ),
-                                      // SizedBox(width: 12.w),
-                                      // // Add button
-                                      // GestureDetector(
-                                      //   onTap: () =>
-                                      //       _showAddEquipmentBottomSheet(),
-                                      //   child: Container(
-                                      //     padding: EdgeInsets.all(10.w),
-                                      //     decoration: BoxDecoration(
-                                      //       color: theme.primaryColor
-                                      //           .withValues(alpha: 0.1),
-                                      //       borderRadius: BorderRadius.circular(
-                                      //         10.r,
-                                      //       ),
-                                      //       border: Border.all(
-                                      //         color: theme.primaryColor,
-                                      //         width: 1.5,
-                                      //       ),
-                                      //     ),
-                                      //     child: Icon(
-                                      //       Icons.add,
-                                      //       size: 24.sp,
-                                      //       color: theme.primaryColor,
-                                      //     ),
-                                      //   ),
-                                      // ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(height: 12.h),
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 16.w,
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        SizedBox(height: 12.h),
-
-                                        /// 🔹 Selected Equipment Type Cards (Always shown first)
-                                        if (controller
-                                            .selectedEquipmentTypeList
-                                            .isNotEmpty)
-                                          ...controller.selectedEquipmentTypeList.map(
-                                            (type) => Card(
-                                              margin: EdgeInsets.only(
-                                                bottom: 8.h,
-                                              ),
-                                              elevation: 2,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12.r),
-                                                side: BorderSide(
-                                                  color: theme.primaryColor
-                                                      .withValues(alpha: 0.3),
-                                                  width: 1,
-                                                ),
-                                              ),
-                                              color: theme.primaryColor
-                                                  .withValues(alpha: 0.05),
-                                              child: Padding(
-                                                padding: EdgeInsets.all(12.w),
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      width: 40.w,
-                                                      height: 40.w,
-                                                      decoration: BoxDecoration(
-                                                        color: theme
-                                                            .primaryColor
-                                                            .withValues(
-                                                              alpha: 0.15,
-                                                            ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              8.r,
-                                                            ),
-                                                      ),
-                                                      child: Icon(
-                                                        Icons.category,
-                                                        color:
-                                                            theme.primaryColor,
-                                                        size: 20.sp,
-                                                      ),
-                                                    ),
-                                                    SizedBox(width: 12.w),
-
-                                                    /// Text
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            type.equipmentTypeDesc,
-                                                            style: TextStyle(
-                                                              fontSize: 14.sp,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w600,
-                                                              color: theme
-                                                                  .primaryColor,
-                                                            ),
-                                                          ),
-                                                          Text(
-                                                            'ID: ${type.equipmentTypeId}',
-                                                            style: TextStyle(
-                                                              fontSize: 11.sp,
-                                                              color: Colors
-                                                                  .grey[600],
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-
-                                                    /// Remove Button
-                                                    GestureDetector(
-                                                      onTap: () {
-                                                        controller
-                                                            .selectedEquipmentTypeList
-                                                            .remove(type);
-                                                      },
-                                                      child: Container(
-                                                        padding: EdgeInsets.all(
-                                                          6.w,
-                                                        ),
-                                                        decoration: BoxDecoration(
-                                                          color: Colors.red[50],
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                6.r,
-                                                              ),
-                                                        ),
-                                                        child: Icon(
-                                                          Icons.close,
-                                                          size: 18.sp,
-                                                          color: Colors.red,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-
-                                        /// 🔹 Save Button (after selected types)
-                                        if (controller
-                                            .selectedEquipmentTypeList
-                                            .isNotEmpty) ...[
-                                          SizedBox(height: 12.h),
-                                          SizedBox(
-                                            height: 40.h,
-                                            width: double.infinity,
-                                            child: ElevatedButton(
-                                              onPressed: () async {
-                                                await controller
-                                                    .saveEquipment();
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    LightThemeColors
-                                                        .primaryColor,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        10.r,
-                                                      ),
-                                                ),
-                                              ),
-                                              child: TextWidget(
-                                                text: "SAVE",
-                                                style: TextStyle(
-                                                  fontSize: 12.sp,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-
-                                        SizedBox(height: 16.h),
-
-                                        /// 🔹 Equipment List / Empty State (Always shown)
-                                        Builder(
-                                          builder: (_) {
-                                            if (controller
-                                                .equipmentList
-                                                .isEmpty) {
-                                              return SizedBox.shrink();
-                                            }
-
-                                            return Column(
-                                              children: [
-                                                /// Equipment Cards
-                                                ...controller.equipmentList.map(
-                                                  (equipment) => Padding(
-                                                    padding: EdgeInsets.only(
-                                                      bottom: 12.h,
-                                                    ),
-                                                    child: EquipmentCard(
-                                                      equipment: equipment,
-                                                      onEdit: () {
-                                                        _showEditEquipmentBottomSheet(
-                                                          equipment,
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 20.h),
-                              ],
-                            ),
-                          ),
-
-                          //********************************* Tab Seven Files *********************************/
-                          Obx(
-                            () => Column(
-                              children: [
-                                SizedBox(height: 15.sp),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      showSingleFilePickerBottomSheet(context);
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        right: 8.0,
-                                      ),
-                                      child: DottedBorder(
-                                        options: RectDottedBorderOptions(
-                                          dashPattern: [3, 2],
-                                        ),
-                                        child: Icon(
-                                          Icons.add,
-                                          size: 25.sp,
-                                          color: theme.primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      children: [
-                                        controller.fileList.isEmpty &&
-                                                controller
-                                                    .fileUploadList
-                                                    .isEmpty
-                                            ? Center(
-                                                child: TextWidget(
-                                                  text:
-                                                      "No files selected for upload",
-                                                ),
-                                              )
-                                            : ListView.separated(
-                                                itemBuilder: (context, index) {
-                                                  final item = controller
-                                                      .fileUploadList[index];
-                                                  return Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      TextWidget(
-                                                        text: item.time,
-                                                      ),
-                                                      SizedBox(height: 10.h),
-
-                                                      // ✅ Description TextField
-                                                      TextField(
-                                                        controller: item
-                                                            .descriptionController, // make sure each item has a controller
-                                                        decoration: InputDecoration(
-                                                          hintText:
-                                                              "Add description...",
-                                                          border: OutlineInputBorder(
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  8.r,
-                                                                ),
-                                                          ),
-                                                          contentPadding:
-                                                              EdgeInsets.symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 8,
-                                                              ),
-                                                        ),
-                                                      ),
-                                                      SizedBox(height: 10.h),
-
-                                                      SingleChildScrollView(
-                                                        scrollDirection:
-                                                            Axis.horizontal,
-                                                        child: Row(
-                                                          children: [
-                                                            ...item.files.map((
-                                                              file,
-                                                            ) {
-                                                              final fileName =
-                                                                  file.path
-                                                                      .split(
-                                                                        '/',
-                                                                      )
-                                                                      .last;
-                                                              final extension =
-                                                                  fileName
-                                                                      .contains(
-                                                                        '.',
-                                                                      )
-                                                                  ? fileName
-                                                                        .split(
-                                                                          '.',
-                                                                        )
-                                                                        .last
-                                                                        .toLowerCase()
-                                                                  : '';
-                                                              return Container(
-                                                                height: 120,
-                                                                width: 100,
-                                                                margin:
-                                                                    const EdgeInsets.only(
-                                                                      right: 10,
-                                                                    ),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors
-                                                                      .grey[100],
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        8,
-                                                                      ),
-                                                                  border: Border.all(
-                                                                    color: Colors
-                                                                        .grey[300]!,
-                                                                  ),
-                                                                ),
-                                                                child: Column(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .center,
-                                                                  children: [
-                                                                    Icon(
-                                                                      _getFileIconData(
-                                                                            extension,
-                                                                          ) ??
-                                                                          Icons
-                                                                              .insert_drive_file,
-                                                                      size: 40,
-                                                                      color: theme
-                                                                          .primaryColor,
-                                                                    ),
-                                                                    const SizedBox(
-                                                                      height: 5,
-                                                                    ),
-                                                                    Padding(
-                                                                      padding: const EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            4,
-                                                                      ),
-                                                                      child: Text(
-                                                                        fileName,
-                                                                        style: const TextStyle(
-                                                                          fontSize:
-                                                                              10,
-                                                                        ),
-                                                                        maxLines:
-                                                                            2,
-                                                                        overflow:
-                                                                            TextOverflow.ellipsis,
-                                                                        textAlign:
-                                                                            TextAlign.center,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              );
-                                                            }),
-
-                                                            // GestureDetector(
-                                                            //   onTap: () =>
-                                                            //       showFilePickerBottomSheet(
-                                                            //         context,
-                                                            //       ),
-                                                            //   child: Container(
-                                                            //     height: 120,
-                                                            //     width: 100,
-                                                            //     margin:
-                                                            //         const EdgeInsets.only(
-                                                            //           right: 8,
-                                                            //         ),
-                                                            //     decoration: BoxDecoration(
-                                                            //       color: Colors
-                                                            //           .grey[200],
-                                                            //       borderRadius:
-                                                            //           BorderRadius.circular(
-                                                            //             8,
-                                                            //           ),
-                                                            //       border: Border.all(
-                                                            //         color: Colors
-                                                            //             .grey,
-                                                            //       ),
-                                                            //     ),
-                                                            //     child: const Icon(
-                                                            //       Icons.add,
-                                                            //       size: 40,
-                                                            //       color: Colors
-                                                            //           .grey,
-                                                            //     ),
-                                                            //   ),
-                                                            // ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      SizedBox(height: 10.h),
-
-                                                      SizedBox(
-                                                        width: double.infinity,
-                                                        child: ElevatedButton(
-                                                          onPressed: () async {
-                                                            await controller.uploadFiles(
-                                                              tagName: item.time
-                                                                  .split(
-                                                                    " ",
-                                                                  )[0],
-                                                              description: item
-                                                                  .descriptionController
-                                                                  .text,
-                                                            ); // pass description
-                                                          },
-                                                          child: const Text(
-                                                            "Upload Files",
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                                separatorBuilder:
-                                                    (
-                                                      BuildContext context,
-                                                      int index,
-                                                    ) => SizedBox(height: 8.sp),
-                                                itemCount: controller
-                                                    .fileUploadList
-                                                    .length,
-                                                shrinkWrap: true,
-                                                physics:
-                                                    NeverScrollableScrollPhysics(),
-                                              ),
-
-                                        SizedBox(height: 20.h),
-                                        // Display files grouped by upload date
-                                        Obx(() {
-                                          final groupedFiles =
-                                              controller.filesGroupedByDate;
-                                          final sortedDates =
-                                              groupedFiles.keys.toList()
-                                                ..sort();
-
-                                          if (sortedDates.isEmpty) {
-                                            return const SizedBox.shrink();
-                                          }
-
-                                          return ListView.separated(
-                                            itemBuilder: (context, index) {
-                                              final date = sortedDates[index];
-                                              final files = groupedFiles[date]!;
-
-                                              return Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  // Date header
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12.sp,
-                                                          vertical: 8.h,
-                                                        ),
-                                                    child: Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.calendar_today,
-                                                          color:
-                                                              Colors.blueGrey,
-                                                          size: 16.sp,
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        TextWidget(
-                                                          text: date,
-                                                          style: TextStyle(
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            fontSize: 16.sp,
-                                                            color:
-                                                                Colors.black87,
-                                                          ),
-                                                        ),
-                                                        SizedBox(width: 8),
-                                                        Container(
-                                                          padding:
-                                                              EdgeInsets.symmetric(
-                                                                horizontal:
-                                                                    8.sp,
-                                                                vertical: 4.h,
-                                                              ),
-                                                          decoration: BoxDecoration(
-                                                            color: theme
-                                                                .primaryColor
-                                                                .withValues(
-                                                                  alpha: 0.1,
-                                                                ),
-                                                            borderRadius:
-                                                                BorderRadius.circular(
-                                                                  12.r,
-                                                                ),
-                                                          ),
-                                                          child: TextWidget(
-                                                            text:
-                                                                "${files.length} ${files.length == 1 ? 'file' : 'files'}",
-                                                            style: TextStyle(
-                                                              fontSize: 12.sp,
-                                                              color: theme
-                                                                  .primaryColor,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-
-                                                  SizedBox(height: 10.h),
-
-                                                  // Horizontal scrollable files
-                                                  SingleChildScrollView(
-                                                    scrollDirection:
-                                                        Axis.horizontal,
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                          horizontal: 12.sp,
-                                                        ),
-                                                    child: Row(
-                                                      children: files
-                                                          .map(
-                                                            (
-                                                              file,
-                                                            ) => GestureDetector(
-                                                              onTap: () =>
-                                                                  _downloadFile(
-                                                                    file,
-                                                                  ),
-                                                              child: Container(
-                                                                height: 120,
-                                                                width: 100,
-                                                                margin:
-                                                                    EdgeInsets.only(
-                                                                      right:
-                                                                          12.sp,
-                                                                    ),
-                                                                decoration: BoxDecoration(
-                                                                  color: Colors
-                                                                      .grey[100],
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        8,
-                                                                      ),
-                                                                  border: Border.all(
-                                                                    color: Colors
-                                                                        .grey[300]!,
-                                                                    width: 1,
-                                                                  ),
-                                                                ),
-                                                                child: Column(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .center,
-                                                                  children: [
-                                                                    Icon(
-                                                                      _getFileIconData(
-                                                                            file.fileExtension,
-                                                                          ) ??
-                                                                          Icons
-                                                                              .insert_drive_file,
-                                                                      size: 40,
-                                                                      color: theme
-                                                                          .primaryColor,
-                                                                    ),
-                                                                    SizedBox(
-                                                                      height: 5,
-                                                                    ),
-                                                                    Padding(
-                                                                      padding: EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            4,
-                                                                      ),
-                                                                      child: Text(
-                                                                        file.fileName ??
-                                                                            'Unknown',
-                                                                        style: TextStyle(
-                                                                          fontSize:
-                                                                              10,
-                                                                        ),
-                                                                        maxLines:
-                                                                            2,
-                                                                        overflow:
-                                                                            TextOverflow.ellipsis,
-                                                                        textAlign:
-                                                                            TextAlign.center,
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          )
-                                                          .toList(),
-                                                    ),
-                                                  ),
-
-                                                  SizedBox(height: 10.h),
-                                                  Divider(
-                                                    height: 10,
-                                                    thickness: 1,
-                                                    color: Colors
-                                                        .blueGrey
-                                                        .shade200,
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                            separatorBuilder: (_, __) =>
-                                                SizedBox(height: 8.sp),
-                                            itemCount: sortedDates.length,
-                                            shrinkWrap: true,
-                                            physics:
-                                                const NeverScrollableScrollPhysics(),
-                                          );
-                                        }),
-                                        SizedBox(height: 15.sp),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          //********************************* Tab Eight Notes *********************************/
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 8.sp,
-                              horizontal: 12.sp,
-                            ),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Dropdown for selection
-                                  InkWell(
-                                    onTap: () async {
-                                      DialogHelper.showLoading();
-
-                                      // await controller.getTagList(); // COMMENTED
-
-                                      DialogHelper.hideLoading();
-                                      // controller.selectedTagId(-1); // COMMENTED
-                                      controller.note1Controller.clear();
-                                      // controller.selectedTagController.value.clear(); // COMMENTED
-                                      controller.noteId(-1);
-                                      showNotesDialog(
-                                        context,
-                                        controller,
-                                        theme,
-                                        false,
-                                      );
-                                    },
-                                    child: Align(
-                                      alignment: Alignment.centerRight,
-                                      child: DottedBorder(
-                                        options: RectDottedBorderOptions(
-                                          dashPattern: [3, 2],
-                                        ),
-                                        child: Icon(
-                                          Icons.add,
-                                          size: 25.sp,
-                                          color:
-                                              controller.mediaList.length == 1
-                                              ? Colors.grey
-                                              : theme.primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 20.h),
-
-                                  // Notes list
-                                  Obx(() {
-                                    final filteredNoteList = controller.noteList
-                                        .where((note) {
-                                          return note.siteId.toString() ==
-                                                  controller
-                                                      .selectedAppointment
-                                                      .value
-                                                      ?.siteID &&
-                                              note.customerId ==
-                                                  controller
-                                                      .selectedAppointment
-                                                      .value
-                                                      ?.customerID;
-                                        })
-                                        .toList();
-                                    return filteredNoteList.isEmpty
-                                        ? Center(
-                                            child: TextWidget(
-                                              text: "No Notes Found",
-                                            ),
-                                          )
-                                        : ListView.builder(
-                                            shrinkWrap: true,
-                                            physics:
-                                                const NeverScrollableScrollPhysics(),
-                                            itemCount: filteredNoteList.length,
-                                            itemBuilder: (context, index) {
-                                              final note = filteredNoteList
-                                                  .toList()[index];
-
-                                              return GestureDetector(
-                                                onTap:
-                                                    note.userId!.trim() ==
-                                                        controller.userId
-                                                            .toString()
-                                                            .trim()
-                                                    ? () {
-                                                        // controller.selectedTagId(note.tagId); // COMMENTED
-                                                        controller
-                                                                .note1Controller
-                                                                .text =
-                                                            note.description!;
-                                                        // COMMENTED: selectedTagController
-                                                        // controller
-                                                        //     .selectedTagController
-                                                        //     .value
-                                                        //     .text = controller
-                                                        //         .allTagList
-                                                        //         .where(
-                                                        //           (e) =>
-                                                        //               e.id ==
-                                                        //               note.tagId,
-                                                        //         )
-                                                        //         .first
-                                                        //         .name;
-                                                        controller.noteId(
-                                                          note.id,
-                                                        );
-                                                        showNotesDialog(
-                                                          context,
-                                                          controller,
-                                                          theme,
-                                                          true,
-                                                        );
-                                                      }
-                                                    : () {
-                                                        showNoteDetailsDialog(
-                                                          context,
-                                                          note,
-                                                          theme,
-                                                          '', // COMMENTED: controller.allTagList.where((e) => e.id == note.tagId).first.name
-                                                        );
-                                                      },
-                                                child: Padding(
-                                                  padding: EdgeInsets.symmetric(
-                                                    vertical: 4.h,
-                                                  ),
-                                                  child: Container(
-                                                    padding: EdgeInsets.all(
-                                                      12.sp,
-                                                    ),
-                                                    decoration: BoxDecoration(
-                                                      color:
-                                                          note.userId!.trim() ==
-                                                              controller.userId
-                                                                  .toString()
-                                                                  .trim()
-                                                          ? Colors.green[50]
-                                                          : Colors.grey[100],
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8.sp,
-                                                          ),
-                                                    ),
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        // Row with User Name on Left, Date-Time on Right
-                                                        Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            Row(
-                                                              children: [
-                                                                Icon(
-                                                                  Icons.person,
-                                                                  size: 14.sp,
-                                                                  color: Colors
-                                                                      .grey[600],
-                                                                ),
-                                                                SizedBox(
-                                                                  width: 6.w,
-                                                                ),
-                                                                Text(
-                                                                  note.userName ??
-                                                                      "N/A",
-                                                                  style: theme
-                                                                      .textTheme
-                                                                      .bodySmall
-                                                                      ?.copyWith(
-                                                                        fontWeight:
-                                                                            FontWeight.w600,
-                                                                      ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            Text(
-                                                              DateFormat(
-                                                                "dd MMM yyyy",
-                                                              ).format(
-                                                                DateTime.parse(
-                                                                  note.createdAt!,
-                                                                ),
-                                                              ),
-                                                              style: theme
-                                                                  .textTheme
-                                                                  .bodySmall
-                                                                  ?.copyWith(
-                                                                    color: Colors
-                                                                        .grey[600],
-                                                                  ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        SizedBox(height: 8.h),
-
-                                                        // Tag as a chip
-                                                        // Container(
-                                                        //   padding:
-                                                        //       EdgeInsets.symmetric(
-                                                        //         horizontal: 8.w,
-                                                        //         vertical: 4.h,
-                                                        //       ),
-                                                        //   decoration: BoxDecoration(
-                                                        //     color: Colors.blue
-                                                        //         .withValues(
-                                                        //           alpha: 0.1,
-                                                        //         ),
-                                                        //     borderRadius:
-                                                        //         BorderRadius.circular(
-                                                        //           12.sp,
-                                                        //         ),
-                                                        //   ),
-                                                        //   child: Text(
-                                                        //     controller
-                                                        //             .allTagList
-                                                        //             .where(
-                                                        //               (e) =>
-                                                        //                   e.id ==
-                                                        //                   note.tagId,
-                                                        //             )
-                                                        //             .isNotEmpty
-                                                        //         ? controller
-                                                        //               .allTagList
-                                                        //               .where(
-                                                        //                 (e) =>
-                                                        //                     e.id ==
-                                                        //                     note.tagId,
-                                                        //               )
-                                                        //               .first
-                                                        //               .name
-                                                        //         : "N/A",
-                                                        //     style: theme
-                                                        //         .textTheme
-                                                        //         .bodySmall
-                                                        //         ?.copyWith(
-                                                        //           color: Colors
-                                                        //               .blue,
-                                                        //           fontWeight:
-                                                        //               FontWeight
-                                                        //                   .w500,
-                                                        //         ),
-                                                        //   ),
-                                                        // ),
-                                                        SizedBox(height: 8.h),
-
-                                                        // Note Content
-                                                        TextWidget(
-                                                          text:
-                                                              note.description ??
-                                                              "N/A",
-                                                          style: theme
-                                                              .textTheme
-                                                              .bodyMedium,
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          );
-                                  }),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          // Padding(
-                          //   padding: EdgeInsets.symmetric(
-                          //       vertical: 8.sp, horizontal: 12.sp),
-                          //   child: Column(
-                          //     crossAxisAlignment: CrossAxisAlignment.start,
-                          //     children: [
-                          //       //   TextWidget(text:
-                          //       //   "Office Notes:",
-                          //       //   style: theme.textTheme.bodyMedium?.copyWith(
-                          //       //     fontWeight: FontWeight.bold,
-                          //       //   ),
-                          //       // ),
-                          //       //   TextWidget(text: "Do not forget to bring the required tools."),
-                          //       // SizedBox(height: 10.h),
-
-                          //       // // --- 2. History Notes ---
-
-                          //       // Column(
-                          //       //   crossAxisAlignment: CrossAxisAlignment.start,
-                          //       //   children: [
-                          //       //       TextWidget(text:
-                          //       //       "Previous Notes:",
-                          //       //       style: theme.textTheme.bodyMedium?.copyWith(
-                          //       //         fontWeight: FontWeight.bold,
-                          //       //       ),
-                          //       //     ),
-                          //       //     ...controller.historyNotes.map(
-                          //       //       (note) => Padding(
-                          //       //         padding: EdgeInsets.symmetric(vertical: 4.h),
-                          //       //         child:   TextWidget(text:
-                          //       //           "${"07/09/2025"} • $note",
-                          //       //           style: theme.textTheme.bodySmall,
-                          //       //         ),
-                          //       //       ),
-                          //       //     ),
-                          //       //     SizedBox(height: 10.h),
-                          //       //   ],
-                          //       // ),
-                          //       TextWidget(
-                          //         text: "Notes",
-                          //         style: theme.textTheme.bodyLarge?.copyWith(
-                          //           color: LightThemeColors.hintTextColor,
-                          //           fontSize: 10.sp,
-                          //           fontWeight: FontWeight.w500,
-                          //         ),
-                          //         textAlign: TextAlign.start,
-                          //       ),
-                          //       Padding(
-                          //         padding: const EdgeInsets.all(8.0),
-                          //         child: GeneralTextField(
-                          //           maxLine: 4,
-                          //           hint: "Add a note here..",
-                          //           theme: theme,
-                          //           textEditingController:
-                          //               controller.noteController,
-                          //           onChanged: (v) {
-                          //             controller.isTyping(true);
-                          //             controller.noteText(v);
-                          //           },
-                          //           onEditingComplete: () {
-                          //             controller.isTyping(false);
-                          //           },
-                          //         ),
-                          //       ),
-                          //       SizedBox(
-                          //         height: 20.h,
-                          //       ),
-                          //       SizedBox(
-                          //         width: double.infinity,
-                          //         height: 48.sp,
-                          //         child: PrimaryButton(
-                          //             title: "Update",
-                          //             onPressed: () async {
-                          //               await controller.updateAppointment();
-                          //             },
-                          //             inactive: false),
-                          //       ),
-                          //     ],
-                          //   ),
-                          // ),
-                        ],
+                    const SizedBox(height: 2),
+                    Text(
+                      displayDate,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF8E8E93),
                       ),
                     ),
                   ],
                 ),
               ),
-      ),
-    );
-  }
+            ],
+          ),
+          const SizedBox(height: 16),
 
-  /// Save all custom fields to the server
-  // Future<void> _saveCustomFields() async {
-  //   try {
-  //     // Get the appointment ID
-  //     final appointmentId = controller.selectedAppointment.value?.apptID;
-  //     if (appointmentId == null) {
-  //       MySnackBar.showErrorToast(
-  //         message: "Appointment ID not found",
-  //       );
-  //       return;
-  //     }
-
-  //     // Collect all custom field values as array of objects
-  //     // Format: [{"type": "FieldName", "value1": "...", "value2": "..."}]
-  //     final List<Map<String, dynamic>> fieldsArray = [];
-  //     for (var field in customFieldsController.selectedCustomFields) {
-  //       final value = field.getFieldValue();
-  //       if (value != null && value.isNotEmpty) {
-  //         fieldsArray.add({
-  //           "type": field.fieldName,
-  //           "value1": value,
-  //           "value2": "", // Can be used for additional values if needed
-  //         });
-  //       }
-  //     }
-
-  //     // Check if there are any fields to save
-  //     if (fieldsArray.isEmpty) {
-  //       MySnackBar.showInfoToast(
-  //         message: "Please fill in at least one custom field",
-  //       );
-  //       return;
-  //     }
-
-  //     // Convert to JSON string
-  //     final fieldsValue = jsonEncode(fieldsArray);
-
-  //     log("📤 Saving custom fields for appointment: $appointmentId");
-  //     log("📤 Fields: $fieldsValue");
-
-  //     // Call the API
-  //     await customFieldsController.saveCustomFieldToServer(
-  //       appointmentId: appointmentId,
-  //       fieldsValue: fieldsValue,
-  //     );
-
-  //     // Success is handled by the controller (shows toast)
-  //   } catch (e) {
-  //     log("❌ Error saving custom fields: $e");
-  //     MySnackBar.showErrorToast(
-  //       message: "Failed to save custom fields",
-  //     );
-  //   }
-  // }
-
-  /// Show equipment type filter bottom sheet
-  void _showEquipmentTypeFilterBottomSheet() {
-    final theme = Theme.of(context);
-    Get.bottomSheet(
-      Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle bar
-            Container(
-              margin: EdgeInsets.symmetric(vertical: 12.h),
-              width: 40.w,
-              height: 4.h,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2.r),
-              ),
-            ),
-            // Header
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Select Equipment Types',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
+          // Status Badges Row
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => showDialogStatusChange(context, controller),
+                  child: _buildCompactStatusBadge(
+                    controller
+                            .settingController
+                            .selectedAppointmentsStatus
+                            .value
+                            ?.statusName ??
+                        "",
+                    _getStatusColor(
+                      controller
+                          .settingController
+                          .selectedAppointmentsStatus
+                          .value
+                          ?.statusName,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Get.back(),
-                  ),
-                ],
+                ),
               ),
-            ),
-            Divider(height: 1.h, color: Colors.grey[200]),
-            // Equipment Type List
-            ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: Get.height * 0.4),
-              child: Obx(
-                () => ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: controller.equipmentTypeList.length,
-                  itemBuilder: (context, index) {
-                    final type = controller.equipmentTypeList[index];
-                    // Check if this type is already selected
-                    final isSelected = controller.selectedEquipmentTypeList.any(
-                      (e) => e.equipmentTypeId == type.equipmentTypeId,
-                    );
-                    return Card(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: 16.w,
-                        vertical: 6.h,
-                      ),
-                      elevation: isSelected ? 4 : 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        side: BorderSide(
-                          color: isSelected
-                              ? theme.primaryColor
-                              : Colors.grey[200]!,
-                          width: isSelected ? 2 : 1,
+              SizedBox(width: 8.w),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => showDialogTicketStatus(context, controller),
+                  child: _buildCompactStatusBadge(
+                    'Ticket: ${controller.settingController.selectedTicket.value?.statusName ?? "N/A"}',
+                    _getTicketColor(
+                      controller
+                          .settingController
+                          .selectedTicket
+                          .value
+                          ?.statusName,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Divider
+          Container(height: 1, color: const Color(0xFFE5E5EA)),
+          const SizedBox(height: 12),
+
+          // Customer row
+          GestureDetector(
+            onTap: () async {
+              controller.showLoading();
+              await controller.customerController.getCustomers();
+              controller.customerController.businessName =
+                  controller.contactName;
+              controller.customerController.title = controller.customerTitle;
+              controller.customerController.address = controller.address;
+              controller.customerController.phoneNumber =
+                  controller.phoneNumber;
+              controller.customerController.mobileNumber =
+                  controller.mobileNumber;
+              controller.customerController.email = controller.email;
+              controller.hideLoading();
+              Get.toNamed(Routes.CUSTOMER_DETAILS);
+            },
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        customerName.isNotEmpty ? customerName : 'N/A',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1C1C1E),
+                          letterSpacing: -0.3,
                         ),
                       ),
-                      color: isSelected
-                          ? theme.primaryColor.withValues(alpha: 0.05)
-                          : Colors.white,
-                      child: InkWell(
-                        onTap: () {
-                          // Toggle: add if not selected, remove if already selected
-                          if (isSelected) {
-                            controller.selectedEquipmentTypeList.removeWhere(
-                              (e) => e.equipmentTypeId == type.equipmentTypeId,
-                            );
-                          } else {
-                            // Add to selected list (no duplicates due to removeWhere check)
-                            controller.selectedEquipmentTypeList.add(type);
-                          }
-                          Get.back(); // Don't close - allow multiple selections
-                        },
-                        borderRadius: BorderRadius.circular(12.r),
-                        child: Padding(
-                          padding: EdgeInsets.all(16.w),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48.w,
-                                height: 48.w,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? theme.primaryColor.withValues(
-                                          alpha: 0.15,
-                                        )
-                                      : Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(12.r),
+                      if (controller.serviceType.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xFF007AFF,
+                              ).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.miscellaneous_services_rounded,
+                                  size: 11,
+                                  color: Color(0xFF007AFF),
                                 ),
-                                child: Icon(
-                                  isSelected
-                                      ? Icons.check_circle
-                                      : Icons.category_outlined,
-                                  color: isSelected
-                                      ? theme.primaryColor
-                                      : Colors.grey[600],
-                                  size: 24.sp,
-                                ),
-                              ),
-                              SizedBox(width: 16.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      type.equipmentTypeDesc,
-                                      style: TextStyle(
-                                        fontSize: 16.sp,
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.w600,
-                                        color: isSelected
-                                            ? theme.primaryColor
-                                            : Colors.black87,
-                                      ),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    controller.serviceType,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF007AFF),
                                     ),
-                                    if (isSelected)
-                                      Text(
-                                        'Selected',
-                                        style: TextStyle(
-                                          fontSize: 12.sp,
-                                          color: theme.primaryColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                  ],
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              if (isSelected)
-                                Icon(
-                                  Icons.check_circle,
-                                  color: theme.primaryColor,
-                                  size: 28.sp,
-                                )
-                              else
-                                Icon(
-                                  Icons.circle_outlined,
-                                  color: Colors.grey[300],
-                                  size: 28.sp,
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, size: 20, color: Color(0xFFC7C7CC)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Divider
+          Container(height: 1, color: const Color(0xFFE5E5EA)),
+          const SizedBox(height: 12),
+
+          // Appointment Info Tiles - 2 columns, 3 rows
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.calendar_today_rounded,
+                  'Request Date',
+                  controller.requestDate,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.play_circle_outline_rounded,
+                  'Start Date',
+                  controller.startDate,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.stop_circle_outlined,
+                  'End Date',
+                  controller.endDate,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.schedule_rounded,
+                  'Time Slot',
+                  controller.timeSlot,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.person_rounded,
+                  'Resource',
+                  controller.selectedAppointment.value?.resource?.name ?? "N/A",
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildCompactInfoTile(
+                  Icons.fingerprint_rounded,
+                  'Appt ID',
+                  controller.selectedAppointment.value?.appoinmentUId
+                          ?.toString() ??
+                      "N/A",
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Divider
+          Container(height: 1, color: const Color(0xFFE5E5EA)),
+          const SizedBox(height: 12),
+
+          // Contact Info Chips
+          Row(
+            children: [
+              Expanded(
+                child: _buildContactChip(
+                  Icons.location_on_rounded,
+                  controller.address,
+                  () async {
+                    try {
+                      await controller.initializeWebController();
+                      if (context.mounted) {
+                        showDialog(
+                          barrierDismissible: true,
+                          context: context,
+                          builder: (BuildContext context) {
+                            return Dialog(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(
+                                          15.r,
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 12.sp,
+                                        ),
+                                        child: Obx(
+                                          () => Stack(
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      12.sp,
+                                                    ),
+                                                child: WebViewWidget(
+                                                  controller:
+                                                      controller.webController!,
+                                                ),
+                                              ),
+                                              if (controller.isLoading.value)
+                                                const Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        color: Colors.blue,
+                                                      ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10.sp),
+                                  SizedBox(
+                                    height: 45.sp,
+                                    width: 120.sp,
+                                    child: PrimaryButton(
+                                      title: "Done",
+                                      onPressed: () => Get.back(),
+                                      inactive: false,
+                                    ),
+                                  ),
+                                  SizedBox(height: 25.sp),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    } catch (e) {
+                      MySnackBar.showErrorToast(message: e.toString());
+                    }
                   },
                 ),
               ),
-            ),
-            SizedBox(height: 8.h),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-    );
-  }
-
-  /// Show add equipment bottom sheet
-
-  /// Show edit equipment bottom sheet
-  void _showEditEquipmentBottomSheet(EquipmentModel equipment) {
-    Get.bottomSheet(
-      EquipmentFormModal(
-        equipment: equipment,
-        equipmentTypes: controller.equipmentTypeList,
-      ),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-    );
-  }
-
-  /// Download/Open file to local storage (Downloads folder)
-  Future<void> _downloadFile(FileModel file) async {
-    // Create file name
-    final fileName =
-        file.fileName ?? 'file_${DateTime.now().millisecondsSinceEpoch}';
-
-    // Add file extension if missing
-    String finalFileName = fileName;
-    if (file.fileExtension != null &&
-        !fileName.endsWith('.${file.fileExtension}')) {
-      finalFileName = '$fileName.${file.fileExtension}';
-    }
-
-    // Get the correct Downloads directory based on platform
-    Directory downloadDir;
-
-    if (Platform.isAndroid) {
-      downloadDir = Directory('/storage/emulated/0/Download');
-    } else if (Platform.isIOS) {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      downloadDir = Directory('${appDocDir.path}/Downloads');
-    } else {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      downloadDir = Directory('${appDocDir.path}/Downloads');
-    }
-
-    // Create directory if it doesn't exist
-    if (!await downloadDir.exists()) {
-      await downloadDir.create(recursive: true);
-    }
-
-    final filePath = '${downloadDir.path}/$finalFileName';
-    final savedFile = File(filePath);
-
-    // Check if file already exists locally
-    if (await savedFile.exists()) {
-      // File already downloaded, open directly
-      await _openFile(filePath, file);
-      return;
-    }
-
-    // File not downloaded yet, show loading and download
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) =>
-          const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      Uint8List? fileBytes;
-
-      // If fileURL exists (network URL), download from URL
-      if (file.fileURL != null && file.fileURL!.isNotEmpty) {
-        try {
-          final response = await Dio().get(
-            file.fileURL!,
-            options: Options(responseType: ResponseType.bytes),
-          );
-          fileBytes = response.data as Uint8List;
-        } catch (e) {
-          if (mounted) Navigator.pop(context);
-          MySnackBar.showErrorToast(
-            message: 'Failed to download file from server',
-          );
-          return;
-        }
-      } else {
-        // Otherwise, use base64 conversion
-        fileBytes = file.bytes;
-
-        // If bytes are null but fileContent exists, decode base64
-        if (fileBytes == null &&
-            file.fileContent != null &&
-            file.fileContent!.isNotEmpty) {
-          try {
-            fileBytes = base64Decode(file.fileContent!);
-          } catch (e) {
-            if (mounted) Navigator.pop(context);
-            MySnackBar.showErrorToast(message: 'Failed to decode file content');
-            return;
-          }
-        }
-      }
-
-      // Check if we have valid bytes
-      if (fileBytes == null) {
-        if (mounted) Navigator.pop(context);
-        MySnackBar.showErrorToast(message: 'File content not available');
-        return;
-      }
-
-      // Write file content
-      await savedFile.writeAsBytes(fileBytes, flush: true);
-      kLog("File saved to: $filePath");
-
-      // Close loading dialog
-      if (mounted) Navigator.pop(context);
-
-      // Open the file after download
-      await _openFile(filePath, file);
-    } catch (e, s) {
-      kLog("Error saving file: $e");
-      kLog(s);
-      // Close loading dialog if still open
-      if (mounted) Navigator.pop(context);
-      MySnackBar.showErrorToast(message: 'Failed to download file: $e');
-    }
-  }
-
-  /// Open file based on its type
-  Future<void> _openFile(String filePath, FileModel file) async {
-    final ext = file.fileExtension?.toLowerCase();
-
-    // For images, show in dialog
-    if (file.isImage) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => Dialog(
-            child: Stack(
-              children: [
-                InteractiveViewer(
-                  child: Image.file(File(filePath), fit: BoxFit.contain),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: _buildContactChip(
+                  Icons.phone_rounded,
+                  controller.mobileNumber.isNotEmpty
+                      ? PhoneDisplayFormatter.format(controller.mobileNumber)
+                      : controller.phoneNumber.isNotEmpty
+                      ? PhoneDisplayFormatter.format(controller.phoneNumber)
+                      : 'N/A',
+                  () async {
+                    try {
+                      await UrlLauncher.phoneCall(
+                        controller.mobileNumber.isNotEmpty
+                            ? controller.mobileNumber
+                            : controller.phoneNumber,
+                      );
+                      if (context.mounted) {
+                        // Phone call initiated successfully
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        MySnackBar.showErrorToast(message: e.toString());
+                      }
+                    }
+                  },
                 ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black54,
-                    ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: _buildContactChip(
+                  Icons.email_rounded,
+                  controller.email.isNotEmpty ? controller.email : 'N/A',
+                  controller.email == ""
+                      ? null
+                      : () async {
+                          try {
+                            await UrlLauncher.email(controller.email);
+                            if (context.mounted) {
+                              // Email launched successfully
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              MySnackBar.showErrorToast(message: e.toString());
+                            }
+                          }
+                        },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabsGrid() {
+    final tabs = [
+      {
+        'label': 'CSL',
+        'icon': Icons.business_rounded,
+        'color': const Color(0xFF5856D6),
+      },
+      {
+        'label': 'Forms',
+        'icon': Icons.description_rounded,
+        'color': const Color(0xFFFF9500),
+      },
+      {
+        'label': 'Est/Inv',
+        'icon': Icons.receipt_long_rounded,
+        'color': const Color(0xFF34C759),
+      },
+      {
+        'label': 'Pictures',
+        'icon': Icons.photo_library_rounded,
+        'color': const Color(0xFFFF2D55),
+      },
+      {
+        'label': 'Equipment',
+        'icon': Icons.handyman_rounded,
+        'color': const Color(0xFFFF9500),
+      },
+      {
+        'label': 'Files',
+        'icon': Icons.folder_rounded,
+        'color': const Color(0xFF5856D6),
+      },
+      {
+        'label': 'Notes',
+        'icon': Icons.note_rounded,
+        'color': const Color(0xFF34C759),
+      },
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 10.w,
+        mainAxisSpacing: 10.h,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: tabs.length,
+      itemBuilder: (context, index) {
+        final tab = tabs[index];
+
+        return GestureDetector(
+          onTap: () {
+            // Navigate to dedicated pages
+            _redirectTab(tab['label'].toString());
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  tab['icon'] as IconData,
+                  size: 22.sp,
+                  color: (tab['color'] as Color),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  tab['label'] as String,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1C1C1E),
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
         );
-      }
-      return;
-    }
+      },
+    );
+  }
 
-    // For videos
-    if (ext == 'mp4' || ext == 'mov' || ext == 'avi' || ext == 'mkv') {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => _VideoDialog(videoPath: filePath),
+  Widget _buildContactChip(IconData icon, String text, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          color: onTap != null ? const Color(0xFFF2F2F7) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 16.sp,
+              color: onTap != null
+                  ? const Color(0xFF007AFF)
+                  : Colors.grey.shade400,
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w500,
+                  color: onTap != null
+                      ? const Color(0xFF1C1C1E)
+                      : Colors.grey.shade400,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactStatusBadge(String label, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          SizedBox(width: 6.w),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: color,
+                letterSpacing: -0.2,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          SizedBox(width: 4.w),
+          Icon(Icons.arrow_drop_down, color: color, size: 18.sp),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactInfoTile(IconData icon, String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(6.r),
+            decoration: BoxDecoration(
+              color: const Color(0xFF007AFF).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, size: 14.sp, color: const Color(0xFF007AFF)),
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF8E8E93),
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  value.isNotEmpty ? value : 'N/A',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1C1C1E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case "installation in progress":
+      case "installation progress":
+        return const Color(0xffE98862);
+      case "scheduled":
+        return const Color(0xff2E888B);
+      case "cancelled":
+        return Colors.red;
+      case "completed":
+        return const Color(0xff0CBC8B);
+      case "pending":
+        return const Color(0xFFFFC107);
+      case "closed":
+        return const Color(0xFF607D8B);
+      case "dispatched":
+        return const Color(0xFF42A5F5);
+      case "in-route":
+      case "in route":
+        return const Color(0xFFFF9800);
+      case "arrived":
+        return const Color(0xFF8BC34A);
+      default:
+        return const Color(0xFF9E9E9E);
+    }
+  }
+
+  Color _getTicketColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case "installation in progress":
+        return const Color(0xffE98862);
+      case "on hold":
+        return const Color.fromARGB(255, 243, 18, 18);
+      case "parts on order":
+        return const Color.fromARGB(255, 21, 234, 242);
+      case "completed":
+        return const Color.fromARGB(255, 11, 197, 145);
+      default:
+        return Colors.red;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // FAB
+  // ─────────────────────────────────────────────────────────────
+  Widget _buildFAB(BuildContext context) {
+    return SizedBox(
+      height: 70.h,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          SizedBox(height: 10.h),
+          SizedBox(height: 10.sp),
+          Container(
+            decoration: BoxDecoration(
+              gradient: WarmOrganicBlueTheme.fabGradient,
+              borderRadius: BorderRadius.circular(
+                WarmOrganicBlueTheme.radiusFull,
+              ),
+              boxShadow: WarmOrganicBlueTheme.elevatedShadow,
+            ),
+            child: FloatingActionButton.extended(
+              onPressed: () => _showSMSBottomSheet(context),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              icon: Icon(Icons.send_rounded, size: 20.sp),
+              label: Text(
+                'Send SMS',
+                style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSMSBottomSheet(BuildContext context) {
+    FocusScope.of(context).unfocus();
+    controller.appointmentDetailsNoteFocusnode.value.unfocus();
+    controller.appointmentDetailsMessageFocusnode.value.unfocus();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(WarmOrganicBlueTheme.radiusXl),
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(20.sp),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Send Message",
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w700,
+                      color: WarmOrganicBlueTheme.deepNavy,
+                    ),
+                  ),
+                  SizedBox(height: 15.sp),
+                  Text(
+                    "Phone",
+                    style: WarmOrganicBlueTheme.bodySmall.copyWith(
+                      color: WarmOrganicBlueTheme.darkSlate,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 4.sp),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.sp,
+                      vertical: 6.sp,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5.r),
+                      color: Colors.grey.shade50,
+                    ),
+                    child: Text(
+                      controller.phoneNumber.isNotEmpty
+                          ? PhoneDisplayFormatter.format(controller.phoneNumber)
+                          : controller.mobileNumber.isNotEmpty
+                          ? PhoneDisplayFormatter.format(
+                              controller.mobileNumber,
+                            )
+                          : "No Phone Number",
+                      style: TextStyle(
+                        color: WarmOrganicBlueTheme.darkSlate,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15.sp,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10.sp),
+                  Text(
+                    'Message',
+                    style: WarmOrganicBlueTheme.bodySmall.copyWith(
+                      color: WarmOrganicBlueTheme.darkSlate,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 4.sp),
+                  TextField(
+                    maxLines: 5,
+                    minLines: 1,
+                    focusNode: controller.appointmentDetailsNoteFocusnode.value,
+                    textInputAction: TextInputAction.newline,
+                    controller: controller.smsController,
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w500,
+                      color: WarmOrganicBlueTheme.darkSlate,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: "Enter message...",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 15.sp),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: SizedBox(
+                          height: 48.sp,
+                          child: OrganicSecondaryButton(
+                            text: "Cancel",
+                            onPressed: () {
+                              controller.smsController.clear();
+                              FocusScope.of(context).unfocus();
+                              Get.back();
+                            },
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 10.sp),
+                      Expanded(
+                        flex: 2,
+                        child: SizedBox(
+                          height: 48.sp,
+                          child: OrganicPrimaryButton(
+                            text: "Send",
+                            onPressed: () async {
+                              FocusScope.of(context).unfocus();
+                              Get.back();
+                              if (controller.mobileNumber.isEmpty &&
+                                  controller.phoneNumber.isEmpty) {
+                                MySnackBar.showErrorToast(
+                                  message:
+                                      "No phone number found for this customer.",
+                                );
+                                return;
+                              }
+                              await 1.delay();
+                              await controller.sendSMS();
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 50.sp),
+                ],
+              ),
+            ),
+          ),
         );
-      }
-      return;
-    }
+      },
+    );
+  }
 
-    // For PDFs and other files, use open_filex
-    final result = await OpenFilex.open(filePath);
-    if (result.type != ResultType.done) {
-      MySnackBar.showErrorToast(
-        message: 'Could not open file: ${result.message}',
-      );
+  // ─────────────────────────────────────────────────────────────
+  // TAB CONTENT SELECTOR
+  // ─────────────────────────────────────────────────────────────
+  void _redirectTab(String tabName) {
+    switch (tabName) {
+      case 'CSL':
+        Get.toNamed(Routes.CUSTOMER_LOCATION);
+        break;
+      case 'Forms':
+        Get.toNamed(Routes.FORMS_TAB);
+        break;
+      case 'Est/Inv':
+        Get.toNamed(Routes.ESTIMATE_TAB);
+        break;
+      case 'Pictures':
+        Get.toNamed(Routes.PICTURES_TAB);
+        break;
+      case 'Equipment':
+        Get.toNamed(Routes.EQUIPMENT_TAB);
+        break;
+      case 'Files':
+        Get.toNamed(Routes.FILES_TAB);
+        break;
+      case 'Notes':
+        Get.toNamed(Routes.NOTES_TAB);
+        break;
     }
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// GLOBAL HELPER FUNCTIONS (Preserved from Original)
+// ─────────────────────────────────────────────────────────────
+
 void showMediaDialog(BuildContext context, String path) {
-  if (_isVideo(path)) {
+  if (path.split('.').last.toLowerCase() == 'mp4' ||
+      path.split('.').last.toLowerCase() == 'mov' ||
+      path.split('.').last.toLowerCase() == 'avi' ||
+      path.split('.').last.toLowerCase() == 'mkv') {
     showDialog(
       context: context,
       builder: (_) => _VideoDialog(videoPath: path),
@@ -6113,7 +1381,7 @@ Future<String?> generateVideoThumbnail(String videoPath) async {
     video: videoPath,
     thumbnailPath: tempDir.path,
     imageFormat: ImageFormat.PNG,
-    maxWidth: 150, // thumbnail width
+    maxWidth: 150,
     quality: 75,
   );
 }
@@ -6126,7 +1394,7 @@ void showNotesDialog(
 ) {
   showDialog(
     context: context,
-    barrierDismissible: false, // Prevent closing by tapping outside
+    barrierDismissible: false,
     builder: (context) {
       return Dialog(
         shape: RoundedRectangleBorder(
@@ -6140,48 +1408,21 @@ void showNotesDialog(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 TextWidget(
                   text: "Add / Update Notes",
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    fontSize: 12.sp,
+                    fontSize: 16.sp,
+                    color: WarmOrganicBlueTheme.deepNavy,
                   ),
                 ),
                 SizedBox(height: 16.h),
-                // notes tag.. COMMENTED
-                // Padding(
-                //   padding: const EdgeInsets.symmetric(horizontal: 16),
-                //   child: GestureDetector(
-                //     onTap: () async {
-                //       controller.getTagList();
-                //       controller.selectedTagController.value.clear();
-                //       controller.selectedTagId(-1);
-                //       Get.toNamed(Routes.TAG_DETAILS);
-                //     },
-                //     child: AbsorbPointer(
-                //       child: TextFormField(
-                //         controller: controller.selectedTagController.value,
-                //         decoration: InputDecoration(
-                //           labelText: 'Select Tag',
-                //           suffixIcon: const Icon(Icons.arrow_drop_down),
-                //           border: OutlineInputBorder(
-                //             borderRadius: BorderRadius.circular(8),
-                //           ),
-                //         ),
-                //       ),
-                //     ),
-                //   ),
-                // ),
-                // SizedBox(height: 16.h),
-
-                // Notes input
                 TextWidget(
                   text: "Notes",
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: LightThemeColors.hintTextColor,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w500,
+                    color: WarmOrganicBlueTheme.darkSlate,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.start,
                 ),
@@ -6200,46 +1441,33 @@ void showNotesDialog(
                       controller.isTyping(true);
                       controller.noteText(v);
                     },
-                    onEditingComplete: () {
-                      controller.isTyping(false);
-                    },
+                    onEditingComplete: () => controller.isTyping(false),
                   ),
                 ),
-
                 SizedBox(height: 20.h),
-
-                // Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Cancel
                     Expanded(
                       child: SizedBox(
                         height: 48.sp,
                         child: PrimaryButton(
                           backgroundColor: Colors.redAccent,
                           title: "Cancel",
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
+                          onPressed: () => Navigator.pop(context),
                           inactive: false,
                         ),
                       ),
                     ),
                     SizedBox(width: 12.w),
-                    // Update
                     Expanded(
                       child: SizedBox(
                         height: 48.sp,
                         child: PrimaryButton(
                           backgroundColor: LightThemeColors.primaryColor,
-                          // COMMENTED: controller.selectedTagId.value != -1
-                          //     ? LightThemeColors.primaryColor
-                          //     : LightThemeColors.buttonDisabledColor,
                           title: isOld ? "Update" : "Save",
                           onPressed: () async {
                             await controller.saveNote(isOld);
-                            // Navigator.pop(context);
                           },
                           inactive: false,
                         ),
@@ -6256,100 +1484,381 @@ void showNotesDialog(
   );
 }
 
-Future<void> openMapWithRoute(String destinationAddress) async {
-  try {
-    // ✅ Get current location
-    Position position = await Geolocator.getCurrentPosition(
-      locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
-    );
-    final origin =
-        '${position.latitude},${position.longitude}'; // current location coordinates
-    final encodedDestination = Uri.encodeComponent(destinationAddress);
-    log("message origin $origin");
-    if (Platform.isIOS) {
-      // Google Maps (if installed)
-      final googleMapsUrl = Uri.parse(
-        'comgooglemaps://?saddr=$origin&daddr=$encodedDestination&directionsmode=driving',
-      );
-      // Apple Maps fallback
-      final appleMapsUrl = Uri.parse(
-        'https://maps.apple.com/?saddr=$origin&daddr=$encodedDestination',
-      );
+void showAccNotesDialog(
+  BuildContext context,
+  NotesController notesController,
+  AppointmentController appointmentController,
+  ThemeData theme,
+) {
+  final TextEditingController noteController = TextEditingController();
 
-      if (await canLaunchUrl(googleMapsUrl)) {
-        await launchUrl(googleMapsUrl);
-      } else if (await canLaunchUrl(appleMapsUrl)) {
-        await launchUrl(appleMapsUrl);
-      } else {
-        throw 'Could not launch maps on iOS';
-      }
-    } else {
-      // ✅ Android or others – open Google Maps web with current location
-      final googleMapsWebUrl = Uri.parse(
-        'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$encodedDestination&travelmode=driving',
-      );
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.sp),
+        ),
+        insetPadding: EdgeInsets.symmetric(horizontal: 16.sp, vertical: 24.sp),
+        child: Padding(
+          padding: EdgeInsets.all(16.sp),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextWidget(
+                  text: "Add Note",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16.sp,
+                    color: WarmOrganicBlueTheme.deepNavy,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                TextWidget(
+                  text: "Description",
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: WarmOrganicBlueTheme.darkSlate,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GeneralTextField(
+                    maxLine: 4,
+                    minLine: 1,
+                    textInputType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    hint: "Add a note here..",
+                    theme: theme,
+                    isEnabled: true,
+                    textEditingController: noteController,
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.sp,
+                        child: PrimaryButton(
+                          backgroundColor: Colors.redAccent,
+                          title: "Cancel",
+                          onPressed: () => Navigator.pop(context),
+                          inactive: false,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48.sp,
+                        child: PrimaryButton(
+                          backgroundColor: LightThemeColors.primaryColor,
+                          title: "Save",
+                          onPressed: () async {
+                            if (noteController.text.trim().isEmpty) {
+                              MySnackBar.showErrorToast(
+                                message: "Please enter a note",
+                              );
+                              return;
+                            }
 
-      if (await canLaunchUrl(googleMapsWebUrl)) {
-        await launchUrl(googleMapsWebUrl, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'Could not launch Google Maps';
-      }
-    }
-  } catch (e) {
-    debugPrint('Error launching map: $e');
-  }
+                            final appointment =
+                                appointmentController.selectedAppointment.value;
+                            if (appointment == null) {
+                              MySnackBar.showErrorToast(
+                                message: "No appointment selected",
+                              );
+                              return;
+                            }
+
+                            final success = await notesController.createNote(
+                              customerId:
+                                  appointment.customerID?.toString() ?? '',
+                              siteId:
+                                  int.tryParse(appointment.siteID ?? '') ?? 0,
+                              description: noteController.text.trim(),
+                              companyId: appointment.companyID,
+                            );
+
+                            if (success) {
+                              Navigator.pop(context);
+                            }
+                          },
+                          inactive: false,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
 }
 
-bool _isVideo(String path) {
-  final ext = path.split('.').last.toLowerCase();
-  return ['mp4', 'mov', 'avi', 'mkv'].contains(ext);
+void showDialogStatusChange(
+  BuildContext context,
+  AppointmentController controller,
+) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(WarmOrganicBlueTheme.radiusXl),
+      ),
+    ),
+    builder: (_) {
+      final tickets = controller.settingController.appointmentsStatus;
+      return Container(
+        padding: EdgeInsets.all(20.r),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(WarmOrganicBlueTheme.radiusXl),
+          ),
+        ),
+        child: Obx(
+          () => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: WarmOrganicBlueTheme.warmSilver,
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16.h),
+              Text('Change Status', style: WarmOrganicBlueTheme.headingMedium),
+              SizedBox(height: 16.h),
+              Wrap(
+                spacing: 10.w,
+                runSpacing: 10.h,
+                children: tickets
+                    .map(
+                      (v) => _buildStatusOption(
+                        v.statusName ?? "N/A",
+                        WarmOrganicBlueTheme.primaryBlue,
+                        () async {
+                          controller.settingController
+                              .selectedAppointmentsStatus(v);
+                          controller.selectedStatusValue(v.statusId!);
+                          await controller.updateAppointment();
+                        },
+                        (controller
+                                    .settingController
+                                    .selectedAppointmentsStatus
+                                    .value
+                                    ?.statusName ??
+                                "") ==
+                            v.statusName,
+                      ),
+                    )
+                    .toList(),
+              ),
+              SizedBox(height: 20.h),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildStatusOption(
+  String label,
+  Color color,
+  VoidCallback onTap,
+  bool isSelected,
+) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusMd),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          if (isSelected) ...[
+            SizedBox(width: 8.w),
+            Icon(
+              Icons.check_circle_outline_outlined,
+              size: 18.sp,
+              color: Colors.greenAccent,
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// INLINE MAP WIDGET
+// ─────────────────────────────────────────────────────────────
+class _InlineMap extends StatefulWidget {
+  final String address;
+
+  const _InlineMap({required this.address});
+
+  @override
+  State<_InlineMap> createState() => _InlineMapState();
+}
+
+class _InlineMapState extends State<_InlineMap> {
+  late final WebViewController _webViewController;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (String url) {
+            setState(() {
+              _isLoading = false;
+            });
+          },
+        ),
+      )
+      ..loadHtmlString('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
+            iframe { width: 100%; height: 100%; border: 0; }
+          </style>
+        </head>
+        <body>
+          <iframe
+            src="https://www.google.com/maps?q=${Uri.encodeComponent(widget.address)}&output=embed"
+            allowfullscreen
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+        </body>
+        </html>
+      ''');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        WebViewWidget(controller: _webViewController),
+        if (_isLoading)
+          Container(
+            color: WarmOrganicBlueTheme.warmSilver,
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+      ],
+    );
+  }
 }
 
 void showDialogTicketStatus(
   BuildContext context,
   AppointmentController controller,
 ) {
-  final tickets = controller.settingController.tickets;
-
-  showDialog(
-    barrierDismissible: true,
+  showModalBottomSheet(
     context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.7),
-    builder: (context) => Dialog(
-      insetPadding: EdgeInsets.all(16.w),
-      backgroundColor: Colors.transparent,
-      child: Material(
-        borderRadius: BorderRadius.circular(12.r),
-
-        color: Colors.white.withValues(
-          alpha: 0.05,
-        ), // Make sure background is NOT fully transparent
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
+    backgroundColor: Colors.transparent,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(WarmOrganicBlueTheme.radiusXl),
+      ),
+    ),
+    builder: (_) {
+      final tickets = controller.settingController.tickets;
+      return Container(
+        padding: EdgeInsets.all(20.r),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(WarmOrganicBlueTheme.radiusXl),
+          ),
+        ),
+        child: Obx(
+          () => Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque, // Ensures touch detection
-                  onTap: () {
-                    Navigator.of(context).pop(); // or Get.back();
-                  },
-                  child: Icon(
-                    Icons.close,
-                    color: Colors.redAccent,
-                    size: 28.sp,
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: WarmOrganicBlueTheme.warmSilver,
+                    borderRadius: BorderRadius.circular(2.r),
                   ),
                 ),
               ),
-              SizedBox(height: 12.h),
-              ..._buildTicketRows(tickets, controller, context),
+              SizedBox(height: 16.h),
+              Text('Change Status', style: WarmOrganicBlueTheme.headingMedium),
+              SizedBox(height: 16.h),
+              Wrap(
+                spacing: 10.w,
+                runSpacing: 10.h,
+                children: tickets
+                    .map(
+                      (v) => _buildStatusOption(
+                        v.statusName ?? "N/A",
+                        WarmOrganicBlueTheme.primaryBlue,
+                        () async {
+                          controller.settingController.selectedTicket(v);
+                          controller.selectedTicketStatusValue(v.statusId!);
+                          await controller.updateAppointment();
+                        },
+                        (controller
+                                    .settingController
+                                    .selectedTicket
+                                    .value
+                                    ?.statusName ??
+                                "") ==
+                            v.statusName,
+                      ),
+                    )
+                    .toList(),
+              ),
+              SizedBox(height: 20.h),
             ],
           ),
         ),
-      ),
-    ),
+      );
+    },
   );
 }
 
@@ -6371,33 +1880,6 @@ void showMediaBottomSheet(BuildContext context, int index) {
           child: Column(
             children: [
               SizedBox(height: 16.h),
-
-              // ============================================
-              // TAG SYSTEM REMOVED (not needed right now)
-              // ============================================
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(horizontal: 16),
-              //   child: GestureDetector(
-              //     onTap: () async {
-              //       appointmentC.getTagList();
-              //       Get.toNamed(Routes.TAG_DETAILS);
-              //     },
-              //     child: AbsorbPointer(
-              //       child: TextFormField(
-              //         controller: appointmentC.selectedTagController.value,
-              //         decoration: InputDecoration(
-              //           labelText: 'Select Tag',
-              //           suffixIcon: const Icon(Icons.arrow_drop_down),
-              //           border: OutlineInputBorder(
-              //             borderRadius: BorderRadius.circular(8),
-              //           ),
-              //         ),
-              //       ),
-              //     ),
-              //   ),
-              // ),
-              // const SizedBox(height: 16),
-              // ============================================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -6406,22 +1888,16 @@ void showMediaBottomSheet(BuildContext context, int index) {
                     title: 'Gallery',
                     onTap: () async {
                       try {
-                        // Tag validation removed
                         final List<XFile?> files = await ImagePicker()
                             .pickMultiImage();
                         if (files.isNotEmpty) {
-                          // Compress images before adding
                           final newImages = <String>[];
                           for (var file in files) {
                             if (file != null) {
-                              try {
-                                final compressedPath = await compressImage(
-                                  file.path,
-                                );
-                                newImages.add(compressedPath);
-                              } catch (e) {
-                                // Skip image if compression fails
-                              }
+                              final compressedPath = await compressImage(
+                                file.path,
+                              );
+                              newImages.add(compressedPath);
                             }
                           }
 
@@ -6464,81 +1940,48 @@ void showMediaBottomSheet(BuildContext context, int index) {
                     icon: Icons.camera_alt,
                     title: 'Photo',
                     onTap: () async {
-                      // Tag validation removed
-                      final XFile? file = await ImagePicker().pickImage(
-                        source: ImageSource.camera,
-                      );
-                      if (file != null) {
-                        // Compress the image first
-                        final compressedPath = await compressImage(file.path);
+                      try {
+                        final XFile? file = await ImagePicker().pickImage(
+                          source: ImageSource.camera,
+                          imageQuality: 85,
+                        );
+                        if (file != null) {
+                          final compressedPath = await compressImage(file.path);
 
-                        if (index != -1) {
-                          appointmentC.mediaList[index].images.add(
-                            compressedPath,
-                          );
-                          appointmentC.mediaList.refresh();
-                        } else {
-                          appointmentC.mediaList.add(
-                            MediaModel(
-                              time: DateFormat(
-                                "MM/dd/yyyy",
-                              ).format(DateTime.now()),
-                              images: [compressedPath],
+                          if (index != -1) {
+                            appointmentC.mediaList[index].images.add(
+                              compressedPath,
+                            );
+                            appointmentC.mediaList.refresh();
+                          } else {
+                            appointmentC.mediaList.add(
+                              MediaModel(
+                                time: DateFormat(
+                                  "MM/dd/yyyy",
+                                ).format(DateTime.now()),
+                                images: [compressedPath],
+                              ),
+                            );
+                          }
+                        }
+
+                        appointmentC.update();
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Error taking photo: Unable to access camera. Please check permissions.',
+                              ),
+                              backgroundColor: Colors.red,
                             ),
                           );
                         }
                       }
 
-                      appointmentC.update();
-
                       Navigator.pop(context);
                     },
                   ),
-                  // _MediaButton(
-                  //   icon: Icons.videocam,
-                  //   title: 'Video',
-                  //   onTap: () async {
-                  //     if (tagController.text.trim().isEmpty && index == -1) {
-                  //       ScaffoldMessenger.of(context).showMaterialBanner(
-                  //         MaterialBanner(
-                  //           content: const Text('Please add a tag first!'),
-                  //           backgroundColor: Colors.red,
-                  //           actions: [
-                  //             TextButton(
-                  //               onPressed: () {
-                  //                 ScaffoldMessenger.of(context)
-                  //                     .hideCurrentMaterialBanner();
-                  //               },
-                  //               child: const Text('OK',
-                  //                   style: TextStyle(color: Colors.white)),
-                  //             ),
-                  //           ],
-                  //         ),
-                  //       );
-                  //       Future.delayed(const Duration(seconds: 2), () {
-                  //         ScaffoldMessenger.of(context)
-                  //             .hideCurrentMaterialBanner();
-                  //       });
-                  //       return;
-                  //     }
-
-                  //     final XFile? file = await ImagePicker()
-                  //         .pickVideo(source: ImageSource.camera);
-                  //     if (file != null) {
-                  //       if (index != -1) {
-                  //         appointmentC.mediaList[index].images.add(file.path);
-                  //       } else {
-                  //         appointmentC.mediaList.add(MediaModel(
-                  //           time:
-                  //               "${tagController.text} (${DateFormat("dd MMM yyyy").format(DateTime.now())})",
-                  //           images: [file.path],
-                  //         ));
-                  //       }
-                  //       appointmentC.update();
-                  //     }
-                  //     Navigator.pop(context);
-                  //   },
-                  // ),
                 ],
               ),
             ],
@@ -6576,548 +2019,187 @@ class _MediaButton extends StatelessWidget {
   }
 }
 
-Color _getTicketColor(String? name) {
-  final status = name?.toLowerCase() ?? "";
-  if (status == "installation in progress") {
-    return const Color(0xffE98862);
-  } else if (status == "on hold") {
-    return const Color.fromARGB(255, 243, 18, 18);
-  } else if (status == "parts on order") {
-    return const Color.fromARGB(255, 21, 234, 242);
-  } else if (status == "completed") {
-    return const Color(0xff0CBC8B);
-  }
-  return Colors.red;
-}
+void showSingleFilePickerBottomSheet(BuildContext context) {
+  final controller = Get.find<AppointmentController>();
+  final fileController = Get.find<FileController>();
 
-List<Widget> _buildTicketRows(
-  List<dynamic> tickets,
-  AppointmentController controller,
-  BuildContext context,
-) {
-  List<Widget> rows = [];
-
-  for (int i = 0; i < tickets.length; i += 3) {
-    final chunk = tickets.skip(i).take(3).toList();
-
-    rows.add(
-      Padding(
-        padding: EdgeInsets.only(bottom: 12.h),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: chunk.map((status) {
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4.w),
-                child: GestureDetector(
-                  onTap: () async {
-                    controller.settingController.selectedTicket(status);
-                    controller.selectedTicketStatusValue(status.statusId!);
-                    await controller.updateAppointment();
-                    Get.back();
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Material(
-                        shape: const CircleBorder(),
-                        color: LightThemeColors.yellowColor.withValues(
-                          alpha: 0.5,
-                        ),
-                        elevation: 6,
-                        child: Padding(
-                          padding: EdgeInsets.all(6.w),
-                          child: CircleAvatar(
-                            radius: 22.r,
-                            backgroundColor: _getTicketColor(status.statusName),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 6.h),
-                      SizedBox(
-                        width: 80.w,
-                        child: TextWidget(
-                          text: status.statusName ?? "",
-                          maxLines: 2,
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13.sp,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  return rows;
-}
-
-void showDialogScheduled(
-  BuildContext context,
-  AppointmentController controller,
-) {
-  showDialog(
-    barrierDismissible: true,
+  showModalBottomSheet(
     context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.7),
-    builder: (context) => Dialog(
-      insetPadding: EdgeInsets.all(16.sp),
-      backgroundColor: Colors.transparent,
-      child: Material(
-        // <-- Ensures proper hit detection
-        borderRadius: BorderRadius.circular(12.r),
-        color: Colors.white.withValues(alpha: 0.05), // Slight opacity
-        child: Padding(
-          padding: EdgeInsets.all(16.sp),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).pop(); // or Get.back()
-                  },
-                  child: Icon(
-                    Icons.close,
-                    color: Colors.redAccent,
-                    size: 32.sp,
-                  ),
-                ),
-              ),
-              SizedBox(height: 12.h),
-              buildStatusGrid(
-                context,
-                controller.settingController,
-                controller,
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-Widget buildStatusGrid(
-  BuildContext context,
-  SettingsController controller,
-  AppointmentController appointmentController,
-) {
-  final rows = <Widget>[];
-
-  for (int i = 0; i < controller.appointmentsStatus.length; i += 3) {
-    final rowItems = controller.appointmentsStatus.skip(i).take(3).toList();
-
-    rows.add(
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: rowItems.map((status) {
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(4.0.sp),
-              child: GestureDetector(
-                onTap: () async {
-                  controller.selectedAppointmentsStatus(status);
-                  appointmentController.selectedStatusValue(status.statusId!);
-                  await appointmentController.updateAppointment();
-                  Get.back();
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Material(
-                      shape: CircleBorder(),
-                      color: LightThemeColors.yellowColor.withValues(
-                        alpha: 0.5,
-                      ),
-                      elevation: 6,
-                      child: Padding(
-                        padding: EdgeInsets.all(6.sp),
-                        child: CircleAvatar(
-                          radius: 20.r,
-                          backgroundColor: getStatusColor(status.statusName!),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 6.h),
-                    SizedBox(
-                      width: 80.w,
-                      child: TextWidget(
-                        text: status.statusName ?? "",
-                        maxLines: 2,
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.white, fontSize: 13.sp),
-                      ),
-                    ),
+    builder: (sheetContext) => Material(
+      child: Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.document_scanner),
+              title: Text("Pick Document"),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await FilePicker.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: [
+                    'pdf',
+                    'doc',
+                    'docx',
+                    'txt',
+                    'xls',
+                    'xlsx',
                   ],
-                ),
-              ),
+                  allowMultiple: false,
+                );
+                if (result != null &&
+                    result.files.isNotEmpty &&
+                    context.mounted) {
+                  final validFiles = await _validateAndFilterFiles([
+                    File(result.files.single.path!),
+                  ], context);
+                  if (validFiles.isNotEmpty) {
+                    // Add files to upload list
+                    controller.fileUploadList.add(
+                      FileUploadItem(
+                        time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
+                        files: validFiles,
+                      ),
+                    );
+                    controller.update();
+                  }
+                }
+              },
             ),
-          );
-        }).toList(),
+            ListTile(
+              leading: Icon(Icons.folder),
+              title: Text("Browse Files"),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await FilePicker.pickFiles(
+                  type: FileType.any,
+                  allowMultiple: false,
+                );
+                if (result != null &&
+                    result.files.isNotEmpty &&
+                    context.mounted) {
+                  final validFiles = await _validateAndFilterFiles([
+                    File(result.files.single.path!),
+                  ], context);
+                  if (validFiles.isNotEmpty) {
+                    // Upload file directly using FileController
+                    final appointment = controller.selectedAppointment.value;
+                    if (appointment != null) {
+                      await fileController.uploadFile(
+                        customerId: appointment.customerID?.toString() ?? '',
+                        siteId: int.tryParse(appointment.siteID ?? '') ?? 0,
+                        file: validFiles.first,
+                        appointmentId: appointment.apptID.toString(),
+                        companyId: appointment.companyID,
+                      );
+                    }
+                  }
+                }
+              },
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  return Column(children: rows);
+    ),
+  );
 }
 
-void showDetailsForms({
-  required BuildContext context,
-  required FormModel data,
-  required FormController formC,
-}) {
-  final descriptionC = TextEditingController(text: data.description);
-  final categoryC = TextEditingController(text: data.category);
-  final titleC = TextEditingController(text: data.templateName);
-  showDialog(
+void showFileBottomSheet(BuildContext context, int index) {
+  final controller = Get.find<AppointmentController>();
+
+  showModalBottomSheet(
     context: context,
-    barrierDismissible: true,
-    builder: (BuildContext context) {
-      return Dialog(
-        insetPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: 0.9.sh, maxWidth: 0.9.sw),
-          child: Padding(
-            padding: EdgeInsets.all(16.w),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Form Details",
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 16.h),
-                  // Template Name
-                  TextField(
-                    controller: titleC,
-                    enabled: false,
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: "Template Name *",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 12.h,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
-                  // Category
-                  TextFormField(
-                    enabled: false,
-                    readOnly: true, // Makes it non-interactive
-                    controller: categoryC, // Display the API value
-                    decoration: InputDecoration(
-                      labelText: "Category",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 12.h,
-                      ),
-                      // Optional: Add a suffix icon to make it look more like a dropdown
-                      suffixIcon: Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    // Optional: Style the text inside
-                    style: TextStyle(fontSize: 14.sp),
-                  ),
-                  SizedBox(height: 12.h),
-                  // Description
-                  TextField(
-                    enabled: false,
-                    readOnly: true,
-                    maxLines: 3, // Makes it non-interactive
-                    controller: descriptionC,
-                    decoration: InputDecoration(
-                      labelText: "Description",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 12.h,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
-                  // Checkboxes
-                  Wrap(
-                    runSpacing: 8.h,
-                    spacing: 12.w,
-                    children: [
-                      CheckboxListTile(
-                        value: data.requireSignature,
-                        onChanged: (v) {},
-                        title: Text(
-                          "Require Signature",
-                          style: TextStyle(fontSize: 14.sp),
-                          overflow: TextOverflow.ellipsis,
+    builder: (sheetContext) => Material(
+      child: Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.document_scanner),
+              title: Text("Pick Document"),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await FilePicker.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: [
+                    'pdf',
+                    'doc',
+                    'docx',
+                    'txt',
+                    'xls',
+                    'xlsx',
+                  ],
+                  allowMultiple: true,
+                );
+                if (result != null &&
+                    result.files.isNotEmpty &&
+                    context.mounted) {
+                  final validFiles = await _validateAndFilterFiles(
+                    result.files.map((e) => File(e.path!)).toList(),
+                    context,
+                  );
+                  if (validFiles.isNotEmpty) {
+                    if (index != -1) {
+                      controller.fileUploadList[index].files.addAll(validFiles);
+                    } else {
+                      controller.fileUploadList.add(
+                        FileUploadItem(
+                          time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
+                          files: validFiles,
                         ),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: Colors.blue,
-                        checkColor: Colors.white,
-                      ),
-                      CheckboxListTile(
-                        value: data.requireTip,
-                        onChanged: (v) {},
-                        title: Text(
-                          "Enable Tip Capture",
-                          style: TextStyle(fontSize: 14.sp),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: Colors.blue,
-                        checkColor: Colors.white,
-                      ),
-                      CheckboxListTile(
-                        value: data.isAutoAssignEnabled,
-                        onChanged: (v) {},
-                        title: Text(
-                          "Auto-assign to appointment types",
-                          style: TextStyle(fontSize: 14.sp),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: Colors.blue,
-                        checkColor: Colors.white,
-                      ),
-                      CheckboxListTile(
-                        value: data.isActive,
-                        onChanged: (v) {},
-                        title: Text(
-                          "Active",
-                          style: TextStyle(fontSize: 14.sp),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: Colors.blue,
-                        checkColor: Colors.white,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20.h),
-                  // Buttons
-                  Wrap(
-                    alignment: WrapAlignment.end,
-                    spacing: 12.w,
-                    children: [
-                      // TextButton(
-                      //   onPressed: () => Navigator.pop(context),
-                      //   child: Text("Cancel",
-                      //       style: TextStyle(fontSize: 14.sp)),
-                      // ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Get.back();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 20.w,
-                            vertical: 12.h,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                        ),
-                        child: Text("Close", style: TextStyle(fontSize: 14.sp)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                      );
+                    }
+                    controller.update();
+                  }
+                }
+              },
             ),
-          ),
-        ),
-      );
-    },
-  );
-}
-
-Widget _buildHeaderCell(String title) {
-  return Expanded(
-    child: Padding(
-      padding: EdgeInsets.all(8.w),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13.sp,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
+            ListTile(
+              leading: Icon(Icons.folder),
+              title: Text("Browse Files"),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await FilePicker.pickFiles(
+                  type: FileType.any,
+                  allowMultiple: true,
+                );
+                if (result != null &&
+                    result.files.isNotEmpty &&
+                    context.mounted) {
+                  final validFiles = await _validateAndFilterFiles(
+                    result.files.map((e) => File(e.path!)).toList(),
+                    context,
+                  );
+                  if (validFiles.isNotEmpty) {
+                    if (index != -1) {
+                      controller.fileUploadList[index].files.addAll(validFiles);
+                    } else {
+                      controller.fileUploadList.add(
+                        FileUploadItem(
+                          time: DateFormat("MM/dd/yyyy").format(DateTime.now()),
+                          files: validFiles,
+                        ),
+                      );
+                    }
+                    controller.update();
+                  }
+                }
+              },
+            ),
+          ],
         ),
       ),
     ),
   );
 }
 
-Widget _buildRow(
-  String field,
-  String value, {
-  Color? valueColor,
-  IconData? icon,
-}) {
-  return Container(
-    margin: EdgeInsets.only(bottom: 12.h),
-    padding: EdgeInsets.all(12.w),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12.r),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withValues(alpha: 0.15),
-          blurRadius: 6,
-          offset: Offset(0, 3),
-        ),
-      ],
-      border: Border.all(color: Colors.grey.shade200),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Icon Section
-        if (icon != null) ...[
-          Container(
-            padding: EdgeInsets.all(8.w),
-            decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8.r),
-            ),
-            child: Icon(icon, size: 20.sp, color: Colors.blue),
-          ),
-          SizedBox(width: 12.w),
-        ],
-
-        // Text Section
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                field,
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
-                ),
-              ),
-              SizedBox(height: 4.h),
-              Text(
-                value.isNotEmpty ? value : "-",
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w400,
-                  color: valueColor ?? Colors.black,
-                ),
-                maxLines: null,
-                softWrap: true,
-                overflow: TextOverflow.visible,
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Color getStatusColor(String statusName) {
-  switch (statusName) {
-    // 🔸 Existing ones (unchanged)
-    case "Installation In Progress":
-    case "Installation in Progress":
-      return const Color(0xffE98862);
-    case "Scheduled":
-      return const Color(0xff2E888B);
-    case "Cancelled":
-      return Colors.red;
-    case "Completed":
-      return const Color(0xff0CBC8B);
-
-    // 🔹 New ones (added)
-    case "Pending":
-      return const Color(0xFFFFC107); // Amber
-    case "Closed":
-      return const Color(0xFF607D8B); // Blue Grey
-    case "Dispatched":
-      return const Color(0xFF42A5F5); // Light Blue
-    case "FA-ID Sent":
-      return const Color(0xFF9575CD); // Purple
-    case "In-Route":
-      return const Color(0xFFFF9800); // Orange
-    case "Arrived":
-      return const Color(0xFF8BC34A); // Light Green
-    case "On-Hold":
-      return const Color(0xFFFF7043); // Deep Orange
-
-    // 🔸 Default (fallback)
-    default:
-      return const Color(0xFF9E9E9E); // Grey
-  }
-}
-
-Future<String> compressImage(String filePath) async {
-  final compressedFile = await FlutterImageCompress.compressWithFile(
-    filePath,
-    quality: 40, // Adjust quality (0-100), lower = smaller size
-    minWidth: 800, // Adjust minimum width
-    minHeight: 800, // Adjust minimum height
-    format: CompressFormat.jpeg, // Use JPEG to reduce size
-  );
-
-  if (compressedFile == null) return filePath;
-
-  // Save compressed image to a temp file
-  final tempDir = Directory.systemTemp;
-  final tempFile = await File(
-    '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg',
-  ).writeAsBytes(compressedFile);
-
-  return tempFile.path;
-}
-
-/// Validate and filter files by size (max 10MB per file)
-/// Returns only valid files and shows warnings for skipped ones
 Future<List<File>> _validateAndFilterFiles(
   List<File> files,
   BuildContext context,
 ) async {
-  const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+  const maxSizeInBytes = 10 * 1024 * 1024;
   final validFiles = <File>[];
   final skippedFiles = <String>[];
 
@@ -7135,7 +2217,6 @@ Future<List<File>> _validateAndFilterFiles(
     }
   }
 
-  // Show warning if any files were skipped
   if (skippedFiles.isNotEmpty && context.mounted) {
     MySnackBar.showErrorToast(
       message:
@@ -7146,1290 +2227,63 @@ Future<List<File>> _validateAndFilterFiles(
   return validFiles;
 }
 
-// import 'package:dropdown_button2/dropdown_button2.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:get/get.dart';
-// import 'package:xinator_fsm_pro/app/components/global-widgets/general_text_field.dart';
-// import 'package:xinator_fsm_pro/app/components/global-widgets/my_buttons.dart';
+Future<String> compressImage(String filePath) async {
+  final compressedFile = await FlutterImageCompress.compressWithFile(
+    filePath,
+    quality: 40,
+    minWidth: 800,
+    minHeight: 800,
+    format: CompressFormat.jpeg,
+  );
 
-// import '../../../../config/theme/light_theme_colors.dart';
-// import '../../../../utils/date_converter.dart';
-// import '../../../../utils/url_launcher.dart';
-// import '../../../components/global-widgets/main_divider.dart';
-// import '../../../components/global-widgets/splash_container.dart';
-// import '../../../routes/app_pages.dart';
-// import '../../item/models/item_list_model.dart';
-// import '../controllers/appointment_controller.dart';
+  if (compressedFile == null) return filePath;
 
-// class AppointmentDetailsView extends GetView<AppointmentController> {
-//   const AppointmentDetailsView({super.key});
-//   @override
-//   Widget build(BuildContext context) {
-//     var theme = Theme.of(context);
-//     return Scaffold(
-//       appBar: AppBar(
-//         title:   TextWidget(text: "Appointment Details"),
-//         centerTitle: false,
-//       ),
-//       body: Padding(
-//         padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Expanded(
-//               child: SingleChildScrollView(
-//                 physics: BouncingScrollPhysics(),
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     Card(
-//                       elevation: 0,
-//                       color: Colors.white,
-//                       child: Padding(
-//                         padding: const EdgeInsets.all(10.0),
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             Row(
-//                               crossAxisAlignment: CrossAxisAlignment.center,
-//                               mainAxisAlignment: MainAxisAlignment.center,
-//                               children: [
-//                                 Expanded(
-//                                   child: InkWell(
-//                                     onTap: () {
-//                                       showDialog(
-//                                         barrierDismissible: true,
-//                                         context: context,
-//                                         barrierColor:
-//                                             Colors.black.withValues(alpha: 0.6),
-//                                         builder: (context) => Dialog(
-//                                           backgroundColor: Colors.transparent,
-//                                           child: Center(
-//                                             child: GridView.builder(
-//                                               shrinkWrap: true,
-//                                               itemCount: controller
-//                                                   .settingController
-//                                                   .appointmentsStatus
-//                                                   .length,
-//                                               gridDelegate:
-//                                                   const SliverGridDelegateWithFixedCrossAxisCount(
-//                                                 childAspectRatio: .8,
-//                                                 crossAxisCount: 3,
-//                                                 crossAxisSpacing: 8,
-//                                                 mainAxisSpacing: 8,
-//                                               ),
-//                                               itemBuilder: (context, index) {
-//                                                 final status = controller
-//                                                     .settingController
-//                                                     .appointmentsStatus[index];
-//                                                 return GestureDetector(
-//                                                   onTap: () {
-//                                                     controller.settingController
-//                                                         .selectedAppointmentsStatus(
-//                                                             status);
-//                                                     Navigator.pop(context);
-//                                                   },
-//                                                   child: Column(
-//                                                     mainAxisSize:
-//                                                         MainAxisSize.min,
-//                                                     children: [
-//                                                       CircleAvatar(
-//                                                         radius: 30,
-//                                                         backgroundColor: Colors
-//                                                             .green.shade100,
-//                                                         child: Icon(
-//                                                           status.statusName ==
-//                                                                   "Pending"
-//                                                               ? Icons
-//                                                                   .pending_actions
-//                                                               : status.statusName ==
-//                                                                       "Scheduled"
-//                                                                   ? Icons.event
-//                                                                   : status.statusName ==
-//                                                                           "Cancelled"
-//                                                                       ? Icons
-//                                                                           .cancel
-//                                                                       : status.statusName ==
-//                                                                               "Closed"
-//                                                                           ? Icons
-//                                                                               .close
-//                                                                           : status.statusName == "Installation In Progress"
-//                                                                               ? Icons.play_arrow
-//                                                                               : Icons.check_circle,
-//                                                           size: 28,
-//                                                           color: Colors
-//                                                               .green.shade700,
-//                                                         ),
-//                                                       ),
-//                                                       const SizedBox(height: 6),
-//                                                       SizedBox(
-//                                                         width: 80,
-//                                                         child:   TextWidget(text:
-//                                                           status.statusName ??
-//                                                               "",
-//                                                           maxLines: 2,
-//                                                           textAlign:
-//                                                               TextAlign.center,
-//                                                           overflow: TextOverflow
-//                                                               .ellipsis,
-//                                                           style:
-//                                                               const TextStyle(
-//                                                                   color: Colors
-//                                                                       .white,
-//                                                                   fontSize: 13),
-//                                                         ),
-//                                                       ),
-//                                                     ],
-//                                                   ),
-//                                                 );
-//                                               },
-//                                             ),
-//                                           ),
-//                                         ),
-//                                       );
-//                                     },
-//                                     child: Obx(
-//                                       () => Column(
-//                                         children: [
-//                                           Material(
-//                                             shape: const CircleBorder(),
-//                                             color:
-//                                                 LightThemeColors.primaryColor,
-//                                             elevation: 10,
-//                                             child: Padding(
-//                                               padding: EdgeInsets.all(20),
-//                                               child: Icon(
-//                                                   controller
-//                                                               .settingController
-//                                                               .selectedAppointmentsStatus
-//                                                               .value
-//                                                               ?.statusName ==
-//                                                           "Pending"
-//                                                       ? Icons.pending_actions
-//                                                       : controller
-//                                                                   .settingController
-//                                                                   .selectedAppointmentsStatus
-//                                                                   .value
-//                                                                   ?.statusName ==
-//                                                               "Scheduled"
-//                                                           ? Icons.event
-//                                                           : controller
-//                                                                       .settingController
-//                                                                       .selectedAppointmentsStatus
-//                                                                       .value
-//                                                                       ?.statusName ==
-//                                                                   "Cancelled"
-//                                                               ? Icons.cancel
-//                                                               : controller
-//                                                                           .settingController
-//                                                                           .selectedAppointmentsStatus
-//                                                                           .value
-//                                                                           ?.statusName ==
-//                                                                       "Closed"
-//                                                                   ? Icons.close
-//                                                                   : controller
-//                                                                               .settingController
-//                                                                               .selectedAppointmentsStatus
-//                                                                               .value
-//                                                                               ?.statusName ==
-//                                                                           "Installation In Progress"
-//                                                                       ? Icons
-//                                                                           .play_arrow
-//                                                                       : Icons
-//                                                                           .check_circle,
-//                                                   color: Colors.white,
-//                                                   size: 28.sp),
-//                                             ),
-//                                           ),
-//                                           SizedBox(
-//                                             height: 10.h,
-//                                           ),
-//                                             TextWidget(text:
-//                                             controller
-//                                                     .settingController
-//                                                     .selectedAppointmentsStatus
-//                                                     .value
-//                                                     ?.statusName ??
-//                                                 "",
-//                                             maxLines: 2,
-//                                             textAlign: TextAlign.center,
-//                                             overflow: TextOverflow.ellipsis,
-//                                             style: const TextStyle(
-//                                                 fontWeight: FontWeight.bold,
-//                                                 color: Colors.black,
-//                                                 fontSize: 13),
-//                                           )
-//                                         ],
-//                                       ),
-//                                     ),
-//                                   ),
-//                                 ),
-//                                 Expanded(
-//                                     child: Column(
-//                                   mainAxisAlignment: MainAxisAlignment.start,
-//                                   children: [
-//                                       TextWidget(text:
-//                                       controller.contactName,
-//                                       style:
-//                                           theme.textTheme.bodyLarge?.copyWith(
-//                                         fontSize: 16.sp,
-//                                         fontWeight: FontWeight.bold,
-//                                         color: theme.primaryColor,
-//                                       ),
-//                                     )
-//                                   ],
-//                                 ))
-//                               ],
-//                             ),
-//                             ListTile(
-//                               onTap: () async {
-//                                 controller.showLoading();
-//                                 await controller.customerController
-//                                     .getCustomers();
-//                                 controller.customerController.businessName =
-//                                     controller.contactName;
-//                                 controller.customerController.title =
-//                                     controller.customerTitle;
-//                                 controller.customerController.address =
-//                                     controller.address;
-//                                 controller.customerController.phoneNumber =
-//                                     controller.phoneNumber;
-//                                 controller.customerController.mobileNumber =
-//                                     controller.mobileNumber;
-//                                 controller.customerController.email =
-//                                     controller.email;
+  final tempDir = Directory.systemTemp;
+  final tempFile = await File(
+    '${tempDir.path}/${DateTime.now().millisecondsSinceEpoch}.jpg',
+  ).writeAsBytes(compressedFile);
 
-//                                 controller.hideLoading();
-
-//                                 Get.toNamed(Routes.CUSTOMER_DETAILS);
-//                               },
-//                               title:   TextWidget(text:
-//                                 "Contact Name",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing:   TextWidget(text:
-//                                 controller.contactName,
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                   color: theme.primaryColor,
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "Address",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing: SizedBox(
-//                                 width: 200.sp,
-//                                 child:   TextWidget(text:
-//                                   controller.address,
-//                                   style: theme.textTheme.bodyLarge?.copyWith(
-//                                     fontSize: 14.sp,
-//                                     fontWeight: FontWeight.w500,
-//                                   ),
-//                                   textAlign: TextAlign.end,
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "Request Date",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing:   TextWidget(text:
-//                                 controller.requestDate,
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "Start Date",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing:   TextWidget(text:
-//                                 controller.startDate,
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "End Date",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing:   TextWidget(text:
-//                                 controller.endDate,
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "Time Slot",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing:   TextWidget(text:
-//                                 controller.timeSlot,
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "Service Type",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing:   TextWidget(text:
-//                                 controller.serviceType,
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "Mobile",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing: InkWell(
-//                                 onTap: () async {
-//                                   await UrlLauncher.phoneCall(
-//                                       controller.mobileNumber);
-//                                 },
-//                                 child:   TextWidget(text:
-//                                   controller.mobileNumber,
-//                                   style: theme.textTheme.bodyLarge?.copyWith(
-//                                     fontSize: 14.sp,
-//                                     fontWeight: FontWeight.w500,
-//                                   ),
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "Phone",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing: InkWell(
-//                                 onTap: () async {
-//                                   await UrlLauncher.phoneCall(
-//                                       controller.phoneNumber);
-//                                 },
-//                                 child:   TextWidget(text:
-//                                   controller.phoneNumber,
-//                                   style: theme.textTheme.bodyLarge?.copyWith(
-//                                     fontSize: 14.sp,
-//                                     fontWeight: FontWeight.w500,
-//                                   ),
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "Email",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing: SizedBox(
-//                                 width: 200.sp,
-//                                 child: InkWell(
-//                                   onTap: () async {
-//                                     await UrlLauncher.email(controller.email);
-//                                   },
-//                                   child:   TextWidget(text:
-//                                     controller.email,
-//                                     style: theme.textTheme.bodyLarge?.copyWith(
-//                                       fontSize: 14.sp,
-//                                       fontWeight: FontWeight.w500,
-//                                       color: theme.primaryColor,
-//                                     ),
-//                                     textAlign: TextAlign.end,
-//                                   ),
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             ListTile(
-//                               title:   TextWidget(text:
-//                                 "Resource",
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   color: LightThemeColors.hintTextColor,
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                               trailing:   TextWidget(text:
-//                                 controller.resource,
-//                                 style: theme.textTheme.bodyLarge?.copyWith(
-//                                   fontSize: 14.sp,
-//                                   fontWeight: FontWeight.w500,
-//                                 ),
-//                               ),
-//                             ),
-//                             MainDivider(),
-//                             Obx(() => Column(
-//                                   children: [
-//                                     Padding(
-//                                       padding: EdgeInsets.symmetric(
-//                                           horizontal: 12.sp),
-//                                       child: Column(
-//                                         crossAxisAlignment:
-//                                             CrossAxisAlignment.start,
-//                                         children: [
-//                                             TextWidget(text:
-//                                             "Status",
-//                                             style: theme.textTheme.bodyLarge
-//                                                 ?.copyWith(
-//                                               color: LightThemeColors
-//                                                   .hintTextColor,
-//                                               fontSize: 14.sp,
-//                                               fontWeight: FontWeight.w500,
-//                                             ),
-//                                           ),
-//                                           SizedBox(height: 8.sp),
-//                                           Container(
-//                                             height: 40.sp,
-//                                             width: double.infinity,
-//                                             padding: EdgeInsets.symmetric(
-//                                                 horizontal: 10.sp),
-//                                             decoration: BoxDecoration(
-//                                               color: LightThemeColors.fillColor,
-//                                               borderRadius:
-//                                                   BorderRadius.circular(10.r),
-//                                               border: Border.all(
-//                                                 width: 1,
-//                                                 color: LightThemeColors
-//                                                     .hintTextColor,
-//                                               ),
-//                                             ),
-//                                             child: DropdownButtonHideUnderline(
-//                                               child: DropdownButton2<int>(
-//                                                 isExpanded: true,
-//                                                 dropdownStyleData:
-//                                                     DropdownStyleData(
-//                                                         maxHeight: 245.sp,
-//                                                         width: 220.sp,
-//                                                         padding:
-//                                                             EdgeInsets.zero,
-//                                                         decoration:
-//                                                             BoxDecoration(
-//                                                           borderRadius:
-//                                                               BorderRadius
-//                                                                   .circular(
-//                                                                       8.r),
-//                                                           color:
-//                                                               LightThemeColors
-//                                                                   .fillColor,
-//                                                           boxShadow: [
-//                                                             BoxShadow(
-//                                                               color: Colors
-//                                                                   .black
-//                                                                   .withValues(
-//                                                                       alpha:
-//                                                                           0.2),
-//                                                               offset:
-//                                                                   const Offset(
-//                                                                       0, 4),
-//                                                               blurRadius: 10,
-//                                                               spreadRadius: 0,
-//                                                             ),
-//                                                           ],
-//                                                         )),
-//                                                 value: controller
-//                                                             .selectedStatusValue
-//                                                             .value ==
-//                                                         0
-//                                                     ? null
-//                                                     : controller
-//                                                         .selectedStatusValue
-//                                                         .value,
-//                                                 hint:   TextWidget(text:
-//                                                   'Select an option',
-//                                                   style: TextStyle(
-//                                                     color: LightThemeColors
-//                                                         .hintTextColor,
-//                                                     fontWeight: FontWeight.w400,
-//                                                     fontSize: 12.sp,
-//                                                   ),
-//                                                 ),
-//                                                 style:
-//                                                     theme.textTheme.bodyMedium,
-//                                                 items: controller
-//                                                     .settingController
-//                                                     .appointmentsStatus
-//                                                     .map((e) {
-//                                                   return DropdownMenuItem<int>(
-//                                                     value: e.statusId,
-//                                                     child:   TextWidget(text:
-//                                                       e.statusName ?? "",
-//                                                       style: theme
-//                                                           .textTheme.bodyMedium
-//                                                           ?.copyWith(
-//                                                         fontSize: 14.sp,
-//                                                         fontWeight:
-//                                                             FontWeight.w500,
-//                                                       ),
-//                                                     ),
-//                                                   );
-//                                                 }).toList(),
-//                                                 onChanged: (int? newValue) {
-//                                                   if (newValue == 4) {
-//                                                     showAdaptiveDialog(
-//                                                         context: context,
-//                                                         builder: (context) {
-//                                                           return AlertDialog(
-//                                                             title: const   TextWidget(text:
-//                                                               'Warning!',
-//                                                               style: TextStyle(
-//                                                                 color:
-//                                                                     Colors.red,
-//                                                               ),
-//                                                             ),
-//                                                             content: const   TextWidget(text:
-//                                                                 'Choosing close will remove the appointment from the list.Are you sure you want to close?'),
-//                                                             actions: [
-//                                                               TextButton(
-//                                                                 onPressed: () {
-//                                                                   Get.back();
-//                                                                 },
-//                                                                 child: const   TextWidget(text:
-//                                                                     'Cancel'),
-//                                                               ),
-//                                                               TextButton(
-//                                                                 onPressed: () {
-//                                                                   Get.back();
-//                                                                   controller
-//                                                                           .selectedStatusValue
-//                                                                           .value =
-//                                                                       newValue!;
-//                                                                 },
-//                                                                 child:   TextWidget(text:
-//                                                                   'Close',
-//                                                                   style:
-//                                                                       TextStyle(
-//                                                                     color: LightThemeColors
-//                                                                         .bodyTextSecondaryColor,
-//                                                                   ),
-//                                                                 ),
-//                                                               ),
-//                                                             ],
-//                                                           );
-//                                                         });
-//                                                   } else {
-//                                                     controller
-//                                                         .selectedStatusValue
-//                                                         .value = newValue!;
-//                                                   }
-//                                                 },
-//                                               ),
-//                                             ),
-//                                           ),
-//                                         ],
-//                                       ),
-//                                     ),
-//                                     SizedBox(height: 10.sp),
-//                                     MainDivider(),
-//                                     Padding(
-//                                       padding: EdgeInsets.symmetric(
-//                                           horizontal: 12.sp),
-//                                       child: Column(
-//                                         crossAxisAlignment:
-//                                             CrossAxisAlignment.start,
-//                                         children: [
-//                                             TextWidget(text:
-//                                             "Ticket Status",
-//                                             style: theme.textTheme.bodyLarge
-//                                                 ?.copyWith(
-//                                               color: LightThemeColors
-//                                                   .hintTextColor,
-//                                               fontSize: 14.sp,
-//                                               fontWeight: FontWeight.w500,
-//                                             ),
-//                                           ),
-//                                           SizedBox(height: 8.sp),
-//                                           Container(
-//                                             height: 40.sp,
-//                                             width: double.infinity,
-//                                             padding: EdgeInsets.symmetric(
-//                                                 horizontal: 10.sp),
-//                                             decoration: BoxDecoration(
-//                                               color: LightThemeColors.fillColor,
-//                                               borderRadius:
-//                                                   BorderRadius.circular(10.r),
-//                                               border: Border.all(
-//                                                 width: 1,
-//                                                 color: LightThemeColors
-//                                                     .hintTextColor,
-//                                               ),
-//                                             ),
-//                                             child: DropdownButtonHideUnderline(
-//                                               child: DropdownButton2<int>(
-//                                                 isExpanded: true,
-//                                                 dropdownStyleData:
-//                                                     DropdownStyleData(
-//                                                         maxHeight: 200.sp,
-//                                                         width: 220.sp,
-//                                                         padding:
-//                                                             EdgeInsets.zero,
-//                                                         decoration:
-//                                                             BoxDecoration(
-//                                                           borderRadius:
-//                                                               BorderRadius
-//                                                                   .circular(
-//                                                                       8.r),
-//                                                           color:
-//                                                               LightThemeColors
-//                                                                   .fillColor,
-//                                                           boxShadow: [
-//                                                             BoxShadow(
-//                                                               color: Colors
-//                                                                   .black
-//                                                                   .withValues(
-//                                                                       alpha:
-//                                                                           0.2),
-//                                                               offset:
-//                                                                   const Offset(
-//                                                                       0, 4),
-//                                                               blurRadius: 10,
-//                                                               spreadRadius: 0,
-//                                                             ),
-//                                                           ],
-//                                                         )),
-//                                                 value: controller
-//                                                             .selectedTicketStatusValue
-//                                                             .value ==
-//                                                         0
-//                                                     ? null
-//                                                     : controller
-//                                                         .selectedTicketStatusValue
-//                                                         .value,
-//                                                 hint:   TextWidget(text:
-//                                                   'Select an option',
-//                                                   style: TextStyle(
-//                                                     color: LightThemeColors
-//                                                         .hintTextColor,
-//                                                     fontWeight: FontWeight.w400,
-//                                                     fontSize: 12.sp,
-//                                                   ),
-//                                                 ),
-//                                                 style:
-//                                                     theme.textTheme.bodyMedium,
-//                                                 items: controller
-//                                                     .settingController.tickets
-//                                                     .map((e) {
-//                                                   return DropdownMenuItem<int>(
-//                                                     value: e.statusId,
-//                                                     child:   TextWidget(text:
-//                                                       e.statusName ?? "",
-//                                                       style: theme
-//                                                           .textTheme.bodyMedium
-//                                                           ?.copyWith(
-//                                                         fontSize: 14.sp,
-//                                                         fontWeight:
-//                                                             FontWeight.w500,
-//                                                       ),
-//                                                     ),
-//                                                   );
-//                                                 }).toList(),
-//                                                 onChanged: (int? newValue) {
-//                                                   controller
-//                                                       .selectedTicketStatusValue
-//                                                       .value = newValue!;
-//                                                 },
-//                                               ),
-//                                             ),
-//                                           ),
-//                                         ],
-//                                       ),
-//                                     ),
-//                                   ],
-//                                 )),
-//                             MainDivider(),
-//                             Padding(
-//                               padding: EdgeInsets.symmetric(
-//                                   vertical: 8.sp, horizontal: 12.sp),
-//                               child: Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 children: [
-//                                     TextWidget(text:
-//                                     "Notes",
-//                                     style: theme.textTheme.bodyLarge?.copyWith(
-//                                       color: LightThemeColors.hintTextColor,
-//                                       fontSize: 14.sp,
-//                                       fontWeight: FontWeight.w500,
-//                                     ),
-//                                     textAlign: TextAlign.start,
-//                                   ),
-//                                   Padding(
-//                                     padding: const EdgeInsets.all(8.0),
-//                                     child: GeneralTextField(
-//                                         maxLine: 4,
-//                                         hint: "Add a note here..",
-//                                         theme: theme,
-//                                         textEditingController:
-//                                             controller.noteTextController),
-//                                   ),
-//                                 ],
-//                               ),
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ),
-//                     SizedBox(height: 10.sp),
-//                     SizedBox(
-//                       width: double.infinity,
-//                       height: 48.sp,
-//                       child: PrimaryButton(
-//                           title: "Update",
-//                           onPressed: () async {
-//                             await controller.updateAppointment(
-//                                 controller.selectedTicketStatusValue.value
-//                                     .toString(),
-//                                 controller.selectedStatusValue.value
-//                                     .toString());
-//                           },
-//                           inactive: false),
-//                     ),
-//                     SizedBox(height: 35.sp),
-//                     Padding(
-//                       padding: EdgeInsets.only(left: 10.0.sp),
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.center,
-//                         children: [
-//                           Center(
-//                             child:   TextWidget(text:
-//                               "Estimate/Invoice Details",
-//                               style: theme.textTheme.headlineSmall?.copyWith(
-//                                 fontWeight: FontWeight.w500,
-//                                 fontSize: 18.sp,
-//                               ),
-//                             ),
-//                           ),
-//                           SizedBox(height: 10.sp),
-//                           Builder(builder: (context) {
-//                             return SplashContainer(
-//                               height: 45.sp,
-//                               width: 150.sp,
-//                               radius: 5,
-//                               color: theme.primaryColor,
-//                               onPressed: () {
-//                                 RenderBox renderBox =
-//                                     context.findRenderObject() as RenderBox;
-//                                 Offset offset = renderBox
-//                                     .localToGlobal(Offset(32.sp, 40.sp));
-//                                 final RenderBox overlay = Overlay.of(context)
-//                                     .context
-//                                     .findRenderObject() as RenderBox;
-//                                 showMenu(
-//                                   shape: RoundedRectangleBorder(
-//                                     borderRadius:
-//                                         BorderRadius.all(Radius.circular(8.r)),
-//                                   ),
-//                                   context: context,
-//                                   position: RelativeRect.fromRect(
-//                                       offset &
-//                                           Size(
-//                                               32.sp,
-//                                               32
-//                                                   .sp), // smaller rect, the touch area
-//                                       Offset.zero &
-//                                           overlay
-//                                               .size // Bigger rect, the entire screen
-//                                       ),
-//                                   items: controller
-//                                       .invoiceController.createTypes
-//                                       .map((e) {
-//                                     return PopupMenuItem(
-//                                       value: e["name"],
-//                                       child:   TextWidget(text: "${e["name"]}"),
-//                                     );
-//                                   }).toList(),
-//                                 ).then((v) async {
-//                                   if (v != null) {
-//                                     controller.invoiceController
-//                                         .clearAllItems();
-//                                     controller.invoiceController
-//                                         .selectedCreateType.value = v;
-
-//                                     if (v == "Invoice") {
-//                                       controller.invoiceController
-//                                               .createCustomerName =
-//                                           controller.contactName;
-//                                       controller.invoiceController
-//                                               .createCustomerAddress =
-//                                           controller.address;
-//                                       controller.invoiceController
-//                                               .createCustomerPhone =
-//                                           controller.mobileNumber;
-//                                       controller.invoiceController
-//                                               .createCustomerEmail =
-//                                           controller.email;
-//                                       controller.invoiceController.customerID
-//                                           .value = controller.customerID;
-//                                       controller
-//                                               .invoiceController.appointmentID =
-//                                           controller.appointmentID;
-//                                       controller.invoiceController.selectedTaxID
-//                                           .value = "";
-//                                       controller.invoiceController
-//                                           .createDiscountTextController
-//                                           .clear();
-//                                       await controller.invoiceController
-//                                           .getInvoiceName();
-//                                       Get.toNamed(Routes.INVOICE_CREATE);
-//                                     } else {
-//                                       controller.invoiceController
-//                                               .createCustomerName =
-//                                           controller.contactName;
-//                                       controller.invoiceController
-//                                               .createCustomerAddress =
-//                                           controller.address;
-//                                       controller.invoiceController
-//                                               .createCustomerPhone =
-//                                           controller.mobileNumber;
-//                                       controller.invoiceController
-//                                               .createCustomerEmail =
-//                                           controller.email;
-//                                       controller.invoiceController.customerID
-//                                           .value = controller.customerID;
-
-//                                       controller
-//                                               .invoiceController.appointmentID =
-//                                           controller.appointmentID;
-//                                       controller.invoiceController.selectedTaxID
-//                                           .value = "";
-//                                       controller.invoiceController
-//                                           .createDiscountTextController
-//                                           .clear();
-//                                       await controller.invoiceController
-//                                           .getInvoiceName();
-//                                       Get.toNamed(Routes.INVOICE_CREATE);
-//                                     }
-//                                   }
-//                                 });
-//                               },
-//                               child: Center(
-//                                 child: Row(
-//                                   mainAxisAlignment: MainAxisAlignment.center,
-//                                   children: [
-//                                     Icon(
-//                                       Icons.add_circle_outline,
-//                                       color: Colors.white,
-//                                       size: 18.sp,
-//                                     ),
-//                                     SizedBox(width: 5.sp),
-//                                       TextWidget(text:
-//                                       "Create New",
-//                                       style:
-//                                           theme.textTheme.bodyLarge?.copyWith(
-//                                         color: Colors.white,
-//                                         fontSize: 16.sp,
-//                                         fontWeight: FontWeight.w500,
-//                                       ),
-//                                     ),
-//                                   ],
-//                                 ),
-//                               ),
-//                             );
-//                           }),
-//                         ],
-//                       ),
-//                     ),
-//                     SizedBox(height: 15.sp),
-//                     Obx(() => ListView.separated(
-//                           itemBuilder: (context, index) {
-//                             final proposal = controller
-//                                 .appointments[controller.selectedAptIndex.value]
-//                                 .invoices![index];
-
-//                             return GestureDetector(
-//                               onTap: () async {
-//                                 controller.showLoading();
-
-//                                 // Clear previous selection if needed
-//                                 controller.invoiceController.selectedItemList
-//                                     .clear();
-//                                 for (var c in controller
-//                                     .invoiceController.editAmountControllers) {
-//                                   c.dispose();
-//                                 }
-//                                 for (var c in controller.invoiceController
-//                                     .editDescriptionControllers) {
-//                                   c.dispose();
-//                                 }
-//                                 for (var c in controller.invoiceController
-//                                     .editQuantityControllers) {
-//                                   c.dispose();
-//                                 }
-//                                 controller
-//                                     .invoiceController.editAmountControllers
-//                                     .clear();
-//                                 controller.invoiceController
-//                                     .editDescriptionControllers
-//                                     .clear();
-//                                 controller
-//                                     .invoiceController.editQuantityControllers
-//                                     .clear();
-//                                 controller
-//                                     .invoiceController.editNoteTextController
-//                                     .clear();
-//                                 controller.invoiceController
-//                                     .editDiscountTextController
-//                                     .clear();
-//                                 controller
-//                                     .invoiceController.initialTaxID.value = "";
-
-//                                 // Set basic info
-//                                 controller.invoiceController.invoiceItemList
-//                                     .value = proposal.items ?? [];
-//                                 controller.invoiceController.depositList.value =
-//                                     proposal.paymentList ?? [];
-//                                 controller
-//                                     .invoiceController
-//                                     .selectedDiscountOption
-//                                     .value = proposal.discountOption ?? "2";
-//                                 controller.invoiceController.invoiceNumber =
-//                                     proposal.number ?? "";
-//                                 controller.invoiceController.isConverted.value =
-//                                     proposal.isConverted ?? false;
-//                                 controller.invoiceController.customerName =
-//                                     proposal.fullName ?? "";
-//                                 controller.invoiceController.address =
-//                                     "${proposal.city}";
-//                                 controller.invoiceController.depositAmount
-//                                     .value = proposal.depositAmount.toString();
-//                                 controller.invoiceController.invoiceID.value =
-//                                     proposal.invoiceID.toString();
-//                                 controller.invoiceController.date =
-//                                     dateTimeConverter(
-//                                         inputFormat: "yyyy/MM/dd",
-//                                         inputTime:
-//                                             proposal.invoiceDate.toString(),
-//                                         outputFormat: "MM/dd/yyyy");
-//                                 controller.invoiceController.subtotal =
-//                                     proposal.subtotal?.toStringAsFixed(1) ?? "";
-//                                 controller.invoiceController.customerID.value =
-//                                     proposal.customerId ?? "";
-//                                 controller.invoiceController.status =
-//                                     proposal.status ?? "";
-//                                 controller.invoiceController.type.value =
-//                                     proposal.type ?? "";
-//                                 controller.invoiceController.total.value =
-//                                     proposal.total?.toStringAsFixed(1) ?? "";
-//                                 controller.invoiceController.newTotal.value =
-//                                     controller.invoiceController.total.value;
-//                                 controller.invoiceController.notes =
-//                                     proposal.note ?? "";
-//                                 controller
-//                                     .invoiceController
-//                                     .editNoteTextController
-//                                     .text = proposal.note ?? "";
-//                                 controller.invoiceController.due =
-//                                     proposal.due ?? "";
-//                                 controller.invoiceController.showingDate.value =
-//                                     dateTimeConverter(
-//                                         inputFormat: "yyyy/MM/dd hh:mm a",
-//                                         inputTime:
-//                                             proposal.invoiceDate.toString(),
-//                                         outputFormat: "MM/dd/yyyy");
-//                                 if (proposal.taxType != "") {
-//                                   controller.invoiceController.initialTaxID
-//                                       .value = proposal.taxType ?? "";
-//                                 }
-//                                 // Set discount values
-//                                 controller
-//                                     .invoiceController
-//                                     .invoiceDiscountDetails
-//                                     .value = proposal.discount ?? 0.00;
-//                                 if (proposal.discountOption == "1") {
-//                                   controller
-//                                       .invoiceController
-//                                       .editDiscountTextController
-//                                       .text = (((double.parse(proposal.discount
-//                                                       ?.toString() ??
-//                                                   "0.00")) *
-//                                               100) /
-//                                           double.parse(proposal.subtotal
-//                                                   ?.toStringAsFixed(2) ??
-//                                               "0.00"))
-//                                       .toStringAsFixed(2);
-//                                 } else {
-//                                   controller
-//                                       .invoiceController
-//                                       .editDiscountTextController
-//                                       .text = double.parse(
-//                                           proposal.discount?.toString() ??
-//                                               "0.00")
-//                                       .toStringAsFixed(2);
-//                                 }
-
-//                                 // Set tax values
-
-//                                 controller.invoiceController.tax.value =
-//                                     controller.invoiceController.taxes
-//                                             .firstWhereOrNull((tax) =>
-//                                                 tax.id ==
-//                                                 int.tryParse(controller
-//                                                     .invoiceController
-//                                                     .initialTaxID
-//                                                     .value))
-//                                             ?.rate
-//                                             ?.toStringAsFixed(2) ??
-//                                         "0.00";
-
-//                                 // Populate selectedItemList and initialize controllers
-//                                 if (proposal.items != null &&
-//                                     proposal.items!.isNotEmpty) {
-//                                   for (var item in proposal.items!) {
-//                                     controller
-//                                         .invoiceController.selectedItemList
-//                                         .add(ItemListModel(
-//                                       id: item.itemId,
-//                                       name: item.name,
-//                                       description: item.description,
-//                                       price: double.tryParse(
-//                                           item.unitPrice ?? "0.00"),
-//                                       isTaxable: item.isTaxable == "TAX"
-//                                           ? true
-//                                           : false,
-//                                       // itemTypeId: int.parse(item.itemTyId!),
-//                                     ));
-
-//                                     // Initialize controllers with existing values
-//                                     controller
-//                                         .invoiceController.editAmountControllers
-//                                         .add(TextEditingController(
-//                                             text: item.unitPrice ?? "0.00"));
-
-//                                     controller.invoiceController
-//                                         .editDescriptionControllers
-//                                         .add(TextEditingController(
-//                                             text: item.description ?? ""));
-
-//                                     controller.invoiceController
-//                                         .editQuantityControllers
-//                                         .add(TextEditingController(
-//                                             text: item.quantity ?? "1"));
-//                                   }
-//                                 }
-//                                 controller.invoiceController
-//                                     .createTotalForEdit();
-//                                 await 0.5
-//                                     .delay(); // Optional small delay before navigation
-//                                 controller.hideLoading();
-//                                 Get.toNamed(Routes.INVOICE_DETAILS);
-//                               },
-//                               child: Card(
-//                                 elevation: 0,
-//                                 color: Colors.white,
-//                                 child: Column(
-//                                   crossAxisAlignment: CrossAxisAlignment.start,
-//                                   children: [
-//                                     ListTile(
-//                                       title:   TextWidget(text:
-//                                         "${proposal.type ?? ""} Number",
-//                                         style:
-//                                             theme.textTheme.bodyLarge?.copyWith(
-//                                           color: LightThemeColors.hintTextColor,
-//                                           fontSize: 14.sp,
-//                                           fontWeight: FontWeight.w500,
-//                                         ),
-//                                       ),
-//                                       trailing: Container(
-//                                         padding: EdgeInsets.symmetric(
-//                                             horizontal: 8.sp, vertical: 2.sp),
-//                                         decoration: BoxDecoration(
-//                                           borderRadius:
-//                                               BorderRadius.circular(5.r),
-//                                           color: proposal.type == "Invoice"
-//                                               ? theme.primaryColor
-//                                               : proposal.type == "Estimate" &&
-//                                                       proposal.isConverted ==
-//                                                           true
-//                                                   ? Colors.green
-//                                                   : Colors.yellow,
-//                                         ),
-//                                         child:   TextWidget(text:
-//                                           proposal.number ?? "",
-//                                           style: theme.textTheme.bodyLarge
-//                                               ?.copyWith(
-//                                             fontSize: 14.sp,
-//                                             fontWeight: FontWeight.w500,
-//                                             color:
-//                                                 proposal.type == "Estimate" &&
-//                                                         proposal.isConverted ==
-//                                                             false
-//                                                     ? Colors.black
-//                                                     : Colors.white,
-//                                           ),
-//                                         ),
-//                                       ),
-//                                     ),
-//                                     MainDivider(),
-//                                     ListTile(
-//                                       title:   TextWidget(text:
-//                                         "Date",
-//                                         style:
-//                                             theme.textTheme.bodyLarge?.copyWith(
-//                                           color: LightThemeColors.hintTextColor,
-//                                           fontSize: 14.sp,
-//                                           fontWeight: FontWeight.w500,
-//                                         ),
-//                                       ),
-//                                       trailing: proposal.invoiceDate != ""
-//                                           ?   TextWidget(text:
-//                                               dateTimeConverter(
-//                                                   inputFormat:
-//                                                       "yyyy/MM/dd hh:mm a",
-//                                                   inputTime: proposal
-//                                                       .invoiceDate
-//                                                       .toString(),
-//                                                   outputFormat: "MM/dd/yyyy"),
-//                                               style: theme.textTheme.bodyLarge
-//                                                   ?.copyWith(
-//                                                 fontSize: 14.sp,
-//                                                 fontWeight: FontWeight.w500,
-//                                               ),
-//                                             )
-//                                           :   TextWidget(text: ""),
-//                                     ),
-//                                     MainDivider(),
-//                                     ListTile(
-//                                       title:   TextWidget(text:
-//                                         "Required Amount",
-//                                         style:
-//                                             theme.textTheme.bodyLarge?.copyWith(
-//                                           color: LightThemeColors.hintTextColor,
-//                                           fontSize: 14.sp,
-//                                           fontWeight: FontWeight.w500,
-//                                         ),
-//                                       ),
-//                                       trailing:   TextWidget(text:
-//                                         "\$${proposal.total?.toStringAsFixed(2) ?? ""}",
-//                                         style:
-//                                             theme.textTheme.bodyLarge?.copyWith(
-//                                           fontSize: 14.sp,
-//                                           fontWeight: FontWeight.w500,
-//                                         ),
-//                                       ),
-//                                     ),
-//                                     MainDivider(),
-//                                     ListTile(
-//                                       title:   TextWidget(text:
-//                                         "Amount Received",
-//                                         style:
-//                                             theme.textTheme.bodyLarge?.copyWith(
-//                                           color: LightThemeColors.hintTextColor,
-//                                           fontSize: 14.sp,
-//                                           fontWeight: FontWeight.w500,
-//                                         ),
-//                                       ),
-//                                       trailing:   TextWidget(text:
-//                                         "\$${proposal.depositAmount?.toStringAsFixed(2) ?? ""}",
-//                                         style:
-//                                             theme.textTheme.bodyLarge?.copyWith(
-//                                           fontSize: 14.sp,
-//                                           fontWeight: FontWeight.w500,
-//                                         ),
-//                                       ),
-//                                     ),
-//                                   ],
-//                                 ),
-//                               ),
-//                             );
-//                           },
-//                           separatorBuilder: (BuildContext context, int index) =>
-//                               SizedBox(height: 8.sp),
-//                           itemCount: controller
-//                               .appointments[controller.selectedAptIndex.value]
-//                               .invoices!
-//                               .length,
-//                           shrinkWrap: true,
-//                           reverse: true,
-//                           physics: NeverScrollableScrollPhysics(),
-//                         )),
-//                     SizedBox(height: 15.sp),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-class ResourceItem {
-  final String title;
-  RxBool selected;
-
-  ResourceItem({required this.title, bool selected = false})
-    : selected = selected.obs;
+  return tempFile.path;
 }
 
-final List<String> productList = ["Computer", "Plumbing", "Tailoring", "AC"];
+Future<void> openMapWithRoute(String destinationAddress) async {
+  try {
+    Position position = await Geolocator.getCurrentPosition(
+      locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
+    );
+    final origin = '${position.latitude},${position.longitude}';
+    final encodedDestination = Uri.encodeComponent(destinationAddress);
+
+    if (Platform.isIOS) {
+      final googleMapsUrl = Uri.parse(
+        'comgooglemaps://?saddr=$origin&daddr=$encodedDestination&directionsmode=driving',
+      );
+      final appleMapsUrl = Uri.parse(
+        'https://maps.apple.com/?saddr=$origin&daddr=$encodedDestination',
+      );
+
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl);
+      } else if (await canLaunchUrl(appleMapsUrl)) {
+        await launchUrl(appleMapsUrl);
+      } else {
+        throw 'Could not launch maps on iOS';
+      }
+    } else {
+      final googleMapsWebUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$encodedDestination&travelmode=driving',
+      );
+
+      if (await canLaunchUrl(googleMapsWebUrl)) {
+        await launchUrl(googleMapsWebUrl, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch Google Maps';
+      }
+    }
+  } catch (e) {
+    debugPrint('Error launching map: $e');
+  }
+}
 
 void openGoogleMaps(String query) async {
   final encodedQuery = Uri.encodeComponent("$query shop near me");
@@ -8444,138 +2298,39 @@ void openGoogleMaps(String query) async {
   }
 }
 
-void showNoteDetailsDialog(
-  BuildContext context,
-  NoteModel note,
-  ThemeData theme,
-  String tagName,
-) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      final screenHeight = MediaQuery.of(context).size.height;
-
-      return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.sp),
-        ),
-        insetPadding: EdgeInsets.symmetric(horizontal: 16.sp, vertical: 24.sp),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            // Allow the dialog to expand up to 80% of the screen height
-            maxHeight: screenHeight * 0.8,
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(16.sp),
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Center(
-                    child: Text(
-                      "Note Details",
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12.sp,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
-
-                  // User Name & Date Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.person,
-                            size: 14.sp,
-                            color: Colors.grey[600],
-                          ),
-                          SizedBox(width: 6.w),
-                          Text(
-                            note.userName ?? "N/A",
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        DateFormat(
-                          "dd MMM yyyy",
-                        ).format(DateTime.parse(note.createdAt!)),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8.h),
-
-                  // Tag chip - COMMENTED
-                  // Container(
-                  //   padding: EdgeInsets.symmetric(
-                  //     horizontal: 8.w,
-                  //     vertical: 4.h,
-                  //   ),
-                  //   decoration: BoxDecoration(
-                  //     color: Colors.blue.withValues(alpha: 0.1),
-                  //     borderRadius: BorderRadius.circular(12.sp),
-                  //   ),
-                  //   child: TextWidget(
-                  //     text: tagName,
-                  //     style: theme.textTheme.bodySmall?.copyWith(
-                  //       color: Colors.blue,
-                  //       fontWeight: FontWeight.w500,
-                  //     ),
-                  //   ),
-                  // ),
-                  SizedBox(height: 12.h),
-
-                  // Description
-                  TextWidget(
-                    textAlign: TextAlign.justify,
-                    maxLines: 500,
-                    overflow: TextOverflow.visible,
-                    text: note.description ?? "No description available.",
-                    style: theme.textTheme.bodyMedium,
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  // Close Button
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        "Close",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    },
-  );
+Color getStatusColor(String statusName) {
+  switch (statusName) {
+    case "Installation In Progress":
+    case "Installation in Progress":
+      return const Color(0xffE98862);
+    case "Scheduled":
+      return const Color(0xff2E888B);
+    case "Cancelled":
+      return Colors.red;
+    case "Completed":
+      return const Color(0xff0CBC8B);
+    case "Pending":
+      return const Color(0xFFFFC107);
+    case "Closed":
+      return const Color(0xFF607D8B);
+    case "Dispatched":
+      return const Color(0xFF42A5F5);
+    case "FA-ID Sent":
+      return const Color(0xFF9575CD);
+    case "In-Route":
+      return const Color(0xFFFF9800);
+    case "Arrived":
+      return const Color(0xFF8BC34A);
+    case "On-Hold":
+      return const Color(0xFFFF7043);
+    default:
+      return const Color(0xFF9E9E9E);
+  }
 }
 
 Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
   final apptC = Get.find<AppointmentController>();
   switch (field.fieldType) {
-    // ---------------- DROPDOWN ----------------
     case 'dropdown':
       return Obx(
         () => Column(
@@ -8609,43 +2364,43 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
         ),
       );
 
-    // ---------------- CHECKLIST ----------------
     case 'checklist':
       return Obx(
-        () => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              field.fieldName!,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            SizedBox(height: 10.h),
-            ...field.options!.map((option) {
-              return CheckboxListTile(
-                checkColor: Colors.white,
-                activeColor: Colors.blue,
-                tileColor: apptC.customFieldChecklistValues.contains(option)
-                    ? Colors.blue.withValues(alpha: 0.2)
-                    : Colors.grey.withValues(alpha: 0.2),
-                title: Text(option),
-                value: apptC.customFieldChecklistValues.contains(option),
-                onChanged: (isChecked) {
-                  if (isChecked == true) {
-                    apptC.customFieldChecklistValues.add(option);
-                    field.selectedOptions!.add(option);
-                  } else {
-                    apptC.customFieldChecklistValues.remove(option);
-                    field.selectedOptions!.remove(option);
-                  }
-                  apptC.update();
-                },
-              );
-            }),
-          ],
+        () => Material(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                field.fieldName!,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              SizedBox(height: 10.h),
+              ...field.options!.map((option) {
+                return CheckboxListTile(
+                  checkColor: Colors.white,
+                  activeColor: Colors.blue,
+                  tileColor: apptC.customFieldChecklistValues.contains(option)
+                      ? Colors.blue.withValues(alpha: 0.2)
+                      : Colors.grey.withValues(alpha: 0.2),
+                  title: Text(option),
+                  value: apptC.customFieldChecklistValues.contains(option),
+                  onChanged: (isChecked) {
+                    if (isChecked == true) {
+                      apptC.customFieldChecklistValues.add(option);
+                      field.selectedOptions!.add(option);
+                    } else {
+                      apptC.customFieldChecklistValues.remove(option);
+                      field.selectedOptions!.remove(option);
+                    }
+                    apptC.update();
+                  },
+                );
+              }),
+            ],
+          ),
         ),
       );
 
-    // ---------------- TEXT FIELD ----------------
     case 'text':
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -8658,14 +2413,11 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
               border: OutlineInputBorder(),
               hintText: "Enter ${field.fieldName}",
             ),
-            onChanged: (value) {
-              field.textValue = value;
-            },
+            onChanged: (value) => field.textValue = value,
           ),
         ],
       );
 
-    // ---------------- NUMBER FIELD ----------------
     case 'number':
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -8678,206 +2430,12 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
               border: OutlineInputBorder(),
               hintText: "Enter ${field.fieldName}",
             ),
-            onChanged: (value) {
-              field.numberValue = value;
-            },
+            onChanged: (value) => field.numberValue = value,
           ),
         ],
       );
 
-    // ---------------- UNSUPPORTED ----------------
     default:
       return Text("Unsupported field type: ${field.fieldType}");
   }
-}
-
-void showProductDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text("Select a Service"),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: productList.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(productList[index]),
-                onTap: () {
-                  Navigator.pop(context); // Close the dialog
-                  openGoogleMaps(productList[index]);
-                },
-              );
-            },
-          ),
-        ),
-      );
-    },
-  );
-}
-
-/// Get icon data for file type based on extension
-IconData? _getFileIconData(String? extension) {
-  if (extension == null) return null;
-
-  switch (extension.toLowerCase()) {
-    case 'pdf':
-      return Icons.picture_as_pdf;
-    case 'doc':
-    case 'docx':
-      return Icons.description;
-    case 'xls':
-    case 'xlsx':
-      return Icons.table_chart;
-    case 'txt':
-      return Icons.text_snippet;
-    case 'zip':
-    case 'rar':
-      return Icons.archive;
-    default:
-      return Icons.insert_drive_file;
-  }
-}
-
-/// Show file picker bottom sheet to select files
-void showFilePickerBottomSheet(BuildContext context) {
-  final controller = Get.find<AppointmentController>();
-
-  showModalBottomSheet(
-    context: context,
-    builder: (sheetContext) => Container(
-      padding: EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.photo_library),
-            title: Text("Pick from Gallery"),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final picker = ImagePicker();
-              final List<XFile> images = await picker.pickMultiImage();
-              if (images.isNotEmpty && context.mounted) {
-                // Compress images before adding
-                final compressedFiles = <File>[];
-                for (var image in images) {
-                  final compressed = await compressImage(image.path);
-                  compressedFiles.add(File(compressed));
-                }
-                controller.addFilesToUploadList(compressedFiles);
-              }
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.document_scanner),
-            title: Text("Pick Document"),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
-                allowMultiple: true,
-              );
-              if (result != null &&
-                  result.files.isNotEmpty &&
-                  context.mounted) {
-                final validFiles = await _validateAndFilterFiles(
-                  result.files.map((f) => File(f.path!)).toList(),
-                  context,
-                );
-                if (validFiles.isNotEmpty) {
-                  controller.addFilesToUploadList(validFiles);
-                }
-              }
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.folder),
-            title: Text("Browse Files"),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
-                type: FileType.any,
-                allowMultiple: true,
-              );
-              if (result != null &&
-                  result.files.isNotEmpty &&
-                  context.mounted) {
-                final validFiles = await _validateAndFilterFiles(
-                  result.files.map((f) => File(f.path!)).toList(),
-                  context,
-                );
-                if (validFiles.isNotEmpty) {
-                  controller.addFilesToUploadList(validFiles);
-                }
-              }
-            },
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-/// Show file picker bottom sheet to select a SINGLE file
-/// Used for document uploads where only one file is allowed at a time
-void showSingleFilePickerBottomSheet(BuildContext context) {
-  final controller = Get.find<AppointmentController>();
-
-  showModalBottomSheet(
-    context: context,
-    builder: (sheetContext) => Container(
-      padding: EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Icon(Icons.document_scanner),
-            title: Text("Pick Document"),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'],
-                allowMultiple: false,
-              );
-              if (result != null &&
-                  result.files.isNotEmpty &&
-                  context.mounted) {
-                final validFiles = await _validateAndFilterFiles([
-                  File(result.files.single.path!),
-                ], context);
-                if (validFiles.isNotEmpty) {
-                  controller.addFilesToUploadList(validFiles);
-                }
-              }
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.folder),
-            title: Text("Browse Files"),
-            onTap: () async {
-              Navigator.pop(sheetContext);
-              final result = await FilePicker.platform.pickFiles(
-                type: FileType.any,
-                allowMultiple: false,
-              );
-              if (result != null &&
-                  result.files.isNotEmpty &&
-                  context.mounted) {
-                final validFiles = await _validateAndFilterFiles([
-                  File(result.files.single.path!),
-                ], context);
-                if (validFiles.isNotEmpty) {
-                  controller.addFilesToUploadList(validFiles);
-                }
-              }
-            },
-          ),
-        ],
-      ),
-    ),
-  );
 }

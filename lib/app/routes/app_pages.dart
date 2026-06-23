@@ -2,21 +2,28 @@ import 'package:get/get.dart';
 
 import '../modules/appointment/bindings/appointment_binding.dart';
 import '../modules/appointment/bindings/custom_fields_binding.dart';
+import '../modules/appointment/views/all_tab_screens/customer_location_screen.dart';
+import '../modules/appointment/views/all_tab_screens/forms_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/estimate_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/pictures_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/equipment_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/files_tab_screen.dart';
+import '../modules/appointment/views/all_tab_screens/notes_tab_screen.dart';
 import '../modules/appointment/views/appointment_details_view.dart';
 import '../modules/appointment/views/appointment_view.dart';
-import '../modules/appointment/views/see_all_form_screen.dart';
 import '../modules/appointment/views/tag_details_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/login_view.dart';
 import '../modules/auth/views/sign_up_view.dart';
-import '../modules/csl/views/csl_view.dart';
 import '../modules/customer/bindings/customer_binding.dart';
 import '../modules/customer/views/customer_details_view.dart';
 import '../modules/customer/views/customer_view.dart';
-import '../modules/forms/bindings/form_binding.dart';
-import '../modules/forms/views/form_builder_screen.dart';
-import '../modules/forms/views/form_view.dart';
+
+import '../modules/forms/binding/form_bindings.dart';
+import '../modules/forms/views/forms_inbox_view.dart';
+import '../components/form_widget/pdf_dynamic_form.dart';
 import '../modules/invoice/bindings/invoice_binding.dart';
+import '../modules/invoice/views/billable_items_view.dart';
 import '../modules/invoice/views/create_invoice_view.dart';
 import '../modules/invoice/views/invoice_details_view.dart';
 import '../modules/invoice/views/manual_payment_view.dart';
@@ -30,6 +37,8 @@ import '../modules/item/bindings/item_binding.dart';
 import '../modules/item/views/item_view.dart';
 import '../modules/onboarding/bindings/onboarding_binding.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
+import '../modules/rag/controllers/rag_controller.dart';
+import '../modules/rag/views/rag_view.dart';
 import '../modules/settings/bindings/settings_binding.dart';
 import '../modules/settings/views/appointment_settings_view.dart';
 import '../modules/settings/views/appointment_status_view.dart';
@@ -41,7 +50,6 @@ import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
 import '../modules/twilio_chat/bindings/twilio_chat_binding.dart';
 import '../modules/twilio_chat/views/twilio_chat_view.dart';
-
 // ignore_for_file: constant_identifier_names
 
 part 'app_routes.dart';
@@ -78,13 +86,58 @@ class AppPages {
     GetPage(
       name: _Paths.APPOINTMENT,
       page: () => const AppointmentView(),
-      bindings: [AppointmentBinding(), CustomFieldsBinding()],
+      bindings: [AppointmentBinding(), CustomFieldsBinding(), FormBindings()],
     ),
-    GetPage(name: _Paths.CSLVIEW, page: () => const CslScreen()),
+    GetPage(
+      name: _Paths.FORMS,
+      page: () => const FormsInboxView(),
+      binding: FormBindings(),
+    ),
+    // GetPage(name: _Paths.CSLVIEW, page: () => const CslScreen()),
     GetPage(
       name: _Paths.APPOINTMENT_DETAILS,
       page: () => AppointmentDetailsView(),
       bindings: [AppointmentBinding(), CustomFieldsBinding()],
+    ),
+    GetPage(
+      name: _Paths.CUSTOMER_LOCATION,
+      page: () => const CustomerLocationScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.FORMS_TAB,
+      page: () => const FormsTabScreen(),
+      bindings: [AppointmentBinding(), CustomFieldsBinding(), FormBindings()],
+    ),
+    GetPage(
+      name: _Paths.BILLABLE_ITEM_SCREEN,
+      page: () => const BillableItemsView(),
+      // bindings: [AppointmentBinding(), CustomFieldsBinding()],
+    ),
+    GetPage(
+      name: _Paths.ESTIMATE_TAB,
+      page: () => const EstimateTabScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.PICTURES_TAB,
+      page: () => const PicturesTabScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.EQUIPMENT_TAB,
+      page: () => const EquipmentTabScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.FILES_TAB,
+      page: () => const FilesTabScreen(),
+      bindings: [AppointmentBinding()],
+    ),
+    GetPage(
+      name: _Paths.NOTES_TAB,
+      page: () => const NotesTabScreen(),
+      bindings: [AppointmentBinding()],
     ),
     GetPage(
       name: _Paths.SETTINGS,
@@ -112,11 +165,7 @@ class AppPages {
     //   page: () => const InvoiceView(),
     //   binding: InvoiceBinding(),
     // ),
-    GetPage(
-      name: _Paths.INVOICE_CREATE,
-      page: () => CreateInvoiceView(),
-      bindings: [InvoiceBinding(), FormBinding()],
-    ),
+    GetPage(name: _Paths.INVOICE_CREATE, page: () => CreateInvoiceView()),
     GetPage(
       name: _Paths.TAG_DETAILS,
       page: () => TagSelectionScreen(),
@@ -125,13 +174,9 @@ class AppPages {
     GetPage(
       name: _Paths.INVOICE_DETAILS,
       page: () => const InvoiceDetailsView(),
-      bindings: [InvoiceBinding(), FormBinding()],
+      bindings: [InvoiceBinding()], // Add BillableItemsBinding here
     ),
-    GetPage(
-      name: _Paths.FORMS,
-      page: () => const FormView(),
-      binding: FormBinding(),
-    ),
+
     GetPage(name: _Paths.X_PAY_LINK_WEB, page: () => XPayLinkScreen()),
     GetPage(
       name: _Paths.TICKET_STATUS,
@@ -168,11 +213,7 @@ class AppPages {
       page: () => const PaymentByCheckView(),
       binding: InvoiceBinding(),
     ),
-    GetPage(
-      name: _Paths.FORMS_CREATE_DRAGG_DROP,
-      page: () => const FormBuilderScreen(),
-      binding: FormBinding(),
-    ),
+
     GetPage(
       name: _Paths.PAYMENT_BY_BANK_TRANSFER,
       page: () => const PaymentByACHView(),
@@ -183,11 +224,7 @@ class AppPages {
       page: () => const ManualPaymentView(),
       binding: InvoiceBinding(),
     ),
-    GetPage(
-      name: Routes.SEEALLFORMS,
-      page: () =>
-          SeeAllFormsScreen(initialTabIndex: Get.arguments['tabIndex'] ?? 0),
-    ),
+
     GetPage(
       name: _Paths.XPAY_PAYMENT,
       page: () => const XPayPaymentView(),
@@ -197,6 +234,38 @@ class AppPages {
       name: _Paths.TWILIO_CHAT,
       page: () => const TwilioChatView(),
       binding: TwilioChatBinding(),
+    ),
+
+    GetPage(
+      name: _Paths.RAG_CHAT,
+      page: () => const RAGView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<RAGController>(() => RAGController());
+      }),
+    ),
+    GetPage(
+      name: _Paths.PDF_DYNAMIC_FORM,
+      page: () {
+        // Extract arguments passed via Get.toNamed
+        final args = Get.arguments as Map<String, dynamic>;
+
+        return PdfDynamicForm(
+          mode: PdfFormMode.viewer,
+          config: {
+            'pdfBase64': args['pdfBase64'] as String?,
+            'form': args['form'] as Map<String, dynamic>?,
+            'smartFieldValues':
+                args['smartFieldValues'] as Map<String, dynamic>? ?? {},
+            'formInstanceId': args['formInstanceId'] as int?,
+            'templateId': args['templateId'] as int?,
+            'appointmentId': args['appointmentId'] as String?,
+            'customerId': args['customerId'] as String?,
+            'queueId': args['queueId'] as int?,
+            'formName': args['formName'] as String?,
+          },
+        );
+      },
+      binding: FormBindings(),
     ),
   ];
 }

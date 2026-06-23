@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PDF Dynamic Form</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+
+        #pdf-container {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+            padding: 10px;
+        }
+
+        /* Field overlay styles */
+        .field-overlay {
+            position: absolute;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .field-overlay input,
+        .field-overlay textarea,
+        .field-overlay select {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .field-overlay input:focus,
+        .field-overlay textarea:focus,
+        .field-overlay select:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+        }
+
+        .field-overlay .smartfield {
+            width: 100%;
+            height: 100%;
+            background: rgba(33, 150, 243, 0.05);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            color: #666;
+        }
+
+        .field-overlay .checkbox-wrapper,
+        .field-overlay .radio-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+        }
+
+        .field-overlay .date-picker {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+        }
+
+        .field-overlay .signature-area {
+            width: 100%;
+            height: 100%;
+            border: 1px dashed #999;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .field-overlay .signature-area.signed {
+            border-style: solid;
+            border-color: #2196F3;
+        }
+
+        .field-overlay .image-picker {
+            width: 100%;
+            height: 100%;
+            border: 1px dashed #999;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .field-overlay .file-picker {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .required-field::before {
+            content: '*';
+            color: red;
+            margin-right: 2px;
+        }
+
+        /* Loading indicator */
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #loading.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196F3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #loading-text {
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+    <!-- PDF.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configuration (will be set by Flutter)
+        let PDF_URL = '';
+        let FIELDS = [];
+        let FORM_DATA = {};
+
+        // State
+        let pdfDoc = null;
+        let scale = 1.5;
+        let pageDimensions = [];
+        let renderedPages = 0;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            console.log('Initializing PDF viewer...');
+            console.log('PDF_URL:', PDF_URL ? PDF_URL.substring(0, 100) + '...' : 'Not set');
+
+            // Check if PDF_URL is set
+            if (!PDF_URL || PDF_URL === '') {
+                console.error('PDF_URL is not set!');
+                document.getElementById('loading-text').textContent = 'Error: PDF URL not configured';
+                return;
+            }
+
+            // Use iframe directly (more reliable than PDF.js in WebView)
+            loadPDFInIframe();
+        }
+
+        async function loadPDF() {
+            const loadingEl = document.getElementById('loading');
+
+            try {
+                console.log('Loading PDF from:', PDF_URL);
+
+                // Load PDF document with proper error handling
+                const loadingTask = pdfjsLib.getDocument({
+                    url: PDF_URL,
+                    cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+                    cMapPacked: true,
+                });
+
+                pdfDoc = await loadingTask.promise;
+                console.log('PDF loaded successfully, pages:', pdfDoc.numPages);
+
+                // Get dimensions for all pages
+                for (let i = 1; i <= pdfDoc.numPages; i++) {
+                    const page = await pdfDoc.getPage(i);
+                    const viewport = page.getViewport({ scale: scale });
+                    pageDimensions.push({
+                        width: viewport.width,
+                        height: viewport.height,
+                        rotation: viewport.rotation
+                    });
+                }
+
+                console.log('Page dimensions:', pageDimensions);
+
+                // Render pages and fields
+                await renderPages();
+
+                console.log('Pages rendered successfully');
+
+                // Hide loading indicator
+                loadingEl.classList.add('hidden');
+
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                if (loadingText) {
+                    loadingText.textContent = 'Error loading PDF: ' + error.message;
+                }
+                throw error;
+            }
+        }
+
+        async function renderPages() {
+            console.log('Starting to render pages...');
+            const container = document.getElementById('pdf-container');
+            container.innerHTML = '';
+
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                console.log('Rendering page ' + pageNum);
+                const page = await pdfDoc.getPage(pageNum);
+                const viewport = page.getViewport({ scale: scale });
+                console.log('Page ' + pageNum + ' viewport:', viewport.width, 'x', viewport.height);
+
+                // Create page container
+                const pageContainer = document.createElement('div');
+                pageContainer.className = 'pdf-page';
+                pageContainer.style.position = 'relative';
+                pageContainer.style.width = viewport.width + 'px';
+                pageContainer.style.height = viewport.height + 'px';
+                pageContainer.style.margin = '20px auto';
+                pageContainer.style.backgroundColor = 'white';
+                pageContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+
+                // Create canvas for PDF page
+                const canvas = document.createElement('canvas');
+                canvas.id = 'page-' + pageNum;
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const context = canvas.getContext('2d');
+
+                // Render PDF page
+                console.log('Rendering page ' + pageNum + ' to canvas...');
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+                console.log('Page ' + pageNum + ' rendered successfully');
+
+                pageContainer.appendChild(canvas);
+
+                // Add field overlays for this page
+                addFieldOverlays(pageContainer, pageNum - 1, viewport.width, viewport.height);
+
+                container.appendChild(pageContainer);
+            }
+            console.log('All pages rendered');
+        }
+
+        function addFieldOverlays(container, pageIndex, pageWidth, pageHeight) {
+            const pageFields = FIELDS.filter(f => f.position && f.position.page === pageIndex);
+
+            console.log(`Adding ${pageFields.length} field overlays for page ${pageIndex}`);
+
+            pageFields.forEach(field => {
+                const pos = field.position;
+                const overlay = createFieldOverlay(field, pos, pageWidth, pageHeight);
+                container.appendChild(overlay);
+            });
+        }
+
+        function createFieldOverlay(field, pos, pageWidth, pageHeight) {
+            const overlay = document.createElement('div');
+            overlay.className = 'field-overlay';
+            overlay.dataset.fieldId = field.id;
+
+            // Position using percentage coordinates (same as web)
+            const left = pos.xPct * pageWidth;
+            const top = pos.yPct * pageHeight;
+            const width = pos.wPct * pageWidth;
+            const height = pos.hPct * pageHeight;
+
+            overlay.style.left = left + 'px';
+            overlay.style.top = top + 'px';
+            overlay.style.width = width + 'px';
+            overlay.style.height = height + 'px';
+
+            // Add field content based on type
+            const content = createFieldContent(field);
+            overlay.appendChild(content);
+
+            return overlay;
+        }
+
+        function createFieldContent(field) {
+            const wrapper = document.createElement('div');
+            wrapper.style.width = '100%';
+            wrapper.style.height = '100%';
+
+            if (field.required) {
+                wrapper.classList.add('required-field');
+            }
+
+            switch (field.type) {
+                case 'smartfield':
+                    wrapper.innerHTML = createSmartField(field);
+                    break;
+                case 'textarea':
+                    wrapper.innerHTML = createTextArea(field);
+                    break;
+                case 'dropdown':
+                    wrapper.appendChild(createDropdown(field));
+                    break;
+                case 'check':
+                    wrapper.innerHTML = createCheckbox(field);
+                    break;
+                case 'radio':
+                    wrapper.innerHTML = createRadioGroup(field);
+                    break;
+                case 'date':
+                    wrapper.appendChild(createDatePicker(field));
+                    break;
+                case 'signature':
+                    wrapper.appendChild(createSignatureArea(field));
+                    break;
+                case 'image':
+                    wrapper.appendChild(createImagePicker(field));
+                    break;
+                case 'file':
+                    wrapper.appendChild(createFilePicker(field));
+                    break;
+                default:
+                    wrapper.textContent = '';
+            }
+
+            return wrapper;
+        }
+
+        function createSmartField(field) {
+            const source = field.smartFieldSource || '';
+            const value = resolveSmartFieldSync(source);
+            const hasValue = value && value.length > 0;
+
+            return '<div class="smartfield">' +
+                '<span style="font-size: 10px; margin-right: 4px;">' +
+                (hasValue ? '✓' : 'ℹ') +
+                '</span>' +
+                '<span>' + (hasValue ? value : (field.placeholder || field.header || '')) + '</span>' +
+                '</div>';
+        }
+
+        function createTextArea(field) {
+            return '<textarea placeholder="' + (field.placeholder || '') + '" ' +
+                'data-field-id="' + field.id + '" ' +
+                'onchange="updateFieldValue(\'' + field.id + '\', this.value)">' +
+                '</textarea>';
+        }
+
+        function createDropdown(field) {
+            const select = document.createElement('select');
+            select.dataset.fieldId = field.id;
+            select.style.width = '100%';
+            select.style.height = '100%';
+            select.style.border = '1px solid #ccc';
+            select.style.borderRadius = '4px';
+            select.style.padding = '4px 8px';
+            select.style.fontSize = '12px';
+            select.style.background = 'rgba(255, 255, 255, 0.9)';
+
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = field.placeholder || 'Select...';
+            select.appendChild(defaultOption);
+
+            if (field.options) {
+                field.options.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt;
+                    option.textContent = opt;
+                    select.appendChild(option);
+                });
+            }
+
+            select.addEventListener('change', function() {
+                updateFieldValue(field.id, this.value);
+            });
+
+            return select;
+        }
+
+        function createCheckbox(field) {
+            return '<div class="checkbox-wrapper">' +
+                '<input type="checkbox" ' +
+                'data-field-id="' + field.id + '" ' +
+                'onchange="updateFieldValue(\'' + field.id + '\', this.checked)" ' +
+                '/>' +
+                (field.header ? '<span>' + field.header + '</span>' : '') +
+                '</div>';
+        }
+
+        function createRadioGroup(field) {
+            let html = '<div class="radio-wrapper">';
+            if (field.options) {
+                field.options.forEach((opt, idx) => {
+                    html += '<label style="display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;">' +
+                        '<input type="radio" name="' + field.id + '" value="' + opt + '" ' +
+                        'data-field-id="' + field.id + '" ' +
+                        'onchange="updateFieldValue(\'' + field.id + '\', this.value)" ' +
+                        '/>' +
+                        '<span>' + opt + '</span>' +
+                        '</label>';
+                });
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function createDatePicker(field) {
+            const input = document.createElement('input');
+            input.type = 'date';
+            input.className = 'date-picker';
+            input.dataset.fieldId = field.id;
+            input.addEventListener('change', function() {
+                updateFieldValue(field.id, this.value);
+            });
+            return input;
+        }
+
+        function createSignatureArea(field) {
+            const area = document.createElement('div');
+            area.className = 'signature-area';
+            area.textContent = field.placeholder || 'Tap to Sign';
+            area.addEventListener('click', function() {
+                if (window.flutter_inappwebview) {
+                    window.flutter_inappwebview.callHandler('openSignatureDialog', field.id);
+                }
+            });
+            return area;
+        }
+
+        function createImagePicker(field) {
+            const picker = document.createElement('div');
+            picker.className = 'image-picker';
+            picker.textContent = field.placeholder || 'Tap to Add Image';
+            picker.addEventListener('click', function() {
+                if (window.flutter_inappwebview) {
+                    window.flutter_inappwebview.callHandler('openImagePicker', field.id);
+                }
+            });
+            return picker;
+        }
+
+        function createFilePicker(field) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.className = 'file-picker';
+            input.dataset.fieldId = field.id;
+
+            if (field.allowedExtensions) {
+                input.accept = field.allowedExtensions.map(ext => '.' + ext).join(',');
+            }
+
+            input.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    updateFieldValue(field.id, {
+                        name: this.files[0].name,
+                        size: this.files[0].size
+                    });
+                }
+            });
+
+            return input;
+        }
+
+        // Sync version of smart field resolver
+        function resolveSmartFieldSync(source) {
+            if (!source) return '';
+
+            if (source.startsWith('system.')) {
+                const now = new Date();
+                switch (source) {
+                    case 'system.TodaysDate':
+                        return (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+                    case 'system.CurrentTime':
+                        return now.toLocaleTimeString();
+                    case 'system.CurrentUser':
+                        return 'John Doe';
+                    case 'system.CurrentUserId':
+                        return 'USR-001';
+                    default:
+                        return '';
+                }
+            }
+
+            if (source.startsWith('customer.')) {
+                switch (source) {
+                    case 'customer.CustomerName': return 'John Smith';
+                    case 'customer.Address1': return '123 Main Street';
+                    case 'customer.City': return 'New York';
+                    case 'customer.State': return 'NY';
+                    case 'customer.Zip': return '10001';
+                    default: return '';
+                }
+            }
+
+            if (source.startsWith('appointment.')) {
+                switch (source) {
+                    case 'appointment.ApptID': return 'APT-12345';
+                    case 'appointment.AppointmentNumber': return 'WO-2024-001';
+                    default: return '';
+                }
+            }
+
+            return '';
+        }
+
+        // Update field value
+        function updateFieldValue(fieldId, value) {
+            console.log('Field updated:', fieldId, '=', value);
+
+            if (window.flutter_inappwebview) {
+                window.flutter_inappwebview.callHandler('updateFormField', fieldId, value);
+            }
+        }
+
+        // Fallback iframe method
+        function loadPDFInIframe() {
+            console.log('Loading PDF in iframe...');
+            const container = document.getElementById('pdf-container');
+            container.innerHTML = '';
+
+            // Hide loading indicator
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) {
+                loadingEl.classList.add('hidden');
+            }
+
+            const iframe = document.createElement('iframe');
+            iframe.src = PDF_URL;
+            iframe.style.width = '100%';
+            iframe.style.height = '100vh';
+            iframe.style.border = 'none';
+            iframe.style.backgroundColor = 'white';
+
+            iframe.onload = function() {
+                console.log('PDF loaded in iframe successfully');
+                if (window.flutter_inappwebview) {
+                    window.flutter_inappwebview.callHandler('onPdfLoaded');
+                }
+            };
+
+            iframe.onerror = function() {
+                console.error('Failed to load PDF in iframe');
+                const container = document.getElementById('pdf-container');
+                if (container) {
+                    container.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Failed to load PDF. Please check your connection.</div>';
+                }
+            };
+
+            container.appendChild(iframe);
+        }
+
+        // Functions to be called from Flutter
+        function updateSignatureImage(fieldId, imageDataUrl) {
+            const field = document.querySelector(`[data-field-id="${fieldId}"]`);
+            if (field) {
+                const container = field.closest('.field-overlay');
+                if (container) {
+                    const img = document.createElement('img');
+                    img.src = imageDataUrl;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'contain';
+
+                    container.innerHTML = '';
+                    container.appendChild(img);
+                    container.classList.add('signed');
+                }
+            }
+        }
+
+        function updateFieldImage(fieldId, imageDataUrl) {
+            const field = document.querySelector(`[data-field-id="${fieldId}"]`);
+            if (field) {
+                const container = field.closest('.field-overlay');
+                if (container) {
+                    container.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = imageDataUrl;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    container.appendChild(img);
+                }
+            }
+        }
+
+        function updateFieldFile(fieldId, fileName, fileDataUrl) {
+            const field = document.querySelector(`[data-field-id="${fieldId}"]`);
+            if (field) {
+                field.textContent = fileName;
+            }
+        }
+
+        // Set configuration from Flutter
+        function setConfig(pdfUrl, fields, formData) {
+            PDF_URL = pdfUrl;
+            FIELDS = fields;
+            FORM_DATA = formData;
+            console.log('Configuration set:', { PDF_URL, fieldsCount: fields.length });
+        }
+    </script>
+</head>
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        <div id="loading-text">Loading PDF...</div>
+    </div>
+    <div id="pdf-container"></div>
+</body>
+</html>

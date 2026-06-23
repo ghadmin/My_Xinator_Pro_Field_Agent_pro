@@ -32,3 +32,51 @@ class SideBar {
   static String get profileGoIcon =>
       'assets/images/side_bar/profile_go_icon.png';
 }
+
+// Spacing System
+class AppSpacing {
+  // Extra small spacing
+  static const double xs = 4.0;
+
+  // Small spacing
+  static const double sm = 8.0;
+
+  // Medium spacing
+  static const double md = 16.0;
+
+  // Large spacing
+  static const double lg = 24.0;
+
+  // Extra large spacing
+  static const double xl = 32.0;
+
+  // 2X large spacing
+  static const double xxl = 48.0;
+
+  // 3X large spacing
+  static const double xxxl = 64.0;
+}
+
+// Border Radius
+class AppBorderRadius {
+  static const double sm = 8.0;
+  static const double md = 12.0;
+  static const double lg = 16.0;
+  static const double xl = 20.0;
+  static const double xxl = 24.0;
+  static const double circle = 9999.0;
+}
+
+// Duration
+class AppDuration {
+  static const Duration fast = Duration(milliseconds: 150);
+  static const Duration normal = Duration(milliseconds: 250);
+  static const Duration slow = Duration(milliseconds: 350);
+}
+
+// Border Width
+class AppBorderWidth {
+  static const double thin = 1.0;
+  static const double medium = 1.5;
+  static const double thick = 2.0;
+}
