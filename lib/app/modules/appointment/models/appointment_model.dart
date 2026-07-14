@@ -1644,10 +1644,12 @@ class Appointments {
     _customFieldId = json['CustomFieldId'];
     _customFeilds = json['CustomFeilds'];
     _siteID = json['SiteID'];
-    _resource =
-        json['Resource'] != null ? Resource.fromJson(json['Resource']) : null;
-    _customer =
-        json['Customer'] != null ? Customer.fromJson(json['Customer']) : null;
+    _resource = json['Resource'] != null
+        ? Resource.fromJson(json['Resource'])
+        : null;
+    _customer = json['Customer'] != null
+        ? Customer.fromJson(json['Customer'])
+        : null;
     _status = json['Status'] != null ? Status.fromJson(json['Status']) : null;
     _ticketStatus = json['TicketStatus'] != null
         ? TicketStatus.fromJson(json['TicketStatus'])
@@ -1692,37 +1694,36 @@ class Appointments {
     TicketStatus? ticketStatus,
     ServiceType? serviceType,
     List<Invoices>? invoices,
-  }) =>
-      Appointments(
-        companyID: companyID ?? _companyID,
-        apptID: apptID ?? _apptID,
-        appoinmentUId: appoinmentUId ?? _appoinmentUId,
-        customerID: customerID ?? _customerID,
-        serviceTypeId: serviceTypeId ?? _serviceTypeId,
-        resourceID: resourceID ?? _resourceID,
-        timeSlotId: timeSlotId ?? _timeSlotId,
-        apptDateTime: apptDateTime ?? _apptDateTime,
-        startDateTime: startDateTime ?? _startDateTime,
-        endDateTime: endDateTime ?? _endDateTime,
-        timeSlot: timeSlot ?? _timeSlot,
-        note: note ?? _note,
-        statusId: statusId ?? _statusId,
-        ticketStatusId: ticketStatusId ?? _ticketStatusId,
-        createdDateTime: createdDateTime ?? _createdDateTime,
-        markDownloaded: markDownloaded ?? _markDownloaded,
-        promoCode: promoCode ?? _promoCode,
-        createdBy: createdBy ?? _createdBy,
-        userID: userID ?? _userID,
-        customFieldId: customFieldId ?? _customFieldId,
-        customFeilds: customFeilds ?? _customFeilds,
-        siteID: siteID ?? _siteID,
-        resource: resource ?? _resource,
-        customer: customer ?? _customer,
-        status: status ?? _status,
-        ticketStatus: ticketStatus ?? _ticketStatus,
-        serviceType: serviceType ?? _serviceType,
-        invoices: invoices ?? _invoices,
-      );
+  }) => Appointments(
+    companyID: companyID ?? _companyID,
+    apptID: apptID ?? _apptID,
+    appoinmentUId: appoinmentUId ?? _appoinmentUId,
+    customerID: customerID ?? _customerID,
+    serviceTypeId: serviceTypeId ?? _serviceTypeId,
+    resourceID: resourceID ?? _resourceID,
+    timeSlotId: timeSlotId ?? _timeSlotId,
+    apptDateTime: apptDateTime ?? _apptDateTime,
+    startDateTime: startDateTime ?? _startDateTime,
+    endDateTime: endDateTime ?? _endDateTime,
+    timeSlot: timeSlot ?? _timeSlot,
+    note: note ?? _note,
+    statusId: statusId ?? _statusId,
+    ticketStatusId: ticketStatusId ?? _ticketStatusId,
+    createdDateTime: createdDateTime ?? _createdDateTime,
+    markDownloaded: markDownloaded ?? _markDownloaded,
+    promoCode: promoCode ?? _promoCode,
+    createdBy: createdBy ?? _createdBy,
+    userID: userID ?? _userID,
+    customFieldId: customFieldId ?? _customFieldId,
+    customFeilds: customFeilds ?? _customFeilds,
+    siteID: siteID ?? _siteID,
+    resource: resource ?? _resource,
+    customer: customer ?? _customer,
+    status: status ?? _status,
+    ticketStatus: ticketStatus ?? _ticketStatus,
+    serviceType: serviceType ?? _serviceType,
+    invoices: invoices ?? _invoices,
+  );
 
   String? get companyID => _companyID;
   dynamic get apptID => _apptID;
@@ -1861,10 +1862,10 @@ class Invoices {
   List<Payment>? _paymentList;
   @HiveField(29)
   String? _qboClassId;
-// "QboClassId": null,
+  // "QboClassId": null,
   @HiveField(30)
   String? _qboLocationId;
-// "QboLocationId": null,
+  // "QboLocationId": null,
 
   Invoices({
     String? invoiceID,
@@ -2008,42 +2009,40 @@ class Invoices {
     String? requestedDepositPercentage,
     dynamic requestedAmountType,
     List<Payment>? paymentList,
-  }) =>
-      Invoices(
-        invoiceID: invoiceID ?? _invoiceID,
-        customerGuid: customerGuid ?? _customerGuid,
-        fullName: fullName ?? _fullName,
-        qBOCustomerId: qBOCustomerId ?? _qBOCustomerId,
-        customerId: customerId ?? _customerId,
-        depositAmount: depositAmount ?? _depositAmount,
-        city: city ?? _city,
-        qBOId: qBOId ?? _qBOId,
-        number: number ?? _number,
-        invoiceDate: invoiceDate ?? _invoiceDate,
-        subtotal: subtotal ?? _subtotal,
-        amountCollect: amountCollect ?? _amountCollect,
-        discount: discount ?? _discount,
-        total: total ?? _total,
-        tax: tax ?? _tax,
-        qboClassId: qboClassId ?? _qboClassId,
-        qboLocationId: qboLocationId ?? _qboLocationId,
-        status: status ?? _status,
-        type: type ?? _type,
-        note: note ?? _note,
-        due: due ?? _due,
-        isConverted: isConverted ?? _isConverted,
-        convertedInvoiceID: convertedInvoiceID ?? _convertedInvoiceID,
-        surcharge: surcharge ?? _surcharge,
-        items: items ?? _items,
-        discountOption: discountOption ?? _discountOption,
-        taxType: taxType ?? _taxType,
-        requestedDepositAmount:
-            requestedDepositAmount ?? _requestedDepositAmount,
-        requestedDepositPercentage:
-            requestedDepositPercentage ?? _requestedDepositPercentage,
-        requestedAmountType: requestedAmountType ?? _requestedAmountType,
-        paymentList: paymentList ?? _paymentList,
-      );
+  }) => Invoices(
+    invoiceID: invoiceID ?? _invoiceID,
+    customerGuid: customerGuid ?? _customerGuid,
+    fullName: fullName ?? _fullName,
+    qBOCustomerId: qBOCustomerId ?? _qBOCustomerId,
+    customerId: customerId ?? _customerId,
+    depositAmount: depositAmount ?? _depositAmount,
+    city: city ?? _city,
+    qBOId: qBOId ?? _qBOId,
+    number: number ?? _number,
+    invoiceDate: invoiceDate ?? _invoiceDate,
+    subtotal: subtotal ?? _subtotal,
+    amountCollect: amountCollect ?? _amountCollect,
+    discount: discount ?? _discount,
+    total: total ?? _total,
+    tax: tax ?? _tax,
+    qboClassId: qboClassId ?? _qboClassId,
+    qboLocationId: qboLocationId ?? _qboLocationId,
+    status: status ?? _status,
+    type: type ?? _type,
+    note: note ?? _note,
+    due: due ?? _due,
+    isConverted: isConverted ?? _isConverted,
+    convertedInvoiceID: convertedInvoiceID ?? _convertedInvoiceID,
+    surcharge: surcharge ?? _surcharge,
+    items: items ?? _items,
+    discountOption: discountOption ?? _discountOption,
+    taxType: taxType ?? _taxType,
+    requestedDepositAmount: requestedDepositAmount ?? _requestedDepositAmount,
+    requestedDepositPercentage:
+        requestedDepositPercentage ?? _requestedDepositPercentage,
+    requestedAmountType: requestedAmountType ?? _requestedAmountType,
+    paymentList: paymentList ?? _paymentList,
+  );
 
   String? get invoiceID => _invoiceID;
   String? get customerGuid => _customerGuid;
@@ -2137,6 +2136,8 @@ class Items {
   String? _isTaxable;
   @HiveField(7)
   String? _itemTyId;
+  @HiveField(8)
+  bool? _po;
 
   Items({
     String? itemId,
@@ -2147,6 +2148,7 @@ class Items {
     String? totalPrice,
     String? isTaxable,
     String? itemTyId,
+    bool? po,
   }) {
     _itemId = itemId;
     _name = name;
@@ -2156,6 +2158,7 @@ class Items {
     _totalPrice = totalPrice;
     _isTaxable = isTaxable;
     _itemTyId = itemTyId;
+    _po = po;
   }
 
   Items.fromJson(dynamic json) {
@@ -2167,6 +2170,7 @@ class Items {
     _totalPrice = json['TotalPrice'];
     _isTaxable = json['IsTaxable'];
     _itemTyId = json['ItemTyId'];
+    _po = json['PO'];
   }
 
   Items copyWith({
@@ -2177,18 +2181,18 @@ class Items {
     String? unitPrice,
     String? totalPrice,
     String? isTaxable,
-    String? itemTyId,
-  }) =>
-      Items(
-        itemId: itemId ?? _itemId,
-        name: name ?? _name,
-        description: description ?? _description,
-        quantity: quantity ?? _quantity,
-        unitPrice: unitPrice ?? _unitPrice,
-        totalPrice: totalPrice ?? _totalPrice,
-        isTaxable: isTaxable ?? _isTaxable,
-        itemTyId: itemTyId ?? _itemTyId,
-      );
+    String? itemTyId,bool? po,
+  }) => Items(
+    itemId: itemId ?? _itemId,
+    name: name ?? _name,
+    description: description ?? _description,
+    quantity: quantity ?? _quantity,
+    unitPrice: unitPrice ?? _unitPrice,
+    totalPrice: totalPrice ?? _totalPrice,
+    isTaxable: isTaxable ?? _isTaxable,
+    itemTyId: itemTyId ?? _itemTyId,
+    po: po ?? _po
+  );
 
   String? get itemId => _itemId;
   String? get name => _name;
@@ -2198,7 +2202,7 @@ class Items {
   String? get totalPrice => _totalPrice;
   String? get isTaxable => _isTaxable;
   String? get itemTyId => _itemTyId;
-
+bool? get po => _po;
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     map['ItemId'] = _itemId;
@@ -2209,6 +2213,7 @@ class Items {
     map['TotalPrice'] = _totalPrice;
     map['IsTaxable'] = _isTaxable;
     map['ItemTyId'] = _itemTyId;
+    map['PO'] = _po;
     return map;
   }
 }
@@ -2284,19 +2289,18 @@ class ServiceType {
     dynamic calenderColor,
     dynamic reminderID,
     bool? isInternalUse,
-  }) =>
-      ServiceType(
-        companyID: companyID ?? _companyID,
-        serviceTypeID: serviceTypeID ?? _serviceTypeID,
-        resource: resource ?? _resource,
-        serviceName: serviceName ?? _serviceName,
-        createdDateTime: createdDateTime ?? _createdDateTime,
-        hour: hour ?? _hour,
-        minute: minute ?? _minute,
-        calenderColor: calenderColor ?? _calenderColor,
-        reminderID: reminderID ?? _reminderID,
-        isInternalUse: isInternalUse ?? _isInternalUse,
-      );
+  }) => ServiceType(
+    companyID: companyID ?? _companyID,
+    serviceTypeID: serviceTypeID ?? _serviceTypeID,
+    resource: resource ?? _resource,
+    serviceName: serviceName ?? _serviceName,
+    createdDateTime: createdDateTime ?? _createdDateTime,
+    hour: hour ?? _hour,
+    minute: minute ?? _minute,
+    calenderColor: calenderColor ?? _calenderColor,
+    reminderID: reminderID ?? _reminderID,
+    isInternalUse: isInternalUse ?? _isInternalUse,
+  );
 
   dynamic get companyID => _companyID;
   dynamic get serviceTypeID => _serviceTypeID;
@@ -2334,11 +2338,7 @@ class TicketStatus {
   @HiveField(2)
   String? _companyId;
 
-  TicketStatus({
-    dynamic statusId,
-    String? statusName,
-    String? companyId,
-  }) {
+  TicketStatus({dynamic statusId, String? statusName, String? companyId}) {
     _statusId = statusId;
     _statusName = statusName;
     _companyId = companyId;
@@ -2354,12 +2354,11 @@ class TicketStatus {
     dynamic statusId,
     String? statusName,
     String? companyId,
-  }) =>
-      TicketStatus(
-        statusId: statusId ?? _statusId,
-        statusName: statusName ?? _statusName,
-        companyId: companyId ?? _companyId,
-      );
+  }) => TicketStatus(
+    statusId: statusId ?? _statusId,
+    statusName: statusName ?? _statusName,
+    companyId: companyId ?? _companyId,
+  );
 
   dynamic get statusId => _statusId;
   String? get statusName => _statusName;
@@ -2383,11 +2382,7 @@ class Status {
   @HiveField(2)
   dynamic _companyId;
 
-  Status({
-    dynamic statusId,
-    String? statusName,
-    dynamic companyId,
-  }) {
+  Status({dynamic statusId, String? statusName, dynamic companyId}) {
     _statusId = statusId;
     _statusName = statusName;
     _companyId = companyId;
@@ -2399,11 +2394,7 @@ class Status {
     _companyId = json['CompanyId'];
   }
 
-  Status copyWith({
-    dynamic statusId,
-    String? statusName,
-    dynamic companyId,
-  }) =>
+  Status copyWith({dynamic statusId, String? statusName, dynamic companyId}) =>
       Status(
         statusId: statusId ?? _statusId,
         statusName: statusName ?? _statusName,
@@ -2662,47 +2653,46 @@ class Customer {
     bool? isDealer,
     dynamic customerCode,
     dynamic updateDate,
-  }) =>
-      Customer(
-        companyID: companyID ?? _companyID,
-        createdCompanyID: createdCompanyID ?? _createdCompanyID,
-        tagID: tagID ?? _tagID,
-        customerID: customerID ?? _customerID,
-        aMCustomerID: aMCustomerID ?? _aMCustomerID,
-        customerGuid: customerGuid ?? _customerGuid,
-        title: title ?? _title,
-        title2: title2 ?? _title2,
-        firstName: firstName ?? _firstName,
-        firstName2: firstName2 ?? _firstName2,
-        lastName: lastName ?? _lastName,
-        lastName2: lastName2 ?? _lastName2,
-        jobTitle: jobTitle ?? _jobTitle,
-        jobTitle2: jobTitle2 ?? _jobTitle2,
-        address1: address1 ?? _address1,
-        address2: address2 ?? _address2,
-        city: city ?? _city,
-        state: state ?? _state,
-        zipCode: zipCode ?? _zipCode,
-        phone: phone ?? _phone,
-        mobile: mobile ?? _mobile,
-        email: email ?? _email,
-        notes: notes ?? _notes,
-        createdDateTime: createdDateTime ?? _createdDateTime,
-        callPopUploaded: callPopUploaded ?? _callPopUploaded,
-        qboId: qboId ?? _qboId,
-        callPopAppId: callPopAppId ?? _callPopAppId,
-        isPrimaryContact: isPrimaryContact ?? _isPrimaryContact,
-        businessID: businessID ?? _businessID,
-        syncToken: syncToken ?? _syncToken,
-        businessName: businessName ?? _businessName,
-        isBusinessContact: isBusinessContact ?? _isBusinessContact,
-        companyName: companyName ?? _companyName,
-        companyName2: companyName2 ?? _companyName2,
-        dealerID: dealerID ?? _dealerID,
-        isDealer: isDealer ?? _isDealer,
-        customerCode: customerCode ?? _customerCode,
-        updateDate: updateDate ?? _updateDate,
-      );
+  }) => Customer(
+    companyID: companyID ?? _companyID,
+    createdCompanyID: createdCompanyID ?? _createdCompanyID,
+    tagID: tagID ?? _tagID,
+    customerID: customerID ?? _customerID,
+    aMCustomerID: aMCustomerID ?? _aMCustomerID,
+    customerGuid: customerGuid ?? _customerGuid,
+    title: title ?? _title,
+    title2: title2 ?? _title2,
+    firstName: firstName ?? _firstName,
+    firstName2: firstName2 ?? _firstName2,
+    lastName: lastName ?? _lastName,
+    lastName2: lastName2 ?? _lastName2,
+    jobTitle: jobTitle ?? _jobTitle,
+    jobTitle2: jobTitle2 ?? _jobTitle2,
+    address1: address1 ?? _address1,
+    address2: address2 ?? _address2,
+    city: city ?? _city,
+    state: state ?? _state,
+    zipCode: zipCode ?? _zipCode,
+    phone: phone ?? _phone,
+    mobile: mobile ?? _mobile,
+    email: email ?? _email,
+    notes: notes ?? _notes,
+    createdDateTime: createdDateTime ?? _createdDateTime,
+    callPopUploaded: callPopUploaded ?? _callPopUploaded,
+    qboId: qboId ?? _qboId,
+    callPopAppId: callPopAppId ?? _callPopAppId,
+    isPrimaryContact: isPrimaryContact ?? _isPrimaryContact,
+    businessID: businessID ?? _businessID,
+    syncToken: syncToken ?? _syncToken,
+    businessName: businessName ?? _businessName,
+    isBusinessContact: isBusinessContact ?? _isBusinessContact,
+    companyName: companyName ?? _companyName,
+    companyName2: companyName2 ?? _companyName2,
+    dealerID: dealerID ?? _dealerID,
+    isDealer: isDealer ?? _isDealer,
+    customerCode: customerCode ?? _customerCode,
+    updateDate: updateDate ?? _updateDate,
+  );
 
   String? get companyID => _companyID;
   String? get createdCompanyID => _createdCompanyID;
@@ -2882,23 +2872,22 @@ class Resource {
     bool? friday,
     dynamic mobile,
     dynamic email,
-  }) =>
-      Resource(
-        id: id ?? _id,
-        companyID: companyID ?? _companyID,
-        name: name ?? _name,
-        description: description ?? _description,
-        workingHour: workingHour ?? _workingHour,
-        saterDay: saterDay ?? _saterDay,
-        sunday: sunday ?? _sunday,
-        monday: monday ?? _monday,
-        tuesday: tuesday ?? _tuesday,
-        wednesday: wednesday ?? _wednesday,
-        thursday: thursday ?? _thursday,
-        friday: friday ?? _friday,
-        mobile: mobile ?? _mobile,
-        email: email ?? _email,
-      );
+  }) => Resource(
+    id: id ?? _id,
+    companyID: companyID ?? _companyID,
+    name: name ?? _name,
+    description: description ?? _description,
+    workingHour: workingHour ?? _workingHour,
+    saterDay: saterDay ?? _saterDay,
+    sunday: sunday ?? _sunday,
+    monday: monday ?? _monday,
+    tuesday: tuesday ?? _tuesday,
+    wednesday: wednesday ?? _wednesday,
+    thursday: thursday ?? _thursday,
+    friday: friday ?? _friday,
+    mobile: mobile ?? _mobile,
+    email: email ?? _email,
+  );
 
   dynamic get id => _id;
   dynamic get companyID => _companyID;
@@ -2963,6 +2952,8 @@ class Payment {
   String? _paymentRefNum;
   @HiveField(12)
   dynamic _rmPaymentId;
+  @HiveField(13)
+  List<Signature>? _signatures;
 
   Payment({
     dynamic id,
@@ -2978,6 +2969,7 @@ class Payment {
     dynamic qboId,
     String? paymentRefNum,
     dynamic rmPaymentId,
+    List<Signature>? signatures,
   }) {
     _id = id;
     _companyId = companyId;
@@ -2992,6 +2984,7 @@ class Payment {
     _qboId = qboId;
     _paymentRefNum = paymentRefNum;
     _rmPaymentId = rmPaymentId;
+    _signatures = signatures;
   }
 
   Payment.fromJson(dynamic json) {
@@ -3008,6 +3001,12 @@ class Payment {
     _qboId = json['QboId'];
     _paymentRefNum = json['PaymentRefNum'];
     _rmPaymentId = json['RMPaymentId'];
+    if (json['Signatures'] != null) {
+      _signatures = [];
+      json['Signatures'].forEach((v) {
+        _signatures?.add(Signature.fromJson(v));
+      });
+    }
   }
 
   Payment copyWith({
@@ -3024,22 +3023,23 @@ class Payment {
     dynamic qboId,
     String? paymentRefNum,
     dynamic rmPaymentId,
-  }) =>
-      Payment(
-        id: id ?? _id,
-        companyId: companyId ?? _companyId,
-        invocieId: invocieId ?? _invocieId,
-        amount: amount ?? _amount,
-        checkName: checkName ?? _checkName,
-        checkNumber: checkNumber ?? _checkNumber,
-        type: type ?? _type,
-        isDeposit: isDeposit ?? _isDeposit,
-        source: source ?? _source,
-        createdDate: createdDate ?? _createdDate,
-        qboId: qboId ?? _qboId,
-        paymentRefNum: paymentRefNum ?? _paymentRefNum,
-        rmPaymentId: rmPaymentId ?? _rmPaymentId,
-      );
+    List<Signature>? signatures,
+  }) => Payment(
+    id: id ?? _id,
+    companyId: companyId ?? _companyId,
+    invocieId: invocieId ?? _invocieId,
+    amount: amount ?? _amount,
+    checkName: checkName ?? _checkName,
+    checkNumber: checkNumber ?? _checkNumber,
+    type: type ?? _type,
+    isDeposit: isDeposit ?? _isDeposit,
+    source: source ?? _source,
+    createdDate: createdDate ?? _createdDate,
+    qboId: qboId ?? _qboId,
+    paymentRefNum: paymentRefNum ?? _paymentRefNum,
+    rmPaymentId: rmPaymentId ?? _rmPaymentId,
+    signatures: signatures ?? _signatures,
+  );
 
   dynamic get id => _id;
   String? get companyId => _companyId;
@@ -3054,6 +3054,7 @@ class Payment {
   dynamic get qboId => _qboId;
   String? get paymentRefNum => _paymentRefNum;
   dynamic get rmPaymentId => _rmPaymentId;
+  List<Signature>? get signatures => _signatures;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -3070,6 +3071,129 @@ class Payment {
     map['QboId'] = _qboId;
     map['PaymentRefNum'] = _paymentRefNum;
     map['RMPaymentId'] = _rmPaymentId;
+    if (_signatures != null) {
+      map['Signatures'] = _signatures?.map((v) => v.toJson()).toList();
+    }
+    return map;
+  }
+}
+
+@HiveType(typeId: 17)
+class Signature {
+  @HiveField(0)
+  dynamic _id;
+  @HiveField(1)
+  dynamic _appointmentId;
+  @HiveField(2)
+  String? _invoiceId;
+  @HiveField(3)
+  dynamic _paymentId;
+  @HiveField(4)
+  dynamic _customerId;
+  @HiveField(5)
+  String? _companyId;
+  @HiveField(6)
+  String? _signatureFileName;
+  @HiveField(7)
+  String? _signatureFileURL;
+  @HiveField(8)
+  dynamic _signatureFileContent;
+  @HiveField(9)
+  String? _createdDate;
+  @HiveField(10)
+  String? _userId;
+
+  Signature({
+    dynamic id,
+    dynamic appointmentId,
+    String? invoiceId,
+    dynamic paymentId,
+    dynamic customerId,
+    String? companyId,
+    String? signatureFileName,
+    String? signatureFileURL,
+    dynamic signatureFileContent,
+    String? createdDate,
+    String? userId,
+  }) {
+    _id = id;
+    _appointmentId = appointmentId;
+    _invoiceId = invoiceId;
+    _paymentId = paymentId;
+    _customerId = customerId;
+    _companyId = companyId;
+    _signatureFileName = signatureFileName;
+    _signatureFileURL = signatureFileURL;
+    _signatureFileContent = signatureFileContent;
+    _createdDate = createdDate;
+    _userId = userId;
+  }
+
+  Signature.fromJson(dynamic json) {
+    _id = json['Id'];
+    _appointmentId = json['AppointmentId'];
+    _invoiceId = json['InvoiceId'];
+    _paymentId = json['PaymentId'];
+    _customerId = json['CustomerId'];
+    _companyId = json['CompanyId'];
+    _signatureFileName = json['SignatureFileName'];
+    _signatureFileURL = json['SignatureFileURL'];
+    _signatureFileContent = json['SignatureFileContent'];
+    _createdDate = json['CreatedDate'];
+    _userId = json['UserId'];
+  }
+
+  Signature copyWith({
+    dynamic id,
+    dynamic appointmentId,
+    String? invoiceId,
+    dynamic paymentId,
+    dynamic customerId,
+    String? companyId,
+    String? signatureFileName,
+    String? signatureFileURL,
+    dynamic signatureFileContent,
+    String? createdDate,
+    String? userId,
+  }) => Signature(
+    id: id ?? _id,
+    appointmentId: appointmentId ?? _appointmentId,
+    invoiceId: invoiceId ?? _invoiceId,
+    paymentId: paymentId ?? _paymentId,
+    customerId: customerId ?? _customerId,
+    companyId: companyId ?? _companyId,
+    signatureFileName: signatureFileName ?? _signatureFileName,
+    signatureFileURL: signatureFileURL ?? _signatureFileURL,
+    signatureFileContent: signatureFileContent ?? _signatureFileContent,
+    createdDate: createdDate ?? _createdDate,
+    userId: userId ?? _userId,
+  );
+
+  dynamic get id => _id;
+  dynamic get appointmentId => _appointmentId;
+  String? get invoiceId => _invoiceId;
+  dynamic get paymentId => _paymentId;
+  dynamic get customerId => _customerId;
+  String? get companyId => _companyId;
+  String? get signatureFileName => _signatureFileName;
+  String? get signatureFileURL => _signatureFileURL;
+  dynamic get signatureFileContent => _signatureFileContent;
+  String? get createdDate => _createdDate;
+  String? get userId => _userId;
+
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    map['Id'] = _id;
+    map['AppointmentId'] = _appointmentId;
+    map['InvoiceId'] = _invoiceId;
+    map['PaymentId'] = _paymentId;
+    map['CustomerId'] = _customerId;
+    map['CompanyId'] = _companyId;
+    map['SignatureFileName'] = _signatureFileName;
+    map['SignatureFileURL'] = _signatureFileURL;
+    map['SignatureFileContent'] = _signatureFileContent;
+    map['CreatedDate'] = _createdDate;
+    map['UserId'] = _userId;
     return map;
   }
 }

@@ -111,7 +111,10 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.BILLABLE_ITEM_SCREEN,
-      page: () => const BillableItemsView(),
+      page: () {
+        
+        final args = Get.arguments as Map<String, dynamic>;
+        return BillableItemsView(isFromCreateInvoice: args['fromCreateInvoice'] ?? false);},
       // bindings: [AppointmentBinding(), CustomFieldsBinding()],
     ),
     GetPage(

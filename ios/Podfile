@@ -66,6 +66,8 @@ post_install do |installer|
 
         content = content.sub(old_code, new_code)
 
+        # Make file writable before attempting to write
+        File.chmod(0644, player_view_path)
         File.write(player_view_path, content)
         puts "✅ Patched DKPlayerView.swift for iOS 16+ compatibility"
       end

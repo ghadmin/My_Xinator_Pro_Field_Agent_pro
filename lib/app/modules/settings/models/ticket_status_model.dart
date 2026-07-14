@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'ticket_status_model.g.dart';
 
-@HiveType(typeId: 12)
+@HiveType(typeId: 15)
 class TicketStatusSettings extends HiveObject {
   @HiveField(0)
   int? statusId;

@@ -26,7 +26,6 @@ import '../../invoice/controllers/invoice_controller.dart';
 import '../../item/models/item_list_model.dart';
 import '../../settings/controllers/settings_controller.dart';
 import '../models/appointment_model.dart';
-import '../models/equipment_type_model.dart';
 import '../models/file_model.dart';
 import '../models/note_model.dart';
 import '../models/site_model.dart';
@@ -229,7 +228,7 @@ class AppointmentController extends GetxController
           return;
         }
 
-        // log("getCustomerSite response: $response");
+        kLog("getCustomerSite response: $response");
 
         // Parse response - API returns an array
         if (response is List && response.isNotEmpty) {
@@ -383,7 +382,7 @@ class AppointmentController extends GetxController
                 name: item.name,
                 description: item.description,
                 price: double.tryParse(item.unitPrice ?? "0.00"),
-                isTaxable: item.isTaxable == "TAX" ? true : false,
+                isTaxable: item.isTaxable == "TAX" ? true : false,po: item.po,
                 // itemTypeId: int.parse(item.itemTyId!),
               ),
             );
@@ -410,34 +409,49 @@ class AppointmentController extends GetxController
 
   Future<void> sendSMS() async {
     showLoading(debugInfo: "sendSMS - Start");
-    var companyID = MySharedPref.getCompanyID();
-    var response = await DioClient()
-        .get(
-          url: ApiUrl.sendCustomerSMS,
-          params: {
-            "companyId": companyID,
-            "customerId": customerID,
-            "SMSBody": smsController.text,
-            "mobile": mobileNumber.isNotEmpty
-                ? mobileNumber
-                : phoneNumber.isNotEmpty
-                ? phoneNumber
-                : "",
-          },
-        )
-        .catchError(handleError);
+    try {
+      var companyID = await MySharedPref.getCompanyID();
+      var response = await DioClient()
+          .get(
+            url: ApiUrl.sendCustomerSMS,
+            params: {
+              "companyId": companyID,
+              "customerId": customerID,
+              "SMSBody": smsController.text,
+              "mobile": mobileNumber.isNotEmpty
+                  ? mobileNumber
+                  : phoneNumber.isNotEmpty
+                  ? phoneNumber
+                  : "",
+            },
+          )
+          .catchError((error) {
+            // Handle error but don't hide loading here - let the catch block do it
+            handleError(error);
+            throw error; // Re-throw to ensure we don't continue
+          });
 
-    if (response == null) return;
-    log(
-      "url ${ApiUrl.sendCustomerSMS} params ${{"companyId": companyID, "customerId": customerID, "SMSBody": smsController.text, "mobile": mobileNumber.isNotEmpty
-          ? mobileNumber
-          : phoneNumber.isNotEmpty
-          ? phoneNumber
-          : ""}}  message send $response",
-    );
-    hideLoading(debugInfo: "sendSMS - Success");
-    smsController.clear();
-    MySnackBar.showToast(message: response["Response"]);
+      if (response == null) {
+        hideLoading(debugInfo: "sendSMS - No response");
+        return;
+      }
+
+      kLog(
+        "url ${ApiUrl.sendCustomerSMS} params ${{"companyId": companyID, "customerId": customerID, "SMSBody": smsController.text, "mobile": mobileNumber.isNotEmpty
+            ? mobileNumber
+            : phoneNumber.isNotEmpty
+            ? phoneNumber
+            : ""}}  message send $response",
+      );
+
+      smsController.clear();
+      MySnackBar.showToast(message: response["Response"]);
+    } catch (e) {
+      // Error already handled by handleError above
+      log("Error in sendSMS: $e");
+    } finally {
+      hideLoading(debugInfo: "sendSMS - Complete");
+    }
   }
 
   Future<void> pickDate() async {
@@ -882,7 +896,9 @@ class AppointmentController extends GetxController
         if (sortTextController.text.isNotEmpty) {
           sortAppointmentsText(); // re-apply text filter after refresh
         } else if (selectedDateRange.value != null) {
-          sortAppointmentsInRange(selectedDateRange.value!); // re-apply date range filter after refresh
+          sortAppointmentsInRange(
+            selectedDateRange.value!,
+          ); // re-apply date range filter after refresh
         } else if (selectedDate.value != null) {
           sortAppointmentsDate(); // re-apply single date filter after refresh
         }

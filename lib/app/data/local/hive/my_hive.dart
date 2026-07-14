@@ -5,6 +5,7 @@ import '../../../modules/appointment/models/appointment_model.dart';
 import '../../../modules/customer/models/customer_model.dart';
 import '../../../modules/invoice/models/tax_model.dart';
 import '../../../modules/item/models/item_group_model.dart';
+import '../../../modules/item/models/item_bundle_model.dart';
 import '../../../modules/item/models/item_list_model.dart';
 import '../../../modules/settings/models/appointment_status_setting.dart';
 import '../../../modules/settings/models/ticket_status_model.dart';
@@ -21,6 +22,7 @@ class MyHive {
   static late Box<TaxModel> _taxBox;
   static late Box<ItemListModel> _itemListBox;
   static late Box<ItemGroupModel> _itemGroupListBox;
+  static late Box<ItemBundleModel> _itemBundleListBox;
   static late Box<dynamic> _formsBox;
 
   // Box name, it's like the table name
@@ -31,6 +33,7 @@ class MyHive {
   static const String _taxBoxName = 'tax';
   static const String _itemListBoxName = 'itemListBox';
   static const String _itemGroupListBoxName = 'itemGroupListBox';
+  static const String _itemBundleListBoxName = 'itemBundleListBox';
   static const String _appointmentStatusSettingBoxName =
       'appointmentStatusSetting';
   static const String _formsBoxName = 'forms';
@@ -55,6 +58,7 @@ class MyHive {
     await initTaxBox();
     await initItemListBox();
     await initItemGroupListBox();
+    await initItemBundleListBox();
     await initFormsBox();
   }
 
@@ -153,6 +157,19 @@ class MyHive {
     }
   }
 
+  /// Initialize item bundle List box
+  static Future<void> initItemBundleListBox() async {
+    try {
+      _itemBundleListBox = await Hive.openBox<ItemBundleModel>(_itemBundleListBoxName);
+    } catch (error) {
+      kLog(
+        "Error opening itemBundleListBox, file might be corrupted. Deleting and recreating: $error",
+      );
+      await Hive.deleteBoxFromDisk(_itemBundleListBoxName);
+      _itemBundleListBox = await Hive.openBox<ItemBundleModel>(_itemBundleListBoxName);
+    }
+  }
+
   /// Initialize forms box
   static Future<void> initFormsBox() async {
     try {
@@ -240,6 +257,16 @@ class MyHive {
     }
   }
 
+  /// Save all itemBundleList to the database
+  static Future<void> saveItemBundleList(List<ItemBundleModel> itemBundles) async {
+    try {
+      await _itemBundleListBox.clear();
+      await _itemBundleListBox.addAll(itemBundles);
+    } catch (error) {
+      kLog("Error saving item bundles: $error");
+    }
+  }
+
   /// Get all appointments from Hive
   static List<Appointments> getAllAppointments() {
     final recipes = _appointmentBox.values.toList();
@@ -281,6 +308,12 @@ class MyHive {
   static List<ItemGroupModel> getAllItemGroups() {
     final itemGroups = _itemGroupListBox.values.toList();
     return itemGroups.cast<ItemGroupModel>();
+  }
+
+  /// Get all itemBundleList from Hive
+  static List<ItemBundleModel> getAllItemBundles() {
+    final itemBundles = _itemBundleListBox.values.toList();
+    return itemBundles.cast<ItemBundleModel>();
   }
 
   /// Save forms data for a specific resource
@@ -452,6 +485,25 @@ class MyHive {
     } catch (error) {
       kLog("❌ Error checking form progress: $error");
       return false;
+    }
+  }
+
+  /// Clear all Hive data - use this when there's corrupted data or schema changes
+  static Future<void> clearAllHiveData() async {
+    try {
+      await Hive.deleteBoxFromDisk(_appointmentBoxName);
+      await Hive.deleteBoxFromDisk(_customerBoxName);
+      await Hive.deleteBoxFromDisk(_ticketStatusSettingBoxName);
+      await Hive.deleteBoxFromDisk(_appointmentStatusSettingBoxName);
+      await Hive.deleteBoxFromDisk(_taxBoxName);
+      await Hive.deleteBoxFromDisk(_itemListBoxName);
+      await Hive.deleteBoxFromDisk(_itemGroupListBoxName);
+      await Hive.deleteBoxFromDisk(_itemBundleListBoxName);
+      await Hive.deleteBoxFromDisk(_formsBoxName);
+      kLog("✅ All Hive data cleared successfully");
+    } catch (error) {
+      kLog("❌ Error clearing Hive data: $error");
+      rethrow;
     }
   }
 }

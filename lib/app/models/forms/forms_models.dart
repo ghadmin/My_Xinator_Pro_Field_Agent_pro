@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 
 // ============== POLL RESPONSE MODELS ==============
 
@@ -237,6 +238,84 @@ class AckResponse {
 
   Map<String, dynamic> toJson() {
     return {'success': success, 'acked': acked, 'requested': requested};
+  }
+}
+
+// ============== ATTACH TEMPLATES MODELS ==============
+
+/// Response from the attach templates endpoint
+class AttachTemplatesResponse {
+  final bool success;
+  final int count;
+  final List<AttachTemplateResult> items;
+
+  AttachTemplatesResponse({
+    required this.success,
+    required this.count,
+    required this.items,
+  });
+
+  factory AttachTemplatesResponse.fromJson(Map<String, dynamic> json) {
+    return AttachTemplatesResponse(
+      success: json['success'] ?? false,
+      count: json['count'] ?? 0,
+      items: (json['items'] as List? ?? [])
+          .map((item) => AttachTemplateResult.fromJson(item))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'count': count,
+      'items': items.map((item) => item.toJson()).toList(),
+    };
+  }
+
+  /// Get count of successfully attached templates
+  int get successCount => items.where((item) => item.success).length;
+
+  /// Get count of templates that were already attached
+  int get alreadyAttachedCount => items.where((item) => item.alreadyAttached).length;
+
+  /// Get list of form instance IDs for newly attached forms
+  List<int> get formInstanceIds =>
+      items.where((item) => item.success && !item.alreadyAttached)
+          .map((item) => item.formInstanceId)
+          .toList();
+}
+
+/// Result for a single template attachment
+class AttachTemplateResult {
+  final int templateId;
+  final bool success;
+  final bool alreadyAttached;
+  final int formInstanceId;
+
+  AttachTemplateResult({
+    required this.templateId,
+    required this.success,
+    required this.alreadyAttached,
+    required this.formInstanceId,
+  });
+
+  factory AttachTemplateResult.fromJson(Map<String, dynamic> json) {
+    return AttachTemplateResult(
+      templateId: json['templateId'] ?? 0,
+      success: json['success'] ?? false,
+      alreadyAttached: json['alreadyAttached'] ?? false,
+      formInstanceId: json['formInstanceId'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'templateId': templateId,
+      'success': success,
+      'alreadyAttached': alreadyAttached,
+      'formInstanceId': formInstanceId,
+    };
   }
 }
 
@@ -730,4 +809,142 @@ class FormRow {
   Map<String, dynamic> toJson() {
     return {'id': id, 'fields': fields.map((f) => f.toJson()).toList()};
   }
+}
+
+// ============== TEMPLATE LIST MODELS ==============
+
+/// Response from the templates endpoint
+class TemplatesResponse {
+  final bool success;
+  final int count;
+  final List<FormTemplateItem> templates;
+
+  TemplatesResponse({
+    required this.success,
+    required this.count,
+    required this.templates,
+  });
+
+  factory TemplatesResponse.fromJson(Map<String, dynamic> json) {
+    return TemplatesResponse(
+      success: json['success'] ?? false,
+      count: json['count'] ?? 0,
+      templates: (json['templates'] as List? ?? [])
+          .map((item) => FormTemplateItem.fromJson(item))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'success': success,
+      'count': count,
+      'templates': templates.map((t) => t.toJson()).toList(),
+    };
+  }
+}
+
+/// A form template item from the templates endpoint
+class FormTemplateItem {
+  final int id;
+  final String name;
+  final String description;
+  final String category;
+  final bool requireSignature;
+  final bool requireTip;
+  final bool isAutoAssignEnabled;
+  final DateTime createdDateTime;
+  final DateTime updatedDateTime;
+
+  FormTemplateItem({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.category,
+    required this.requireSignature,
+    required this.requireTip,
+    required this.isAutoAssignEnabled,
+    required this.createdDateTime,
+    required this.updatedDateTime,
+  });
+
+  factory FormTemplateItem.fromJson(Map<String, dynamic> json) {
+    return FormTemplateItem(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      category: json['category'] ?? '',
+      requireSignature: json['requireSignature'] ?? false,
+      requireTip: json['requireTip'] ?? false,
+      isAutoAssignEnabled: json['isAutoAssignEnabled'] ?? false,
+      createdDateTime: DateTime.parse(
+        json['createdDateTime'] ?? DateTime.now().toIso8601String(),
+      ),
+      updatedDateTime: DateTime.parse(
+        json['updatedDateTime'] ?? DateTime.now().toIso8601String(),
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'category': category,
+      'requireSignature': requireSignature,
+      'requireTip': requireTip,
+      'isAutoAssignEnabled': isAutoAssignEnabled,
+      'createdDateTime': createdDateTime.toIso8601String(),
+      'updatedDateTime': updatedDateTime.toIso8601String(),
+    };
+  }
+
+  /// Convert to FormOption for UI display
+  FormOption toFormOption() {
+    // Determine icon based on category
+    IconData icon;
+    switch (category.toLowerCase()) {
+      case 'maintenance':
+        icon = Icons.miscellaneous_services;
+        break;
+      case 'inspection':
+        icon = Icons.checklist;
+        break;
+      case 'quote':
+      case 'pricing':
+        icon = Icons.request_quote;
+        break;
+      case 'work order':
+        icon = Icons.assignment;
+        break;
+      default:
+        icon = Icons.description;
+    }
+
+    return FormOption(
+      id: id.toString(),
+      name: name,
+      description: description,
+      icon: icon,
+      templateId: id,
+    );
+  }
+}
+
+/// Form option for UI display
+class FormOption {
+  final String id;
+  final String name;
+  final String description;
+  final IconData icon;
+  final int? templateId;
+
+  FormOption({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.icon,
+    this.templateId,
+  });
 }

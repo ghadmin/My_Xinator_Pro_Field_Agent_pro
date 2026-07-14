@@ -20,7 +20,8 @@
       "Bash(xargs grep -n \"\\\\${.*}.*toStringAsFixed\\(1\\)\")",
       "Bash(xargs grep -n \"\\\\${.*}.*toStringAsFixed\\(0\\)\")",
       "Bash(xargs grep -n \"\\\\${.*}\\\\.toStringAsFixed\\(2\\)\")",
-      "Bash(grep -n '\\\\$ ' /Users/hridoy/StudioProjects/My_Xinator_Pro_Field_Agent_pro/lib/app/modules/invoice/views/payment_by_cash_view.dart)"
+      "Bash(grep -n '\\\\$ ' /Users/hridoy/StudioProjects/My_Xinator_Pro_Field_Agent_pro/lib/app/modules/invoice/views/payment_by_cash_view.dart)",
+      "Bash(pkill -f \"flutter run\")"
     ]
   }
 }

@@ -1,22 +1,17 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:myxinator_pro_field_agent_pro/app/components/global-widgets/general_text_field.dart';
 import 'package:myxinator_pro_field_agent_pro/app/components/global-widgets/my_buttons.dart';
-import 'package:myxinator_pro_field_agent_pro/app/components/global-widgets/my_snackbar.dart';
-import 'package:myxinator_pro_field_agent_pro/app/data/local/my_shared_pref.dart';
 import 'package:myxinator_pro_field_agent_pro/app/models/forms/forms_models.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/appointment_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/custom_fields_controller.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/all_tab_screens/form_selection_screen.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/widgets/warm_organic_components.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/forms/controllers/forms_controller.dart';
-import 'package:myxinator_pro_field_agent_pro/app/routes/app_pages.dart';
-import 'package:myxinator_pro_field_agent_pro/app/service/REST/api_urls.dart';
 import 'package:myxinator_pro_field_agent_pro/app/service/helper/network_connectivity.dart';
-import 'package:myxinator_pro_field_agent_pro/config/theme/light_theme_colors.dart';
 import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:remixicon/remixicon.dart';
@@ -69,6 +64,17 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
           child: Column(
             children: [
               SizedBox(height: 8.h),
+              Align(
+                alignment: Alignment.centerRight,
+                child: OrganicPrimaryButton(
+                  text: 'Add New',
+                  icon: Icons.add_rounded,
+                  height: 40.h,
+                  width: 140.w,
+                  onPressed: () => Get.to(() => const FormSelectionScreen()),
+                ),
+              ),
+              SizedBox(height: 10.h),
 
               formsController.pendingForms.isEmpty
                   ? Center(
@@ -128,7 +134,6 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
   }
 
   Widget _buildFormCard(BuildContext context, FormQueueItem form) {
-    kLog('form response id ${form.formInstanceId}');
     return OrganicCard(
       margin: EdgeInsets.only(bottom: 12.h),
       shadow: WarmOrganicBlueTheme.softShadow,
@@ -145,6 +150,7 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                   ),
                 ),
               ),
+
               IconButton(
                 icon: Icon(
                   Remix.telegram_2_fill,

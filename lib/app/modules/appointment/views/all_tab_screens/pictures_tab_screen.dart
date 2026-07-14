@@ -344,6 +344,7 @@ class _PicturesTabScreenState extends State<PicturesTabScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: images.map((item) {
+                            kLog('v ${item.fileUrl}');
                             return GestureDetector(
                               onTap: () {
                                 showDialog(

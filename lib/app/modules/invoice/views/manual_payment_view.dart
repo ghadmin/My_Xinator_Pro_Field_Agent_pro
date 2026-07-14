@@ -71,9 +71,7 @@ class ManualPaymentView extends GetView<InvoiceController> {
               // Customer Signature Section
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12.sp),
-                child: CustomerSignatureSection(
-                  customerSignature: controller.customerSignature,
-                ),
+                child: CustomerSignatureSection(),
               ),
               SizedBox(height: 30.h),
               _backButton(), SizedBox(height: 30.h),

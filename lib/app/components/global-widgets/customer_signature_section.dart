@@ -9,11 +9,8 @@ import '../../modules/invoice/controllers/invoice_controller.dart';
 import '../../modules/invoice/views/customer_signature_view.dart';
 
 class CustomerSignatureSection extends StatelessWidget {
-  final String customerSignature;
-
   const CustomerSignatureSection({
     super.key,
-    required this.customerSignature,
   });
 
   InvoiceController get controller => Get.find<InvoiceController>();
@@ -22,15 +19,16 @@ class CustomerSignatureSection extends StatelessWidget {
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
 
-    // Decode base64 to bytes for display
-    Uint8List? signatureBytes;
-    if (customerSignature.isNotEmpty) {
-      try {
-        signatureBytes = base64Decode(customerSignature);
-      } catch (e) {
-        debugPrint('Error decoding signature: $e');
+    return Obx(() {
+      // Decode base64 to bytes for display
+      Uint8List? signatureBytes;
+      if (controller.customerSignature.value.isNotEmpty) {
+        try {
+          signatureBytes = base64Decode(controller.customerSignature.value);
+        } catch (e) {
+          debugPrint('Error decoding signature: $e');
+        }
       }
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,13 +42,13 @@ class CustomerSignatureSection extends StatelessWidget {
           onTap: () async {
             final result = await Get.to(
               () => CustomerSignatureView(
-                existingSignature: customerSignature.isNotEmpty
-                    ? customerSignature
+                existingSignature: controller.customerSignature.value.isNotEmpty
+                    ? controller.customerSignature.value
                     : null,
               ),
             );
             if (result != null) {
-              controller.customerSignature = result;
+              controller.customerSignature.value = result;
             }
           },
           child: Container(
@@ -130,5 +128,6 @@ class CustomerSignatureSection extends StatelessWidget {
         ),
       ],
     );
+    });
   }
 }

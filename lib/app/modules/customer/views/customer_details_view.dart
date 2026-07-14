@@ -404,9 +404,9 @@ import '../../../utils/simple_phone_formatter.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/text_widget.dart';
-import '../controllers/customer_controller.dart';
+import '../../appointment/controllers/appointment_controller.dart';
 
-class CustomerDetailsView extends GetView<CustomerController> {
+class CustomerDetailsView extends GetView<AppointmentController> {
   const CustomerDetailsView({super.key});
 
   @override
@@ -450,7 +450,7 @@ class CustomerDetailsView extends GetView<CustomerController> {
   // CUSTOMER INFO SECTION
   // ---------------------------------------------------------------------------
   Widget _buildCustomerInfoCard(ThemeData theme) {
-    final customer = controller.selectedCustomer.value;
+    final customer = controller.selectedAppointment.value!.customer;
 
     return Card(
       elevation: 0,
@@ -490,7 +490,9 @@ class CustomerDetailsView extends GetView<CustomerController> {
           // Email
           _emailTile(
             "Email",
-            controller.email != '' ? controller.email : "N/A",
+            customer?.email != null && customer!.email!.isNotEmpty
+                ? customer.email!
+                : "N/A",
             theme,
           ),
           MainDivider(),
@@ -506,7 +508,9 @@ class CustomerDetailsView extends GetView<CustomerController> {
           // Business Name
           _tile(
             "Business Name",
-            controller.businessName != '' ? controller.businessName : "N/A",
+            customer?.businessName != null && customer!.businessName!.isNotEmpty
+                ? customer.businessName!
+                : "N/A",
             theme,
           ),
           MainDivider(),

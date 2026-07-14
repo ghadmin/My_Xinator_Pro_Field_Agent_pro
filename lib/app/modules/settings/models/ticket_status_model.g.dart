@@ -8,7 +8,7 @@ part of 'ticket_status_model.dart';
 
 class TicketStatusSettingsAdapter extends TypeAdapter<TicketStatusSettings> {
   @override
-  final int typeId = 12;
+  final int typeId = 15;
 
   @override
   TicketStatusSettings read(BinaryReader reader) {

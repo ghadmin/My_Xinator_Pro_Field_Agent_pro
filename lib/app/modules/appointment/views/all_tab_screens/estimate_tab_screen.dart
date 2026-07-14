@@ -41,41 +41,45 @@ class _EstimateTabScreenState extends State<EstimateTabScreen> {
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         child: Obx(
-          () => Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              OrganicPrimaryButton(
-                key: _createInvoiceButtonKey,
-                text: 'Create New',
-                icon: Icons.add_rounded,
-                height: 40.h,
-                width: 140.w,
-                onPressed: () => _showCreateInvoiceMenu(context),
-              ),
-              SizedBox(height: 12.h),
+          () => SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                OrganicPrimaryButton(
+                  key: _createInvoiceButtonKey,
+                  text: 'Create New',
+                  icon: Icons.add_rounded,
+                  height: 40.h,
+                  width: 140.w,
+                  onPressed: () => _showCreateInvoiceMenu(context),
+                ),
+                SizedBox(height: 12.h),
 
-              if (controller
-                          .sortedAppointments[controller.selectedAptIndex.value]
-                          .invoices ==
-                      null ||
-                  controller
+                if (controller
+                            .sortedAppointments[controller
+                                .selectedAptIndex
+                                .value]
+                            .invoices ==
+                        null ||
+                    controller
+                        .sortedAppointments[controller.selectedAptIndex.value]
+                        .invoices!
+                        .isEmpty)
+                  OrganicEmptyState(
+                    icon: Icons.receipt_long_rounded,
+                    title: 'No Invoices',
+                    subtitle:
+                        'Create an invoice or estimate for this appointment.',
+                  )
+                else
+                  ...controller
                       .sortedAppointments[controller.selectedAptIndex.value]
                       .invoices!
-                      .isEmpty)
-                OrganicEmptyState(
-                  icon: Icons.receipt_long_rounded,
-                  title: 'No Invoices',
-                  subtitle:
-                      'Create an invoice or estimate for this appointment.',
-                )
-              else
-                ...controller
-                    .sortedAppointments[controller.selectedAptIndex.value]
-                    .invoices!
-                    .map((proposal) => _buildInvoiceCard(context, proposal)),
+                      .map((proposal) => _buildInvoiceCard(context, proposal)),
 
-              SizedBox(height: 80.h),
-            ],
+                SizedBox(height: 80.h),
+              ],
+            ),
           ),
         ),
       ),
@@ -262,6 +266,7 @@ class _EstimateTabScreenState extends State<EstimateTabScreen> {
                 id: item.itemId,
                 name: item.name,
                 description: item.description,
+                po: item.po,
                 price: double.tryParse(item.unitPrice ?? "0.00"),
                 isTaxable: item.isTaxable == "TAX" ? true : false,
                 // itemTypeId: int.parse(item.itemTyId!),

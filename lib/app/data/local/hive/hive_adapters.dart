@@ -1,7 +1,10 @@
 import '../../../modules/appointment/models/appointment_model.dart';
+import '../../../modules/sceduling/models/appointment_model.dart' as scheduling_models;
 import '../../../modules/customer/models/customer_model.dart';
 import '../../../modules/invoice/models/tax_model.dart';
 import '../../../modules/item/models/item_list_model.dart';
+import '../../../modules/item/models/item_group_model.dart';
+import '../../../modules/item/models/item_bundle_model.dart';
 import '../../../modules/settings/models/appointment_status_setting.dart';
 import '../../../modules/settings/models/ticket_status_model.dart';
 import 'my_hive.dart';
@@ -20,6 +23,8 @@ class HiveAdapters {
         ..registerAdapter(CustomerAdapter())
         ..registerAdapter(ResourceAdapter())
         ..registerAdapter(PaymentAdapter())
+        ..registerAdapter(SignatureAdapter())
+        ..registerAdapter(scheduling_models.PaymentSignatureAdapter())
 
         // HiveAdapter for TicketStatusSettings
         ..registerAdapter(TicketStatusSettingsAdapter())
@@ -30,7 +35,11 @@ class HiveAdapters {
         // HiveAdapter for CustomerModel
         ..registerAdapter(CustomerModelAdapter())
         // HiveAdapter for ItemListModel
-        ..registerAdapter(ItemListModelAdapter());
+        ..registerAdapter(ItemListModelAdapter())
+        // HiveAdapter for ItemGroupModel
+        ..registerAdapter(ItemGroupModelAdapter())
+        // HiveAdapter for ItemBundleModel
+        ..registerAdapter(ItemBundleModelAdapter());
     });
   }
 }

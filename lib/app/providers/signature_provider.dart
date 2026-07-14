@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:myxinator_pro_field_agent_pro/app/models/signature/signature_model.dart';
+import 'package:myxinator_pro_field_agent_pro/app/models/signature/signature_request_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/repositories/signature_repository.dart';
+import 'package:myxinator_pro_field_agent_pro/app/services/signature_api_service.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 
 /// Signature Provider
@@ -8,6 +10,7 @@ import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 /// Manages signature state with GetX
 class SignatureProvider extends GetxController {
   final SignatureRepository _repository = SignatureRepository();
+  final SignatureApiService _apiService = SignatureApiService();
 
   // ============== OBSERVABLES ==============
 
@@ -253,6 +256,152 @@ class SignatureProvider extends GetxController {
   /// Set signature image data (for typed signatures converted to image)
   void setSignatureImageData(String base64Data) {
     signatureImageData.value = base64Data;
+  }
+
+  // ============== SIGNATURE API METHODS ==============
+
+  /// Save signature for payment
+  ///
+  /// Saves current signature for a specific payment using the new signature model structure
+  /// [paymentId] - The payment ID to attach the signature to
+  /// [customerId] - Customer ID (optional)
+  /// [companyId] - Company ID (optional)
+  /// [userId] - User ID (optional)
+  /// [appointmentId] - Appointment ID (optional)
+  /// [invoiceId] - Invoice ID (optional)
+  Future<bool> saveSignatureForPayment({
+    required int paymentId,
+    int? customerId,
+    String? companyId,
+    String? userId,
+    int? appointmentId,
+    String? invoiceId,
+  }) async {
+    try {
+      // Validate based on current tab
+      if (currentTabIndex.value == 0) {
+        // Draw tab
+        if (!validateDrawnSignature()) return false;
+      } else {
+        // Type tab
+        if (!validateTypedSignature()) return false;
+      }
+
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      // Get signature data
+      final signatureData = currentTabIndex.value == 0
+          ? drawnSignatureData.value
+          : signatureImageData.value;
+
+      // Generate signature filename
+      final signatureType = currentTabIndex.value == 0 ? 'drawn' : 'typed';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final signatureFileName = 'signature_${signatureType}_$timestamp.png';
+
+      // Create signature request model
+      final request = SignatureRequestModel.forPayment(
+        paymentId: paymentId,
+        signatureFileName: signatureFileName,
+        signatureFileContent: signatureData,
+        customerId: customerId,
+        companyId: companyId,
+        userId: userId,
+        appointmentId: appointmentId,
+        invoiceId: invoiceId,
+      );
+
+      // Call API service
+      final response = await _apiService.saveSignatureForPayment(
+        request: request,
+      );
+
+      if (_apiService.isSuccess(response)) {
+        kLog('✅ Signature saved for payment: $paymentId');
+        return true;
+      } else {
+        final errorMsg = _apiService.getErrorMessage(response);
+        errorMessage.value = errorMsg;
+        kLog('❌ Failed to save signature for payment: $errorMsg');
+        return false;
+      }
+    } catch (e) {
+      kLog('❌ Error saving signature for payment: $e');
+      errorMessage.value = 'Error: $e';
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Save signature for appointment
+  ///
+  /// Saves current signature for a specific appointment using the new signature model structure
+  /// [appointmentId] - The appointment ID to attach the signature to
+  /// [customerId] - Customer ID (optional)
+  /// [companyId] - Company ID (optional)
+  /// [userId] - User ID (optional)
+  Future<bool> saveSignatureForAppointment({
+    required String appointmentId,
+    int? customerId,
+    String? companyId,
+    String? userId,
+  }) async {
+    try {
+      // Validate based on current tab
+      if (currentTabIndex.value == 0) {
+        // Draw tab
+        if (!validateDrawnSignature()) return false;
+      } else {
+        // Type tab
+        if (!validateTypedSignature()) return false;
+      }
+
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      // Get signature data
+      final signatureData = currentTabIndex.value == 0
+          ? drawnSignatureData.value
+          : signatureImageData.value;
+
+      // Generate signature filename
+      final signatureType = currentTabIndex.value == 0 ? 'drawn' : 'typed';
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final signatureFileName = 'signature_${signatureType}_$timestamp.png';
+
+      // Create signature request model
+      final request = SignatureRequestModel.forAppointment(
+        appointmentId: int.parse(appointmentId),
+        signatureFileName: signatureFileName,
+        signatureFileContent: signatureData,
+        customerId: customerId,
+        companyId: companyId,
+        userId: userId,
+      );
+
+      // Call API service
+      final response = await _apiService.saveSignature(
+        request: request,
+      );
+
+      if (_apiService.isSuccess(response)) {
+        kLog('✅ Signature saved for appointment: $appointmentId');
+        return true;
+      } else {
+        final errorMsg = _apiService.getErrorMessage(response);
+        errorMessage.value = errorMsg;
+        kLog('❌ Failed to save signature for appointment: $errorMsg');
+        return false;
+      }
+    } catch (e) {
+      kLog('❌ Error saving signature for appointment: $e');
+      errorMessage.value = 'Error: $e';
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   @override

@@ -1,15 +1,15 @@
 import 'package:hive/hive.dart';
 import 'item_list_model.dart';
 
-part 'item_group_model.g.dart';
+part 'item_bundle_model.g.dart';
 
-@HiveType(typeId: 16)
-class ItemGroupModel extends HiveObject {
+@HiveType(typeId: 12)
+class ItemBundleModel extends HiveObject {
   @HiveField(0)
   int? id;
 
   @HiveField(1)
-  String? groupName;
+  String? bundleName;
 
   @HiveField(2)
   String? description;
@@ -35,9 +35,9 @@ class ItemGroupModel extends HiveObject {
   @HiveField(9)
   int? totalItems;
 
-  ItemGroupModel({
+  ItemBundleModel({
     this.id,
-    this.groupName,
+    this.bundleName,
     this.description,
     this.itemCount,
     this.companyId,
@@ -48,9 +48,9 @@ class ItemGroupModel extends HiveObject {
     this.totalItems,
   });
 
-  ItemGroupModel.fromJson(dynamic json) {
+  ItemBundleModel.fromJson(dynamic json) {
     id = json['Id'];
-    groupName = json['GroupName'];
+    bundleName = json['BundleName'];
     description = json['Description'];
     itemCount = json['ItemCount'];
     companyId = json['CompanyId'];
@@ -77,7 +77,7 @@ class ItemGroupModel extends HiveObject {
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     map['Id'] = id;
-    map['GroupName'] = groupName;
+    map['BundleName'] = bundleName;
     map['Description'] = description;
     map['ItemCount'] = itemCount;
     map['CompanyId'] = companyId;

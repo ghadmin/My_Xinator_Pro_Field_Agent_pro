@@ -63,6 +63,28 @@ class FormsController extends GetxController with ExceptionHandler {
   /// Loading state for appointment forms
   final RxBool isLoadingAppointmentForms = false.obs;
 
+  // ============== FORM SELECTION PROPERTIES ==============
+
+  /// Available form templates for selection
+  final availableFormTemplates = <FormOption>[].obs;
+
+  /// Loading state for form templates
+  final RxBool isLoadingTemplates = false.obs;
+
+  /// Error state for form templates
+  final RxBool templatesError = false.obs;
+
+  /// Error message for templates
+  final RxString templatesErrorMessage = ''.obs;
+
+  /// Selected form IDs for multi-selection
+  final RxSet<String> selectedFormIds = <String>{}.obs;
+
+  /// Search functionality for form templates
+  final TextEditingController templateSearchController =
+      TextEditingController();
+  final RxString templateSearchQuery = ''.obs;
+
   // ============== EMAIL PROPERTIES ==============
 
   /// Text controllers for email form
@@ -1359,7 +1381,267 @@ class FormsController extends GetxController with ExceptionHandler {
   void onReady() {
     // Load forms from Hive on controller ready
     // Note: resourceId needs to be set separately before polling
+
+    // Setup template search listener
+    templateSearchController.addListener(() {
+      templateSearchQuery.value = templateSearchController.text;
+    });
+
     super.onReady();
+  }
+
+  // ============== FORM TEMPLATE METHODS ==============
+
+  /// Fetch available form templates from API
+  ///
+  /// Loads enabled form templates that can be selected for appointment forms
+  Future<void> fetchFormTemplates() async {
+    try {
+      isLoadingTemplates.value = true;
+      templatesError.value = false;
+      templatesErrorMessage.value = '';
+
+      // Check network connectivity
+      if (!await NetworkConnectivity.isNetworkAvailable()) {
+        MySnackBar.showErrorToast(message: "No network connection!");
+        templatesError.value = true;
+        templatesErrorMessage.value =
+            'No network connection. Please check your internet and try again.';
+        isLoadingTemplates.value = false;
+        return;
+      }
+
+      // Get company ID from shared preferences
+      final companyId = await MySharedPref.getCompanyID();
+
+      if (companyId == null || companyId.isEmpty) {
+        kLog('⚠️ CompanyId is null or empty');
+        templatesError.value = true;
+        templatesErrorMessage.value =
+            'Company ID not found. Please log in again.';
+        isLoadingTemplates.value = false;
+        return;
+      }
+
+      kLog('📋 Fetching templates for companyId: $companyId');
+
+      final response = await _formsApiService.listTemplates(
+        companyId: companyId,
+      );
+
+      if (response == null) {
+        kLog('⚠️ Templates response is null');
+        templatesError.value = true;
+        templatesErrorMessage.value = 'Failed to load forms. Please try again.';
+        isLoadingTemplates.value = false;
+        return;
+      }
+
+      if (!response['success']) {
+        kLog('⚠️ Templates API returned success=false');
+        templatesError.value = true;
+        templatesErrorMessage.value =
+            response['error'] ?? 'Failed to load forms.';
+        isLoadingTemplates.value = false;
+        return;
+      }
+
+      final templatesResponse = TemplatesResponse.fromJson(response);
+
+      if (templatesResponse.templates.isEmpty) {
+        kLog('ℹ️ No templates found');
+        availableFormTemplates.clear();
+      } else {
+        kLog('✅ Loaded ${templatesResponse.templates.length} templates');
+
+        // Convert template items to form options
+        availableFormTemplates.assignAll(
+          templatesResponse.templates
+              .map((template) => template.toFormOption())
+              .toList(),
+        );
+      }
+
+      isLoadingTemplates.value = false;
+    } catch (e, stackTrace) {
+      kLog('❌ Error fetching templates: $e');
+      kLog('Stack trace: $stackTrace');
+      templatesError.value = true;
+      templatesErrorMessage.value = 'An error occurred: ${e.toString()}';
+      isLoadingTemplates.value = false;
+    }
+  }
+
+  /// Get filtered form templates based on search query
+  List<FormOption> get filteredFormTemplates {
+    if (templateSearchQuery.value.isEmpty) return availableFormTemplates;
+
+    return availableFormTemplates.where((option) {
+      return option.name.toLowerCase().contains(
+            templateSearchQuery.value.toLowerCase(),
+          ) ||
+          option.description.toLowerCase().contains(
+            templateSearchQuery.value.toLowerCase(),
+          );
+    }).toList();
+  }
+
+  /// Get selected count
+  int get selectedTemplatesCount => selectedFormIds.length;
+
+  /// Toggle form template selection
+  void toggleTemplateSelection(FormOption form) {
+    if (pendingForms
+        .where(
+          (f) =>
+              f.appointmentId ==
+              appointmentController.selectedAppointment.value!.apptID
+                  .toString(),
+        )
+        .any((formItem) => formItem.templateId == form.templateId)) {
+      MySnackBar.showInfoToast(
+        message: 'Form "${form.name}" is already in the pending list.',
+      );
+      return;
+    }
+    if (selectedFormIds.contains(form.id)) {
+      selectedFormIds.remove(form.id);
+      kLog('Deselected template: $form.id');
+    } else {
+      selectedFormIds.add(form.id);
+      kLog('Selected template: $form.id');
+    }
+  }
+
+  /// Check if a template is selected
+  bool isTemplateSelected(String formId) {
+    return selectedFormIds.contains(formId);
+  }
+
+  /// Clear template search
+  void clearTemplateSearch() {
+    templateSearchController.clear();
+    templateSearchQuery.value = '';
+  }
+
+  /// Retry fetching templates
+  void retryFetchTemplates() {
+    fetchFormTemplates();
+  }
+
+  /// Get selected form templates
+  List<FormOption> getSelectedTemplates() {
+    return availableFormTemplates
+        .where((form) => selectedFormIds.contains(form.id))
+        .toList();
+  }
+
+  /// Clear template selection
+  void clearTemplateSelection() {
+    selectedFormIds.clear();
+  }
+
+  /// Attach selected forms to an appointment
+  ///
+  /// Takes selected template IDs and attaches them to the specified appointment
+  /// Returns the API response with success status and form instance IDs
+  Future<Map<String, dynamic>?> attachSelectedFormsToAppointment({
+    required String appointmentId,
+    String? customerId,
+  }) async {
+    try {
+      if (selectedFormIds.isEmpty) {
+        kLog('⚠️ No forms selected for attachment');
+        return null;
+      }
+
+      // Check network connectivity
+      if (!await NetworkConnectivity.isNetworkAvailable()) {
+        MySnackBar.showErrorToast(message: "No network connection!");
+        return null;
+      }
+
+      // Get company ID from shared preferences
+      final companyId = await MySharedPref.getCompanyID();
+
+      if (companyId == null || companyId.isEmpty) {
+        kLog('⚠️ CompanyId is null or empty');
+        MySnackBar.showErrorToast(
+          message: 'Company ID not found. Please log in again.',
+        );
+        return null;
+      }
+
+      // Get selected template IDs (convert string IDs to int)
+      final selectedTemplates = getSelectedTemplates();
+      final templateIds = selectedTemplates
+          .map(
+            (template) => template.templateId ?? int.tryParse(template.id) ?? 0,
+          )
+          .where((id) => id > 0)
+          .toList();
+
+      if (templateIds.isEmpty) {
+        kLog('⚠️ No valid template IDs found');
+        MySnackBar.showErrorToast(message: 'No valid forms selected.');
+        return null;
+      }
+
+      kLog(
+        '📎 Attaching ${templateIds.length} forms to appointment $appointmentId',
+      );
+
+      // Get filledBy from shared preferences (technician name)
+      final filledBy = await MySharedPref.getUserName();
+
+      final response = await _formsApiService.attachTemplates(
+        companyId: companyId,
+        appointmentId: appointmentId,
+        templateIds: templateIds,
+        customerId: customerId,
+        filledBy: filledBy,
+      );
+
+      if (response != null) {
+        final attachResponse = AttachTemplatesResponse.fromJson(response);
+
+        if (attachResponse.success) {
+          kLog('✅ Successfully attached ${attachResponse.count} forms');
+
+          // Show success message
+          if (attachResponse.alreadyAttachedCount > 0) {
+            MySnackBar.showInfoToast(
+              message:
+                  '${attachResponse.successCount - attachResponse.alreadyAttachedCount} forms attached, ${attachResponse.alreadyAttachedCount} were already attached',
+            );
+          } else {
+            MySnackBar.showToast(
+              message: '${attachResponse.count} form(s) attached successfully',
+            );
+          }
+
+          // Clear selection after successful attachment
+          clearTemplateSelection();
+        } else {
+          kLog('⚠️ Attach operation failed');
+          MySnackBar.showErrorToast(message: 'Failed to attach forms.');
+        }
+      } else {
+        kLog('⚠️ Attach response is null');
+        MySnackBar.showErrorToast(
+          message: 'Failed to attach forms. Please try again.',
+        );
+      }
+
+      return response;
+    } catch (e, stackTrace) {
+      kLog('❌ Error attaching forms: $e');
+      kLog('Stack trace: $stackTrace');
+      MySnackBar.showErrorToast(
+        message: 'Failed to attach forms: ${e.toString()}',
+      );
+      return null;
+    }
   }
 
   /// Load pending forms from Hive for a specific resource

@@ -539,7 +539,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
           // Customer row
           GestureDetector(
             onTap: () async {
-              controller.showLoading();
+              // controller.showLoading();
               await controller.customerController.getCustomers();
               controller.customerController.businessName =
                   controller.contactName;
@@ -550,7 +550,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               controller.customerController.mobileNumber =
                   controller.mobileNumber;
               controller.customerController.email = controller.email;
-              controller.hideLoading();
+              // controller.hideLoading();
               Get.toNamed(Routes.CUSTOMER_DETAILS);
             },
             child: Row(
@@ -694,7 +694,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               Expanded(
                 child: _buildContactChip(
                   Icons.location_on_rounded,
-                  controller.address,
+                  controller.selectedSite.value?.address != null
+                      ? "${controller.selectedSite.value!.address!}, ${controller.selectedSite.value!.state!}, ${controller.selectedSite.value!.zip!}"
+                      : "N/A",
                   () async {
                     try {
                       await controller.initializeWebController();
@@ -778,10 +780,12 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               Expanded(
                 child: _buildContactChip(
                   Icons.phone_rounded,
-                  controller.mobileNumber.isNotEmpty
-                      ? PhoneDisplayFormatter.format(controller.mobileNumber)
-                      : controller.phoneNumber.isNotEmpty
-                      ? PhoneDisplayFormatter.format(controller.phoneNumber)
+                  controller.selectedSite.value!.phoneNumber
+                          .toString()
+                          .isNotEmpty
+                      ? PhoneDisplayFormatter.format(
+                          controller.selectedSite.value!.phoneNumber,
+                        )
                       : 'N/A',
                   () async {
                     try {
@@ -805,10 +809,13 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               Expanded(
                 child: _buildContactChip(
                   Icons.email_rounded,
-                  controller.email.isNotEmpty ? controller.email : 'N/A',
-                  controller.email == ""
-                      ? null
-                      : () async {
+                  controller.selectedSite.value!.email.toString().isNotEmpty &&
+                          controller.selectedSite.value!.email != null
+                      ? controller.selectedSite.value!.email!
+                      : 'N/A',
+                  controller.selectedSite.value!.email.toString().isNotEmpty &&
+                          controller.selectedSite.value!.email != null
+                      ? () async {
                           try {
                             await UrlLauncher.email(controller.email);
                             if (context.mounted) {
@@ -819,7 +826,8 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                               MySnackBar.showErrorToast(message: e.toString());
                             }
                           }
-                        },
+                        }
+                      : null,
                 ),
               ),
             ],
@@ -1252,7 +1260,6 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                 );
                                 return;
                               }
-                              await 1.delay();
                               await controller.sendSMS();
                             },
                           ),

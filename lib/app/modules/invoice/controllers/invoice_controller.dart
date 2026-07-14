@@ -1130,10 +1130,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mime/mime.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../utils/date_converter.dart';
 import 'package:intl/intl.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
+import '../../../components/global-widgets/pagination_widget.dart';
 import '../../../data/local/hive/my_hive.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../routes/app_pages.dart';
@@ -1150,6 +1152,21 @@ import '../models/invoice_backup_model.dart';
 import '../models/qbo_class_dropdown_model.dart';
 import '../models/qbo_location_dropdown_model.dart';
 import '../models/tax_model.dart';
+
+enum SearchByType { name, group, bundle }
+
+extension SearchByTypeExtension on SearchByType {
+  String get displayName {
+    switch (this) {
+      case SearchByType.name:
+        return "Name";
+      case SearchByType.group:
+        return "Group";
+      case SearchByType.bundle:
+        return "Bundle";
+    }
+  }
+}
 
 class InvoiceController extends GetxController with ExceptionHandler {
   late final WebViewController webController;
@@ -1199,15 +1216,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final Rx<FocusNode> createInvoiceEmailBodyFocusnode = FocusNode().obs;
 
   // Search and Filter logic
-  final RxString searchByType = "Name".obs;
-  final List<String> searchOptions = ["Name", "Group", "Bundle"];
-
-  final RxList<String> bundleList = <String>[
-    'Bundle 1',
-    'Bundle 2',
-    'Bundle 3',
-  ].obs; // To be populated by API
-  final RxString selectedBundle = "".obs;
+  final Rx<SearchByType> searchByType = SearchByType.name.obs;
+  final List<SearchByType> searchOptions = SearchByType.values;
 
   @override
   void onInit() async {
@@ -1330,6 +1340,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   final ScrollController scrollController = ScrollController();
   final authController = Get.put(AuthController());
   final itemController = Get.put(ItemController());
+  final PaginationController paginationController = PaginationController();
   final TextEditingController itemSearchController = TextEditingController();
   final TextEditingController noteTextController = TextEditingController();
   final TextEditingController editNoteTextController = TextEditingController();
@@ -1425,7 +1436,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxDouble discountedTaxableTotalInCreate = 0.00.obs;
   ScrollController billableItemsScrollController = ScrollController();
   // Customer signature (Base64 encoded string)
-  String customerSignature = "";
+  RxString customerSignature = "".obs;
 
   RxDouble invoiceTax = 0.00.obs;
   RxString selectedTaxID = "".obs;
@@ -1568,7 +1579,9 @@ class InvoiceController extends GetxController with ExceptionHandler {
             qboLocationList.value = response
                 .map((e) => QboLocationModel.fromJson(e))
                 .toList();
-            log("✓ Successfully loaded ${qboLocationList.length} QBO locations");
+            log(
+              "✓ Successfully loaded ${qboLocationList.length} QBO locations",
+            );
           } catch (e) {
             log("Error parsing QBO Location data: $e");
             qboLocationList.value = [];
@@ -1587,7 +1600,10 @@ class InvoiceController extends GetxController with ExceptionHandler {
       qboLocationList.value = [];
       // Don't show toast for initialization errors to avoid spam
       if (isLoadingQboLocation.value) {
-        MySnackBar.showErrorToast(message: "Failed to load QBO Locations. Please check your connection.");
+        MySnackBar.showErrorToast(
+          message:
+              "Failed to load QBO Locations. Please check your connection.",
+        );
       }
     } finally {
       isLoadingQboLocation.value = false;
@@ -1647,7 +1663,9 @@ class InvoiceController extends GetxController with ExceptionHandler {
       qboClassList.value = [];
       // Don't show toast for initialization errors to avoid spam
       if (isLoadingQboClass.value) {
-        MySnackBar.showErrorToast(message: "Failed to load QBO Classes. Please check your connection.");
+        MySnackBar.showErrorToast(
+          message: "Failed to load QBO Classes. Please check your connection.",
+        );
       }
     } finally {
       isLoadingQboClass.value = false;
@@ -1985,7 +2003,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
           },
         )
         .catchError(handleError);
-
+    kLog('response invoice name: $response');
     if (response == null) return;
 
     invoiceName.value = response["InvoiceNo"];
@@ -2046,7 +2064,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
               "ModifiedDate": null,
               "ModifiedBy": null,
               "Note": noteTextController.text,
-              "CustomerSignature": customerSignature,
+              "CustomerSignature": customerSignature.value,
               "CreatedDate": dateTimeConverter(
                 inputTime: DateTime.now().toString(),
                 outputFormat: "yyyy/MM/dd",
@@ -2094,6 +2112,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
                       : "0.00"),
                   // "ItemTyId": item.itemTypeId ?? "",
                   "ItemId": item.id ?? "",
+                  "PO": item.po ?? false,
                 };
               }).toList(),
 
@@ -2258,6 +2277,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
                       : "0.00",
                   // "ItemTyId": item.itemTypeId ?? "",
                   "ItemId": item.id ?? "",
+                  "PO": item.po ?? false,
                 };
               }).toList(),
             },
@@ -2799,47 +2819,65 @@ class InvoiceController extends GetxController with ExceptionHandler {
   }
 
   Future<void> saveSignature({Payment? payment}) async {
-    if (customerSignature == '') return;
-    if (payment == null) return;
+    // Show user feedback for empty signature
+    if (customerSignature.value == '') {
+      kLog("⚠️ No signature data to save");
+      MySnackBar.showErrorToast(message: "No signature data to save");
+      return;
+    }
 
-    // Check if payment was created today
-    final paymentDate = DateFormat("MM/dd/yyyy").parse(payment.createdDate!);
-    final today = DateTime.now();
-    final todayDate = DateTime(today.year, today.month, today.day);
-
-    if (!DateFormat("yyyy-MM-dd")
-        .format(paymentDate)
-        .contains(DateFormat("yyyy-MM-dd").format(todayDate))) {
+    // Show user feedback for null payment
+    if (payment == null) {
+      kLog("⚠️ Payment is null, cannot save signature");
+      MySnackBar.showErrorToast(message: "Payment information not available");
       return;
     }
 
     var companyID = MySharedPref.getCompanyID();
     var userID = MySharedPref.getUserName();
     final apptC = Get.find<AppointmentController>();
-    var response = await DioClient()
-        .post(
-          url: ApiUrl.saveSignature,
-          body: {
-            "signature": {
-              "appointmentId": apptC.appointmentID,
-              "invoiceId": payment.invocieId,
-              "paymentId": payment.id,
-              "customerId": customerID.value,
-              "companyId": companyID.toString(),
-              "signatureFileName": "signature.png",
-              "signatureFileContent": customerSignature,
-              "userId": userID,
-            },
+
+    try {
+      var response = await DioClient().post(
+        url: ApiUrl.saveSignatureForPayment,
+        body: {
+          "signature": {
+            "appointmentId": apptC.appointmentID,
+            "invoiceId": payment.invocieId,
+            "paymentId": payment.id,
+            "customerId": customerID.value,
+            "companyId": companyID.toString(),
+            "signatureFileName": "signature.png",
+            "signatureFileContent": customerSignature.value,
+            "userId": userID,
           },
-        )
-        .catchError(handleError);
-    log(
-      "sign body ${{
-        "signature": {"appointmentId": apptC.appointmentID, "invoiceId": payment.invocieId, "paymentId": payment.id, "customerId": customerID.value, "companyId": companyID, "signatureFileName": "signature.png", "signatureFileContent": customerSignature, "userId": userID},
-      }}",
-    );
-    if (response == null) return;
-    log("Save Signature Response: $response");
+        },
+      );
+
+      kLog("Save Signature Response: $response");
+      log("✅ Save Signature Response: $response");
+
+      // Check if response is valid and show appropriate feedback
+      if (response != null) {
+        MySnackBar.showToast(message: "Signature saved successfully! ✅");
+        customerSignature.value = "";
+        kLog("✅ Signature saved successfully");
+      } else {
+        final errorMessage =
+            response['Message'] ?? response['error'] ?? 'Unknown error';
+        MySnackBar.showErrorToast(
+          message: "Failed to save signature: $errorMessage",
+        );
+        kLog("❌ Signature save failed: $errorMessage");
+      }
+    } catch (e, s) {
+      kLog("❌ Exception saving signature: $e");
+      kLog("❌ Exception saving signature: $s");
+      MySnackBar.showErrorToast(
+        message: "Error saving signature: ${e.toString()}",
+      );
+      handleError(e);
+    }
   }
 
   final selectedInvoice = Rxn<Invoices>();

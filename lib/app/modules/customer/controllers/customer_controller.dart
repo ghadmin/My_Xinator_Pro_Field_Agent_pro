@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 
 import '../../../../utils/date_converter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
@@ -71,7 +72,7 @@ class CustomerController extends GetxController with ExceptionHandler {
             },
           )
           .catchError(handleError);
-      // log("customer res ${jsonEncode(response)}");
+      kLog("customer res ${jsonEncode(response)}");
       if (response == null) {
         showEmptyWidget();
         return;

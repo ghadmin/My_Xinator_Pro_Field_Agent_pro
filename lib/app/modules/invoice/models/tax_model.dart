@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'tax_model.g.dart';
 
-@HiveType(typeId: 9)
+@HiveType(typeId: 14)
 class TaxModel extends HiveObject {
   TaxModel({
     this.id,

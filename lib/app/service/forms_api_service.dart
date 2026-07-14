@@ -523,6 +523,87 @@ class FormsApiService {
     }
   }
 
+  /// List enabled form templates
+  ///
+  /// GET /FaProSync.ashx?op=templates&companyId={X}
+  Future<Map<String, dynamic>?> listTemplates({
+    required String companyId,
+  }) async {
+    try {
+      log('📋 Listing templates: companyId=$companyId');
+
+      final url =
+          '${ApiUrl.currentBaseUrl}/FaProSync.ashx?op=templates&companyId=$companyId';
+
+      final response = await _dioClient.get(
+        url: url,
+        headers: ApiUrl.authHeaders,
+      );
+
+      if (response != null) {
+        final count = response['count'] as int? ?? 0;
+        log('✅ Templates response: $count items');
+        return response;
+      }
+
+      log('⚠️ Templates response is null');
+      return null;
+    } catch (e) {
+      log('❌ List templates error: $e');
+      rethrow;
+    }
+  }
+
+  /// Attach form templates to an appointment
+  ///
+  /// POST /FaProSync.ashx?op=attach
+  /// Supports both single and multiple form attachment
+  Future<Map<String, dynamic>?> attachTemplates({
+    required String companyId,
+    required String appointmentId,
+    required List<int> templateIds,
+    String? customerId,
+    String? filledBy,
+  }) async {
+    try {
+      log(
+        '📎 Attaching templates: appointmentId=$appointmentId, templateIds=${templateIds.length}, customerId=$customerId',
+      );
+
+      final request = <String, dynamic>{
+        'companyId': companyId,
+        'appointmentId': appointmentId,
+        'templateIds': templateIds,
+        if (customerId != null && customerId.isNotEmpty)
+          'customerId': customerId,
+        if (filledBy != null && filledBy.isNotEmpty) 'filledBy': filledBy,
+      };
+
+      final response = await _dioClient.post(
+        url: '${ApiUrl.currentBaseUrl}/FaProSync.ashx?op=attach',
+        body: request,
+        headers: ApiUrl.authHeaders,
+      );
+      kLog('📎 Attach templates response: ${jsonEncode(response)}');
+      if (response != null) {
+        final count = response['count'] as int? ?? 0;
+        final success = response['success'] as bool? ?? false;
+        log('✅ Attach response: success=$success, count=$count');
+
+        // Check if any forms were already attached
+        final items = response['items'] as List? ?? [];
+
+        return response;
+      }
+
+      log('⚠️ Attach response is null');
+      return null;
+    } catch (e) {
+      log('❌ Attach templates error: $e');
+      rethrow;
+    }
+  }
+
   /// Send custom email with optional PDF attachment
   ///
   /// POST /fsm/FaProSync.ashx?op=sendEmail

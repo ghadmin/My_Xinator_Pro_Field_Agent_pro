@@ -29,13 +29,14 @@ class ItemListModelAdapter extends TypeAdapter<ItemListModel> {
       isDeleted: fields[9] as bool?,
       qboId: fields[10] as int?,
       quantityOnHand: fields[11] as int?,
+      po: fields[12] as bool?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ItemListModel obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +60,9 @@ class ItemListModelAdapter extends TypeAdapter<ItemListModel> {
       ..writeByte(10)
       ..write(obj.qboId)
       ..writeByte(11)
-      ..write(obj.quantityOnHand);
+      ..write(obj.quantityOnHand)
+      ..writeByte(12)
+      ..write(obj.po);
   }
 
   @override

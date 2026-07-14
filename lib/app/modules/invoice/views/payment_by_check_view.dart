@@ -170,9 +170,7 @@ class PaymentByCheckView extends GetView<InvoiceController> {
                     : SizedBox.shrink(),
                 SizedBox(height: 24),
                 // Customer Signature Section
-                CustomerSignatureSection(
-                  customerSignature: controller.customerSignature,
-                ),
+                CustomerSignatureSection(),
                 SizedBox(height: 32),
                 Row(
                   children: [
