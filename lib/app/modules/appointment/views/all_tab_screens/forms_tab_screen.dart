@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -13,7 +12,6 @@ import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/widg
 import 'package:myxinator_pro_field_agent_pro/app/modules/forms/controllers/forms_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/service/helper/network_connectivity.dart';
 import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
-import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:remixicon/remixicon.dart';
 
 class FormsTabScreen extends StatefulWidget {
@@ -236,12 +234,11 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                                     maxLine: 3,
                                     theme: Theme.of(context),
                                     focusNode: formsController
-                                        ?.emailSubjectFocusnode
+                                        .emailSubjectFocusnode
                                         .value,
                                     textEditingController:
                                         formsController
-                                            ?.subjectTextController ??
-                                        TextEditingController(),
+                                            .subjectTextController ,
                                   ),
                                   SizedBox(height: 10.sp),
                                   GeneralTextField(
@@ -250,14 +247,13 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                                     maxLine: 8,
                                     minLine: 6,
                                     focusNode: formsController
-                                        ?.emailBodyFocusnode
+                                        .emailBodyFocusnode
                                         .value,
                                     textInputType: TextInputType.multiline,
                                     textInputAction: TextInputAction.newline,
                                     textEditingController:
                                         formsController
-                                            ?.emailBodyTextController ??
-                                        TextEditingController(),
+                                            .emailBodyTextController ,
                                   ),
                                   SizedBox(height: 20.sp),
                                   Row(
@@ -273,10 +269,10 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                                               formsController.ccTextController
                                                   .clear();
                                               formsController
-                                                  ?.subjectTextController
+                                                  .subjectTextController
                                                   .clear();
                                               formsController
-                                                  ?.emailBodyTextController
+                                                  .emailBodyTextController
                                                   .clear();
                                               Get.back();
                                             },
@@ -293,22 +289,22 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                                             onPressed: () async {
                                               final success =
                                                   await formsController
-                                                      ?.sendFormEmail(
+                                                      .sendFormEmail(
                                                         form: form,
                                                       );
                                               // Only close and clear data if email sent successfully
                                               if (success == true) {
                                                 formsController
-                                                    ?.toTextController
+                                                    .toTextController
                                                     .clear();
                                                 formsController
-                                                    ?.ccTextController
+                                                    .ccTextController
                                                     .clear();
                                                 formsController
-                                                    ?.subjectTextController
+                                                    .subjectTextController
                                                     .clear();
                                                 formsController
-                                                    ?.emailBodyTextController
+                                                    .emailBodyTextController
                                                     .clear();
                                                 Get.back();
                                               }

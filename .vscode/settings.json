@@ -16,5 +16,22 @@
         ".vscode/.swift-format",
         "${file}"
     ],
-    "dart.flutterSdkPath": "/Users/hridoy/Public/Documents/flutter"
+    "dart.flutterSdkPath": "/Users/hridoy/Public/Documents/flutter",
+    "[swift]": {
+        "editor.defaultFormatter": "sweetpad.sweetpad",
+        "editor.formatOnSave": true
+    },
+    "sweetpad.build.destination": {
+        "id": "iossimulator-0A5B77E4-9F19-4B22-AF3C-3AFF7A67481C",
+        "type": "iOSSimulator"
+    },
+    "cSpell.words": [
+        "allowfullscreen",
+        "appoinment",
+        "appt",
+        "Focusnode",
+        "klog",
+        "myxinator",
+        "remixicon"
+    ]
 }

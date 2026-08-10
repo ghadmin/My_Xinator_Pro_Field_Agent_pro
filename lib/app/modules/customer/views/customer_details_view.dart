@@ -450,7 +450,7 @@ class CustomerDetailsView extends GetView<AppointmentController> {
   // CUSTOMER INFO SECTION
   // ---------------------------------------------------------------------------
   Widget _buildCustomerInfoCard(ThemeData theme) {
-    final customer = controller.selectedAppointment.value!.customer;
+    final customer = controller.customerController.selectedCustomer.value;
 
     return Card(
       elevation: 0,
@@ -527,7 +527,9 @@ class CustomerDetailsView extends GetView<AppointmentController> {
           // Mobile
           _callTile(
             "Mobile",
-            controller.mobileNumber != '' ? PhoneDisplayFormatter.format(controller.mobileNumber) : "N/A",
+            controller.mobileNumber != ''
+                ? PhoneDisplayFormatter.format(controller.mobileNumber)
+                : "N/A",
             theme,
           ),
           MainDivider(),
@@ -535,7 +537,9 @@ class CustomerDetailsView extends GetView<AppointmentController> {
           // Phone
           _callTile(
             "Phone",
-            controller.phoneNumber != '' ? PhoneDisplayFormatter.format(controller.phoneNumber) : "N/A",
+            controller.phoneNumber != ''
+                ? PhoneDisplayFormatter.format(controller.phoneNumber)
+                : "N/A",
             theme,
           ),
         ],

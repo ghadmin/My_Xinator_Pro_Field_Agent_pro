@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../modules/appointment/bindings/appointment_binding.dart';
+import '../modules/appointment/bindings/create_appointment_binding.dart';
 import '../modules/appointment/bindings/custom_fields_binding.dart';
 import '../modules/appointment/views/all_tab_screens/customer_location_screen.dart';
 import '../modules/appointment/views/all_tab_screens/forms_tab_screen.dart';
@@ -11,6 +12,7 @@ import '../modules/appointment/views/all_tab_screens/files_tab_screen.dart';
 import '../modules/appointment/views/all_tab_screens/notes_tab_screen.dart';
 import '../modules/appointment/views/appointment_details_view.dart';
 import '../modules/appointment/views/appointment_view.dart';
+import '../modules/appointment/views/create_appointment_view.dart';
 import '../modules/appointment/views/tag_details_view.dart';
 import '../modules/auth/bindings/auth_binding.dart';
 import '../modules/auth/views/login_view.dart';
@@ -87,6 +89,11 @@ class AppPages {
       name: _Paths.APPOINTMENT,
       page: () => const AppointmentView(),
       bindings: [AppointmentBinding(), CustomFieldsBinding(), FormBindings()],
+    ),
+    GetPage(
+      name: _Paths.CREATE_APPOINTMENT,
+      page: () => const CreateAppointmentView(),
+      binding: CreateAppointmentBinding(),
     ),
     GetPage(
       name: _Paths.FORMS,

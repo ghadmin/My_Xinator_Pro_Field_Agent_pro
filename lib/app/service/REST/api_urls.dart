@@ -75,6 +75,10 @@ class ApiUrl {
       "$baseUrl/SaveAppointmentCustomFields";
   static const generateTuaPaymentLink = "$baseUrl/GenerateTuaPaymentLink";
   static const getCustomerSitesUrl = "$baseUrl/GetCustomerSites";
+  static const getTimeSlotListUrl = "$baseUrl/GetTimeSlotList";
+  static const getNextAppointmentNumberUrl = "$baseUrl/GetNextAppointmentNumber";
+  static const getServiceTypeListUrl = "$baseUrl/GetServiceTypeList";
+  static const getResourceListUrl = "$baseUrl/GetResourceList";
 
   // Forms API endpoints
   static const getAllForms = "$baseUrl/GetAllFormTemplates";

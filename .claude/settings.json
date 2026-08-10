@@ -21,7 +21,10 @@
       "Bash(xargs grep -n \"\\\\${.*}.*toStringAsFixed\\(0\\)\")",
       "Bash(xargs grep -n \"\\\\${.*}\\\\.toStringAsFixed\\(2\\)\")",
       "Bash(grep -n '\\\\$ ' /Users/hridoy/StudioProjects/My_Xinator_Pro_Field_Agent_pro/lib/app/modules/invoice/views/payment_by_cash_view.dart)",
-      "Bash(pkill -f \"flutter run\")"
+      "Bash(pkill -f \"flutter run\")",
+      "Bash(flutter --version)",
+      "Bash(tee /tmp/flutter_build.log)",
+      "Bash(open Runner.xcworkspace)"
     ]
   }
 }

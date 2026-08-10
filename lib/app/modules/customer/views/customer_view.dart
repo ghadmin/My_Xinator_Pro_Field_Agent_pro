@@ -9,7 +9,6 @@ import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
-import '../../appointment/controllers/appointment_controller.dart';
 import '../../../utils/simple_phone_formatter.dart';
 import '../controllers/customer_controller.dart';
 
@@ -17,7 +16,7 @@ class CustomerView extends GetView<CustomerController> {
   const CustomerView({super.key});
   @override
   Widget build(BuildContext context) {
-    final appointmentC = Get.find<AppointmentController>();
+    // final appointmentC = Get.find<AppointmentController>();
     var theme = Theme.of(context);
     return Scaffold(
       drawer: CustomDrawer(indexClicked: 2),
@@ -84,12 +83,12 @@ class CustomerView extends GetView<CustomerController> {
                             itemBuilder: (context, index) {
                               final customer =
                                   controller.sortedCustomers[index];
-                              final selectedApp = appointmentC.appointments
-                                  .where(
-                                    (p0) =>
-                                        p0.customer!.customerID ==
-                                        customer.customerID,
-                                  );
+                              // final selectedApp = appointmentC.appointments
+                              //     .where(
+                              //       (p0) =>
+                              //           p0.customer!.customerID ==
+                              //           customer.customerID,
+                              //     );
                               return SplashContainer(
                                 radius: 8,
                                 color: Colors.white,
@@ -105,7 +104,7 @@ class CustomerView extends GetView<CustomerController> {
                                   controller.mobileNumber =
                                       customer.mobile ?? "";
                                   controller.email = customer.email ?? "";
-                                  controller.selectedCustomer(customer);
+                                  controller.selectedCustomer.value = customer;
                                   Get.toNamed(Routes.CUSTOMER_DETAILS);
                                   // appointmentC.selectedAppointment.value = null;
 

@@ -1133,7 +1133,6 @@ import 'package:mime/mime.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../utils/date_converter.dart';
-import 'package:intl/intl.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/pagination_widget.dart';
 import '../../../data/local/hive/my_hive.dart';
@@ -1149,6 +1148,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../item/controllers/item_controller.dart';
 import '../../item/models/item_list_model.dart';
 import '../models/invoice_backup_model.dart';
+import '../models/payment_signature_model.dart';
 import '../models/qbo_class_dropdown_model.dart';
 import '../models/qbo_location_dropdown_model.dart';
 import '../models/tax_model.dart';
@@ -1177,6 +1177,9 @@ class InvoiceController extends GetxController with ExceptionHandler {
   RxBool isSendTuaPayLink = false.obs;
   final RxBool isLoading = true.obs;
   final RxBool isLoading2 = true.obs;
+
+  // Demo toggle for "For Non Covered Items" - no functional change
+  final RxBool forNonCoveredItems = false.obs;
 
   // TUA Pay Link variables
   final TextEditingController tuaBaseAmountController = TextEditingController();
@@ -2818,6 +2821,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     log("Deposit Response: $response");
   }
 
+  final tempSignatureList = RxList<PaymentSignatureModel>([]);
   Future<void> saveSignature({Payment? payment}) async {
     // Show user feedback for empty signature
     if (customerSignature.value == '') {
@@ -2860,6 +2864,12 @@ class InvoiceController extends GetxController with ExceptionHandler {
       // Check if response is valid and show appropriate feedback
       if (response != null) {
         MySnackBar.showToast(message: "Signature saved successfully! ✅");
+        tempSignatureList.add(
+          PaymentSignatureModel(
+            paymentId: payment.id.toString(),
+            signature: customerSignature.value,
+          ),
+        );
         customerSignature.value = "";
         kLog("✅ Signature saved successfully");
       } else {

@@ -337,6 +337,44 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                           );
                         }),
                       SizedBox(height: 5.sp),
+                      // "For Non Covered Items" Toggle
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.sp),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "For Non Covered Items",
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: LightThemeColors.bodyTextSecondaryColor,
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Obx(
+                              () => Transform.scale(
+                                scale: 0.8,
+                                child: SizedBox(
+                                  width: 50.sp,
+                                  child: Switch(
+                                    value: controller.forNonCoveredItems.value,
+                                    onChanged: (value) {
+                                      // Demo only - no functional change
+                                      controller.forNonCoveredItems.value =
+                                          value;
+                                    },
+                                    activeThumbColor: theme.primaryColor,
+                                    activeTrackColor: Colors.grey.shade300,
+                                    inactiveTrackColor: Colors.grey.shade400,
+                                    inactiveThumbColor: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 8.sp),
                       controller.descriptionControllers.isEmpty
                           ? SizedBox.shrink()
                           //new design
@@ -372,7 +410,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                   controller.billableItemsScrollController,
                               scrollDirection: Axis.horizontal,
                               child: SizedBox(
-                                width: (InvoiceTableWidth.totalWidth).sp,
+                                width:
+                                    1200.sp, // Much wider table for more space
                                 child: Theme(
                                   data: theme.copyWith(
                                     canvasColor: Colors.white,
@@ -1159,7 +1198,6 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 //     );
                                 //   },
                                 // );
-                             
                               },
                               iconData: Icons.add_circle_outline,
                               inactive: false,
@@ -2573,14 +2611,14 @@ class CreateInvoiceView extends GetView<InvoiceController> {
       child: Row(
         children: [
           // Drag handle
-          _buildBodyCell(
-            Center(
+          SizedBox(
+            width: 40.sp,
+            child: Center(
               child: ReorderableDragStartListener(
                 index: index,
                 child: Icon(Icons.drag_handle, color: theme.primaryColor),
               ),
             ),
-            InvoiceTableWidth.drag,
           ),
           // Item
           _buildBodyCell(
@@ -2589,8 +2627,6 @@ class CreateInvoiceView extends GetView<InvoiceController> {
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
             ),
             InvoiceTableWidth.item,
           ),
@@ -2599,8 +2635,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
             Text(
               item.description ?? "",
               style: theme.textTheme.bodySmall,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
+              maxLines: null,
+              overflow: TextOverflow.visible,
             ),
             InvoiceTableWidth.description,
           ),
@@ -2645,16 +2681,18 @@ class CreateInvoiceView extends GetView<InvoiceController> {
           ),
           // PO Checkbox
           _buildBodyCell(
-           Checkbox(
-              value: item.po ?? false,
-              onChanged: (value) {
-                controller.markAsDirty();
-                item.po = value;
-                controller.selectedItemList[index].po = value;
-                controller.selectedItemList.refresh();
-              },
-              activeColor: theme.primaryColor,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            Center(
+              child: Checkbox(
+                value: item.po ?? false,
+                onChanged: (value) {
+                  controller.markAsDirty();
+                  item.po = value;
+                  controller.selectedItemList[index].po = value;
+                  controller.selectedItemList.refresh();
+                },
+                activeColor: theme.primaryColor,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
             InvoiceTableWidth.po,
           ),
@@ -2695,20 +2733,20 @@ class CreateInvoiceView extends GetView<InvoiceController> {
   }
 
   /// Reusable body cell widget
-  Widget _buildBodyCell(Widget child, double width) {
-    return SizedBox(
-      width: width.sp,
+  Widget _buildBodyCell(Widget child, int flex) {
+    return Expanded(
+      flex: flex,
       child: Padding(padding: EdgeInsets.all(8.sp), child: child),
     );
   }
 
   Widget _buildHeaderCell(
     String text,
-    double width, {
+    int flex, {
     TextAlign align = TextAlign.left,
   }) {
-    return SizedBox(
-      width: width.sp,
+    return Expanded(
+      flex: flex,
       child: Padding(
         padding: EdgeInsets.all(8.sp),
         child: Text(

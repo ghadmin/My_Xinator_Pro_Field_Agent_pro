@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:intl/intl.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/create_appointment_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/custom_fields_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/image/models/picture_model.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
@@ -76,6 +77,7 @@ class AppointmentController extends GetxController
   final customFieldsController = Get.put(CustomFieldsController());
   final invoiceController = Get.put(InvoiceController());
   final customerController = Get.put(CustomerController());
+  final createAppointmentController = Get.put(CreateAppointmentController());
   final TextEditingController sortTextController = TextEditingController();
   final noteController = TextEditingController();
   final note1Controller = TextEditingController();

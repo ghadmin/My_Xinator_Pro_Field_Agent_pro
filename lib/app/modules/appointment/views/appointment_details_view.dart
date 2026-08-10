@@ -18,7 +18,6 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 // ─── Warm Organic Blue Design ───────────────────────────────────
-import '../../../../utils/url_launcher.dart';
 import '../../../utils/simple_phone_formatter.dart';
 import '../models/custom_field_model.dart';
 import 'widgets/warm_organic_components.dart';
@@ -198,7 +197,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                 ),
               ),
 
-        // Contact Name (tappable) this thing add to appbar. ),
+      
         backgroundColor: WarmOrganicBlueTheme.warmGray,
         body: Obx(
           () => controller.selectedAppointment.value == null

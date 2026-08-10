@@ -1119,68 +1119,68 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
   /// Initialize form values from API response data
   /// This handles the structure returned by getFormResponseByNaturalKey
   /// Matches field IDs from API response with template fields
-  void _initializeFormFromResponses() {
-    if (_responses == null) return;
+  // void _initializeFormFromResponses() {
+  //   if (_responses == null) return;
 
-    kLog('🔄 Initializing form from ${_responses!.length} responses');
-    final sampleFieldIds = _responses!
-        .take(3)
-        .map((r) => r['fieldId'])
-        .toList();
-    kLog('📋 Sample response field IDs: $sampleFieldIds');
+  //   kLog('🔄 Initializing form from ${_responses!.length} responses');
+  //   final sampleFieldIds = _responses!
+  //       .take(3)
+  //       .map((r) => r['fieldId'])
+  //       .toList();
+  //   kLog('📋 Sample response field IDs: $sampleFieldIds');
 
-    for (final response in _responses!) {
-      if (response is Map<String, dynamic>) {
-        final fieldId = response['fieldId'] as String?;
-        final value = response['value'];
-        final type = response['type'] as String?;
+  //   for (final response in _responses!) {
+  //     if (response is Map<String, dynamic>) {
+  //       final fieldId = response['fieldId'] as String?;
+  //       final value = response['value'];
+  //       final type = response['type'] as String?;
 
-        if (fieldId != null && value != null) {
-          final position = response['position'] as Map<String, dynamic>?;
-          final pageIndex = position?['page'] as int?;
-          kLog(
-            '📝 Processing field: $fieldId, type: $type, page: $pageIndex, value length: ${value.toString().length}',
-          );
+  //       if (fieldId != null && value != null) {
+  //         final position = response['position'] as Map<String, dynamic>?;
+  //         final pageIndex = position?['page'] as int?;
+  //         kLog(
+  //           '📝 Processing field: $fieldId, type: $type, page: $pageIndex, value length: ${value.toString().length}',
+  //         );
 
-          // Handle different types based on the response
-          if (type == 'signature' || type == 'image') {
-            // For signature/image, value is already base64 data URL
-            if (value is String && value.startsWith('data:image')) {
-              formValues[fieldId] = value;
-              kLog(
-                '🖼️ Signature/Image: $fieldId (base64 length: ${value.length})',
-              );
-            } else if (value is String && !value.startsWith('data:image')) {
-              // Add data URL prefix if missing
-              formValues[fieldId] = 'data:image/png;base64,$value';
-              kLog('🖼️ Signature/Image: $fieldId (added prefix)');
-            } else {
-              formValues[fieldId] = value.toString();
-              kLog('🖼️ Signature/Image: $fieldId (converted to string)');
-            }
-          } else if (type == 'checkbox' || type == 'check') {
-            // Convert checkbox values
-            formValues[fieldId] =
-                value == true || value == 'true' || value == 1;
-          } else if (type == 'number') {
-            // Convert numeric values
-            if (value is num) {
-              formValues[fieldId] = value;
-            } else {
-              formValues[fieldId] = num.tryParse(value.toString()) ?? 0;
-            }
-          } else {
-            // Text, textarea, date, dropdown, radio, etc.
-            formValues[fieldId] = value.toString();
-          }
-          kLog(
-            '✅ Pre-populated field: $fieldId = ${formValues[fieldId] ?? value}',
-          );
-        }
-      }
-    }
-    kLog('Total pre-populated fields: ${formValues.length}');
-  }
+  //         // Handle different types based on the response
+  //         if (type == 'signature' || type == 'image') {
+  //           // For signature/image, value is already base64 data URL
+  //           if (value is String && value.startsWith('data:image')) {
+  //             formValues[fieldId] = value;
+  //             kLog(
+  //               '🖼️ Signature/Image: $fieldId (base64 length: ${value.length})',
+  //             );
+  //           } else if (value is String && !value.startsWith('data:image')) {
+  //             // Add data URL prefix if missing
+  //             formValues[fieldId] = 'data:image/png;base64,$value';
+  //             kLog('🖼️ Signature/Image: $fieldId (added prefix)');
+  //           } else {
+  //             formValues[fieldId] = value.toString();
+  //             kLog('🖼️ Signature/Image: $fieldId (converted to string)');
+  //           }
+  //         } else if (type == 'checkbox' || type == 'check') {
+  //           // Convert checkbox values
+  //           formValues[fieldId] =
+  //               value == true || value == 'true' || value == 1;
+  //         } else if (type == 'number') {
+  //           // Convert numeric values
+  //           if (value is num) {
+  //             formValues[fieldId] = value;
+  //           } else {
+  //             formValues[fieldId] = num.tryParse(value.toString()) ?? 0;
+  //           }
+  //         } else {
+  //           // Text, textarea, date, dropdown, radio, etc.
+  //           formValues[fieldId] = value.toString();
+  //         }
+  //         kLog(
+  //           '✅ Pre-populated field: $fieldId = ${formValues[fieldId] ?? value}',
+  //         );
+  //       }
+  //     }
+  //   }
+  //   kLog('Total pre-populated fields: ${formValues.length}');
+  // }
 
   @override
   Widget build(BuildContext context) {

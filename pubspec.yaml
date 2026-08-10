@@ -2,7 +2,7 @@ name: myxinator_pro_field_agent_pro
 description: "A new Flutter project."
 
 publish_to: "none"
-version: 1.0.2+9
+version: 1.0.2+10
 
 environment:
   sdk: ^3.9.2
@@ -18,7 +18,7 @@ dependencies:
     sdk: flutter
 
   # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  # Use with the CupertinoIcons class for iOS style icons.v
   cupertino_icons:
   dotted_border:
   get:
@@ -46,7 +46,7 @@ dependencies:
   hive_flutter:
   connectivity_plus:
   image_picker:
-  image_cropper:
+  image_cropper: ^8.0.2
   pretty_dio_logger:
   remixicon:
   timezone:

@@ -36,8 +36,8 @@ class UrlLauncher {
       scheme: 'mailto',
       path: email,
       queryParameters: <String, String>{
-        if (subject != null) 'subject': subject,
-        if (body != null) 'body': body,
+        'subject': ?subject,
+        'body': ?body,
       },
     );
     if (await canLaunchUrl(uri)) {

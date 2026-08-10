@@ -10,6 +10,7 @@ abstract class Routes {
   static const LOGIN = _Paths.LOGIN;
   static const SIGNUP = _Paths.SIGNUP;
   static const APPOINTMENT = _Paths.APPOINTMENT;
+  static const CREATE_APPOINTMENT = _Paths.CREATE_APPOINTMENT;
   static const APPOINTMENT_DETAILS = _Paths.APPOINTMENT_DETAILS;
   static const CUSTOMER_LOCATION = _Paths.CUSTOMER_LOCATION;
   static const SETTINGS = _Paths.SETTINGS;
@@ -56,6 +57,7 @@ abstract class _Paths {
   static const SIGNUP = '/signup';
   static const APPOINTMENT = '/appointment';
   static const SIGNATURE = '/signature';
+  static const CREATE_APPOINTMENT = '/create-appointment';
   static const APPOINTMENT_DETAILS = '/appointment_list';
   static const CUSTOMER_LOCATION = '/customer-location';
   static const SETTINGS = '/settings';

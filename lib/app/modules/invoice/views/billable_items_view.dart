@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/my_buttons.dart';
@@ -210,13 +209,13 @@ class BillableItemsView extends GetView<InvoiceController> {
                     child: Row(
                       children: [
                         SizedBox(
-                          width: 50,
+                          width: 60,
                           child: Center(child: SizedBox(width: 24, height: 24)),
                         ),
                         Expanded(
-                          flex: 3,
+                          flex: 4,
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8.sp),
+                            padding: EdgeInsets.symmetric(horizontal: 12.sp),
                             child: Text(
                               "Item Name",
                               style: TextStyle(
@@ -228,9 +227,9 @@ class BillableItemsView extends GetView<InvoiceController> {
                           ),
                         ),
                         Expanded(
-                          flex: 5,
+                          flex: 6,
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8.sp),
+                            padding: EdgeInsets.symmetric(horizontal: 12.sp),
                             child: Text(
                               "Description",
                               style: TextStyle(
@@ -244,7 +243,7 @@ class BillableItemsView extends GetView<InvoiceController> {
                         Expanded(
                           flex: 2,
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8.sp),
+                            padding: EdgeInsets.symmetric(horizontal: 12.sp),
                             child: Text(
                               "Qty",
                               style: TextStyle(
@@ -257,9 +256,9 @@ class BillableItemsView extends GetView<InvoiceController> {
                           ),
                         ),
                         Expanded(
-                          flex: 2,
+                          flex: 3,
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8.sp),
+                            padding: EdgeInsets.symmetric(horizontal: 12.sp),
                             child: Text(
                               "Unit Cost",
                               style: TextStyle(
@@ -370,7 +369,7 @@ class BillableItemsView extends GetView<InvoiceController> {
                                         CrossAxisAlignment.center,
                                     children: [
                                       SizedBox(
-                                        width: 50,
+                                        width: 60,
                                         child: Center(
                                           child: isFromCreateInvoice
                                               ? Checkbox(
@@ -523,10 +522,10 @@ class BillableItemsView extends GetView<InvoiceController> {
                                         ),
                                       ),
                                       Expanded(
-                                        flex: 3,
+                                        flex: 4,
                                         child: Padding(
                                           padding: EdgeInsets.symmetric(
-                                            horizontal: 8.sp,
+                                            horizontal: 12.sp,
                                           ),
                                           child: Text(
                                             item.name ?? "",
@@ -536,21 +535,23 @@ class BillableItemsView extends GetView<InvoiceController> {
                                               fontWeight: FontWeight.w500,
                                               fontSize: 14.sp,
                                             ),
-                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: null,
+                                            overflow: TextOverflow.visible,
                                           ),
                                         ),
                                       ),
                                       Expanded(
-                                        flex: 5,
+                                        flex: 6,
                                         child: Padding(
                                           padding: EdgeInsets.symmetric(
-                                            horizontal: 8.sp,
+                                            horizontal: 12.sp,
                                           ),
                                           child: Text(
                                             item.description ?? "",
                                             style: theme.textTheme.bodySmall
                                                 ?.copyWith(fontSize: 13.sp),
-                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: null,
+                                            overflow: TextOverflow.visible,
                                           ),
                                         ),
                                       ),
@@ -558,22 +559,21 @@ class BillableItemsView extends GetView<InvoiceController> {
                                         flex: 2,
                                         child: Padding(
                                           padding: EdgeInsets.symmetric(
-                                            horizontal: 8.sp,
+                                            horizontal: 12.sp,
                                           ),
                                           child: Text(
                                             "${item.quantityOnHand ?? 0}",
                                             style: theme.textTheme.bodyMedium
                                                 ?.copyWith(fontSize: 13.sp),
                                             textAlign: TextAlign.center,
-                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ),
                                       Expanded(
-                                        flex: 2,
+                                        flex: 3,
                                         child: Padding(
                                           padding: EdgeInsets.symmetric(
-                                            horizontal: 8.sp,
+                                            horizontal: 12.sp,
                                           ),
                                           child: Text(
                                             "\$${(item.price ?? 0.00).toStringAsFixed(2)}",
@@ -584,7 +584,6 @@ class BillableItemsView extends GetView<InvoiceController> {
                                                   fontSize: 13.sp,
                                                 ),
                                             textAlign: TextAlign.end,
-                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ),

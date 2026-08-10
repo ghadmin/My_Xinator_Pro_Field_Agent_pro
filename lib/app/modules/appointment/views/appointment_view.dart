@@ -419,28 +419,208 @@ class AppointmentView extends GetView<AppointmentController> {
                 ),
         ),
       ),
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: 20.sp),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: "create_appointment",
+            backgroundColor: Colors.green,
+            onPressed: () {
+              _showCustomerList(context, theme);
+            },
+            child: Icon(Icons.add, color: Colors.white),
+          ),
+          SizedBox(height: 10.sp),
+          // FloatingActionButton(
+          //   heroTag: "rag_chat",
+          //   backgroundColor: Colors.deepPurple,
+          //   onPressed: () {
+          //     Get.toNamed(Routes.RAG_CHAT);
+          //   },
+          //   child: Icon(Icons.psychology, color: Colors.white),
+          // ),
+          // SizedBox(height: 20.sp),
+          FloatingActionButton(
+            heroTag: "twilio_support",
+            backgroundColor: Colors.blue,
+            onPressed: () {
+              Get.toNamed(Routes.TWILIO_CHAT);
+            },
+            child: Icon(Icons.support_agent, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCustomerList(BuildContext context, ThemeData theme) {
+    // Get unique customers from appointment list
+    final uniqueCustomers = <String, dynamic>{};
+    for (var appointment in controller.sortedAppointments) {
+      if (appointment.customer?.customerID != null) {
+        uniqueCustomers[appointment.customer!.customerID.toString()] =
+            appointment.customer;
+      }
+    }
+    final customers = uniqueCustomers.values.toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        constraints: BoxConstraints(maxHeight: Get.size.height * 0.7),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // FloatingActionButton(
-            //   heroTag: "rag_chat",
-            //   backgroundColor: Colors.deepPurple,
-            //   onPressed: () {
-            //     Get.toNamed(Routes.RAG_CHAT);
-            //   },
-            //   child: Icon(Icons.psychology, color: Colors.white),
-            // ),
-            SizedBox(height: 20.sp),
-            FloatingActionButton(
-              heroTag: "twilio_support",
-              backgroundColor: Colors.blue,
-              onPressed: () {
-                Get.toNamed(Routes.TWILIO_CHAT);
-              },
-              child: Icon(Icons.support_agent, color: Colors.white),
+            // Handle bar
+            Container(
+              margin: EdgeInsets.only(top: 10.sp),
+              width: 40.sp,
+              height: 4.sp,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: EdgeInsets.all(20.sp),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Customer List",
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            // Search
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.sp),
+              child: GeneralTextField(
+                isEnabled: true,
+                hint: "Search customer...",
+                theme: theme,
+                onChanged: (value) {
+                  // Filter logic can be added here
+                },
+                textEditingController: TextEditingController(),
+              ),
+            ),
+            SizedBox(height: 15.sp),
+            // Customer list
+            Expanded(
+              child: customers.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No customers found",
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: EdgeInsets.symmetric(horizontal: 20.sp),
+                      itemCount: customers.length,
+                      separatorBuilder: (context, index) => Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final customer = customers[index];
+                        return SplashContainer(
+                          radius: 8,
+                          color: Colors.white,
+                          border: Border.all(
+                            color: Colors.grey.shade200,
+                            width: 1,
+                          ),
+                          onPressed: () {
+                            Get.back();
+                            // Navigate to create appointment with selected customer
+                            controller.createAppointmentController
+                                .selectedCustomer(customer);
+                            Get.toNamed(Routes.CREATE_APPOINTMENT);
+                          },
+                          child: Padding(
+                            padding: EdgeInsets.all(15.sp),
+                            child: Row(
+                              children: [
+                                // Avatar
+                                CircleAvatar(
+                                  radius: 25.sp,
+                                  backgroundColor: theme.primaryColor
+                                      .withValues(alpha: 0.1),
+                                  child: Text(
+                                    "${customer?.firstName?.substring(0, 1).toUpperCase() ?? ''}${customer?.lastName?.substring(0, 1).toUpperCase() ?? ''}",
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: theme.primaryColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 15.w),
+                                // Customer details
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "${customer?.firstName ?? ''} ${customer?.lastName ?? ''}",
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 2.sp),
+                                      Text(
+                                        customer?.email ?? '',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: LightThemeColors
+                                                  .hintTextColor,
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 2.sp),
+                                      Text(
+                                        "${customer?.address1 ?? ''}, ${customer?.city ?? ''}, ${customer?.state ?? ''}",
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: LightThemeColors
+                                                  .hintTextColor,
+                                              fontSize: 11.sp,
+                                            ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Arrow icon
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 16.sp,
+                                  color: Colors.grey,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

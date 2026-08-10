@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -22,21 +23,21 @@ import '../../appointment/controllers/appointment_controller.dart';
 import '../controllers/invoice_controller.dart';
 import '../models/qbo_class_dropdown_model.dart';
 import '../models/qbo_location_dropdown_model.dart';
-import '../../../service/REST/api_urls.dart' as api_urls;
 
-/// Column width configuration for invoice table
+/// Column width configuration for invoice table (using flexible ratios)
 class InvoiceTableWidth {
-  static double drag = 40.w;
-  static double item = 180.w;
-  static double description = 200.w;
-  static double qty = 60.w;
-  static double price = 80.w;
-  static double total = 80.w;
-  static double taxable = 60.w;
-  static double po = 50.w;
-  static double actions = 70.w;
+  static int drag = 1;
+  static int item = 4;
+  static int description = 6;
+  static int qty = 2;
+  static int price = 3;
+  static int total = 3;
+  static int taxable = 2;
+  static int po = 2;
+  static int actions = 2;
 
-  static double get totalWidth =>
+  // Total flex units for calculating percentages if needed
+  static int get totalFlex =>
       drag + item + description + qty + price + total + taxable + po + actions;
 }
 
@@ -46,11 +47,11 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   /// Reusable header cell widget
   Widget _buildHeaderCell(
     String text,
-    double width, {
+    int flex, {
     TextAlign align = TextAlign.left,
   }) {
-    return SizedBox(
-      width: width.sp,
+    return Expanded(
+      flex: flex,
       child: Padding(
         padding: EdgeInsets.all(8.sp),
         child: Text(
@@ -66,9 +67,9 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   }
 
   /// Reusable body cell widget
-  Widget _buildBodyCell(Widget child, double width) {
-    return SizedBox(
-      width: width.sp,
+  Widget _buildBodyCell(Widget child, int flex) {
+    return Expanded(
+      flex: flex,
       child: Padding(padding: EdgeInsets.all(8.sp), child: child),
     );
   }
@@ -80,7 +81,10 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
       decoration: BoxDecoration(color: theme.primaryColor),
       child: Row(
         children: [
-          _buildHeaderCell("", InvoiceTableWidth.drag),
+          SizedBox(
+            width: 40.sp,
+            child: Center(child: SizedBox.shrink()),
+          ),
           _buildHeaderCell("Item", InvoiceTableWidth.item),
           _buildHeaderCell("Description", InvoiceTableWidth.description),
           _buildHeaderCell(
@@ -136,14 +140,14 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
       child: Row(
         children: [
           // Drag handle
-          _buildBodyCell(
-            Center(
+          SizedBox(
+            width: 40.sp,
+            child: Center(
               child: ReorderableDragStartListener(
                 index: index,
                 child: Icon(Icons.drag_handle, color: theme.primaryColor),
               ),
             ),
-            InvoiceTableWidth.drag,
           ),
           // Item
           _buildBodyCell(
@@ -152,8 +156,6 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
             ),
             InvoiceTableWidth.item,
           ),
@@ -162,8 +164,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
             Text(
               item.description ?? "",
               style: theme.textTheme.bodySmall,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
+              maxLines: null,
+              overflow: TextOverflow.visible,
             ),
             InvoiceTableWidth.description,
           ),
@@ -208,16 +210,18 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           ),
           // PO Checkbox
           _buildBodyCell(
-            Checkbox(
-              value: item.po ?? false,
-              onChanged: (value) {
-                controller.markAsDirty();
-                item.po = value;
-                controller.selectedItemList[index].po = value;
-                controller.selectedItemList.refresh();
-              },
-              activeColor: theme.primaryColor,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            Center(
+              child: Checkbox(
+                value: item.po ?? false,
+                onChanged: (value) {
+                  controller.markAsDirty();
+                  item.po = value;
+                  controller.selectedItemList[index].po = value;
+                  controller.selectedItemList.refresh();
+                },
+                activeColor: theme.primaryColor,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
             InvoiceTableWidth.po,
           ),
@@ -624,7 +628,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   controller.billableItemsScrollController,
                               scrollDirection: Axis.horizontal,
                               child: SizedBox(
-                                width: (InvoiceTableWidth.totalWidth).sp,
+                                width: 1200.sp, // Much wider table for more space
                                 child: Theme(
                                   data: theme.copyWith(
                                     canvasColor: Colors.white,
@@ -3280,171 +3284,171 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
     );
   }
 
-  void _showAddItemDialog(BuildContext context, theme) {
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Container(
-            height: .8.sh,
-            padding: EdgeInsets.all(20.sp),
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 40.sp,
-                  child: GeneralTextField(
-                    hint: "Search item",
-                    focusNode: controller.invoiceDetailsSearchFocusnode.value,
-                    suffixIcon: Icon(
-                      Icons.search,
-                      color: LightThemeColors.bodyTextSecondaryColor,
-                    ),
-                    theme: theme,
-                    textInputAction: TextInputAction.search,
-                    onChanged: (_) => controller.itemController.sortItems(),
-                    textEditingController:
-                        controller.itemController.sortTextController,
-                  ),
-                ),
-                SizedBox(height: 10.sp),
-                Expanded(
-                  child: Obx(
-                    () => ListView(
-                      children: controller.itemController.sortedItems.map((
-                        item,
-                      ) {
-                        final alreadySelected = controller.selectedItemList.any(
-                          (selected) => selected.id == item.id,
-                        );
-                        return CheckboxListTile(
-                          activeColor: theme.primaryColor,
-                          value: alreadySelected,
-                          onChanged: (checked) {
-                            controller.markAsDirty();
-                            if (checked == true && !alreadySelected) {
-                              controller.selectedItemList.add(item);
-                              controller.editAmountControllers.add(
-                                TextEditingController(
-                                  text: item.price.toString(),
-                                ),
-                              );
-                              controller.editDescriptionControllers.add(
-                                TextEditingController(
-                                  text: item.description ?? "",
-                                ),
-                              );
-                              controller.editQuantityControllers.add(
-                                TextEditingController(text: '1'),
-                              );
-                              controller.createTotalForEdit();
-                              controller.updateRequestedDepositAmount();
-                            } else if (checked == false && alreadySelected) {
-                              final index = controller.selectedItemList
-                                  .indexWhere(
-                                    (selected) => selected.id == item.id,
-                                  );
-                              if (index != -1) {
-                                controller.selectedItemList.removeAt(index);
-                                controller.editAmountControllers.removeAt(
-                                  index,
-                                );
-                                controller.editDescriptionControllers.removeAt(
-                                  index,
-                                );
-                                controller.editQuantityControllers.removeAt(
-                                  index,
-                                );
-                                controller.createTotalForEdit();
-                                controller.updateRequestedDepositAmount();
-                              }
-                            }
-                          },
-                          title: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 5.sp,
-                              vertical: 10.sp,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8.sp),
-                              border: Border.all(
-                                color: LightThemeColors.bodyTextSecondaryColor,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.name ?? "",
-                                  style: TextStyle(
-                                    color: LightThemeColors.primaryColor,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 16.sp,
-                                  ),
-                                ),
-                                SizedBox(height: 5.sp),
-                                item.description == ""
-                                    ? SizedBox.shrink()
-                                    : Text(item.description ?? ""),
-                                SizedBox(height: 8.sp),
-                                Row(
-                                  children: [
-                                    Text(
-                                      "Price: ",
-                                      style: TextStyle(
-                                        color: LightThemeColors
-                                            .bodyTextSecondaryColor,
-                                        fontSize: 12.sp,
-                                      ),
-                                    ),
-                                    Text(
-                                      "\$${(item.price ?? 0.00).toStringAsFixed(2)}",
-                                      style: TextStyle(
-                                        color: theme.primaryColor,
-                                        fontSize: 12.sp,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 5.sp),
-                                Text(
-                                  "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
-                                  style: TextStyle(
-                                    color:
-                                        LightThemeColors.bodyTextSecondaryColor,
-                                    fontSize: 12.sp,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20.sp),
-                SizedBox(
-                  height: 50.sp,
-                  width: 150.sp,
-                  child: PrimaryButton(
-                    title: "Close",
-                    onPressed: () {
-                      Get.back();
-                    },
-                    inactive: false,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // void _showAddItemDialog(BuildContext context, theme) {
+  //   showDialog(
+  //     barrierDismissible: false,
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return Dialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(8.r),
+  //         ),
+  //         child: Container(
+  //           height: .8.sh,
+  //           padding: EdgeInsets.all(20.sp),
+  //           child: Column(
+  //             children: [
+  //               SizedBox(
+  //                 height: 40.sp,
+  //                 child: GeneralTextField(
+  //                   hint: "Search item",
+  //                   focusNode: controller.invoiceDetailsSearchFocusnode.value,
+  //                   suffixIcon: Icon(
+  //                     Icons.search,
+  //                     color: LightThemeColors.bodyTextSecondaryColor,
+  //                   ),
+  //                   theme: theme,
+  //                   textInputAction: TextInputAction.search,
+  //                   onChanged: (_) => controller.itemController.sortItems(),
+  //                   textEditingController:
+  //                       controller.itemController.sortTextController,
+  //                 ),
+  //               ),
+  //               SizedBox(height: 10.sp),
+  //               Expanded(
+  //                 child: Obx(
+  //                   () => ListView(
+  //                     children: controller.itemController.sortedItems.map((
+  //                       item,
+  //                     ) {
+  //                       final alreadySelected = controller.selectedItemList.any(
+  //                         (selected) => selected.id == item.id,
+  //                       );
+  //                       return CheckboxListTile(
+  //                         activeColor: theme.primaryColor,
+  //                         value: alreadySelected,
+  //                         onChanged: (checked) {
+  //                           controller.markAsDirty();
+  //                           if (checked == true && !alreadySelected) {
+  //                             controller.selectedItemList.add(item);
+  //                             controller.editAmountControllers.add(
+  //                               TextEditingController(
+  //                                 text: item.price.toString(),
+  //                               ),
+  //                             );
+  //                             controller.editDescriptionControllers.add(
+  //                               TextEditingController(
+  //                                 text: item.description ?? "",
+  //                               ),
+  //                             );
+  //                             controller.editQuantityControllers.add(
+  //                               TextEditingController(text: '1'),
+  //                             );
+  //                             controller.createTotalForEdit();
+  //                             controller.updateRequestedDepositAmount();
+  //                           } else if (checked == false && alreadySelected) {
+  //                             final index = controller.selectedItemList
+  //                                 .indexWhere(
+  //                                   (selected) => selected.id == item.id,
+  //                                 );
+  //                             if (index != -1) {
+  //                               controller.selectedItemList.removeAt(index);
+  //                               controller.editAmountControllers.removeAt(
+  //                                 index,
+  //                               );
+  //                               controller.editDescriptionControllers.removeAt(
+  //                                 index,
+  //                               );
+  //                               controller.editQuantityControllers.removeAt(
+  //                                 index,
+  //                               );
+  //                               controller.createTotalForEdit();
+  //                               controller.updateRequestedDepositAmount();
+  //                             }
+  //                           }
+  //                         },
+  //                         title: Container(
+  //                           padding: EdgeInsets.symmetric(
+  //                             horizontal: 5.sp,
+  //                             vertical: 10.sp,
+  //                           ),
+  //                           decoration: BoxDecoration(
+  //                             borderRadius: BorderRadius.circular(8.sp),
+  //                             border: Border.all(
+  //                               color: LightThemeColors.bodyTextSecondaryColor,
+  //                             ),
+  //                           ),
+  //                           child: Column(
+  //                             crossAxisAlignment: CrossAxisAlignment.start,
+  //                             children: [
+  //                               Text(
+  //                                 item.name ?? "",
+  //                                 style: TextStyle(
+  //                                   color: LightThemeColors.primaryColor,
+  //                                   fontWeight: FontWeight.w500,
+  //                                   fontSize: 16.sp,
+  //                                 ),
+  //                               ),
+  //                               SizedBox(height: 5.sp),
+  //                               item.description == ""
+  //                                   ? SizedBox.shrink()
+  //                                   : Text(item.description ?? ""),
+  //                               SizedBox(height: 8.sp),
+  //                               Row(
+  //                                 children: [
+  //                                   Text(
+  //                                     "Price: ",
+  //                                     style: TextStyle(
+  //                                       color: LightThemeColors
+  //                                           .bodyTextSecondaryColor,
+  //                                       fontSize: 12.sp,
+  //                                     ),
+  //                                   ),
+  //                                   Text(
+  //                                     "\$${(item.price ?? 0.00).toStringAsFixed(2)}",
+  //                                     style: TextStyle(
+  //                                       color: theme.primaryColor,
+  //                                       fontSize: 12.sp,
+  //                                     ),
+  //                                   ),
+  //                                 ],
+  //                               ),
+  //                               SizedBox(height: 5.sp),
+  //                               Text(
+  //                                 "Taxable: ${item.isTaxable == true ? "Yes" : "No"}",
+  //                                 style: TextStyle(
+  //                                   color:
+  //                                       LightThemeColors.bodyTextSecondaryColor,
+  //                                   fontSize: 12.sp,
+  //                                 ),
+  //                               ),
+  //                             ],
+  //                           ),
+  //                         ),
+  //                       );
+  //                     }).toList(),
+  //                   ),
+  //                 ),
+  //               ),
+  //               SizedBox(height: 20.sp),
+  //               SizedBox(
+  //                 height: 50.sp,
+  //                 width: 150.sp,
+  //                 child: PrimaryButton(
+  //                   title: "Close",
+  //                   onPressed: () {
+  //                     Get.back();
+  //                   },
+  //                   inactive: false,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   Future<bool?> _showUnsavedChangesDialogAsync(BuildContext context) {
     final theme = Theme.of(context);
@@ -3945,7 +3949,53 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
 
   /// Build signature cell widget for payment table
   Widget _buildSignatureCell(dynamic deposit, ThemeData theme) {
-    // Check if deposit has signatures
+    // First check if we have a temporary signature in the list for this payment
+    final paymentId = deposit?.id?.toString();
+    if (paymentId != null) {
+      final tempSignature = controller.tempSignatureList.firstWhereOrNull(
+        (sig) => sig.paymentId == paymentId,
+      );
+
+      if (tempSignature?.signature != null &&
+          tempSignature!.signature!.isNotEmpty) {
+        // Display base64 image from temp signature list
+        try {
+          final imageBytes = base64Decode(tempSignature.signature!);
+          return GestureDetector(
+            onTap: () =>
+                _showTempSignatureDialog(tempSignature.signature!, theme),
+            child: Container(
+              width: 60.sp,
+              height: 40.sp,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: Colors.green.shade300),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8.r),
+                child: Image.memory(
+                  imageBytes,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.grey.shade300,
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 20.sp,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        } catch (e) {
+          log("Error decoding base64 signature: $e");
+          // Fall through to network image logic if decoding fails
+        }
+      }
+    }
+
+    // Check if deposit has signatures (original logic)
     if (deposit?.signatures == null || deposit.signatures.isEmpty) {
       return Text(
         "No Signature",
@@ -4089,6 +4139,116 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
         ),
       ),
     );
+  }
+
+  /// Show temporary signature full screen dialog
+  void _showTempSignatureDialog(String base64Signature, ThemeData theme) {
+    showAdaptiveDialog(
+      context: Get.context!,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
+        child: Stack(
+          children: [
+            // Close button
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: () => Get.back(),
+                child: Container(
+                  padding: EdgeInsets.all(8.sp),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Icon(Icons.close, color: Colors.black, size: 24.sp),
+                ),
+              ),
+            ),
+            // Signature display
+            Center(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: 0.8.sh,
+                  maxWidth: 0.9.sw,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.all(16.sp),
+                child: _buildBase64Signature(base64Signature),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build base64 signature image widget
+  Widget _buildBase64Signature(String base64Signature) {
+    try {
+      final imageBytes = base64Decode(base64Signature);
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: Colors.green.shade300),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.r),
+          child: Image.memory(
+            imageBytes,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Container(
+              height: 200.sp,
+              width: double.infinity,
+              color: Colors.grey.shade300,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.broken_image, size: 40.sp, color: Colors.grey),
+                    SizedBox(height: 8.sp),
+                    Text(
+                      'Signature not available',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      log("Error displaying base64 signature: $e");
+      return Container(
+        height: 200.sp,
+        width: double.infinity,
+        color: Colors.grey.shade300,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.broken_image, size: 40.sp, color: Colors.grey),
+              SizedBox(height: 8.sp),
+              Text(
+                'Error loading signature',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   /// Build single signature image widget
