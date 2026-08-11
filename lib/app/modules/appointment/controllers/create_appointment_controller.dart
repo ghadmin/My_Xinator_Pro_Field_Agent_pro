@@ -32,10 +32,12 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   final appointmentIdController = TextEditingController();
   final isAppointmentIdLoading = false.obs;
   final timeRequired = ''.obs;
+  final notesController = TextEditingController();
 
   // Form state
-  final selectedDate = Rxn<DateTime>();
-  final selectedTimeSlot = Rxn<String>();
+  final selectedStartDate = Rxn<DateTime>();
+  final selectedEndDate = Rxn<DateTime>();
+  final selectedTimeSlot = Rxn<TimeSlotModel>();
   final selectedCalendar = RxString('');
   final selectedCEC = RxString('');
   final selectedServiceType = Rxn<int>();
@@ -57,8 +59,6 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   final isLoadingServiceTypes = false.obs;
   final isLoadingResources = false.obs;
 
-  // Available time slots
-  final availableSlots = <String>[].obs;
   final timeSlotModels = <TimeSlotModel>[].obs;
 
   // Service types from API
@@ -199,17 +199,8 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
                 .map((e) => TimeSlotModel.fromJson(e as Map<String, dynamic>))
                 .toList(),
           );
-
-          // Convert TimeSlotModel list to string list for display
-          availableSlots.clear();
-          for (var slot in timeSlotModels) {
-            availableSlots.add(
-              slot.startTime,
-            ); // or use slot.label for full display
-          }
         } else {
           timeSlotModels.clear();
-          availableSlots.clear();
         }
 
         if (showLoader) {
@@ -490,6 +481,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
     phoneController.dispose();
     emailController.dispose();
     appointmentIdController.dispose();
+    notesController.dispose();
     super.onClose();
   }
 
@@ -497,7 +489,9 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   void onDaySelected(DateTime selected, DateTime focused) {
     selectedDay.value = selected;
     focusedDay.value = focused;
-    selectedDate.value = selected;
+    selectedStartDate.value = selected;
+    selectedEndDate.value = selected;
+
     isCalendarSelected.value = true;
 
     // Load time slots when moving to slot selection
@@ -512,7 +506,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   }
 
   // Slot selection
-  void selectTimeSlot(String slot) {
+  void selectTimeSlot(TimeSlotModel slot) {
     selectedTimeSlot.value = slot;
     isSlotSelected.value = true;
 
@@ -579,61 +573,125 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   }
 
   // Form submission
-  void submitAppointment() {
+  Future<void> submitAppointment() async {
     // Validate form
     if (!_validateForm()) {
       return;
     }
 
-    final customer = selectedCustomer.value;
-    final customerAddress =
-        '${customer?.address1 ?? ''}${customer?.address2 != null && customer!.address2!.isNotEmpty ? ', ${customer.address2}' : ''}';
+    try {
+      showLoading();
 
-    // Create appointment data
-    final appointmentData = {
-      'startDate': _formatDateTime(selectedDate.value, selectedTimeSlot.value),
-      'endDate': _formatEndDate(selectedDate.value, selectedTimeSlot.value),
-      'calendar': selectedCalendar.value,
-      'cec': selectedCEC.value,
-      'appointmentId': appointmentIdController.text,
-      'timeRequired': timeRequired.value,
-      'serviceTypeId': selectedServiceType.value,
-      'resourceId': selectedResource.value,
-      'statusId': selectedStatus.value,
-      'appointmentTime': selectedTimeSlot.value,
-      'businessName': customer?.businessName ?? customer?.companyName ?? '',
-      'title': customer?.title ?? '',
-      'firstName': customer?.firstName ?? '',
-      'lastName': customer?.lastName ?? '',
-      'jobTitle': customer?.jobTitle ?? '',
-      'address': customerAddress,
-      'city': customer?.city ?? '',
-      'state': customer?.state ?? '',
-      'zipCode': customer?.zipCode ?? '',
-      'mobile': customer?.mobile ?? '',
-      'phone': customer?.phone ?? '',
-      'email': customer?.email ?? '',
-      'customerId': customer?.customerID ?? '',
-      'siteId': selectedSite.value,
-    };
+      if (await NetworkConnectivity.isNetworkAvailable()) {
+        final customer = selectedCustomer.value;
 
-    // Here you would make API call to create appointment
-    print('Creating appointment with data: $appointmentData');
+        // Get required user data
+        final companyID = await MySharedPref.getCompanyID();
+        final userID = MySharedPref.getResourceID();
+        final userEmail = await MySharedPref.getEmail();
 
-    // Show success message and navigate back
-    Get.snackbar(
-      'Success',
-      'Appointment created successfully',
-      snackPosition: SnackPosition.BOTTOM,
-    );
+        // Get the selected time slot model to extract TimeSlotId
+        final selectedTimeSlotModel = timeSlotModels.firstWhereOrNull(
+          (slot) => slot.startTime == selectedTimeSlot.value?.startTime,
+        );
 
-    // Navigate back to appointment list
-    Get.back();
+        if (selectedTimeSlotModel == null) {
+          hideLoading();
+          MySnackBar.showErrorToast(message: "Selected time slot not found");
+          return;
+        }
+
+        // Format dates in ISO format (yyyy-MM-ddTHH:mm:ss)
+        final startDateTime = _formatISODateTime(
+          selectedStartDate.value,
+          selectedTimeSlot.value!.startTime,
+        );
+        final endDateTime = _formatISOEndDate(
+          selectedEndDate.value,
+          selectedTimeSlot.value!.endTime,
+          timeRequired.value,
+        );
+
+        // Create appointment data according to API requirements
+        final appointmentData = {
+          "appointment": {
+            "CompanyID": companyID,
+            "CustomerID": customer?.customerID ?? '',
+            "ServiceTypeId": selectedServiceType.value?.toString() ?? '',
+            "ResourceID": selectedResource.value ?? 0,
+            "TimeSlotId": selectedTimeSlotModel.id,
+            "StartDateTime": startDateTime,
+            "EndDateTime": endDateTime,
+            "StatusId": selectedStatus.value?.toString() ?? '2',
+            "SchedulingCal": selectedCalendar.value.isNotEmpty
+                ? selectedCalendar.value
+                : 'CEC',
+            "Note": notesController.text.isNotEmpty
+                ? notesController.text
+                : 'Appointment from mobile app',
+            "SiteID": selectedSite.value?.toString() ?? '',
+            "CreatedBy": userEmail?.isNotEmpty == true
+                ? userEmail!.split('@')[0]
+                : 'mobile_user',
+            "UserID": userID,
+          },
+        };
+
+        kLog("Creating appointment with data: $appointmentData");
+
+        final response = await DioClient()
+            .post(url: ApiUrl.createAppointmentUrl, body: appointmentData)
+            .catchError(handleError);
+
+        if (response == null) {
+          hideLoading();
+          return;
+        }
+
+        kLog("Create appointment response: $response");
+
+        // Parse response
+        if (response is Map<String, dynamic>) {
+          final status = response['Status'];
+          final message = response['Message'] ?? response['Response'];
+
+          if (status == 'success' || status == 'Success') {
+            hideLoading();
+
+            MySnackBar.showToast(
+              message: message ?? 'Appointment created successfully',
+            );
+
+            // Clear form and navigate back
+            clearForm();
+            Get.back(result: true); // Return true to indicate success
+          } else {
+            hideLoading();
+            MySnackBar.showErrorToast(
+              message: message ?? 'Failed to create appointment',
+            );
+          }
+        } else {
+          hideLoading();
+          MySnackBar.showErrorToast(message: 'Invalid response from server');
+        }
+      } else {
+        hideLoading();
+        MySnackBar.showErrorToast(message: "No network connection");
+      }
+    } catch (e, s) {
+      kLog(e.toString());
+      kLog(s.toString());
+      hideLoading();
+      MySnackBar.showErrorToast(
+        message: "Error creating appointment: ${e.toString()}",
+      );
+    }
   }
 
   // Validation
   bool _validateForm() {
-    if (selectedDate.value == null) {
+    if (selectedStartDate.value == null) {
       Get.snackbar(
         'Error',
         'Please select a date',
@@ -697,16 +755,32 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
       return false;
     }
 
+    // Validate 24-hour rule: EndDateTime cannot be more than 24 hours after StartDateTime
+    if (selectedStartDate.value != null && selectedEndDate.value != null) {
+      final difference = selectedEndDate.value!.difference(selectedStartDate.value!);
+      if (difference.inHours > 24) {
+        Get.snackbar(
+          'Invalid Duration',
+          'EndDateTime cannot be more than 24 hours after StartDateTime',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade400,
+          colorText: Colors.white,
+        );
+        return false;
+      }
+    }
+
     return true;
   }
 
   // Helper methods
-  String _formatDateTime(DateTime? date, String? time) {
+  String _formatISODateTime(DateTime? date, String? time) {
     if (date == null || time == null) return '';
-    final dateFormat = DateFormat('MM/dd/yyyy hh:mm a');
-    // Parse the time slot and combine with date
+    // Parse the time slot (format: "10:30 AM" or similar)
     final timeFormat = DateFormat('hh:mm a');
     final parsedTime = timeFormat.parse(time);
+
+    // Combine date with parsed time
     final combinedDateTime = DateTime(
       date.year,
       date.month,
@@ -714,17 +788,73 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
       parsedTime.hour,
       parsedTime.minute,
     );
-    return dateFormat.format(combinedDateTime);
+
+    // Return in ISO format: yyyy-MM-ddTHH:mm:ss
+    return DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(combinedDateTime);
   }
 
-  String _formatEndDate(DateTime? date, String? time) {
-    // For now, same as start date. You can add duration logic later
-    return _formatDateTime(date, time);
+  String _formatISOEndDate(DateTime? date, String? time, String timeRequired) {
+    if (date == null || time == null) return '';
+
+    // Parse start time
+    final timeFormat = DateFormat('hh:mm a');
+    final parsedTime = timeFormat.parse(time);
+    final startDateTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      parsedTime.hour,
+      parsedTime.minute,
+    );
+
+    // Parse time required (format: "1h 30m" or "30m" or "1h")
+    int additionalMinutes = 0;
+    if (timeRequired.isNotEmpty) {
+      // Parse hours
+      final hoursMatch = RegExp(r'(\d+)\s*h').firstMatch(timeRequired);
+      if (hoursMatch != null) {
+        additionalMinutes += int.parse(hoursMatch.group(1)!) * 60;
+      }
+
+      // Parse minutes
+      final minutesMatch = RegExp(r'(\d+)\s*m').firstMatch(timeRequired);
+      if (minutesMatch != null) {
+        additionalMinutes += int.parse(minutesMatch.group(1)!);
+      }
+
+      // If no match found, try to parse as plain number (assuming minutes)
+      if (hoursMatch == null && minutesMatch == null) {
+        final numberMatch = RegExp(r'(\d+)').firstMatch(timeRequired);
+        if (numberMatch != null) {
+          additionalMinutes += int.parse(numberMatch.group(1)!);
+        }
+      }
+    }
+
+    // Add time required to start time
+    final endDateTime = startDateTime.add(Duration(minutes: additionalMinutes));
+
+    // Return in ISO format: yyyy-MM-ddTHH:mm:ss
+    return DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(endDateTime);
   }
 
   String getFormattedSelectedDate() {
-    if (selectedDate.value == null) return '';
-    return DateFormat('MM/dd/yyyy').format(selectedDate.value!);
+    if (selectedStartDate.value == null) return '';
+    return DateFormat('MM/dd/yyyy').format(selectedStartDate.value!);
+  }
+
+  String getFormattedStartDate() {
+    if (selectedStartDate.value != null && selectedTimeSlot.value != null) {
+      return '${getFormattedSelectedDate()} ${selectedTimeSlot.value?.startTime ?? ""}';
+    }
+    return 'Select date and time slot';
+  }
+
+  String getFormattedEndDate() {
+    if (selectedEndDate.value != null && selectedTimeSlot.value != null) {
+      return '${getFormattedSelectedDate()} ${selectedTimeSlot.value?.endTime ?? ""}';
+    }
+    return 'Select date and time slot';
   }
 
   void clearForm() {
@@ -760,5 +890,131 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
     // Generate a random appointment ID
     appointmentIdController.text = DateTime.now().millisecondsSinceEpoch
         .toString();
+  }
+
+  /// Select date and time with AM/PM support
+  Future<void> selectDateTime({
+    required BuildContext context,
+    required bool isStartDate,
+  }) async {
+    try {
+      // Preselect today's date if no date is selected
+      DateTime initialDate = isStartDate
+          ? (selectedStartDate.value ?? DateTime.now())
+          : (selectedEndDate.value ?? selectedStartDate.value ?? DateTime.now());
+
+      // Ensure the initial date is not before today for start date
+      if (isStartDate) {
+        final now = DateTime.now();
+        if (initialDate.isBefore(DateTime(now.year, now.month, now.day))) {
+          initialDate = DateTime.now();
+        }
+      }
+
+      // Show date picker
+      final pickedDate = await showDatePicker(
+        context: context,
+        initialDate: initialDate,
+        firstDate: isStartDate ? DateTime.now() : DateTime(2020),
+        lastDate: DateTime(2100),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: Theme.of(context).primaryColor,
+                onPrimary: Colors.white,
+                surface: Colors.white,
+                onSurface: Colors.black87,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedDate != null) {
+        // Show time picker after date is selected
+        final pickedTime = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay.fromDateTime(initialDate),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.light(
+                  primary: Theme.of(context).primaryColor,
+                  onPrimary: Colors.white,
+                  surface: Colors.white,
+                  onSurface: Colors.black87,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+
+        if (pickedTime != null) {
+          // Combine date and time
+          final selectedDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+
+          if (isStartDate) {
+            // Update start date
+            selectedStartDate.value = selectedDateTime;
+
+            // Auto-update end date to match start date if it's before or null
+            if (selectedEndDate.value == null ||
+                selectedEndDate.value!.isBefore(selectedDateTime)) {
+              selectedEndDate.value = selectedDateTime;
+            }
+
+            // Update the selected day for calendar consistency
+            selectedDay.value = pickedDate;
+            focusedDay.value = pickedDate;
+          } else {
+            // For end date, ensure it's not before start date
+            if (selectedStartDate.value != null &&
+                selectedDateTime.isBefore(selectedStartDate.value!)) {
+              Get.snackbar(
+                'Invalid Date',
+                'End date must be same as or after start date',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.red.shade400,
+                colorText: Colors.white,
+              );
+              return;
+            }
+
+            // Ensure end date is not more than 24 hours after start date
+            if (selectedStartDate.value != null) {
+              final difference = selectedDateTime.difference(selectedStartDate.value!);
+              if (difference.inHours > 24) {
+                Get.snackbar(
+                  'Invalid Date',
+                  'EndDateTime cannot be more than 24 hours after StartDateTime',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.red.shade400,
+                  colorText: Colors.white,
+                );
+                return;
+              }
+            }
+
+            selectedEndDate.value = selectedDateTime;
+          }
+
+          // Refresh time slots if start date changed
+          if (isStartDate) {
+            await loadTimeSlots();
+          }
+        }
+      }
+    } catch (e) {
+      kLog("Error selecting date time: $e");
+    }
   }
 }

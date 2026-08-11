@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/time_slot_model.dart';
 
 import '../../../components/global-widgets/splash_container.dart';
 import '../controllers/create_appointment_controller.dart';
@@ -240,6 +241,9 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
             child: ElevatedButton(
               onPressed: () {
                 controller.currentStep.value = 1;
+                controller.selectedStartDate.value =
+                    controller.selectedDay.value;
+                controller.selectedEndDate.value = controller.selectedDay.value;
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.primaryColor,
@@ -330,7 +334,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
       }
 
       // Show actual time slots when loaded
-      if (controller.availableSlots.isEmpty) {
+      if (controller.timeSlotModels.isEmpty) {
         return Center(
           child: Padding(
             padding: EdgeInsets.all(32.h),
@@ -363,10 +367,11 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
           crossAxisSpacing: 10.w,
           mainAxisSpacing: 10.h,
         ),
-        itemCount: controller.availableSlots.length,
+        itemCount: controller.timeSlotModels.length,
         itemBuilder: (context, index) {
-          final slot = controller.availableSlots[index];
-          final isSelected = controller.selectedTimeSlot.value == slot;
+          final slot = controller.timeSlotModels[index];
+          final isSelected =
+              controller.selectedTimeSlot.value?.startTime == slot.startTime;
 
           return SplashContainer(
             onPressed: () {
@@ -380,7 +385,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
             ),
             child: Center(
               child: Text(
-                slot,
+                slot.startTime,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: isSelected ? Colors.white : Colors.black87,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -428,7 +433,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
               ),
               SizedBox(height: 8.h),
               Text(
-                '${controller.getFormattedSelectedDate()} at ${controller.selectedTimeSlot.value ?? ""}',
+                '${controller.getFormattedSelectedDate()} at ${controller.selectedTimeSlot.value?.startTime}',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontSize: 16.sp,
                   fontWeight: FontWeight.w500,
@@ -454,6 +459,35 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
         _buildSectionHeader('Status & Scheduling', theme, Icons.schedule),
         SizedBox(height: 16.h),
         _buildStatusForm(theme),
+
+        SizedBox(height: 24.h),
+
+        // Any Details Section
+        _buildSectionHeader('Any Details', theme, Icons.note),
+        SizedBox(height: 16.h),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: theme.dividerColor),
+          ),
+          child: TextField(
+            controller: controller.notesController,
+            maxLines: 4,
+            decoration: InputDecoration(
+              hintText: 'Add any notes or comments here...',
+              hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.hintColor,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 12.h,
+              ),
+            ),
+            style: theme.textTheme.bodyMedium,
+          ),
+        ),
 
         SizedBox(height: 24.h),
 
@@ -515,18 +549,20 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
         Row(
           children: [
             Expanded(
-              child: _buildReadOnlyField(
+              child: _buildClickableDateField(
                 'Start Date',
-                '${controller.getFormattedSelectedDate()} ${controller.selectedTimeSlot.value ?? ""}',
+                controller.getFormattedStartDate(),
                 theme,
+                isStartDate: true,
               ),
             ),
             SizedBox(width: 12.w),
             Expanded(
-              child: _buildReadOnlyField(
+              child: _buildClickableDateField(
                 'End Date',
-                '${controller.getFormattedSelectedDate()} ${controller.selectedTimeSlot.value ?? ""}',
+                controller.getFormattedEndDate(),
                 theme,
+                isStartDate: false,
               ),
             ),
           ],
@@ -615,6 +651,8 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                 ),
         ),
         SizedBox(height: 16.h),
+        _buildServiceTypeDropdown(theme),
+        SizedBox(height: 16.h),
         Obx(
           () => _buildReadOnlyField(
             'Time Required',
@@ -624,8 +662,6 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
             theme,
           ),
         ),
-        SizedBox(height: 16.h),
-        _buildServiceTypeDropdown(theme),
         SizedBox(height: 16.h),
         _buildResourceDropdown(theme),
       ],
@@ -637,10 +673,105 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
       children: [
         _buildStatusDropdown(theme),
         SizedBox(height: 16.h),
-        _buildReadOnlyField(
+        _buildAppointmentTimeDropdown(theme),
+      ],
+    );
+  }
+
+  Widget _buildAppointmentTimeDropdown(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
           'Appointment Time',
-          controller.selectedTimeSlot.value ?? 'Select',
-          theme,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        SizedBox(height: 4.h),
+        Obx(
+          () => controller.isLoadingTimeSlots.value
+              ? Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 16.sp,
+                        height: 16.sp,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.primaryColor,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Text(
+                        'Loading time slots...',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : controller.timeSlotModels.isEmpty
+              ? Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Text(
+                    'No time slots available',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                )
+              : Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: controller.selectedTimeSlot.value?.startTime,
+                      isExpanded: true,
+                      hint: Text('Select time slot'),
+                      items: controller.timeSlotModels.toSet().toList().map((
+                        TimeSlotModel slot,
+                      ) {
+                        return DropdownMenuItem<String>(
+                          value: slot.startTime,
+                          child: Text(slot.startTime),
+                        );
+                      }).toList(),
+                      onChanged: (String? value) {
+                        final selectedSlot = controller.timeSlotModels
+                            .firstWhereOrNull(
+                              (slot) => slot.startTime == value,
+                            );
+                        controller.selectedTimeSlot.value = selectedSlot;
+                      },
+                    ),
+                  ),
+                ),
         ),
       ],
     );
@@ -873,6 +1004,58 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
     );
   }
 
+  Widget _buildClickableDateField(
+    String label,
+    String value,
+    ThemeData theme, {
+    required bool isStartDate,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        SizedBox(height: 4.h),
+        GestureDetector(
+          onTap: () => controller.selectDateTime(
+            context: Get.context!,
+            isStartDate: isStartDate,
+          ),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(color: theme.primaryColor, width: 1.5),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: value.contains('Select')
+                          ? Colors.grey.shade600
+                          : Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Icon(Icons.arrow_drop_down, color: theme.primaryColor),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDropdownField<T>(
     String label,
     List<T> items,
@@ -1011,7 +1194,10 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
         Obx(
           () => controller.isLoadingResources.value
               ? Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 12.h,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(8.r),
@@ -1062,17 +1248,19 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                                   children: [
                                     Text(
                                       resource.name,
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                     ),
                                     if (resource.description.isNotEmpty)
                                       Text(
                                         resource.description,
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 11.sp,
-                                        ),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: Colors.grey.shade600,
+                                              fontSize: 11.sp,
+                                            ),
                                       ),
                                   ],
                                 ),

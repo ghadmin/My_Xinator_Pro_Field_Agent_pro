@@ -79,6 +79,7 @@ class ApiUrl {
   static const getNextAppointmentNumberUrl = "$baseUrl/GetNextAppointmentNumber";
   static const getServiceTypeListUrl = "$baseUrl/GetServiceTypeList";
   static const getResourceListUrl = "$baseUrl/GetResourceList";
+  static const createAppointmentUrl = "$baseUrl/CreateAppointment";
 
   // Forms API endpoints
   static const getAllForms = "$baseUrl/GetAllFormTemplates";
