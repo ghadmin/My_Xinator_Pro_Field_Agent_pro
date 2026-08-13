@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/customer/controllers/customer_controller.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
@@ -455,16 +456,9 @@ class AppointmentView extends GetView<AppointmentController> {
   }
 
   void _showCustomerList(BuildContext context, ThemeData theme) {
-    // Get unique customers from appointment list
-    final uniqueCustomers = <String, dynamic>{};
-    for (var appointment in controller.sortedAppointments) {
-      if (appointment.customer?.customerID != null) {
-        uniqueCustomers[appointment.customer!.customerID.toString()] =
-            appointment.customer;
-      }
-    }
-    final customers = uniqueCustomers.values.toList();
 
+final customerC = Get.find<CustomerController>();
+final customerList = customerC.customers;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -523,7 +517,7 @@ class AppointmentView extends GetView<AppointmentController> {
             SizedBox(height: 15.sp),
             // Customer list
             Expanded(
-              child: customers.isEmpty
+              child: customerList.isEmpty
                   ? Center(
                       child: Text(
                         "No customers found",
@@ -532,10 +526,10 @@ class AppointmentView extends GetView<AppointmentController> {
                     )
                   : ListView.separated(
                       padding: EdgeInsets.symmetric(horizontal: 20.sp),
-                      itemCount: customers.length,
+                      itemCount: customerList.length,
                       separatorBuilder: (context, index) => Divider(height: 1),
                       itemBuilder: (context, index) {
-                        final customer = customers[index];
+                        final customer = customerList[index];
                         return SplashContainer(
                           radius: 8,
                           color: Colors.white,
@@ -560,7 +554,7 @@ class AppointmentView extends GetView<AppointmentController> {
                                   backgroundColor: theme.primaryColor
                                       .withValues(alpha: 0.1),
                                   child: Text(
-                                    "${customer?.firstName?.substring(0, 1).toUpperCase() ?? ''}${customer?.lastName?.substring(0, 1).toUpperCase() ?? ''}",
+                                    "${customer?.firstName?.isNotEmpty == true ? customer.firstName![0].toUpperCase() : ''}${customer?.lastName?.isNotEmpty == true ? customer.lastName![0].toUpperCase() : ''}",
                                     style: theme.textTheme.bodyLarge?.copyWith(
                                       color: theme.primaryColor,
                                       fontWeight: FontWeight.w600,

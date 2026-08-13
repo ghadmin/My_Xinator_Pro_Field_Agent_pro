@@ -13,6 +13,7 @@ import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
 import '../../../service/helper/network_connectivity.dart';
 import '../models/customer_model.dart';
+import '../../appointment/controllers/create_appointment_controller.dart';
 
 class CustomerController extends GetxController with ExceptionHandler {
   String businessName = "";
@@ -24,6 +25,10 @@ class CustomerController extends GetxController with ExceptionHandler {
   String email = "";
   RxBool isCustomerEmpty = false.obs;
   final selectedCustomer = Rx<CustomerModel?>(null);
+
+  // Getter to access CreateAppointmentController
+  CreateAppointmentController get createAppointmentController =>
+      Get.find<CreateAppointmentController>();
 
   /// API ///
   final customers = RxList<CustomerModel>();

@@ -283,6 +283,45 @@ class CustomerView extends GetView<CustomerController> {
                                                         ),
                                                 ],
                                               ),
+                                              SizedBox(height: 8.sp),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  controller
+                                                      .createAppointmentController
+                                                      .selectedCustomer(
+                                                        customer,
+                                                      );
+                                                  Get.toNamed(
+                                                    Routes.CREATE_APPOINTMENT,
+                                                  );
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      theme.primaryColor,
+                                                  foregroundColor: Colors.white,
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 12.sp,
+                                                    vertical: 8.sp,
+                                                  ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8.r,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: TextWidget(
+                                                  text: 'Create Appointment',
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodySmall
+                                                      ?.copyWith(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),

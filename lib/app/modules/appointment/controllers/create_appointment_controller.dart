@@ -6,7 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/appointment_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/resource_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/service_type_model.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/site_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/time_slot_model.dart';
+import 'package:myxinator_pro_field_agent_pro/app/modules/customer/models/customer_model.dart';
 
 import '../../../data/local/my_shared_pref.dart';
 import '../../../service/REST/api_urls.dart';
@@ -34,6 +36,20 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   final timeRequired = ''.obs;
   final notesController = TextEditingController();
 
+  // Site form controllers
+  final siteFirstNameController = TextEditingController();
+  final siteLastNameController = TextEditingController();
+  final siteCountryController = TextEditingController();
+  final siteZipCodeController = TextEditingController();
+  final siteNameController = TextEditingController();
+  final siteAddressController = TextEditingController();
+  final siteCityController = TextEditingController();
+  final siteStateController = TextEditingController();
+  final siteContactController = TextEditingController();
+  final siteEmailController = TextEditingController();
+  final sitePhoneNumberController = TextEditingController();
+  final siteNoteController = TextEditingController();
+
   // Form state
   final selectedStartDate = Rxn<DateTime>();
   final selectedEndDate = Rxn<DateTime>();
@@ -51,10 +67,9 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   final selectedDay = Rxn<DateTime>();
 
   // UI state
-  final currentStep = 0.obs; // 0: calendar, 1: slots, 2: form
+  final currentStep = 0.obs; // 0: calendar, 1: form
   final isCalendarSelected = false.obs;
-  final isSlotSelected = false.obs;
-  final selectedCustomer = Rx<Customer?>(null);
+  final selectedCustomer = Rx<CustomerModel?>(null);
   final isLoadingTimeSlots = false.obs;
   final isLoadingServiceTypes = false.obs;
   final isLoadingResources = false.obs;
@@ -482,6 +497,21 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
     emailController.dispose();
     appointmentIdController.dispose();
     notesController.dispose();
+
+    // Dispose site controllers
+    siteFirstNameController.dispose();
+    siteLastNameController.dispose();
+    siteCountryController.dispose();
+    siteZipCodeController.dispose();
+    siteNameController.dispose();
+    siteAddressController.dispose();
+    siteCityController.dispose();
+    siteStateController.dispose();
+    siteContactController.dispose();
+    siteEmailController.dispose();
+    sitePhoneNumberController.dispose();
+    siteNoteController.dispose();
+
     super.onClose();
   }
 
@@ -489,8 +519,23 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   void onDaySelected(DateTime selected, DateTime focused) {
     selectedDay.value = selected;
     focusedDay.value = focused;
-    selectedStartDate.value = selected;
-    selectedEndDate.value = selected;
+
+    // Set default times for case 0: 12:00 PM for start, 12:30 PM for end
+    selectedStartDate.value = DateTime(
+      selected.year,
+      selected.month,
+      selected.day,
+      12, // 12:00 PM (12-hour format, noon)
+      0,
+    );
+
+    selectedEndDate.value = DateTime(
+      selected.year,
+      selected.month,
+      selected.day,
+      12, // 12:00 PM (12-hour format, noon)
+      30, // +30 minutes = 12:30 PM
+    );
 
     isCalendarSelected.value = true;
 
@@ -508,10 +553,6 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   // Slot selection
   void selectTimeSlot(TimeSlotModel slot) {
     selectedTimeSlot.value = slot;
-    isSlotSelected.value = true;
-
-    // Move to form step
-    currentStep.value = 2;
   }
 
   // Service type selection
@@ -564,14 +605,6 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
     currentStep.value = 0;
   }
 
-  void backToSlots() {
-    // Reload time slots if needed (optional)
-    if (timeSlotModels.isEmpty) {
-      loadTimeSlots();
-    }
-    currentStep.value = 1;
-  }
-
   // Form submission
   Future<void> submitAppointment() async {
     // Validate form
@@ -590,27 +623,19 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
         final userID = MySharedPref.getResourceID();
         final userEmail = await MySharedPref.getEmail();
 
-        // Get the selected time slot model to extract TimeSlotId
-        final selectedTimeSlotModel = timeSlotModels.firstWhereOrNull(
-          (slot) => slot.startTime == selectedTimeSlot.value?.startTime,
-        );
+        // Get the selected time slot model to extract TimeSlotId (if time slot is selected)
+        final timeSlotId = selectedTimeSlot.value != null
+            ? timeSlotModels
+                  .firstWhereOrNull(
+                    (slot) =>
+                        slot.startTime == selectedTimeSlot.value?.startTime,
+                  )
+                  ?.id
+            : null;
 
-        if (selectedTimeSlotModel == null) {
-          hideLoading();
-          MySnackBar.showErrorToast(message: "Selected time slot not found");
-          return;
-        }
-
-        // Format dates in ISO format (yyyy-MM-ddTHH:mm:ss)
-        final startDateTime = _formatISODateTime(
-          selectedStartDate.value,
-          selectedTimeSlot.value!.startTime,
-        );
-        final endDateTime = _formatISOEndDate(
-          selectedEndDate.value,
-          selectedTimeSlot.value!.endTime,
-          timeRequired.value,
-        );
+        // Format dates in ISO format directly from selected DateTime values
+        final startDateTime = _formatDateTimeToISO(selectedStartDate.value);
+        final endDateTime = _formatDateTimeToISO(selectedEndDate.value);
 
         // Create appointment data according to API requirements
         final appointmentData = {
@@ -619,7 +644,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
             "CustomerID": customer?.customerID ?? '',
             "ServiceTypeId": selectedServiceType.value?.toString() ?? '',
             "ResourceID": selectedResource.value ?? 0,
-            "TimeSlotId": selectedTimeSlotModel.id,
+            if (timeSlotId != null) "TimeSlotId": timeSlotId,
             "StartDateTime": startDateTime,
             "EndDateTime": endDateTime,
             "StatusId": selectedStatus.value?.toString() ?? '2',
@@ -694,16 +719,16 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
     if (selectedStartDate.value == null) {
       Get.snackbar(
         'Error',
-        'Please select a date',
+        'Please select a start date and time',
         snackPosition: SnackPosition.BOTTOM,
       );
       return false;
     }
 
-    if (selectedTimeSlot.value == null) {
+    if (selectedEndDate.value == null) {
       Get.snackbar(
         'Error',
-        'Please select a time slot',
+        'Please select an end date and time',
         snackPosition: SnackPosition.BOTTOM,
       );
       return false;
@@ -757,7 +782,9 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
 
     // Validate 24-hour rule: EndDateTime cannot be more than 24 hours after StartDateTime
     if (selectedStartDate.value != null && selectedEndDate.value != null) {
-      final difference = selectedEndDate.value!.difference(selectedStartDate.value!);
+      final difference = selectedEndDate.value!.difference(
+        selectedStartDate.value!,
+      );
       if (difference.inHours > 24) {
         Get.snackbar(
           'Invalid Duration',
@@ -774,68 +801,10 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   }
 
   // Helper methods
-  String _formatISODateTime(DateTime? date, String? time) {
-    if (date == null || time == null) return '';
-    // Parse the time slot (format: "10:30 AM" or similar)
-    final timeFormat = DateFormat('hh:mm a');
-    final parsedTime = timeFormat.parse(time);
-
-    // Combine date with parsed time
-    final combinedDateTime = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      parsedTime.hour,
-      parsedTime.minute,
-    );
-
+  String _formatDateTimeToISO(DateTime? dateTime) {
+    if (dateTime == null) return '';
     // Return in ISO format: yyyy-MM-ddTHH:mm:ss
-    return DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(combinedDateTime);
-  }
-
-  String _formatISOEndDate(DateTime? date, String? time, String timeRequired) {
-    if (date == null || time == null) return '';
-
-    // Parse start time
-    final timeFormat = DateFormat('hh:mm a');
-    final parsedTime = timeFormat.parse(time);
-    final startDateTime = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      parsedTime.hour,
-      parsedTime.minute,
-    );
-
-    // Parse time required (format: "1h 30m" or "30m" or "1h")
-    int additionalMinutes = 0;
-    if (timeRequired.isNotEmpty) {
-      // Parse hours
-      final hoursMatch = RegExp(r'(\d+)\s*h').firstMatch(timeRequired);
-      if (hoursMatch != null) {
-        additionalMinutes += int.parse(hoursMatch.group(1)!) * 60;
-      }
-
-      // Parse minutes
-      final minutesMatch = RegExp(r'(\d+)\s*m').firstMatch(timeRequired);
-      if (minutesMatch != null) {
-        additionalMinutes += int.parse(minutesMatch.group(1)!);
-      }
-
-      // If no match found, try to parse as plain number (assuming minutes)
-      if (hoursMatch == null && minutesMatch == null) {
-        final numberMatch = RegExp(r'(\d+)').firstMatch(timeRequired);
-        if (numberMatch != null) {
-          additionalMinutes += int.parse(numberMatch.group(1)!);
-        }
-      }
-    }
-
-    // Add time required to start time
-    final endDateTime = startDateTime.add(Duration(minutes: additionalMinutes));
-
-    // Return in ISO format: yyyy-MM-ddTHH:mm:ss
-    return DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(endDateTime);
+    return DateFormat("yyyy-MM-dd'T'HH:mm:ss").format(dateTime);
   }
 
   String getFormattedSelectedDate() {
@@ -844,17 +813,21 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   }
 
   String getFormattedStartDate() {
-    if (selectedStartDate.value != null && selectedTimeSlot.value != null) {
-      return '${getFormattedSelectedDate()} ${selectedTimeSlot.value?.startTime ?? ""}';
+    if (selectedStartDate.value != null) {
+      final date = DateFormat('MM/dd/yyyy').format(selectedStartDate.value!);
+      final time = DateFormat('hh:mm a').format(selectedStartDate.value!);
+      return '$date $time';
     }
-    return 'Select date and time slot';
+    return 'Select date and time';
   }
 
   String getFormattedEndDate() {
-    if (selectedEndDate.value != null && selectedTimeSlot.value != null) {
-      return '${getFormattedSelectedDate()} ${selectedTimeSlot.value?.endTime ?? ""}';
+    if (selectedEndDate.value != null) {
+      final date = DateFormat('MM/dd/yyyy').format(selectedEndDate.value!);
+      final time = DateFormat('hh:mm a').format(selectedEndDate.value!);
+      return '$date $time';
     }
-    return 'Select date and time slot';
+    return 'Select date and time';
   }
 
   void clearForm() {
@@ -883,7 +856,6 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
 
     currentStep.value = 0;
     isCalendarSelected.value = false;
-    isSlotSelected.value = false;
   }
 
   void generateAppointmentId() {
@@ -898,16 +870,47 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
     required bool isStartDate,
   }) async {
     try {
-      // Preselect today's date if no date is selected
-      DateTime initialDate = isStartDate
-          ? (selectedStartDate.value ?? DateTime.now())
-          : (selectedEndDate.value ?? selectedStartDate.value ?? DateTime.now());
+      // Use current selected date/time as initial, or default for case 0
+      DateTime initialDate;
+      if (isStartDate) {
+        initialDate = selectedStartDate.value ?? DateTime.now();
+        // Ensure we have a default time if none is set
+        if (selectedStartDate.value == null) {
+          initialDate = DateTime(
+            DateTime.now().year,
+            DateTime.now().month,
+            DateTime.now().day,
+            12, // Default to 12:00 PM
+            0,
+          );
+        }
+      } else {
+        initialDate =
+            selectedEndDate.value ?? selectedStartDate.value ?? DateTime.now();
+        // Ensure we have a default time if none is set
+        if (selectedEndDate.value == null) {
+          final baseDate = selectedStartDate.value ?? DateTime.now();
+          initialDate = DateTime(
+            baseDate.year,
+            baseDate.month,
+            baseDate.day,
+            12, // Default to 12:00 PM
+            30, // Default to 12:30 PM
+          );
+        }
+      }
 
       // Ensure the initial date is not before today for start date
       if (isStartDate) {
         final now = DateTime.now();
         if (initialDate.isBefore(DateTime(now.year, now.month, now.day))) {
-          initialDate = DateTime.now();
+          initialDate = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            12, // 12:00 PM
+            0,
+          );
         }
       }
 
@@ -969,7 +972,10 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
             // Auto-update end date to match start date if it's before or null
             if (selectedEndDate.value == null ||
                 selectedEndDate.value!.isBefore(selectedDateTime)) {
-              selectedEndDate.value = selectedDateTime;
+              // Set end date to 30 minutes after start time by default
+              selectedEndDate.value = selectedDateTime.add(
+                Duration(minutes: 30),
+              );
             }
 
             // Update the selected day for calendar consistency
@@ -991,7 +997,9 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
 
             // Ensure end date is not more than 24 hours after start date
             if (selectedStartDate.value != null) {
-              final difference = selectedDateTime.difference(selectedStartDate.value!);
+              final difference = selectedDateTime.difference(
+                selectedStartDate.value!,
+              );
               if (difference.inHours > 24) {
                 Get.snackbar(
                   'Invalid Date',
@@ -1007,7 +1015,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
             selectedEndDate.value = selectedDateTime;
           }
 
-          // Refresh time slots if start date changed
+          // Refresh time slots if start date changed (optional, since dates are independent)
           if (isStartDate) {
             await loadTimeSlots();
           }
@@ -1015,6 +1023,207 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
       }
     } catch (e) {
       kLog("Error selecting date time: $e");
+    }
+  }
+
+  // Site management methods
+  void clearSiteForm() {
+    siteFirstNameController.clear();
+    siteLastNameController.clear();
+    siteCountryController.clear();
+    siteZipCodeController.clear();
+    siteNameController.clear();
+    siteAddressController.clear();
+    siteCityController.clear();
+    siteStateController.clear();
+    siteContactController.clear();
+    siteEmailController.clear();
+    sitePhoneNumberController.clear();
+    siteNoteController.clear();
+  }
+
+  Future<void> saveCustomerSite() async {
+    try {
+      // Validation
+      if (siteFirstNameController.text.trim().isEmpty) {
+        Get.snackbar(
+          'Error',
+          'First name is required',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade400,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      if (siteLastNameController.text.trim().isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Last name is required',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade400,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      if (siteCountryController.text.trim().isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Country is required',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade400,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      if (siteZipCodeController.text.trim().isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Zip/Postal Code is required',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade400,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      if (siteNameController.text.trim().isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Site Name is required',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade400,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      if (siteAddressController.text.trim().isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Address is required',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade400,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      if (siteEmailController.text.trim().isNotEmpty &&
+          !GetUtils.isEmail(siteEmailController.text.trim())) {
+        Get.snackbar(
+          'Error',
+          'Invalid email format',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade400,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      showLoading();
+
+      if (await NetworkConnectivity.isNetworkAvailable()) {
+        final customer = selectedCustomer.value;
+        final companyID = await MySharedPref.getCompanyID();
+
+        // Create site data according to new API requirements
+        final siteData = {
+          "site": {
+            "CompanyID": companyID,
+            "CustomerID": customer?.customerID ?? '',
+            "SiteName": siteNameController.text.trim(),
+            "Address": siteAddressController.text.trim(),
+            "City": siteCityController.text.trim(),
+            "State": siteStateController.text.trim(),
+            "Zip": siteZipCodeController.text.trim(),
+            "Country": siteCountryController.text.trim(),
+            "FirstName": siteFirstNameController.text.trim(),
+            "LastName": siteLastNameController.text.trim(),
+            "Email": siteEmailController.text.trim(),
+            "PhoneNumber": sitePhoneNumberController.text.trim(),
+            "Note": siteNoteController.text.trim(),
+          },
+        };
+
+        kLog("Saving customer site with data: $siteData");
+
+        // Assuming there's a save site endpoint (using getCustomerSitesUrl as reference)
+        final response = await DioClient()
+            .post(url: ApiUrl.saveCustomerSiteUrl, body: siteData)
+            .catchError(handleError);
+
+        if (response == null) {
+          hideLoading();
+          return;
+        }
+
+        kLog("Save customer site response: $response");
+
+        // Parse response
+        if (response is Map<String, dynamic>) {
+          final status = response['Status'];
+          final message = response['Message'] ?? response['Response'];
+
+          if (status == 'success' || status == 'Success') {
+            hideLoading();
+
+            MySnackBar.showToast(
+              message: message ?? 'Site created successfully',
+            );
+
+            // Clear the form and close dialog
+            clearSiteForm();
+            Get.back();
+
+            // Reload sites list if needed
+            await loadCustomerSites();
+          } else {
+            hideLoading();
+            MySnackBar.showErrorToast(
+              message: message ?? 'Failed to create site',
+            );
+          }
+        } else {
+          hideLoading();
+          MySnackBar.showErrorToast(message: 'Invalid response from server');
+        }
+      } else {
+        hideLoading();
+        MySnackBar.showErrorToast(message: "No network connection");
+      }
+    } catch (e, s) {
+      kLog(e.toString());
+      kLog(s.toString());
+      hideLoading();
+      MySnackBar.showErrorToast(
+        message: "Error creating site: ${e.toString()}",
+      );
+    }
+  }
+
+  Future<void> loadCustomerSites() async {
+    try {
+      if (await NetworkConnectivity.isNetworkAvailable()) {
+        final customer = selectedCustomer.value;
+        if (customer == null) return;
+
+        final response = await DioClient()
+            .get(
+              url: ApiUrl.getCustomerSitesUrl,
+              params: {"customerId": customer.customerID},
+            )
+            .catchError((e) => null);
+
+        if (response != null && response is List) {
+          // Update sites list if needed
+          kLog("Loaded customer sites: $response");
+        }
+      }
+    } catch (e) {
+      kLog("Error loading customer sites: $e");
     }
   }
 }

@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/time_slot_model.dart';
 
-import '../../../components/global-widgets/splash_container.dart';
 import '../controllers/create_appointment_controller.dart';
 
 class CreateAppointmentView extends GetView<CreateAppointmentController> {
@@ -20,11 +19,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             if (controller.currentStep.value > 0) {
-              if (controller.currentStep.value == 2) {
-                controller.backToSlots();
-              } else {
-                controller.backToCalendar();
-              }
+              controller.backToCalendar();
             } else {
               Get.back();
             }
@@ -51,8 +46,6 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
       case 0:
         return _buildCalendarStep(theme);
       case 1:
-        return _buildSlotStep(theme);
-      case 2:
         return _buildFormStep(theme);
       default:
         return _buildCalendarStep(theme);
@@ -241,9 +234,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
             child: ElevatedButton(
               onPressed: () {
                 controller.currentStep.value = 1;
-                controller.selectedStartDate.value =
-                    controller.selectedDay.value;
-                controller.selectedEndDate.value = controller.selectedDay.value;
+                // Dates are already set by onDaySelected with default times
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.primaryColor,
@@ -253,7 +244,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                 ),
               ),
               child: Text(
-                'Continue to Time Selection',
+                'Continue to Appointment Details',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -265,192 +256,11 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
     );
   }
 
-  Widget _buildSlotStep(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Selected Date: ${controller.getFormattedSelectedDate()}',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.primaryColor,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(height: 20.h),
-        Text(
-          'Select Time Slot',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(height: 10.h),
-        Text(
-          'Choose an available time slot for your appointment',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: Colors.grey.shade600,
-          ),
-        ),
-        SizedBox(height: 20.h),
-        _buildTimeSlotsGrid(theme),
-      ],
-    );
-  }
-
-  Widget _buildTimeSlotsGrid(ThemeData theme) {
-    return Obx(() {
-      // Show skeleton loading while fetching time slots
-      if (controller.isLoadingTimeSlots.value) {
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 2.5,
-            crossAxisSpacing: 10.w,
-            mainAxisSpacing: 10.h,
-          ),
-          itemCount: 9, // Show 9 skeleton placeholders
-          itemBuilder: (context, index) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8.r),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Center(
-                child: Container(
-                  width: 60.w,
-                  height: 16.h,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(4.r),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      }
-
-      // Show actual time slots when loaded
-      if (controller.timeSlotModels.isEmpty) {
-        return Center(
-          child: Padding(
-            padding: EdgeInsets.all(32.h),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.access_time,
-                  size: 48.sp,
-                  color: Colors.grey.shade400,
-                ),
-                SizedBox(height: 16.h),
-                Text(
-                  'No time slots available',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          childAspectRatio: 2.5,
-          crossAxisSpacing: 10.w,
-          mainAxisSpacing: 10.h,
-        ),
-        itemCount: controller.timeSlotModels.length,
-        itemBuilder: (context, index) {
-          final slot = controller.timeSlotModels[index];
-          final isSelected =
-              controller.selectedTimeSlot.value?.startTime == slot.startTime;
-
-          return SplashContainer(
-            onPressed: () {
-              controller.selectTimeSlot(slot);
-            },
-            radius: 8,
-            color: isSelected ? theme.primaryColor : Colors.white,
-            border: Border.all(
-              color: isSelected ? theme.primaryColor : Colors.grey.shade300,
-              width: isSelected ? 2.0 : 1.0,
-            ),
-            child: Center(
-              child: Text(
-                slot.startTime,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isSelected ? Colors.white : Colors.black87,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 12.sp,
-                ),
-              ),
-            ),
-          );
-        },
-      );
-    });
-  }
-
   Widget _buildFormStep(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Selected date and time summary
-        Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: theme.primaryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(color: theme.primaryColor, width: 1),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 16.sp,
-                    color: theme.primaryColor,
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    'Selected Date & Time',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.primaryColor,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                '${controller.getFormattedSelectedDate()} at ${controller.selectedTimeSlot.value?.startTime}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 24.h),
-
         // Appointment Information Section
-        _buildSectionHeader(
-          'Appointment Information',
-          theme,
-          Icons.info_outline,
-        ),
-        SizedBox(height: 16.h),
         _buildAppointmentInfoForm(theme),
 
         SizedBox(height: 24.h),
@@ -527,7 +337,12 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
     );
   }
 
-  Widget _buildSectionHeader(String title, ThemeData theme, IconData icon) {
+  Widget _buildSectionHeader(
+    String title,
+    ThemeData theme,
+    IconData icon, {
+    VoidCallback? onAddPressed,
+  }) {
     return Row(
       children: [
         Icon(icon, color: theme.primaryColor, size: 20.sp),
@@ -539,6 +354,12 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
             fontWeight: FontWeight.w600,
           ),
         ),
+        SizedBox(width: 4.w),
+        if (onAddPressed != null)
+          GestureDetector(
+            onTap: onAddPressed,
+            child: Icon(Icons.add, color: theme.primaryColor, size: 20.sp),
+          ),
       ],
     );
   }
@@ -568,6 +389,8 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
           ],
         ),
         SizedBox(height: 16.h),
+
+        // Optional: Appointment Time Slot (for reference only)
         _buildDropdownField(
           'Calendar',
           controller.calendars,
@@ -653,6 +476,8 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
         SizedBox(height: 16.h),
         _buildServiceTypeDropdown(theme),
         SizedBox(height: 16.h),
+        _buildAppointmentTimeDropdown(theme),
+        SizedBox(height: 16.h),
         Obx(
           () => _buildReadOnlyField(
             'Time Required',
@@ -673,7 +498,6 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
       children: [
         _buildStatusDropdown(theme),
         SizedBox(height: 16.h),
-        _buildAppointmentTimeDropdown(theme),
       ],
     );
   }
@@ -689,7 +513,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
             color: Colors.grey.shade700,
           ),
         ),
-        SizedBox(height: 4.h),
+        SizedBox(width: 4.h),
         Obx(
           () => controller.isLoadingTimeSlots.value
               ? Container(
@@ -753,7 +577,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                     child: DropdownButton<String>(
                       value: controller.selectedTimeSlot.value?.startTime,
                       isExpanded: true,
-                      hint: Text('Select time slot'),
+                      hint: Text('Select time slot (optional)'),
                       items: controller.timeSlotModels.toSet().toList().map((
                         TimeSlotModel slot,
                       ) {
@@ -877,15 +701,18 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
               Icons.person,
               theme,
             ),
-            SizedBox(height: 12.h),
+            SizedBox(height: 8.h),
 
             // Job Title
             if (customer.jobTitle != null && customer.jobTitle!.isNotEmpty)
               _buildInfoRow('Job Title', customer.jobTitle!, Icons.work, theme),
 
-            SizedBox(height: 12.h),
-            Divider(color: Colors.grey.shade200),
-            SizedBox(height: 12.h),
+            if (customer.jobTitle != null && customer.jobTitle!.isNotEmpty)
+              SizedBox(height: 8.h),
+            if (customer.jobTitle != null && customer.jobTitle!.isNotEmpty)
+              Divider(color: Colors.grey.shade200),
+            if (customer.jobTitle != null && customer.jobTitle!.isNotEmpty)
+              SizedBox(height: 8.h),
 
             // Address
             if (customerAddress.isNotEmpty)
@@ -896,21 +723,22 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                 theme,
               ),
 
-            SizedBox(height: 12.h),
+            if (customerAddress.isNotEmpty) SizedBox(height: 8.h),
 
             // Location (City, State, Zip)
             if (locationInfo.isNotEmpty)
               _buildInfoRow('Location', locationInfo, Icons.place, theme),
 
-            SizedBox(height: 12.h),
-            Divider(color: Colors.grey.shade200),
-            SizedBox(height: 12.h),
+            if (locationInfo.isNotEmpty) SizedBox(height: 8.h),
+            if (locationInfo.isNotEmpty) Divider(color: Colors.grey.shade200),
+            if (locationInfo.isNotEmpty) SizedBox(height: 8.h),
 
             // Phone Numbers
             if (customer.phone != null && customer.phone!.isNotEmpty)
               _buildInfoRow('Phone', customer.phone!, Icons.phone, theme),
 
-            SizedBox(height: 12.h),
+            if (customer.phone != null && customer.phone!.isNotEmpty)
+              SizedBox(height: 8.h),
 
             if (customer.mobile != null && customer.mobile!.isNotEmpty)
               _buildInfoRow(
@@ -920,9 +748,12 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                 theme,
               ),
 
-            SizedBox(height: 12.h),
-            Divider(color: Colors.grey.shade200),
-            SizedBox(height: 12.h),
+            if (customer.mobile != null && customer.mobile!.isNotEmpty)
+              SizedBox(height: 8.h),
+            if (customer.mobile != null && customer.mobile!.isNotEmpty)
+              Divider(color: Colors.grey.shade200),
+            if (customer.mobile != null && customer.mobile!.isNotEmpty)
+              SizedBox(height: 8.h),
 
             // Email
             if (customer.email != null && customer.email!.isNotEmpty)
@@ -1323,12 +1154,25 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Sites & Locations',
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
-          ),
+        Row(
+          children: [
+            Text(
+              'Sites & Locations',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            SizedBox(width: 4.w),
+            GestureDetector(
+              onTap: () => _showSiteDialog(theme),
+              child: Icon(
+                Icons.add_circle,
+                color: theme.primaryColor,
+                size: 24.sp,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 4.h),
         Container(
@@ -1354,6 +1198,221 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                   controller.selectedSite.value = value;
                 },
               ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSiteDialog(ThemeData theme) {
+    Get.dialog(
+      AlertDialog(
+        title: Text('Add/Update Customer Site'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Contact Person Information Section
+              Text(
+                'Contact Person Information',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.primaryColor,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'First Name',
+                controller.siteFirstNameController,
+                theme,
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'Last Name',
+                controller.siteLastNameController,
+                theme,
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteCountryDropdown(theme),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'Zip/Postal Code',
+                controller.siteZipCodeController,
+                theme,
+              ),
+
+              SizedBox(height: 20.h),
+
+              // Site Information Section
+              Text(
+                'Site Information',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.primaryColor,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'Site Name',
+                controller.siteNameController,
+                theme,
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'Address',
+                controller.siteAddressController,
+                theme,
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteTextField('City', controller.siteCityController, theme),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'State',
+                controller.siteStateController,
+                theme,
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'Site Contact',
+                controller.siteContactController,
+                theme,
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'Email',
+                controller.siteEmailController,
+                theme,
+                isEmail: true,
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'Phone Number',
+                controller.sitePhoneNumberController,
+                theme,
+                isPhone: true,
+              ),
+              SizedBox(height: 12.h),
+              _buildSiteTextField(
+                'Note',
+                controller.siteNoteController,
+                theme,
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              controller.clearSiteForm();
+              // Get.back();
+            },
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: controller.saveCustomerSite,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.primaryColor,
+            ),
+            child: Text('Save', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSiteTextField(
+    String label,
+    TextEditingController controller,
+    ThemeData theme, {
+    bool isEmail = false,
+    bool isPhone = false,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        SizedBox(height: 4.h),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          keyboardType: isEmail
+              ? TextInputType.emailAddress
+              : (isPhone ? TextInputType.phone : TextInputType.text),
+          decoration: InputDecoration(
+            hintText: 'Enter $label',
+            hintStyle: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.grey.shade400,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.r),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.r),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.r),
+              borderSide: BorderSide(color: theme.primaryColor),
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 12.w,
+              vertical: 12.h,
+            ),
+          ),
+          style: theme.textTheme.bodyMedium,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSiteCountryDropdown(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Country',
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        SizedBox(height: 4.h),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: controller.siteCountryController.text.isEmpty
+                  ? null
+                  : controller.siteCountryController.text,
+              isExpanded: true,
+              hint: Text('Select Country'),
+              items: ['CANADA', 'USA'].map((country) {
+                return DropdownMenuItem<String>(
+                  value: country,
+                  child: Text(country),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  controller.siteCountryController.text = value;
+                }
+              },
             ),
           ),
         ),
