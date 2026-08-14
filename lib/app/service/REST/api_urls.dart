@@ -75,9 +75,11 @@ class ApiUrl {
       "$baseUrl/SaveAppointmentCustomFields";
   static const generateTuaPaymentLink = "$baseUrl/GenerateTuaPaymentLink";
   static const getCustomerSitesUrl = "$baseUrl/GetCustomerSites";
+  static const getAllCustomerSitesUrl = '$baseUrl/GetCustomerSiteList';
   static const saveCustomerSiteUrl = "$baseUrl/SaveCustomerSite";
   static const getTimeSlotListUrl = "$baseUrl/GetTimeSlotList";
-  static const getNextAppointmentNumberUrl = "$baseUrl/GetNextAppointmentNumber";
+  static const getNextAppointmentNumberUrl =
+      "$baseUrl/GetNextAppointmentNumber";
   static const getServiceTypeListUrl = "$baseUrl/GetServiceTypeList";
   static const getResourceListUrl = "$baseUrl/GetResourceList";
   static const createAppointmentUrl = "$baseUrl/CreateAppointment";

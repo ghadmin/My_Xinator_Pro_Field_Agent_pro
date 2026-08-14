@@ -151,13 +151,82 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
     'Wyoming',
   ].obs;
 
-  final sites = <Map<String, dynamic>>[
-    {'id': 1, 'name': 'Main Office'},
-    {'id': 2, 'name': 'Branch Office A'},
-    {'id': 3, 'name': 'Branch Office B'},
-  ].obs;
+  final sites = <Map<String, dynamic>>[].obs;
+  final isLoadingSites = false.obs;
 
   final calendars = <String>['CEC', 'FSM'].obs;
+
+  // Canadian provinces and territories
+  final canadianProvinces = <String>[
+    'Alberta',
+    'British Columbia',
+    'Manitoba',
+    'New Brunswick',
+    'Newfoundland and Labrador',
+    'Northwest Territories',
+    'Nova Scotia',
+    'Nunavut',
+    'Ontario',
+    'Prince Edward Island',
+    'Quebec',
+    'Saskatchewan',
+    'Yukon',
+  ].obs;
+
+  // US states
+  final usStates = <String>[
+    'Alabama',
+    'Alaska',
+    'Arizona',
+    'Arkansas',
+    'California',
+    'Colorado',
+    'Connecticut',
+    'Delaware',
+    'Florida',
+    'Georgia',
+    'Hawaii',
+    'Idaho',
+    'Illinois',
+    'Indiana',
+    'Iowa',
+    'Kansas',
+    'Kentucky',
+    'Louisiana',
+    'Maine',
+    'Maryland',
+    'Massachusetts',
+    'Michigan',
+    'Minnesota',
+    'Mississippi',
+    'Missouri',
+    'Montana',
+    'Nebraska',
+    'Nevada',
+    'New Hampshire',
+    'New Jersey',
+    'New Mexico',
+    'New York',
+    'North Carolina',
+    'North Dakota',
+    'Ohio',
+    'Oklahoma',
+    'Oregon',
+    'Pennsylvania',
+    'Rhode Island',
+    'South Carolina',
+    'South Dakota',
+    'Tennessee',
+    'Texas',
+    'Utah',
+    'Vermont',
+    'Virginia',
+    'Washington',
+    'West Virginia',
+    'Wisconsin',
+    'Wyoming',
+    'District of Columbia',
+  ].obs;
 
   @override
   void onInit() {
@@ -169,6 +238,12 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
     loadTimeSlots();
     // Fetch next appointment number
     getNextAppointmentNumber();
+    // Load customer sites if a customer is selected
+    ever(selectedCustomer, (customer) {
+      if (customer != null) {
+        loadCustomerSites();
+      }
+    });
   }
 
   // Load time slots from API
@@ -1078,6 +1153,17 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
         return;
       }
 
+      if (siteStateController.text.trim().isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Province/State is required',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade400,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
       if (siteZipCodeController.text.trim().isEmpty) {
         Get.snackbar(
           'Error',
@@ -1174,9 +1260,13 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
               message: message ?? 'Site created successfully',
             );
 
-            // Clear the form and close dialog
+            // Clear the form
             clearSiteForm();
-            Get.back();
+
+            // Close only the dialog using Navigator.pop
+            if (Get.isDialogOpen == true) {
+              Navigator.of(Get.overlayContext!).pop();
+            }
 
             // Reload sites list if needed
             await loadCustomerSites();
@@ -1206,24 +1296,78 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
 
   Future<void> loadCustomerSites() async {
     try {
+      final customer = selectedCustomer.value;
+      if (customer == null) {
+        sites.clear();
+        return;
+      }
+
+      isLoadingSites.value = true;
+
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        final customer = selectedCustomer.value;
-        if (customer == null) return;
+        final companyID = await MySharedPref.getCompanyID();
+
+        final requestData = {
+          "companyId": companyID,
+          "customerId": customer.customerID,
+          "includeInactive": false,
+          "search": "",
+        };
+
+        kLog("Loading customer sites with request: $requestData");
 
         final response = await DioClient()
-            .get(
-              url: ApiUrl.getCustomerSitesUrl,
-              params: {"customerId": customer.customerID},
-            )
+            .post(url: ApiUrl.getAllCustomerSitesUrl, body: requestData)
             .catchError((e) => null);
 
-        if (response != null && response is List) {
-          // Update sites list if needed
-          kLog("Loaded customer sites: $response");
+        if (response != null) {
+          kLog("Customer sites response: $response");
+
+          // Parse response based on the actual structure
+          if (response is Map<String, dynamic>) {
+            final status = response['Status'];
+            final responseData = response['Response'];
+
+            if (status == 'success' || status == 'Success') {
+              if (responseData is List) {
+                sites.clear();
+                // Convert site data to dropdown format
+                for (var site in responseData) {
+                  if (site is Map<String, dynamic>) {
+                    sites.add({
+                      'id': site['Id'] ?? site['id'],
+                      'name':
+                          site['SiteName'] ??
+                          site['siteName'] ??
+                          'Unknown Site',
+                    });
+                  }
+                }
+                kLog("Loaded ${sites.length} customer sites");
+              }
+            }
+          } else if (response is List) {
+            // Direct array response
+            sites.clear();
+            for (var site in response) {
+              if (site is Map<String, dynamic>) {
+                sites.add({
+                  'id': site['Id'] ?? site['id'],
+                  'name':
+                      site['SiteName'] ?? site['siteName'] ?? 'Unknown Site',
+                });
+              }
+            }
+            kLog("Loaded ${sites.length} customer sites");
+          }
         }
+      } else {
+        MySnackBar.showErrorToast(message: "No network connection");
       }
     } catch (e) {
       kLog("Error loading customer sites: $e");
+    } finally {
+      isLoadingSites.value = false;
     }
   }
 }

@@ -233,8 +233,26 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
             padding: EdgeInsets.only(top: 16.h),
             child: ElevatedButton(
               onPressed: () {
+                // If dates haven't been set yet (user didn't click a specific date),
+                // set them using current day with default times
+                if (controller.selectedStartDate.value == null) {
+                  final today = controller.selectedDay.value ?? DateTime.now();
+                  controller.selectedStartDate.value = DateTime(
+                    today.year,
+                    today.month,
+                    today.day,
+                    12, // 12:00 PM (noon)
+                    0,
+                  );
+                  controller.selectedEndDate.value = DateTime(
+                    today.year,
+                    today.month,
+                    today.day,
+                    12, // 12:00 PM (noon)
+                    30, // 12:30 PM
+                  );
+                }
                 controller.currentStep.value = 1;
-                // Dates are already set by onDaySelected with default times
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.primaryColor,
@@ -1163,7 +1181,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                 color: Colors.grey.shade700,
               ),
             ),
-            SizedBox(width: 4.w),
+            Spacer(),
             GestureDetector(
               onTap: () => _showSiteDialog(theme),
               child: Icon(
@@ -1175,31 +1193,82 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
           ],
         ),
         SizedBox(height: 4.h),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 12.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Obx(
-            () => DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: controller.selectedSite.value,
-                isExpanded: true,
-                hint: Text('SELECT'),
-                items: controller.sites.map((site) {
-                  return DropdownMenuItem<int>(
-                    value: site['id'] as int,
-                    child: Text(site['name'] as String),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  controller.selectedSite.value = value;
-                },
-              ),
-            ),
-          ),
+        Obx(
+          () => controller.isLoadingSites.value
+              ? Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 16.sp,
+                        height: 16.sp,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.primaryColor,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Text(
+                        'Loading sites...',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : controller.sites.isEmpty
+              ? Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12.w,
+                    vertical: 12.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Text(
+                    'No sites available. Add a site first.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                )
+              : Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: controller.selectedSite.value,
+                      isExpanded: true,
+                      hint: Text('SELECT'),
+                      items: controller.sites.map((site) {
+                        return DropdownMenuItem<int>(
+                          value: site['id'] as int?,
+                          child: Text(site['name'] as String),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        controller.selectedSite.value = value;
+                      },
+                    ),
+                  ),
+                ),
         ),
       ],
     );
@@ -1208,7 +1277,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
   void _showSiteDialog(ThemeData theme) {
     Get.dialog(
       AlertDialog(
-        title: Text('Add/Update Customer Site'),
+        title: Text('Add'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1236,6 +1305,8 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
               ),
               SizedBox(height: 12.h),
               _buildSiteCountryDropdown(theme),
+              SizedBox(height: 12.h),
+              _buildSiteProvinceDropdown(theme),
               SizedBox(height: 12.h),
               _buildSiteTextField(
                 'Zip/Postal Code',
@@ -1267,12 +1338,6 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
               ),
               SizedBox(height: 12.h),
               _buildSiteTextField('City', controller.siteCityController, theme),
-              SizedBox(height: 12.h),
-              _buildSiteTextField(
-                'State',
-                controller.siteStateController,
-                theme,
-              ),
               SizedBox(height: 12.h),
               _buildSiteTextField(
                 'Site Contact',
@@ -1307,7 +1372,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
           TextButton(
             onPressed: () {
               controller.clearSiteForm();
-              // Get.back();
+              Navigator.of(Get.overlayContext!).pop();
             },
             child: Text('Cancel'),
           ),
@@ -1396,22 +1461,96 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
             border: Border.all(color: Colors.grey.shade300),
           ),
           child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: controller.siteCountryController.text.isEmpty
-                  ? null
-                  : controller.siteCountryController.text,
-              isExpanded: true,
-              hint: Text('Select Country'),
-              items: ['CANADA', 'USA'].map((country) {
-                return DropdownMenuItem<String>(
-                  value: country,
-                  child: Text(country),
+            child: ValueListenableBuilder(
+              valueListenable: controller.siteCountryController,
+              builder: (context, value, child) {
+                return DropdownButton<String>(
+                  value: value.text.isEmpty ? null : value.text,
+                  isExpanded: true,
+                  hint: Text('Select Country'),
+                  items: ['CANADA', 'USA'].map((country) {
+                    return DropdownMenuItem<String>(
+                      value: country,
+                      child: Text(country),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      controller.siteCountryController.text = val;
+                      // Clear province when country changes
+                      controller.siteStateController.clear();
+                    }
+                  },
                 );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  controller.siteCountryController.text = value;
-                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSiteProvinceDropdown(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Province/State',
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        SizedBox(height: 4.h),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: ValueListenableBuilder(
+              valueListenable: controller.siteCountryController,
+              builder: (context, countryValue, child) {
+                return ValueListenableBuilder(
+                  valueListenable: controller.siteStateController,
+                  builder: (context, provinceValue, child) {
+                    // Determine which list to show based on selected country
+                    final List<String> options = countryValue.text == 'CANADA'
+                        ? controller.canadianProvinces
+                        : countryValue.text == 'USA'
+                        ? controller.usStates
+                        : [];
+
+                    return DropdownButton<String>(
+                      value: provinceValue.text.isEmpty
+                          ? null
+                          : provinceValue.text,
+                      isExpanded: true,
+                      hint: Text(
+                        countryValue.text.isEmpty
+                            ? 'Select Country First'
+                            : 'Select Province/State',
+                      ),
+                      items: options.isEmpty
+                          ? []
+                          : options.map((province) {
+                              return DropdownMenuItem<String>(
+                                value: province,
+                                child: Text(province),
+                              );
+                            }).toList(),
+                      onChanged: options.isEmpty
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                controller.siteStateController.text = value;
+                              }
+                            },
+                    );
+                  },
+                );
               },
             ),
           ),
