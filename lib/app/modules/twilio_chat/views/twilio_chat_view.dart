@@ -20,7 +20,7 @@ class _TwilioChatViewState extends State<TwilioChatView> {
           children: [
             // Watermark logo in center
             Center(
-              child: Opacity(
+              child: Opacity( 
                 opacity: 0.1,
                 child: Image.asset(
                   'assets/images/splashIcon.png',

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -10,8 +9,8 @@ import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controller
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/all_tab_screens/form_selection_screen.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/widgets/warm_organic_components.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/forms/controllers/forms_controller.dart';
-import 'package:myxinator_pro_field_agent_pro/app/service/helper/network_connectivity.dart';
 import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 import 'package:remixicon/remixicon.dart';
 
 class FormsTabScreen extends StatefulWidget {
@@ -45,6 +44,7 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
 
   @override
   Widget build(BuildContext context) {
+    kLog('appt selected ${controller.selectedAppointment.value}');
     return Scaffold(
       backgroundColor: WarmOrganicBlueTheme.warmGray,
       appBar: AppBar(
@@ -56,6 +56,11 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
       body: Obx(() {
         final appointmentId =
             controller.selectedAppointment.value?.apptID?.toString() ?? '';
+        final appointmentForms = appointmentId.isEmpty
+            ? <FormQueueItem>[]
+            : formsController.pendingForms
+                  .where((f) => f.appointmentId == appointmentId)
+                  .toList();
 
         return SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -74,7 +79,7 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
               ),
               SizedBox(height: 10.h),
 
-              formsController.pendingForms.isEmpty
+              appointmentForms.isEmpty
                   ? Center(
                       child: Column(
                         children: [
@@ -93,33 +98,13 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                       primary: false,
                       shrinkWrap: true,
                       padding: EdgeInsets.zero,
-                      itemCount: formsController.pendingForms
-                          .where(
-                            (f) =>
-                                f.appointmentId ==
-                                appointmentController
-                                    .selectedAppointment
-                                    .value!
-                                    .apptID
-                                    .toString(),
-                          )
-                          .length,
+                      itemCount: appointmentForms.length,
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: EdgeInsets.only(bottom: 12.h),
                           child: _buildFormCard(
                             context,
-                            formsController.pendingForms
-                                .where(
-                                  (f) =>
-                                      f.appointmentId ==
-                                      appointmentController
-                                          .selectedAppointment
-                                          .value!
-                                          .apptID
-                                          .toString(),
-                                )
-                                .toList()[index],
+                            appointmentForms[index],
                           ),
                         );
                       },
@@ -237,8 +222,7 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                                         .emailSubjectFocusnode
                                         .value,
                                     textEditingController:
-                                        formsController
-                                            .subjectTextController ,
+                                        formsController.subjectTextController,
                                   ),
                                   SizedBox(height: 10.sp),
                                   GeneralTextField(
@@ -252,8 +236,7 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                                     textInputType: TextInputType.multiline,
                                     textInputAction: TextInputAction.newline,
                                     textEditingController:
-                                        formsController
-                                            .emailBodyTextController ,
+                                        formsController.emailBodyTextController,
                                   ),
                                   SizedBox(height: 20.sp),
                                   Row(
@@ -294,11 +277,9 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
                                                       );
                                               // Only close and clear data if email sent successfully
                                               if (success == true) {
-                                                formsController
-                                                    .toTextController
+                                                formsController.toTextController
                                                     .clear();
-                                                formsController
-                                                    .ccTextController
+                                                formsController.ccTextController
                                                     .clear();
                                                 formsController
                                                     .subjectTextController

@@ -1153,7 +1153,7 @@ import '../models/qbo_class_dropdown_model.dart';
 import '../models/qbo_location_dropdown_model.dart';
 import '../models/tax_model.dart';
 
-enum SearchByType { name, group, bundle }
+enum SearchByType { name, group, bundle, ItemsCategory }
 
 extension SearchByTypeExtension on SearchByType {
   String get displayName {
@@ -1164,6 +1164,8 @@ extension SearchByTypeExtension on SearchByType {
         return "Group";
       case SearchByType.bundle:
         return "Bundle";
+      case SearchByType.ItemsCategory:
+        return "Items Category";
     }
   }
 }
@@ -1713,7 +1715,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     // Amount after discount now includes surcharge
     amountAfterDiscount.value = subTotal - discountAmount + surchargeAmount;
-    double discountRatio = discount / subTotal;
+    double discountRatio = subTotal > 0 ? discount / subTotal : 0.0;
     double discountedTaxableTotal =
         selectedDiscountOption.value ==
             "1" // Percentage discount
@@ -1729,9 +1731,11 @@ class InvoiceController extends GetxController with ExceptionHandler {
     // Total = amountAfterDiscount (which now includes surcharge) + tax
     double total = amountAfterDiscount.value + taxOnTaxableTotal;
 
-    // Update observable values
-    invoiceTax.value = double.parse((taxOnTaxableTotal).toStringAsFixed(2));
-    invoiceTotal.value = total.toStringAsFixed(2);
+    // Update observable values with NaN safety checks
+    invoiceTax.value = double.parse(
+      (taxOnTaxableTotal.isNaN ? 0.0 : taxOnTaxableTotal).toStringAsFixed(2),
+    );
+    invoiceTotal.value = (total.isNaN ? 0.0 : total).toStringAsFixed(2);
   }
 
   void createTotalForEdit() {
@@ -1772,7 +1776,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
     // Amount after discount now includes surcharge
     amountAfterDiscount.value = subTotal - discountAmount + surchargeAmount;
-    double discountRatio = discount / subTotal;
+    double discountRatio = subTotal > 0 ? discount / subTotal : 0.0;
     double discountedTaxableTotal = selectedDiscountOption.value == "1"
         ? ((subTotal - nonTaxableTotalInDetails.value) * (discount / 100))
         : (subTotal - nonTaxableTotalInDetails.value) * discountRatio;
@@ -1787,9 +1791,11 @@ class InvoiceController extends GetxController with ExceptionHandler {
     // Total = amountAfterDiscount (which now includes surcharge) + tax
     double total = amountAfterDiscount.value + taxOnTaxableTotal;
 
-    // Update observable values
-    invoiceTax.value = double.parse((taxOnTaxableTotal).toStringAsFixed(2));
-    invoiceTotal.value = total.toStringAsFixed(2);
+    // Update observable values with NaN safety checks
+    invoiceTax.value = double.parse(
+      (taxOnTaxableTotal.isNaN ? 0.0 : taxOnTaxableTotal).toStringAsFixed(2),
+    );
+    invoiceTotal.value = (total.isNaN ? 0.0 : total).toStringAsFixed(2);
   }
 
   void removeItem(int index) {
@@ -2052,16 +2058,24 @@ class InvoiceController extends GetxController with ExceptionHandler {
               "DisplayNumber": null,
               "CustomerId": customerID.value,
               "UserId": userID,
-              "Subtotal": invoiceSubtotal.value,
-              "Discount": invoiceDiscount.value,
+              "Subtotal": invoiceSubtotal.value.isNaN
+                  ? 0.0
+                  : invoiceSubtotal.value,
+              "Discount": invoiceDiscount.value.isNaN
+                  ? 0.0
+                  : invoiceDiscount.value,
               "QboClassId": selectedQboClass.value?.qboClassId ?? 0,
               "QboLocationId": selectedQboLocation.value?.qboLocationId ?? 0,
 
-              "Tax": double.parse(
-                invoiceTax.value.toStringAsFixed(2),
-              ).toStringAsFixed(2),
+              "Tax": invoiceTax.value.isNaN
+                  ? 0.0
+                  : double.parse(
+                      invoiceTax.value.toStringAsFixed(2),
+                    ).toStringAsFixed(2),
 
-              "Total": double.parse(invoiceTotal.value).toStringAsFixed(2),
+              "Total": (double.tryParse(invoiceTotal.value) ?? 0.0).isNaN
+                  ? "0.00"
+                  : invoiceTotal.value,
               "Status": 1,
               "InvoiceType": null,
               "ModifiedDate": null,
@@ -2191,10 +2205,18 @@ class InvoiceController extends GetxController with ExceptionHandler {
               "DisplayNumber": null,
               "CustomerId": customerID.value,
               "UserId": userID,
-              "Subtotal": invoiceSubtotal.value,
-              "Discount": invoiceDiscount.value,
-              "Tax": double.parse(invoiceTax.value.toStringAsFixed(2)),
-              "Total": double.parse(invoiceTotal.value).toStringAsFixed(2),
+              "Subtotal": invoiceSubtotal.value.isNaN
+                  ? 0.0
+                  : invoiceSubtotal.value,
+              "Discount": invoiceDiscount.value.isNaN
+                  ? 0.0
+                  : invoiceDiscount.value,
+              "Tax": invoiceTax.value.isNaN
+                  ? 0.0
+                  : double.parse(invoiceTax.value.toStringAsFixed(2)),
+              "Total": (double.tryParse(invoiceTotal.value) ?? 0.0).isNaN
+                  ? "0.00"
+                  : invoiceTotal.value,
               "Status": 1,
               "InvoiceType": null,
               "ModifiedBy": null,
@@ -2417,9 +2439,9 @@ class InvoiceController extends GetxController with ExceptionHandler {
             "payment": {
               "CompanyID": companyID,
               "InvocieId": invoiceID.value,
-              "Amount": double.parse(
-                finalCollectionAmount.value,
-              ).abs().toStringAsFixed(2),
+              "Amount": (double.tryParse(finalCollectionAmount.value) ?? 0.0)
+                  .abs()
+                  .toStringAsFixed(2),
               "Type": type,
               "Source": "Xinator BMS",
               "CheckName": checkNameTextController.text,

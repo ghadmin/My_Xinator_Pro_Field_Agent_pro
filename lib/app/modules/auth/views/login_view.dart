@@ -1118,7 +1118,7 @@ class LoginView extends GetView<AuthController> {
                     child: Image.asset(
                       AppImages.kCECBrand,
                       width: 130.sp,
-                      fit: BoxFit.cover,
+                    fit: BoxFit.cover,
                     ),
                   ),
                 ),

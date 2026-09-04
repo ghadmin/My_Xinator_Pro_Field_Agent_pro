@@ -197,7 +197,6 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                 ),
               ),
 
-      
         backgroundColor: WarmOrganicBlueTheme.warmGray,
         body: Obx(
           () => controller.selectedAppointment.value == null
@@ -417,6 +416,67 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     );
   }
 
+  // Helper function to calculate comprehensive duration between start and end dates
+  String _calculateDuration() {
+    try {
+      if (controller.startDate.isNotEmpty && controller.endDate.isNotEmpty) {
+        final startDateTime = DateFormat(
+          'MM/dd/yyyy hh:mm a',
+        ).parse(controller.startDate);
+        final endDateTime = DateFormat(
+          'MM/dd/yyyy hh:mm a',
+        ).parse(controller.endDate);
+
+        final duration = endDateTime.difference(startDateTime);
+        final totalMinutes = duration.inMinutes;
+
+        // Calculate all time units
+        final years = totalMinutes ~/ (365 * 24 * 60);
+        final remainingAfterYears = totalMinutes % (365 * 24 * 60);
+
+        final months = remainingAfterYears ~/ (30 * 24 * 60);
+        final remainingAfterMonths = remainingAfterYears % (30 * 24 * 60);
+
+        final weeks = remainingAfterMonths ~/ (7 * 24 * 60);
+        final remainingAfterWeeks = remainingAfterMonths % (7 * 24 * 60);
+
+        final days = remainingAfterWeeks ~/ (24 * 60);
+        final remainingAfterDays = remainingAfterWeeks % (24 * 60);
+
+        final hours = remainingAfterDays ~/ 60;
+        final minutes = remainingAfterDays % 60;
+
+        // Build the duration string showing only non-zero units
+        List<String> parts = [];
+
+        if (years > 0) {
+          parts.add('$years Year${years > 1 ? 's' : ''}');
+        }
+        if (months > 0) {
+          parts.add('$months Month${months > 1 ? 's' : ''}');
+        }
+        if (weeks > 0) {
+          parts.add('$weeks Week${weeks > 1 ? 's' : ''}');
+        }
+        if (days > 0) {
+          parts.add('$days Day${days > 1 ? 's' : ''}');
+        }
+        if (hours > 0) {
+          parts.add('$hours Hr');
+        }
+        if (minutes > 0 || parts.isEmpty) {
+          parts.add('$minutes Min');
+        }
+
+        // Join all parts with spaces
+        return parts.join(' ');
+      }
+    } catch (e) {
+      kLog('Error calculating duration: $e');
+    }
+    return 'N/A';
+  }
+
   Widget _buildTimeCard() {
     // Parse the start date to get time and date information
     String displayTime = 'N/A';
@@ -489,45 +549,47 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
           const SizedBox(height: 16),
 
           // Status Badges Row
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => showDialogStatusChange(context, controller),
-                  child: _buildCompactStatusBadge(
-                    controller
+          Obx(
+            () => Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => showDialogStatusChange(context, controller),
+                    child: _buildCompactStatusBadge(
+                      controller
+                              .settingController
+                              .selectedAppointmentsStatus
+                              .value
+                              ?.statusName ??
+                          "",
+                      _getStatusColor(
+                        controller
                             .settingController
                             .selectedAppointmentsStatus
                             .value
-                            ?.statusName ??
-                        "",
-                    _getStatusColor(
-                      controller
-                          .settingController
-                          .selectedAppointmentsStatus
-                          .value
-                          ?.statusName,
+                            ?.statusName,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => showDialogTicketStatus(context, controller),
-                  child: _buildCompactStatusBadge(
-                    'Ticket: ${controller.settingController.selectedTicket.value?.statusName ?? "N/A"}',
-                    _getTicketColor(
-                      controller
-                          .settingController
-                          .selectedTicket
-                          .value
-                          ?.statusName,
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => showDialogTicketStatus(context, controller),
+                    child: _buildCompactStatusBadge(
+                      'Ticket: ${controller.settingController.selectedTicket.value?.statusName ?? "N/A"}',
+                      _getTicketColor(
+                        controller
+                            .settingController
+                            .selectedTicket
+                            .value
+                            ?.statusName,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -619,7 +681,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
           Container(height: 1, color: const Color(0xFFE5E5EA)),
           const SizedBox(height: 12),
 
-          // Appointment Info Tiles - 2 columns, 3 rows
+          // Appointment Info Tiles - 2 columns, 4 rows
           Row(
             children: [
               Expanded(
@@ -652,9 +714,9 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               SizedBox(width: 12.w),
               Expanded(
                 child: _buildCompactInfoTile(
-                  Icons.schedule_rounded,
-                  'Time Slot',
-                  controller.timeSlot,
+                  Icons.access_time_rounded,
+                  'Duration',
+                  _calculateDuration(),
                 ),
               ),
             ],
@@ -664,12 +726,24 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
             children: [
               Expanded(
                 child: _buildCompactInfoTile(
+                  Icons.schedule_rounded,
+                  'Time Slot',
+                  controller.timeSlot,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: _buildCompactInfoTile(
                   Icons.person_rounded,
                   'Resource',
                   controller.selectedAppointment.value?.resource?.name ?? "N/A",
                 ),
               ),
-              SizedBox(width: 12.w),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
               Expanded(
                 child: _buildCompactInfoTile(
                   Icons.fingerprint_rounded,
@@ -678,6 +752,10 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                           ?.toString() ??
                       "N/A",
                 ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: SizedBox(), // Empty spacer to maintain 2-column layout
               ),
             ],
           ),
@@ -695,7 +773,14 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                   Icons.location_on_rounded,
                   controller.selectedSite.value?.address != null
                       ? "${controller.selectedSite.value!.address!}, ${controller.selectedSite.value!.state!}, ${controller.selectedSite.value!.zip!}"
-                      : "N/A",
+                      : controller
+                                .selectedAppointment
+                                .value
+                                ?.customer
+                                ?.address1 !=
+                            null
+                      ? "${controller.selectedAppointment.value!.customer!.address1!}, ${controller.selectedAppointment.value!.customer!.state!}, ${controller.selectedAppointment.value!.customer!.zipCode!}"
+                      : 'N/A',
                   () async {
                     try {
                       await controller.initializeWebController();
@@ -779,11 +864,19 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               Expanded(
                 child: _buildContactChip(
                   Icons.phone_rounded,
-                  controller.selectedSite.value!.phoneNumber
-                          .toString()
-                          .isNotEmpty
+                  controller.selectedSite.value?.phoneNumber
+                              .toString()
+                              .isNotEmpty ??
+                          false
                       ? PhoneDisplayFormatter.format(
                           controller.selectedSite.value!.phoneNumber,
+                        )
+                      : controller.selectedAppointment.value?.customer?.phone
+                                .toString()
+                                .isNotEmpty ??
+                            false
+                      ? PhoneDisplayFormatter.format(
+                          controller.selectedAppointment.value!.customer!.phone,
                         )
                       : 'N/A',
                   () async {
@@ -808,25 +901,64 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
               Expanded(
                 child: _buildContactChip(
                   Icons.email_rounded,
-                  controller.selectedSite.value!.email.toString().isNotEmpty &&
-                          controller.selectedSite.value!.email != null
+                  controller.selectedSite.value?.email != null &&
+                          controller.selectedSite.value!.email!
+                              .toString()
+                              .isNotEmpty
                       ? controller.selectedSite.value!.email!
+                      : controller.selectedAppointment.value?.customer?.email !=
+                                null &&
+                            controller
+                                .selectedAppointment
+                                .value!
+                                .customer!
+                                .email!
+                                .toString()
+                                .isNotEmpty
+                      ? controller.selectedAppointment.value!.customer!.email!
                       : 'N/A',
-                  controller.selectedSite.value!.email.toString().isNotEmpty &&
-                          controller.selectedSite.value!.email != null
-                      ? () async {
-                          try {
-                            await UrlLauncher.email(controller.email);
-                            if (context.mounted) {
-                              // Email launched successfully
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              MySnackBar.showErrorToast(message: e.toString());
-                            }
-                          }
+                  () async {
+                    final email =
+                        controller.selectedSite.value?.email != null &&
+                            controller.selectedSite.value!.email!
+                                .toString()
+                                .isNotEmpty
+                        ? controller.selectedSite.value!.email!
+                        : controller
+                                      .selectedAppointment
+                                      .value
+                                      ?.customer
+                                      ?.email !=
+                                  null &&
+                              controller
+                                  .selectedAppointment
+                                  .value!
+                                  .customer!
+                                  .email!
+                                  .toString()
+                                  .isNotEmpty
+                        ? controller.selectedAppointment.value!.customer!.email!
+                        : null;
+
+                    if (email != null && email.isNotEmpty && email != 'N/A') {
+                      try {
+                        await UrlLauncher.email(email);
+                        if (context.mounted) {
+                          // Email launched successfully
                         }
-                      : null,
+                      } catch (e) {
+                        if (context.mounted) {
+                          MySnackBar.showErrorToast(message: e.toString());
+                        }
+                      }
+                    } else {
+                      if (context.mounted) {
+                        MySnackBar.showErrorToast(
+                          message: "No email available",
+                        );
+                      }
+                    }
+                  },
                 ),
               ),
             ],

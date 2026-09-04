@@ -15,12 +15,12 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.myserviceforce.myXinatorPROFieldAgentPRO"
-    compileSdk = 36
+    namespace = "com.myserviceforce.myxinatorprofieldagentpro"
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
-        applicationId = "com.myserviceforce.myXinatorPROFieldAgentPRO"
+        applicationId = "com.myserviceforce.myxinatorprofieldagentpro"
         minSdk = flutter.minSdkVersion
         targetSdk = 34
         versionCode = 2
@@ -31,6 +31,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlin {
@@ -80,4 +81,11 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    // Google Play Services for location
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 }

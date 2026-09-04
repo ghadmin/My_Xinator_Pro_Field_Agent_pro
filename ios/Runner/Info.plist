@@ -49,7 +49,11 @@
 	</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>
-	This app uses your location only while the app is open to display navigation routes to your destination.
+	We need your location to provide accurate field tracking and navigation even when the app is running in the background.
+	</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>
+	We need your location so the app can continue to track and update your tasks even if you are not actively using it.
 	</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>
@@ -90,6 +94,11 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>

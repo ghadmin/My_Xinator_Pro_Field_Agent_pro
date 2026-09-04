@@ -141,96 +141,88 @@ class ItemView extends GetView<ItemController> {
                           itemCount: controller.sortedItems.length,
                           itemBuilder: (context, index) {
                             final item = controller.sortedItems[index];
-                            return SplashContainer(
-                              radius: 8,
-                              color: Colors.white,
-                              onPressed: () {
-                                // Handle navigation / details
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.all(15.sp),
-                                child: IntrinsicHeight(
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      /// Left side → Expanded
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            TextWidget(
-                                              text: item.name ?? "",
-                                              style: theme
-                                                  .textTheme
-                                                  .headlineSmall
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                            return Padding(
+                              padding: EdgeInsets.all(15.sp),
+                              child: IntrinsicHeight(
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    /// Left side → Expanded
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          TextWidget(
+                                            text: item.name ?? "",
+                                            style: theme.textTheme.headlineSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          SizedBox(height: 2.sp),
+
+                                          /// description
+                                          // if ((item.description ?? "")
+                                          //     .isNotEmpty)
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                              bottom: 2.sp,
                                             ),
-                                            SizedBox(height: 2.sp),
-
-                                            /// description
-                                            // if ((item.description ?? "")
-                                            //     .isNotEmpty)
-                                            Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: 2.sp,
-                                              ),
-                                              child: TextWidget(
-                                                text:
-                                                    item.description != null &&
-                                                        item.description != ''
-                                                    ? item.description!
-                                                    : "N/A",
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-
-                                            /// barcode
-                                            if ((item.barcode ?? "").isNotEmpty)
-                                              TextWidget(
-                                                text: item.barcode ?? "",
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      /// Right side → shrink to fit
-                                      IntrinsicWidth(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            TextWidget(
+                                            child: TextWidget(
                                               text:
-                                                  "\$${item.price?.toStringAsFixed(2) ?? ""}",
-                                              style: theme
-                                                  .textTheme
-                                                  .headlineSmall
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
+                                                  item.description != null &&
+                                                      item.description != ''
+                                                  ? item.description!
+                                                  : "N/A",
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
-                                          ],
-                                        ),
+                                          ),
+
+                                          /// barcode
+                                          if ((item.barcode ?? "").isNotEmpty)
+                                            TextWidget(
+                                              text: item.barcode ?? "",
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+
+                                    /// Right side → shrink to fit
+                                    IntrinsicWidth(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          TextWidget(
+                                            text:
+                                                "\$${item.price?.toStringAsFixed(2) ?? ""}",
+                                            style: theme.textTheme.headlineSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
                           },
-                          separatorBuilder: (context, index) =>
-                              SizedBox(height: 15.sp),
+                          separatorBuilder: (context, index) => Container(
+                            height: 1,
+                            margin: EdgeInsets.symmetric(vertical: 7.sp),
+                            color: LightThemeColors.dividerColor,
+                          ),
                         ),
                       ),
                     ),

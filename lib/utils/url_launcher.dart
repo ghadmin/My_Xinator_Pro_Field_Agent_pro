@@ -18,10 +18,7 @@ class UrlLauncher {
 
   // Phone call launcher
   static Future<void> phoneCall(String phoneNumber) async {
-    final Uri uri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
+    final Uri uri = Uri(scheme: 'tel', path: phoneNumber);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else {
@@ -30,15 +27,24 @@ class UrlLauncher {
   }
 
   // Email launcher with optional subject and body
-  static Future<void> email(String email,
-      {String? subject, String? body}) async {
+  static Future<void> email(
+    String email, {
+    String? subject,
+    String? body,
+  }) async {
+    // Build query parameters only if they're provided
+    final Map<String, String> queryParameters = {};
+    if (subject != null) {
+      queryParameters['subject'] = subject;
+    }
+    if (body != null) {
+      queryParameters['body'] = body;
+    }
+
     final Uri uri = Uri(
       scheme: 'mailto',
       path: email,
-      queryParameters: <String, String>{
-        'subject': ?subject,
-        'body': ?body,
-      },
+      queryParameters: queryParameters.isEmpty ? null : queryParameters,
     );
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);

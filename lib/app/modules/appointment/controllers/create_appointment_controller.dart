@@ -409,7 +409,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
               ? selectedCalendar.value
               : "",
         };
-
+        kLog('GetResourceList $requestBody');
         var response = await DioClient()
             .post(url: ApiUrl.getResourceListUrl, body: requestBody)
             .catchError(showLoader ? handleError : (e) => null);

@@ -1,7 +1,6 @@
 import 'package:flutter/animation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../data/local/my_shared_pref.dart';
 import '../../../routes/app_pages.dart';
 
@@ -19,10 +18,7 @@ class SplashController extends GetxController
     );
 
     animation = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: animationController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
     );
 
     animationController.forward();
@@ -43,6 +39,7 @@ class SplashController extends GetxController
       }
     });
   }
+
 
   @override
   void onReady() {

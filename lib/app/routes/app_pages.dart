@@ -47,6 +47,7 @@ import '../modules/settings/views/appointment_status_view.dart';
 import '../modules/settings/views/settings_view.dart';
 import '../modules/settings/views/ticket_status_view.dart';
 import '../modules/signature/bindings/signature_binding.dart';
+import '../modules/training/views/training_view.dart';
 import '../modules/signature/views/signature_view.dart';
 import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
@@ -276,6 +277,10 @@ class AppPages {
         );
       },
       binding: FormBindings(),
+    ),
+    GetPage(
+      name: _Paths.TRAINING,
+      page: () => const TrainingView(),
     ),
   ];
 }

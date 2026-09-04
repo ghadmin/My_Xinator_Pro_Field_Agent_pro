@@ -123,6 +123,10 @@ class ApiUrl {
   /// Build submit URL: POST /FaProSync.ashx?op=submit
   static String get submitUrl => "$currentBaseUrl/FaProSync.ashx?op=submit";
 
+  /// FaProTrack ping URL: POST /FaProTrack.ashx?op=ping
+  static final String faProTrackPingUrl =
+      "$currentBaseUrl/FaProTrack.ashx?op=ping";
+
   /// Build PDF download URL
   static String pdfDownloadUrl(String relativePath) {
     final cleanPath = relativePath.startsWith('/')

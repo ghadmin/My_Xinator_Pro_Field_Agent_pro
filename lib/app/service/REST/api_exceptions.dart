@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
@@ -34,7 +35,7 @@ class DioExceptions implements Exception {
         break;
       case DioExceptionType.unknown:
         log("DioExceptionType.unknown occurred", name: "DioExceptions");
-        message = "Network connection failed. Please check your internet connection and try again.";
+        message = _messageForUnknown(dioException);
         break;
       case DioExceptionType.connectionError:
         log("DioExceptionType.connectionError occurred", name: "DioExceptions");
@@ -45,6 +46,22 @@ class DioExceptions implements Exception {
         message = Strings.somethingWrong.tr;
         break;
     }
+  }
+
+  /// `DioExceptionType.unknown` wraps every non-HTTP failure, so check the
+  /// underlying error before blaming connectivity. A [FormatException] means
+  /// the server responded but the body could not be decoded (e.g. an HTML
+  /// error page instead of JSON) — that is a server issue, not "no internet".
+  String _messageForUnknown(DioException dioException) {
+    final error = dioException.error;
+    if (error is FormatException) {
+      return "The server sent an invalid response. Please try again later.";
+    }
+    if (error is HandshakeException) {
+      return "Secure connection failed. Please check your network or try again later.";
+    }
+    // SocketException and anything else — treat as a connectivity problem
+    return "Network connection failed. Please check your internet connection and try again.";
   }
 
   String _handleError(int statusCode, dynamic error) {

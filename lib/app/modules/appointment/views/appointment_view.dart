@@ -183,229 +183,242 @@ class AppointmentView extends GetView<AppointmentController> {
                                   (e) => e.status!.statusName != "Completed",
                                 )
                                 .toList()[index];
-                            return SplashContainer(
-                              radius: 8,
-                              color: Colors.white,
-                              border: Border.all(
-                                color: Colors.transparent,
-                                width: 0,
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                bottom:
+                                    index ==
+                                        controller.sortedAppointments.length - 1
+                                    ? 90.h
+                                    : 0,
                               ),
-                              onPressed: () async {
-                                controller.isTyping(false);
-                                controller.selectedAptIndex.value = index;
+                              child: SplashContainer(
+                                radius: 8,
+                                color: Colors.white,
+                                border: Border.all(
+                                  color: Colors.transparent,
+                                  width: 0,
+                                ),
+                                onPressed: () async {
+                                  controller.isTyping(false);
+                                  controller.selectedAptIndex.value = index;
 
-                                await controller.selectSingleAppointments(
-                                  appointment,
-                                  controller.sortedAppointments.indexWhere(
-                                    (element) =>
-                                        element.apptID == appointment.apptID,
-                                  ),
-                                  // false,
-                                );
-                                // controller.getTagList();
-                                controller.getCurrentUserId();
-                                // var createdDateTime = dateTimeConverter(
-                                //     inputFormat: "yyyy/MM/dd hh:mm a",
-                                //     inputTime: appointment.createdDateTime
-                                //         .toString(),
-                                //     outputFormat: "MM/dd/yyyy hh:mm a");
-                                // var startTime = dateTimeConverter(
-                                //     inputFormat: "yyyy/MM/dd hh:mm a",
-                                //     inputTime:
-                                //         appointment.startDateTime.toString(),
-                                //     outputFormat: "MM/dd/yyyy hh:mm a");
-                                // var endTime = dateTimeConverter(
-                                //     inputFormat: "yyyy/MM/dd hh:mm a",
-                                //     inputTime:
-                                //         appointment.endDateTime.toString(),
-                                //     outputFormat: "MM/dd/yyyy hh:mm a");
-                                // controller.createdBy =
-                                //     appointment.createdBy ?? "";
-                                // controller.appointmentID =
-                                //     "${appointment.apptID ?? ""}";
-                                // controller.appointmentUID =
-                                //     appointment.appoinmentUId ?? "";
-                                // controller.customerID =
-                                //     "${appointment.customerID ?? ""}";
-                                // controller.promoCode =
-                                //     appointment.promoCode ?? "";
-                                // controller.serviceTypeID =
-                                //     appointment.serviceTypeId ?? "";
-                                // controller.resourceID =
-                                //     appointment.resourceID!;
-                                // controller.timeSlotID =
-                                //     appointment.timeSlotId!;
-                                // controller.contactName =
-                                //     "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
-                                // controller.address =
-                                //     "${appointment.customer?.address1}, "
-                                //     "${appointment.customer?.city}, "
-                                //     "${appointment.customer?.state}, ";
-                                // controller.mobileNumber =
-                                //     appointment.customer?.mobile ?? "";
-                                // controller.phoneNumber =
-                                //     appointment.customer?.phone ?? "";
-                                // controller.customerTitle =
-                                //     "${appointment.customer?.title ?? ""} ${appointment.customer?.title2 ?? ""}";
-                                // controller.email =
-                                //     appointment.customer?.email ?? "";
-                                // controller.invoiceController.toTextController
-                                //     .text = appointment.customer?.email ?? "";
-                                // controller.invoiceController.customerFirstName
-                                //         .value =
-                                //     appointment.customer?.firstName ?? "";
-                                // controller.requestDate = createdDateTime;
-                                // controller.startDate = startTime;
-                                // controller.endDate = endTime;
-                                // controller.timeSlot =
-                                //     appointment.timeSlot ?? "";
-                                // controller.serviceType =
-                                //     appointment.serviceType?.serviceName ??
-                                //         "";
+                                  await controller.selectSingleAppointments(
+                                    appointment,
+                                    controller.sortedAppointments.indexWhere(
+                                      (element) =>
+                                          element.apptID == appointment.apptID,
+                                    ),
+                                    // false,
+                                  );
+                                  // controller.getTagList();
+                                  controller.getCurrentUserId();
+                                  // var createdDateTime = dateTimeConverter(
+                                  //     inputFormat: "yyyy/MM/dd hh:mm a",
+                                  //     inputTime: appointment.createdDateTime
+                                  //         .toString(),
+                                  //     outputFormat: "MM/dd/yyyy hh:mm a");
+                                  // var startTime = dateTimeConverter(
+                                  //     inputFormat: "yyyy/MM/dd hh:mm a",
+                                  //     inputTime:
+                                  //         appointment.startDateTime.toString(),
+                                  //     outputFormat: "MM/dd/yyyy hh:mm a");
+                                  // var endTime = dateTimeConverter(
+                                  //     inputFormat: "yyyy/MM/dd hh:mm a",
+                                  //     inputTime:
+                                  //         appointment.endDateTime.toString(),
+                                  //     outputFormat: "MM/dd/yyyy hh:mm a");
+                                  // controller.createdBy =
+                                  //     appointment.createdBy ?? "";
+                                  // controller.appointmentID =
+                                  //     "${appointment.apptID ?? ""}";
+                                  // controller.appointmentUID =
+                                  //     appointment.appoinmentUId ?? "";
+                                  // controller.customerID =
+                                  //     "${appointment.customerID ?? ""}";
+                                  // controller.promoCode =
+                                  //     appointment.promoCode ?? "";
+                                  // controller.serviceTypeID =
+                                  //     appointment.serviceTypeId ?? "";
+                                  // controller.resourceID =
+                                  //     appointment.resourceID!;
+                                  // controller.timeSlotID =
+                                  //     appointment.timeSlotId!;
+                                  // controller.contactName =
+                                  //     "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}";
+                                  // controller.address =
+                                  //     "${appointment.customer?.address1}, "
+                                  //     "${appointment.customer?.city}, "
+                                  //     "${appointment.customer?.state}, ";
+                                  // controller.mobileNumber =
+                                  //     appointment.customer?.mobile ?? "";
+                                  // controller.phoneNumber =
+                                  //     appointment.customer?.phone ?? "";
+                                  // controller.customerTitle =
+                                  //     "${appointment.customer?.title ?? ""} ${appointment.customer?.title2 ?? ""}";
+                                  // controller.email =
+                                  //     appointment.customer?.email ?? "";
+                                  // controller.invoiceController.toTextController
+                                  //     .text = appointment.customer?.email ?? "";
+                                  // controller.invoiceController.customerFirstName
+                                  //         .value =
+                                  //     appointment.customer?.firstName ?? "";
+                                  // controller.requestDate = createdDateTime;
+                                  // controller.startDate = startTime;
+                                  // controller.endDate = endTime;
+                                  // controller.timeSlot =
+                                  //     appointment.timeSlot ?? "";
+                                  // controller.serviceType =
+                                  //     appointment.serviceType?.serviceName ??
+                                  //         "";
 
-                                // controller.selectedStatusValue.value =
-                                //     appointment.status?.statusId ?? 0;
-                                // controller.selectedTicketStatusValue.value =
-                                //     appointment.ticketStatus?.statusId ?? 0;
-                                // controller.resource =
-                                //     appointment.resource?.name ?? "";
+                                  // controller.selectedStatusValue.value =
+                                  //     appointment.status?.statusId ?? 0;
+                                  // controller.selectedTicketStatusValue.value =
+                                  //     appointment.ticketStatus?.statusId ?? 0;
+                                  // controller.resource =
+                                  //     appointment.resource?.name ?? "";
 
-                                // controller.notes = appointment.note ?? "";
-                                // controller.noteTextController.text =
-                                //     appointment.note ?? "";
-                                // controller.selectedAptIndex.value = index;
-                                controller.selectedCustomer(
-                                  appointment.customer,
-                                );
-                                Get.toNamed(Routes.APPOINTMENT_DETAILS);
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.all(15.sp),
-                                child: IntrinsicHeight(
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
-                                              style: theme
-                                                  .textTheme
-                                                  .headlineSmall
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            SizedBox(height: 2.sp),
-                                            Text(
-                                              appointment
-                                                      .serviceType
-                                                      ?.serviceName ??
-                                                  "",
-                                            ),
-                                            Text(
-                                              "${appointment.customer?.address1}, "
-                                              "${appointment.customer?.city}, "
-                                              "${appointment.customer?.state}, ",
-                                            ),
-                                            SizedBox(height: 4.sp),
-                                            Text(
-                                              dateTimeConverter(
-                                                inputFormat:
-                                                    "yyyy/MM/dd hh:mm a",
-                                                inputTime: appointment
-                                                    .startDateTime
-                                                    .toString(),
-                                                outputFormat:
-                                                    "MM/dd/yyyy hh:mm a",
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 120.sp,
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 10.sp,
-                                                vertical: 5.sp,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(15.r),
-                                                color:
-                                                    appointment
-                                                            .status
-                                                            ?.statusName ==
-                                                        "Installation In Progress"
-                                                    ? Color(0xffE98862)
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Installation in Progress"
-                                                    ? Color(0xffE98862)
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Scheduled"
-                                                    ? Color(0xff2E888B)
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Cancelled"
-                                                    ? Colors.red
-                                                    : Color(0xff0CBC8B),
-                                              ),
-                                              child: Text(
-                                                appointment
-                                                            .status
-                                                            ?.statusName ==
-                                                        "Installation In Progress"
-                                                    ? "In Progress"
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Installation in Progress"
-                                                    ? "In Progress"
-                                                    : appointment
-                                                              .status
-                                                              ?.statusName ??
-                                                          "",
+                                  // controller.notes = appointment.note ?? "";
+                                  // controller.noteTextController.text =
+                                  //     appointment.note ?? "";
+                                  // controller.selectedAptIndex.value = index;
+                                  controller.selectedCustomer(
+                                    appointment.customer,
+                                  );
+                                  Get.toNamed(Routes.APPOINTMENT_DETAILS);
+                                },
+                                child: Padding(
+                                  padding: EdgeInsets.all(15.sp),
+                                  child: IntrinsicHeight(
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
                                                 style: theme
                                                     .textTheme
-                                                    .bodyMedium
+                                                    .headlineSmall
                                                     ?.copyWith(
-                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              SizedBox(height: 2.sp),
+                                              Text(
+                                                appointment
+                                                        .serviceType
+                                                        ?.serviceName ??
+                                                    "",
+                                              ),
+                                              Text(
+                                                "${appointment.customer?.address1}, "
+                                                "${appointment.customer?.city}, "
+                                                "${appointment.customer?.state}, ",
+                                              ),
+                                              SizedBox(height: 4.sp),
+                                              Text(
+                                                dateTimeConverter(
+                                                  inputFormat:
+                                                      "yyyy/MM/dd hh:mm a",
+                                                  inputTime: appointment
+                                                      .startDateTime
+                                                      .toString(),
+                                                  outputFormat:
+                                                      "MM/dd/yyyy hh:mm a",
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 120.sp,
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 10.sp,
+                                                  vertical: 5.sp,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        15.r,
+                                                      ),
+                                                  color:
+                                                      appointment
+                                                              .status
+                                                              ?.statusName ==
+                                                          "Installation In Progress"
+                                                      ? Color(0xffE98862)
+                                                      : appointment
+                                                                .status
+                                                                ?.statusName ==
+                                                            "Installation in Progress"
+                                                      ? Color(0xffE98862)
+                                                      : appointment
+                                                                .status
+                                                                ?.statusName ==
+                                                            "Scheduled"
+                                                      ? Color(0xff2E888B)
+                                                      : appointment
+                                                                .status
+                                                                ?.statusName ==
+                                                            "Cancelled"
+                                                      ? Colors.red
+                                                      : Color(0xff0CBC8B),
+                                                ),
+                                                child: Text(
+                                                  appointment
+                                                              .status
+                                                              ?.statusName ==
+                                                          "Installation In Progress"
+                                                      ? "In Progress"
+                                                      : appointment
+                                                                .status
+                                                                ?.statusName ==
+                                                            "Installation in Progress"
+                                                      ? "In Progress"
+                                                      : appointment
+                                                                .status
+                                                                ?.statusName ??
+                                                            "",
+                                                  style: theme
+                                                      .textTheme
+                                                      .bodyMedium
+                                                      ?.copyWith(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                ),
+                                              ),
+                                              Text(
+                                                "Click to see details",
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
+                                                      color: theme.primaryColor,
+                                                      fontSize: 11.sp,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
                                               ),
-                                            ),
-                                            Text(
-                                              "Click to see details",
-                                              style: theme.textTheme.bodySmall
-                                                  ?.copyWith(
-                                                    color: theme.primaryColor,
-                                                    fontSize: 11.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -456,9 +469,8 @@ class AppointmentView extends GetView<AppointmentController> {
   }
 
   void _showCustomerList(BuildContext context, ThemeData theme) {
-
-final customerC = Get.find<CustomerController>();
-final customerList = customerC.customers;
+    final customerC = Get.find<CustomerController>();
+    final customerList = customerC.customers;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -621,4 +633,5 @@ final customerList = customerC.customers;
       ),
     );
   }
+
 }

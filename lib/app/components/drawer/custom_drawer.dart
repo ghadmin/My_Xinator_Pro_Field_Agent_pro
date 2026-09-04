@@ -104,6 +104,19 @@ class CustomDrawer extends StatelessWidget {
                   ),
                   SizedBox(height: 10.h),
 
+                  _drawerItem(
+                    iconWidget: Icon(
+                      Icons.school_outlined,
+                      size: 25.h,
+                      color: LightThemeColors.primaryColor,
+                    ),
+                    text: 'Training',
+                    indexNumber: 4,
+                    onTap: () => Get.toNamed(Routes.TRAINING),
+                  ),
+
+                  SizedBox(height: 10.h),
+
                   /// 👇 logout is still part of ListView, right under Customers
                   _drawerItem(
                     icon: SideBar.logoutIcon,
@@ -165,7 +178,8 @@ class CustomDrawer extends StatelessWidget {
   }
 
   Widget _drawerItem({
-    required String icon,
+    String? icon,
+    Widget? iconWidget,
     required String text,
     required int indexNumber,
     required GestureTapCallback onTap,
@@ -176,7 +190,7 @@ class CustomDrawer extends StatelessWidget {
       contentPadding: EdgeInsets.symmetric(horizontal: 20.sp),
       title: Row(
         children: [
-          Image.asset(height: 25.h, width: 25.w, icon),
+          iconWidget ?? Image.asset(height: 25.h, width: 25.w, icon!),
           Padding(
             padding: EdgeInsets.only(left: 15.sp),
             child: TextWidget(

@@ -47,6 +47,8 @@ abstract class Routes {
   static const FILES_TAB = _Paths.FILES_TAB;
   static const NOTES_TAB = _Paths.NOTES_TAB;
   static const BILLABLE_ITEM_SCREEN = _Paths.BILLABLE_ITEM_SCREEN;
+  static const LOCATION_TRACKING = _Paths.LOCATION_TRACKING;
+  static const TRAINING = _Paths.TRAINING;
 }
 
 abstract class _Paths {
@@ -92,4 +94,6 @@ abstract class _Paths {
   static const FILES_TAB = '/files-tab';
   static const NOTES_TAB = '/notes-tab';
   static const BILLABLE_ITEM_SCREEN = '/billable-item-screen';
+  static const LOCATION_TRACKING = '/location-tracking';
+  static const TRAINING = '/training';
 }

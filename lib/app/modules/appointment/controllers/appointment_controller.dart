@@ -230,11 +230,28 @@ class AppointmentController extends GetxController
           return;
         }
 
-        kLog("getCustomerSite response: $response");
+        kLog(
+          "getCustomerSite response: $response and endpoint ${ApiUrl.getCustomerSitesUrl} and body ${{"siteId": siteId, "customerId": customerId ?? 0, "companyId": companyID}}",
+        );
 
         // Parse response - API returns an array
         if (response is List && response.isNotEmpty) {
           selectedSite.value = SiteModel.fromJson(response[0]);
+        } else {
+          // Convert customer data to SiteModel when site data is not available
+          final customer = selectedAppointment.value?.customer;
+          selectedSite.value = SiteModel(
+            customerID: customer?.customerID?.toString(),
+            firstName: customer?.firstName,
+            lastName: customer?.lastName,
+            address: customer?.address1,
+            state: customer?.state,
+            zip: customer?.zipCode,
+            email: customer?.email,
+            phoneNumber: (customer?.mobile?.isNotEmpty == true)
+                ? customer?.mobile
+                : customer?.phone, 
+          );
         }
 
         if (showLoader) hideLoading();
@@ -384,7 +401,8 @@ class AppointmentController extends GetxController
                 name: item.name,
                 description: item.description,
                 price: double.tryParse(item.unitPrice ?? "0.00"),
-                isTaxable: item.isTaxable == "TAX" ? true : false,po: item.po,
+                isTaxable: item.isTaxable == "TAX" ? true : false,
+                po: item.po,
                 // itemTypeId: int.parse(item.itemTyId!),
               ),
             );
@@ -868,22 +886,22 @@ class AppointmentController extends GetxController
         appointments.assignAll(
           (response as List)
               .map((e) => Appointments.fromJson(e))
-              .where(
-                (apt) =>
-                    apt.status?.statusName != "Pending" &&
-                    apt.status?.statusName != "Scheduled",
-              )
+              // .where(
+              //   (apt) =>
+              //       apt.status?.statusName != "Pending" &&
+              //       apt.status?.statusName != "Scheduled",
+              // )
               .toList(),
         );
 
         sortedAppointments.assignAll(
           response
               .map((e) => Appointments.fromJson(e))
-              .where(
-                (apt) =>
-                    apt.status?.statusName != "Pending" &&
-                    apt.status?.statusName != "Scheduled",
-              )
+              // .where(
+              //   (apt) =>
+              //       apt.status?.statusName != "Pending" &&
+              //       apt.status?.statusName != "Scheduled",
+              // )
               .toList()
             ..sort((a, b) {
               final aDate = DateFormat(

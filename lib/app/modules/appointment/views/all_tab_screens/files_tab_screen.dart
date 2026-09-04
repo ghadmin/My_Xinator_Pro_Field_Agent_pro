@@ -15,6 +15,8 @@ import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controller
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/file/controllers/file_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/file/models/file_item_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/widgets/warm_organic_components.dart';
+import 'package:myxinator_pro_field_agent_pro/app/service/REST/api_urls.dart';
+import 'package:myxinator_pro_field_agent_pro/app/service/REST/dio_client.dart';
 import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 
@@ -458,38 +460,9 @@ class _FilesTabScreenState extends State<FilesTabScreen> {
   }
 
   Future<void> _downloadFile(FileItem file) async {
-    final fileName = file.fileName;
-    final extension = file.extension;
-
-    String finalFileName = fileName;
-    if (!fileName.endsWith('.$extension')) {
-      finalFileName = '$fileName.$extension';
-    }
-
-    Directory downloadDir;
-    if (Platform.isAndroid) {
-      downloadDir = Directory('/storage/emulated/0/Download');
-    } else if (Platform.isIOS) {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      downloadDir = Directory('${appDocDir.path}/Downloads');
-    } else {
-      final appDocDir = await getApplicationDocumentsDirectory();
-      downloadDir = Directory('${appDocDir.path}/Downloads');
-    }
-
-    if (!await downloadDir.exists()) {
-      await downloadDir.create(recursive: true);
-    }
-
-    final filePath = '${downloadDir.path}/$finalFileName';
-    final savedFile = File(filePath);
-
-    if (await savedFile.exists()) {
-      await _openFile(filePath, file);
-      return;
-    }
-
     if (!mounted) return;
+
+    // Show loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -498,90 +471,43 @@ class _FilesTabScreenState extends State<FilesTabScreen> {
     );
 
     try {
-      Uint8List? fileBytes;
+      kLog("Downloading file: ${file.fileName} from ${file.fileUrl}");
 
-      if (file.fileUrl.isNotEmpty) {
-        try {
-          final response = await Dio().get(
-            file.fileUrl,
-            options: Options(responseType: ResponseType.bytes),
-          );
-          fileBytes = response.data as Uint8List;
-        } catch (e) {
-          if (mounted) Navigator.pop(context);
-          MySnackBar.showErrorToast(
-            message: 'Failed to download file from server',
-          );
-          return;
-        }
+      // Use the simple download approach with app's dio instance
+      final dio = Dio(); // This should use the same dio instance used for app login
+      final fileName = file.fileName;
+      final extension = file.extension;
+
+      String finalFileName = fileName;
+      if (!fileName.endsWith('.$extension')) {
+        finalFileName = '$fileName.$extension';
       }
 
-      if (fileBytes == null) {
-        if (mounted) Navigator.pop(context);
-        MySnackBar.showErrorToast(message: 'Failed to download file');
-        return;
-      }
+      final dir = await getApplicationDocumentsDirectory();
+      final savePath = '${dir.path}/$finalFileName';
 
-      await savedFile.writeAsBytes(fileBytes, flush: true);
-      kLog("File saved to: $filePath");
+      await dio.download(file.fileUrl, savePath);
+
+      kLog("File downloaded successfully to: $savePath");
 
       if (mounted) Navigator.pop(context);
-      await _openFile(filePath, file);
+
+      // Verify file was saved
+      final savedFile = File(savePath);
+      if (await savedFile.exists()) {
+        final fileSize = await savedFile.length();
+        MySnackBar.showToast(
+          message: 'Downloaded: ${file.fileName} (${(fileSize / 1024).toStringAsFixed(1)} KB)',
+        );
+        kLog("File saved successfully. Size: $fileSize bytes");
+      } else {
+        MySnackBar.showErrorToast(message: 'File was not saved properly');
+      }
     } catch (e, s) {
-      kLog("Error saving file: $e");
-      kLog(s);
+      kLog("Download failed: $e");
+      kLog("Stack trace: $s");
       if (mounted) Navigator.pop(context);
-      MySnackBar.showErrorToast(message: 'Failed to download file: $e');
-    }
-  }
-
-  Future<void> _openFile(String filePath, FileItem file) async {
-    final ext = file.extension.toLowerCase();
-
-    if (_isImageFile(file.fileType)) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => Dialog(
-            child: Stack(
-              children: [
-                InteractiveViewer(
-                  child: Image.file(File(filePath), fit: BoxFit.contain),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black54,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-      return;
-    }
-
-    if (ext == 'mp4' || ext == 'mov' || ext == 'avi' || ext == 'mkv') {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => _VideoDialog(videoPath: filePath),
-        );
-      }
-      return;
-    }
-
-    final result = await OpenFilex.open(filePath);
-    if (result.type != ResultType.done) {
-      MySnackBar.showErrorToast(
-        message: 'Could not open file: ${result.message}',
-      );
+      MySnackBar.showErrorToast(message: 'Failed to download file: ${e.toString()}');
     }
   }
 
@@ -724,54 +650,4 @@ Future<List<File>> _validateAndFilterFiles(
   }
 
   return validFiles;
-}
-
-class _VideoDialog extends StatefulWidget {
-  final String videoPath;
-  const _VideoDialog({required this.videoPath});
-
-  @override
-  State<_VideoDialog> createState() => _VideoDialogState();
-}
-
-class _VideoDialogState extends State<_VideoDialog> {
-  late VideoPlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.file(File(widget.videoPath))
-      ..initialize().then((_) {
-        setState(() {});
-        _controller.play();
-      });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      child: _controller.value.isInitialized
-          ? AspectRatio(
-              aspectRatio: _controller.value.aspectRatio,
-              child: Stack(
-                alignment: Alignment.bottomCenter,
-                children: [
-                  VideoPlayer(_controller),
-                  VideoProgressIndicator(_controller, allowScrubbing: true),
-                ],
-              ),
-            )
-          : SizedBox(
-              height: 150,
-              width: 150,
-              child: Center(child: CircularProgressIndicator()),
-            ),
-    );
-  }
 }
