@@ -5,13 +5,13 @@
             "name": "Flutter: iPhone Simulator",
             "type": "dart",
             "request": "launch",
-            "deviceId": "iphone"
+            "deviceId": "2BE0E9D0-9028-4493-BC00-5F32628273DA"
         },
         {
             "name": "Flutter: Physical Device",
             "type": "dart",
             "request": "launch",
-            "deviceId": "ios"
+            "deviceId": "00008120-000A058A0207601E"
         },
       
         {

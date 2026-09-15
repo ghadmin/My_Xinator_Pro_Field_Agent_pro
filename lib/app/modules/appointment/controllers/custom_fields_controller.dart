@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/my_shared_pref.dart';
@@ -128,10 +129,12 @@ class CustomFieldsController extends GetxController
         var companyID = await MySharedPref.getCompanyID();
         log("getCustomFields: CompanyID = $companyID");
 
-        var response = await DioClient().get(
-          url: ApiUrl.getCustomFieldsUrl,
-          params: {"companyId": companyID},
-        ).catchError(handleError);
+        var response = await DioClient()
+            .get(
+              url: ApiUrl.getCustomFieldsUrl,
+              params: {"companyId": companyID},
+            )
+            .catchError(handleError);
 
         log("getCustomFields: Response = $response");
 
@@ -147,7 +150,9 @@ class CustomFieldsController extends GetxController
         allCustomFields.value = customFields;
 
         // Process or store the custom fields as needed
-        log("✅ Custom Fields loaded successfully: ${customFields.length} fields");
+        log(
+          "✅ Custom Fields loaded successfully: ${customFields.length} fields",
+        );
       } else {
         log("❌ getCustomFields: No network connection");
         MySnackBar.showErrorToast(message: "No network connection.");
@@ -178,15 +183,19 @@ class CustomFieldsController extends GetxController
   }) async {
     log("getAttachedCustomFields: Starting to fetch attached custom fields...");
     try {
+      var companyID = await MySharedPref.getCompanyID();
       showLoading();
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        var response = await DioClient().get(
-          url: ApiUrl.getAttachedCustomFieldsUrl,
-          params: {
-            "appointmentId": appointmentId,
-            "fieldId": fieldId,
-          },
-        ).catchError(handleError);
+        var response = await DioClient()
+            .get(
+              url: ApiUrl.getAttachedCustomFieldsUrl,
+              params: {
+                "appointmentId": appointmentId,
+                "fieldId": fieldId,
+                'companyId': companyID,
+              },
+            )
+            .catchError(handleError);
 
         log("getAttachedCustomFields: Response = $response");
 
@@ -201,8 +210,10 @@ class CustomFieldsController extends GetxController
         }
 
         final List<AttachedCustomFieldModel> customFields = (response as List)
-            .map((e) =>
-                AttachedCustomFieldModel.fromJson(e as Map<String, dynamic>))
+            .map(
+              (e) =>
+                  AttachedCustomFieldModel.fromJson(e as Map<String, dynamic>),
+            )
             .toList();
 
         if (customFields.isNotEmpty) {
@@ -246,10 +257,19 @@ class CustomFieldsController extends GetxController
                   break;
                 case 'checklist':
                   // For checklist, FieldValue is a JSON array string like "[\"option1\",\"option2\"]"
-                  newField.selectedOptions =
-                      attachedField.getFieldValueAsList();
+                  newField.selectedOptions = attachedField
+                      .getFieldValueAsList();
                   appointmentController.customFieldChecklistValues.value =
                       newField.selectedOptions ?? [];
+                  break;
+                case 'time':
+                  newField.timeValue = attachedField.fieldValue;
+                  break;
+                case 'date':
+                  newField.dateValue = attachedField.fieldValue;
+                  break;
+                case 'signature':
+                  newField.signatureValue = attachedField.fieldValue;
                   break;
               }
 
@@ -263,7 +283,9 @@ class CustomFieldsController extends GetxController
         }
 
         // Process or store the custom fields as needed
-        log("✅ Attached Custom Fields loaded successfully: ${customFields.length} fields");
+        log(
+          "✅ Attached Custom Fields loaded successfully: ${customFields.length} fields",
+        );
       } else {
         log("❌ getAttachedCustomFields: No network connection");
         MySnackBar.showErrorToast(message: "No network connection.");
@@ -273,6 +295,60 @@ class CustomFieldsController extends GetxController
       log("❌ Stack trace: $stackTrace");
     } finally {
       hideLoading();
+    }
+  }
+
+  /// Delete an attached custom field from an appointment
+  ///
+  /// [appointmentId] - The appointment ID (required)
+  /// [fieldId] - The field ID to delete (required)
+  ///
+  /// Example:
+  /// ```dart
+  /// await controller.deleteAppointmentCustomField(
+  ///   appointmentId: 131,
+  ///   fieldId: 5,
+  /// );
+  /// ```
+  Future<void> deleteAppointmentCustomField({
+    required int appointmentId,
+    required int fieldId,
+  }) async {
+    showLoading();
+
+    try {
+      if (await NetworkConnectivity.isNetworkAvailable()) {
+        var response = await DioClient()
+            .get(
+              url: ApiUrl.deleteAppointmentCustomFieldsUrl,
+              params: {"appointmentId": appointmentId, "fieldId": fieldId},
+            )
+            .catchError(handleError);
+
+        kLog("deleteAppointmentCustomField: Response = $response");
+
+        hideLoading();
+
+        if (response == null) {
+          MySnackBar.showErrorToast(message: "Failed to delete custom field.");
+          return;
+        }
+
+        kLog("✅ Custom field deleted successfully: $response");
+        MySnackBar.showToast(message: "Custom field deleted successfully");
+
+        selectedCustomFields.removeWhere((field) => field.fieldID == fieldId);
+      } else {
+        hideLoading();
+        MySnackBar.showErrorToast(message: "No network connection.");
+      }
+    } catch (e, stackTrace) {
+      hideLoading();
+      log("❌ Error deleting custom field: $e");
+      log("❌ Stack trace: $stackTrace");
+      MySnackBar.showErrorToast(
+        message: "An error occurred while deleting the custom field.",
+      );
     }
   }
 
@@ -286,9 +362,7 @@ class CustomFieldsController extends GetxController
   ///   appointmentId: 101,
   /// );
   /// ```
-  Future<void> saveAttachedCustomFields({
-    required int appointmentId,
-  }) async {
+  Future<void> saveAttachedCustomFields({required int appointmentId}) async {
     if (selectedCustomFields.isEmpty) {
       log("saveAttachedCustomFields: No custom fields to save");
       return;
@@ -318,6 +392,17 @@ class CustomFieldsController extends GetxController
             case 'number':
               fieldValue = field.numberValue ?? '';
               break;
+            case 'time':
+              fieldValue = field.timeValue ?? '';
+              break;
+            case 'date':
+              fieldValue = field.dateValue ?? '';
+              break;
+            case 'signature':
+              // Send only the base64 payload as the value
+              // (strips the "data:image/png;base64," prefix)
+              fieldValue = (field.signatureValue ?? '').split(',').last;
+              break;
             default:
               fieldValue = '';
           }
@@ -330,9 +415,7 @@ class CustomFieldsController extends GetxController
         }).toList();
 
         // Prepare the request body
-        final Map<String, dynamic> body = {
-          "fields": fields,
-        };
+        final Map<String, dynamic> body = {"fields": fields};
 
         log("saveAttachedCustomFields: Request body = ${jsonEncode(body)}");
 

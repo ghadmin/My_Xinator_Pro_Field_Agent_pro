@@ -17,6 +17,9 @@ class CustomFieldModel {
   // Added to store field values
   String? textValue; // For text field
   String? numberValue; // For number field
+  String? timeValue; // For time field
+  String? dateValue; // For date field
+  String? signatureValue; // For signature field (base64 PNG data URI)
 
   CustomFieldModel(
       {this.fieldID,
@@ -67,6 +70,12 @@ class CustomFieldModel {
         return textValue;
       case 'number':
         return numberValue;
+      case 'time':
+        return timeValue;
+      case 'date':
+        return dateValue;
+      case 'signature':
+        return signatureValue;
       default:
         return null;
     }

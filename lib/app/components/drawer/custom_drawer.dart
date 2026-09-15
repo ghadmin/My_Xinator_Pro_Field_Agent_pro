@@ -8,6 +8,7 @@ import '../../../config/theme/light_theme_colors.dart';
 import '../../../utils/constants.dart';
 import '../../data/local/my_shared_pref.dart';
 import '../../modules/auth/controllers/auth_controller.dart';
+import '../../modules/location_tracking/controllers/location_tracking_controller.dart';
 import '../../routes/app_pages.dart';
 import '../global-widgets/asset_image_box.dart';
 import '../global-widgets/text_widget.dart';
@@ -16,11 +17,20 @@ class CustomDrawer extends StatelessWidget {
   CustomDrawer({super.key, required this.indexClicked});
   late int indexClicked;
 
+  /// The controller owns the tracking state (and persists it), so the switch
+  /// also updates by itself when tracking auto-starts after the user returns
+  /// from the permission settings page.
+  LocationTrackingController get _trackingController =>
+      Get.isRegistered<LocationTrackingController>()
+          ? Get.find<LocationTrackingController>()
+          : Get.put(LocationTrackingController());
+
   @override
   Widget build(BuildContext context) {
     // var theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
     final authController = Get.put(AuthController());
+    final trackingController = _trackingController;
     return Drawer(
       width: size.width > 600 ? 230.w : null,
       child: Padding(
@@ -104,15 +114,37 @@ class CustomDrawer extends StatelessWidget {
                   ),
                   SizedBox(height: 10.h),
 
-                  _drawerItem(
-                    iconWidget: Icon(
-                      Icons.school_outlined,
-                      size: 25.h,
-                      color: LightThemeColors.primaryColor,
+                  //no need for now.. when i prompt to open it.. please uncomment it, and remove this comment .
+                  // _drawerItem(
+                  //   iconWidget: Icon(
+                  //     Icons.school_outlined,
+                  //     size: 25.h,
+                  //     color: LightThemeColors.primaryColor,
+                  //   ),
+                  //   text: 'Training',
+                  //   indexNumber: 4,
+                  //   onTap: () => Get.toNamed(Routes.TRAINING),
+                  // ),
+                  SizedBox(height: 10.h),
+
+                  /// tracking toggle
+                  Obx(
+                    () => _drawerItem(
+                      iconWidget: Icon(
+                        Icons.location_on_outlined,
+                        size: 25.h,
+                        color: LightThemeColors.primaryColor,
+                      ),
+                      text: 'Tracking',
+                      indexNumber: 5,
+                      onTap: () => trackingController.toggleTracking(),
+                      trailing: Switch(
+                        value: trackingController.isTrackingEnabled.value,
+                        activeThumbColor: LightThemeColors.primaryColor,
+                        onChanged: (_) =>
+                            trackingController.toggleTracking(),
+                      ),
                     ),
-                    text: 'Training',
-                    indexNumber: 4,
-                    onTap: () => Get.toNamed(Routes.TRAINING),
                   ),
 
                   SizedBox(height: 10.h),
@@ -183,6 +215,7 @@ class CustomDrawer extends StatelessWidget {
     required String text,
     required int indexNumber,
     required GestureTapCallback onTap,
+    Widget? trailing,
   }) {
     return ListTile(
       selected: indexClicked == indexNumber,
@@ -207,6 +240,7 @@ class CustomDrawer extends StatelessWidget {
         ],
       ),
       onTap: onTap,
+      trailing: trailing,
     );
   }
 }

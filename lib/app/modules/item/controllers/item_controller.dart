@@ -67,7 +67,7 @@ class ItemController extends GetxController with ExceptionHandler {
         kLog('Total items count: ${response['TotalItems']}');
       } else if (response is List) {
         // Legacy format: direct array
-        itemsList = response as List;
+        itemsList = response;
       } else {
         // Unexpected format
         items.clear();

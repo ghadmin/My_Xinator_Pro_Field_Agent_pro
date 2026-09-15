@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
@@ -173,63 +174,98 @@ class DialogHelper {
     );
   }
 
+  /// Tracks whether a loading dialog was requested. GetX's `Get.isDialogOpen`
+  /// is observer-driven state and can go stale, leaving the loader stuck on
+  /// screen, so we keep our own source of truth here.
+  static bool _isLoaderVisible = false;
+
   ///show loading
   static Future<void> showLoading() async {
+    // Prevent stacking a second loader while one is already open/pending
+    if (_isLoaderVisible) return;
+    _isLoaderVisible = true;
+
     final completer = Completer<void>();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      Get.dialog(
-        barrierDismissible: false,
-        barrierColor: Colors.black.withValues(alpha: .1),
-        // barrierColor: LightThemeColors.bodyTextColor,
-        Center(
-          child: Container(
-            height: 80.h,
-            decoration: const BoxDecoration(
-              color: Colors.transparent,
-              shape: BoxShape.circle,
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // App Icon
-                Container(
-                  height: 50.sp,
-                  width: 50.sp,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: AssetImage(
-                        AppImages.kLoaderIcon,
+
+    void openDialog() {
+      // hideLoading() ran before the dialog was opened
+      if (!_isLoaderVisible) {
+        completer.complete();
+        return;
+      }
+      try {
+        Get.dialog(
+          barrierDismissible: false,
+          barrierColor: Colors.black.withValues(alpha: .1),
+          // barrierColor: LightThemeColors.bodyTextColor,
+          Center(
+            child: Container(
+              height: 80.h,
+              decoration: const BoxDecoration(
+                color: Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // App Icon
+                  Container(
+                    height: 50.sp,
+                    width: 50.sp,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: DecorationImage(
+                        image: AssetImage(
+                          AppImages.kLoaderIcon,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Loader
-                SizedBox(
-                  height: 60.sp,
-                  width: 60.sp,
-                  child: const CircularProgressIndicator(),
-                ),
-              ],
+                  // Loader
+                  SizedBox(
+                    height: 60.sp,
+                    width: 60.sp,
+                    child: const CircularProgressIndicator(),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      );
+        );
+      } catch (_) {
+        _isLoaderVisible = false;
+      }
       // Complete after dialog is shown
-      await Future.delayed(const Duration(milliseconds: 50));
-      completer.complete();
-    });
+      Future.delayed(const Duration(milliseconds: 50), completer.complete);
+    }
+
+    if (WidgetsBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      // Called during a build/layout pass — defer to the end of the frame
+      WidgetsBinding.instance.addPostFrameCallback((_) => openDialog());
+      WidgetsBinding.instance.scheduleFrame();
+    } else {
+      // Push the route now; the push schedules its own frame, so the loader
+      // shows up immediately instead of waiting for an unrelated repaint.
+      // (A post-frame callback alone never fires while the app is idle —
+      // e.g. tap → network request → response, with no frame in between.)
+      openDialog();
+    }
+
     return completer.future;
   }
 
   ///hide loading
   static Future<void> hideLoading() async {
+    _isLoaderVisible = false;
     try {
-      if (Get.isDialogOpen == true) {
-        Get.until((route) => !Get.isDialogOpen!);
-        // Wait for dialog to fully close
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
+      // Pop by route type instead of relying on the observer-driven
+      // `Get.isDialogOpen` flag — that flag can be false while the loader
+      // is still on screen, which used to leave the spinner stuck forever.
+      // popUntil is a no-op when no popup route exists.
+      Get.until((route) => route is! PopupRoute);
+      // Wait for dialog to fully close
+      await Future.delayed(const Duration(milliseconds: 100));
     } catch (_) {
       // Safe ignore
     }

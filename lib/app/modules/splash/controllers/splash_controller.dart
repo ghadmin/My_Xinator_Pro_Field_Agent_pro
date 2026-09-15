@@ -30,6 +30,9 @@ class SplashController extends GetxController
       var email = await MySharedPref.getEmail();
       if (companyID != null && companyID != "") {
         Get.offAllNamed(Routes.APPOINTMENT);
+        // Location tracking auto-starts after appointments load (see
+        // AppointmentController._triggerLocationTrackingOnce) so the
+        // resource id is available
       } else if ((companyID == null || companyID == "") &&
           (email != null && email != "")) {
         Get.offAllNamed(Routes.LOGIN);
@@ -39,7 +42,6 @@ class SplashController extends GetxController
       }
     });
   }
-
 
   @override
   void onReady() {

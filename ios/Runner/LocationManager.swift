@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import UserNotifications
 import Flutter
 
 /**
@@ -17,13 +18,38 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     private var username: String?
     private var email: String?
 
+    // Tracking state
+    private var isTrackingRequested = false
+    private var lastLocation: CLLocation?
+    private var lastSentDate: Date?
+    private var heartbeatTimer: Timer?
+    private var trackingNotificationTimer: Timer?
+
+    /// True when the user has granted usable location permission
+    private var isAuthorized: Bool {
+        let status = locationManager?.authorizationStatus ?? CLLocationManager().authorizationStatus
+        return status == .authorizedAlways || status == .authorizedWhenInUse
+    }
+
     // Location settings
-    private let distanceFilter: CLLocationDistance = 100.0 // 100 meters
+    private let distanceFilter: CLLocationDistance = 200.0 // send when moved 200m from last delivered fix
     private let desiredAccuracy: CLLocationAccuracy = kCLLocationAccuracyHundredMeters
+
+    // Heartbeat: while stationary (no 200m movement) CoreLocation delivers
+    // nothing, so re-send the last known location after this long instead.
+    private let heartbeatInterval: TimeInterval = 1800 // 30 minutes
+    private let heartbeatCheckInterval: TimeInterval = 60
 
     // Channel names
     private static let channelName = "com.myserviceforce.myxinatorprofieldagentpro/location_events"
     private static let methodName = "startLocationTracking"
+
+    // Persistent "tracking active" notification. iOS has no un-dismissable
+    // notification like Android's foreground service, so the closest
+    // equivalent is a silent local notification kept alive in Notification
+    // Center while tracking runs (see startTrackingNotification()).
+    private static let trackingNotificationId = "location_tracking_active"
+    private static let trackingNotificationRefreshInterval: TimeInterval = 30
 
     override init() {
         super.init()
@@ -39,6 +65,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         // Configure for background tracking
         locationManager?.allowsBackgroundLocationUpdates = true
         locationManager?.pausesLocationUpdatesAutomatically = false
+        locationManager?.showsBackgroundLocationIndicator = true // blue pill while tracking runs
         locationManager?.distanceFilter = distanceFilter
         locationManager?.desiredAccuracy = desiredAccuracy
 
@@ -55,16 +82,25 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         self.userId = userId
         self.username = username
         self.email = email
+        isTrackingRequested = true
+
+        // Keep the server updated even when the device is stationary
+        startHeartbeatTimer()
+
+        // Keep a "tracking active" notification in Notification Center
+        startTrackingNotification()
 
         // Setup event channel for location updates
         setupEventChannel(messenger: messenger)
 
         // Check permission status
-        let status = CLLocationManager.authorizationStatus()
+        let status = locationManager?.authorizationStatus ?? CLLocationManager().authorizationStatus
 
         switch status {
         case .authorizedAlways, .authorizedWhenInUse:
-            startLocationUpdates()
+            // Updates start when Flutter attaches to the event channel (onListen),
+            // so the first (often cached) fix is never dropped.
+            break
         case .notDetermined:
             locationManager?.requestAlwaysAuthorization()
         case .denied, .restricted:
@@ -79,8 +115,12 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     func stopTracking() {
         NSLog("🛑 Stopping location tracking")
 
+        isTrackingRequested = false
+        stopHeartbeatTimer()
+        stopTrackingNotification()
+        lastSentDate = nil
         locationManager?.stopUpdatingLocation()
-        eventSink?.end()
+        eventSink?(FlutterEndOfEventStream)
         eventSink = nil
 
         // Clear user data
@@ -113,6 +153,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         guard let location = locations.last else { return }
 
         NSLog("📍 Location received: \(location.coordinate.latitude), \(location.coordinate.longitude), accuracy: \(location.horizontalAccuracy)m")
+        lastLocation = location
 
         // Send location to Flutter
         sendLocationEvent(location: location)
@@ -123,14 +164,21 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         sendErrorEvent(error.localizedDescription)
     }
 
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorizationStatus status: CLAuthorizationStatus) {
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
         switch status {
         case .authorizedAlways, .authorizedWhenInUse:
             NSLog("✅ Location permission granted")
-            startLocationUpdates()
+            // Only start GPS when tracking was actually requested; onListen
+            // handles the start if Flutter has not attached to the channel yet
+            if isTrackingRequested, eventSink != nil {
+                startLocationUpdates()
+            }
         case .denied, .restricted:
             NSLog("❌ Location permission denied or restricted")
-            sendErrorEvent("Location permission denied")
+            if isTrackingRequested {
+                sendErrorEvent("Location permission denied")
+            }
         case .notDetermined:
             NSLog("⏳ Location permission not determined")
         @unknown default:
@@ -157,11 +205,120 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
             "timestamp": location.timestamp.timeIntervalSince1970 * 1000, // Convert to milliseconds
             "altitude": location.altitude,
             "speed": location.speed,
-            "course": location.course
+            "heading": location.course // Dart contract reads "heading" (Android parity)
         ]
 
         eventSink(locationData)
+        lastSentDate = Date()
         NSLog("📤 Location event sent to Flutter")
+    }
+
+    // MARK: - Stationary Heartbeat
+
+    private func startHeartbeatTimer() {
+        stopHeartbeatTimer()
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: heartbeatCheckInterval, repeats: true) { [weak self] _ in
+            self?.checkHeartbeat()
+        }
+        NSLog("💓 Heartbeat armed: re-send every \(Int(heartbeatInterval / 60)) min while stationary")
+    }
+
+    private func stopHeartbeatTimer() {
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = nil
+    }
+
+    private func checkHeartbeat() {
+        guard isTrackingRequested, let last = lastLocation else { return }
+
+        let elapsed = Date().timeIntervalSince(lastSentDate ?? .distantPast)
+        guard elapsed >= heartbeatInterval else { return }
+
+        NSLog("💓 Heartbeat: stationary for \(Int(elapsed / 60)) min, re-sending last known location")
+        sendLocationEvent(location: last)
+    }
+
+    // MARK: - Persistent Tracking Notification
+
+    /// Mirrors Android's ongoing foreground-service notification as closely as
+    /// iOS allows. A repeating system trigger is deliberately avoided: it would
+    /// keep re-posting forever after a force-quit, when tracking is dead. Instead
+    /// a refresh timer re-posts only while this process (and tracking) is alive,
+    /// so a notification the user swiped away returns within
+    /// [trackingNotificationRefreshInterval] and one stale entry at most
+    /// survives a force-quit. Posted with .passive interruption level — silent,
+    /// no banner, no screen wake. Never touches UNUserNotificationCenter.delegate
+    /// (flutter_local_notifications owns it).
+    private func startTrackingNotification() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert]) { [weak self] granted, error in
+            if let error = error {
+                NSLog("⚠️ Notification authorization request failed: \(error.localizedDescription)")
+                return
+            }
+            guard granted else {
+                NSLog("⚠️ Notification permission denied — tracking status notification unavailable")
+                return
+            }
+            DispatchQueue.main.async {
+                self?.postTrackingNotification()
+                self?.startTrackingNotificationTimer()
+            }
+        }
+    }
+
+    private func startTrackingNotificationTimer() {
+        stopTrackingNotificationTimer()
+        trackingNotificationTimer = Timer.scheduledTimer(withTimeInterval: Self.trackingNotificationRefreshInterval, repeats: true) { [weak self] _ in
+            self?.ensureTrackingNotificationPresent()
+        }
+    }
+
+    private func stopTrackingNotificationTimer() {
+        trackingNotificationTimer?.invalidate()
+        trackingNotificationTimer = nil
+    }
+
+    /// Re-post only when neither a pending nor a delivered copy exists, so an
+    /// already-visible notification is never cleared and re-added (which would
+    /// make it blink in Notification Center).
+    private func ensureTrackingNotificationPresent() {
+        guard isTrackingRequested else { return }
+        let center = UNUserNotificationCenter.current()
+        center.getPendingNotificationRequests { pending in
+            if pending.contains(where: { $0.identifier == Self.trackingNotificationId }) { return }
+            center.getDeliveredNotifications { delivered in
+                if delivered.contains(where: { $0.request.identifier == Self.trackingNotificationId }) { return }
+                self.postTrackingNotification()
+            }
+        }
+    }
+
+    private func postTrackingNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Field Agent - Location Tracking"
+        content.body = "Your location is being tracked"
+        content.sound = nil
+        content.interruptionLevel = .passive // silent: NC entry only, no banner/sound/screen wake
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
+        let request = UNNotificationRequest(identifier: Self.trackingNotificationId, content: content, trigger: trigger)
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                NSLog("⚠️ Failed to schedule tracking notification: \(error.localizedDescription)")
+            } else {
+                NSLog("🔔 Tracking status notification posted")
+            }
+        }
+    }
+
+    private func stopTrackingNotification() {
+        stopTrackingNotificationTimer()
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [Self.trackingNotificationId])
+        center.removeDeliveredNotifications(withIdentifiers: [Self.trackingNotificationId])
+        NSLog("🔕 Tracking status notification removed")
     }
 
     private func sendErrorEvent(_ errorMessage: String) {
@@ -186,6 +343,18 @@ extension LocationManager: FlutterStreamHandler {
     func onListen(withArguments arguments: Any?, eventSink: @escaping FlutterEventSink) -> FlutterError? {
         self.eventSink = eventSink
         NSLog("📡 Event channel listener attached")
+
+        // Flutter is listening: safe to start GPS now so the first
+        // (often cached) fix reaches Dart instead of being dropped
+        if isTrackingRequested, isAuthorized {
+            startLocationUpdates()
+
+            // Flush the last known fix so stationary devices still report
+            if let last = lastLocation {
+                NSLog("📤 Flushing last known location to Flutter")
+                sendLocationEvent(location: last)
+            }
+        }
         return nil
     }
 

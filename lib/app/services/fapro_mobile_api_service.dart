@@ -387,6 +387,41 @@ class FaProMobileApiService {
 
   // ==================== FILES ====================
 
+  /// Download a file's raw bytes via the download op
+  ///
+  /// GET ?resource=files&op=download&id={fileId}
+  /// Streams the stored bytes to [savePath]. Errors (400/401/404) arrive as
+  /// JSON with a non-200 status, which the dio client turns into an exception.
+  Future<File?> downloadFile({
+    required String companyId,
+    required int fileId,
+    required String savePath,
+  }) async {
+    try {
+      final url = _buildUrl(
+        resource: 'files',
+        operation: 'download',
+        companyId: companyId,
+        extraParams: {'id': fileId.toString()},
+      );
+
+      kLog('GET $url');
+      final file = await _dioClient.download(
+        url: url,
+        savePath: savePath,
+        headers: ApiUrl.faProMobileAuthHeaders,
+      );
+
+      if (file != null) {
+        kLog('File $fileId downloaded: $savePath (${await file.length()} bytes)');
+      }
+      return file;
+    } catch (e) {
+      kLog('Exception downloading file $fileId: $e');
+      return null;
+    }
+  }
+
   /// Get files list for a customer and site
   Future<Map<String, dynamic>?> getFilesList({
     required String companyId,

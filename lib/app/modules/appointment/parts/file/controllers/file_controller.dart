@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
+import 'package:mime/mime.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/file/models/file_item_model.dart';
 import '../../../../../services/fapro_mobile_api_service.dart';
 import '../../../../../../utils/klog.dart';
@@ -19,6 +22,9 @@ class FileController extends GetxController with ExceptionHandler {
   final RxString filesErrorMessage = ''.obs;
   final RxBool isUploadingFile = false.obs;
   final RxDouble fileUploadProgress = 0.0.obs;
+
+  /// Ids of files currently being downloaded (guards double-taps)
+  final RxSet<int> downloadingFileIds = <int>{}.obs;
 
   // ==================== FILES METHODS ====================
 
@@ -275,6 +281,102 @@ class FileController extends GetxController with ExceptionHandler {
     }
   }
 
+  // ==================== DOWNLOAD METHODS ====================
+
+  /// Download a file to the app documents directory and open it
+  ///
+  /// Returns the saved file, or null on failure. Feedback is surfaced via
+  /// snackbars, matching the other methods in this controller.
+  Future<File?> downloadFile({
+    required FileItem file,
+    String? companyId,
+    bool openAfterDownload = true,
+  }) async {
+    if (downloadingFileIds.contains(file.id)) return null;
+    downloadingFileIds.add(file.id);
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final savePath = await _resolveSavePath(dir, file);
+
+      final savedFile = await _service.downloadFile(
+        companyId: companyId ?? '14590',
+        fileId: file.id,
+        savePath: savePath,
+      );
+
+      if (savedFile == null) {
+        Get.snackbar(
+          'Error',
+          'Failed to download ${file.fileName}',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return null;
+      }
+
+      kLog('File downloaded: ${savedFile.path} (${await savedFile.length()} bytes)');
+
+      if (openAfterDownload) {
+        final result = await OpenFilex.open(savedFile.path);
+        if (result.type != ResultType.done) {
+          Get.snackbar(
+            'Info',
+            'Downloaded to ${savedFile.path} but no app found to open it',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
+      }
+      return savedFile;
+    } catch (e) {
+      Get.snackbar('Error', 'Exception: $e', snackPosition: SnackPosition.BOTTOM);
+      return null;
+    } finally {
+      downloadingFileIds.remove(file.id);
+      files.refresh();
+    }
+  }
+
+  /// Build a collision-free save path under [dir] for [file]
+  ///
+  /// Keeps the server-provided name (sanitized), appends an extension derived
+  /// from the mime type if the name lacks one, and suffixes (1), (2)... on
+  /// re-downloads instead of overwriting earlier copies.
+  Future<String> _resolveSavePath(Directory dir, FileItem file) async {
+    final baseName = _sanitizeFileName(file.fileName);
+    final dotIndex = baseName.lastIndexOf('.');
+    final hasExtension = dotIndex > 0 && dotIndex < baseName.length - 1;
+
+    final stem = hasExtension ? baseName.substring(0, dotIndex) : baseName;
+    final extension = hasExtension
+        ? baseName.substring(dotIndex + 1)
+        : _extensionFromMimeType(file.fileType);
+
+    var candidate = extension.isNotEmpty ? '$stem.$extension' : stem;
+    var savePath = '${dir.path}/$candidate';
+    var counter = 1;
+    while (await File(savePath).exists()) {
+      candidate = '$stem (${counter++})${extension.isNotEmpty ? '.$extension' : ''}';
+      savePath = '${dir.path}/$candidate';
+    }
+    return savePath;
+  }
+
+  /// Strip characters the OS filesystems reject in file names
+  String _sanitizeFileName(String name) {
+    final cleaned = name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
+    return cleaned.isEmpty ? 'file' : cleaned;
+  }
+
+  /// Best-effort extension from the row's FileType column
+  String _extensionFromMimeType(String mimeType) {
+    if (mimeType.isEmpty) return '';
+    try {
+      final ext = extensionFromMime(mimeType);
+      return (ext == null || ext == 'bin') ? '' : ext;
+    } catch (_) {
+      return '';
+    }
+  }
+
   // ==================== GETTERS ====================
 
   /// Group files by upload date, time, and reference
@@ -310,6 +412,7 @@ class FileController extends GetxController with ExceptionHandler {
   /// Clear all data
   void clearAllData() {
     files.clear();
+    downloadingFileIds.clear();
   }
 
   @override

@@ -20,11 +20,13 @@ android {
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
-        applicationId = "com.myserviceforce.myxinatorprofieldagentpro"
+        // Must match the package name on Play Console (case-sensitive!):
+        // com.myserviceforce.myXinatorPROFieldAgentPRO
+        applicationId = "com.myserviceforce.myXinatorPROFieldAgentPRO"
         minSdk = flutter.minSdkVersion
-        targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1"
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
         multiDexEnabled = true
     }
 

@@ -27,6 +27,7 @@ class MySharedPref {
   static const String _resourceIDKey = 'resource_id';
   static const String _currentLocalKey = 'current_local';
   static const String _lightThemeKey = 'is_theme_light';
+  static const String _trackingEnabledKey = 'is_tracking_enabled';
 
   /// set email
   static setEmail(String email) =>
@@ -97,6 +98,14 @@ class MySharedPref {
   /// get if the current theme type is light
   static bool getThemeIsLight() =>
       _sharedPreferences!.getBool(_lightThemeKey) ?? true;
+
+  /// set tracking enabled
+  static Future<void> setTrackingEnabled(bool enabled) =>
+      _sharedPreferences!.setBool(_trackingEnabledKey, enabled);
+
+  /// get if tracking is enabled
+  static bool getTrackingEnabled() =>
+      _sharedPreferences!.getBool(_trackingEnabledKey) ?? false;
 
   /// save current locale
   static void setCurrentLanguage(String languageCode) =>

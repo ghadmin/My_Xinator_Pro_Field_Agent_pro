@@ -42,7 +42,7 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
       ),
       'make': TextEditingController(text: widget.equipment?.make ?? ''),
       'model': TextEditingController(text: widget.equipment?.model ?? ''),
-      'barcode': TextEditingController(text: widget.equipment?.barcode ?? ''),
+      'sku': TextEditingController(text: widget.equipment?.barcode ?? ''),
       'warrantyStart': TextEditingController(
         text: widget.equipment?.warrantyStart ?? '',
       ),
@@ -108,9 +108,10 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
       model: _controllers['model']!.text.isEmpty
           ? null
           : _controllers['model']!.text,
-      barcode: _controllers['barcode']!.text.isEmpty
+      // SKU field — sent to the API as `barcode`
+      barcode: _controllers['sku']!.text.isEmpty
           ? null
-          : _controllers['barcode']!.text,
+          : _controllers['sku']!.text,
       warrantyStart: _controllers['warrantyStart']!.text.isEmpty
           ? null
           : _controllers['warrantyStart']!.text,
@@ -307,11 +308,11 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
                           hint: 'Enter model (optional)',
                         ),
 
-                        // Barcode
+                        // SKU
                         _buildTextField(
-                          key: 'barcode',
-                          label: 'Barcode',
-                          hint: 'Enter barcode (optional)',
+                          key: 'sku',
+                          label: 'SKU',
+                          hint: 'Enter SKU (optional)',
                         ),
 
                         // Warranty Start
@@ -422,9 +423,6 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
           hintText: hint,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r)),
           contentPadding: EdgeInsets.all(16.w),
-          suffixIcon: required
-              ? const Text('*', style: TextStyle(color: Colors.red))
-              : null,
         ),
         validator: required
             ? (value) =>
@@ -477,7 +475,6 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
                         ),
                       ),
                       const Icon(Icons.arrow_drop_down),
-                      const Text('*', style: TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
@@ -536,59 +533,14 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
     _focusNodes.forEach((key, node) => node.unfocus());
 
     Get.bottomSheet(
-      Container(
-        height: Get.height * 0.9, // 90% of screen height
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              // Header
-              Padding(
-                padding: EdgeInsets.all(16.w),
-                child: Row(
-                  children: [
-                    TextWidget(
-                      text: 'Select Equipment Type',
-                      style: Get.theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => Get.back(),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-              ),
-              // Type list
-              Expanded(
-                child: ListView.separated(
-                  itemCount: widget.equipmentTypes.length,
-                  separatorBuilder: (_, __) => Divider(height: 1.h),
-                  itemBuilder: (context, index) {
-                    final type = widget.equipmentTypes[index];
-                    return Material(
-                      child: ListTile(
-                        title: Text(type.typeName),
-                        onTap: () {
-                          setState(() {
-                            _controllers['type']!.text = type.typeName;
-                          });
-                          Get.back();
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
+      _EquipmentTypeSelectorSheet(
+        equipmentTypes: widget.equipmentTypes,
+        onSelect: (typeName) {
+          setState(() {
+            _controllers['type']!.text = typeName;
+          });
+          Get.back();
+        },
       ),
       isScrollControlled: true,
     );
@@ -601,6 +553,252 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
     } catch (e) {
       return dateStr;
     }
+  }
+}
+
+/// Bottom sheet content for selecting an equipment type
+class _EquipmentTypeSelectorSheet extends StatefulWidget {
+  final List<EquipmentType> equipmentTypes;
+  final ValueChanged<String> onSelect;
+
+  const _EquipmentTypeSelectorSheet({
+    required this.equipmentTypes,
+    required this.onSelect,
+  });
+
+  @override
+  State<_EquipmentTypeSelectorSheet> createState() =>
+      _EquipmentTypeSelectorSheetState();
+}
+
+class _EquipmentTypeSelectorSheetState
+    extends State<_EquipmentTypeSelectorSheet> {
+  final _searchController = TextEditingController();
+  List<EquipmentType> _filteredTypes = [];
+  bool _addToMaster = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredTypes = widget.equipmentTypes;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterTypes(String query) {
+    setState(() {
+      final lowercaseQuery = query.toLowerCase();
+      _filteredTypes = widget.equipmentTypes
+          .where((t) => t.typeName.toLowerCase().contains(lowercaseQuery))
+          .toList();
+    });
+  }
+
+  /// Whether the current search text is an exact (case-insensitive)
+  /// match of an existing master equipment type.
+  bool _hasExactMatch(String query) => widget.equipmentTypes.any(
+        (t) => t.typeName.trim().toLowerCase() == query.trim().toLowerCase(),
+      );
+
+  /// Whether to show the custom type section — the user typed something
+  /// that is not an exact match in the master list.
+  bool get _showCustomOption =>
+      _searchController.text.trim().isNotEmpty &&
+      !_hasExactMatch(_searchController.text);
+
+  /// Add the typed text as a custom equipment type.
+  void _addCustomType() {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+
+    if (_addToMaster) {
+      // TODO(API): Save this new type to the Equipment Master List.
+      // Call the create-equipment-type API here, e.g.:
+      //   await equipmentController.addEquipmentTypeToMaster(typeName: query);
+      // On success, re-fetch equipment types so the new entry comes back
+      // with a real equipmentTypeId.
+      //
+      // NOTE: Until the API is wired up, the type below is selected by name
+      // only — the equipment is saved without an equipmentTypeId.
+    }
+
+    // With the toggle OFF the name is used for this equipment only
+    // (equipmentTypeId stays null).
+    widget.onSelect(query);
+  }
+
+  /// Custom type section — lets the user use the typed text as a new
+  /// equipment type, optionally saving it to the Equipment Master List.
+  Widget _buildCustomTypeSection() {
+    final query = _searchController.text.trim();
+    return Container(
+      margin: EdgeInsets.fromLTRB(16.w, 0, 16.w, 0),
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Use the typed text as a custom type
+          InkWell(
+            onTap: _addCustomType,
+            borderRadius: BorderRadius.circular(8.r),
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 4.h),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.add_circle_outline,
+                    size: 20.sp,
+                    color: Colors.blue[700],
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Text(
+                      'Add "$query" (custom)',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Toggle — when ON, the type is also saved to the Equipment
+          // Master List via API; when OFF it is used for this equipment only
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Add to Equipment Master List',
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ),
+              Switch(
+                value: _addToMaster,
+                activeThumbColor: LightThemeColors.primaryColor,
+                onChanged: (value) => setState(() => _addToMaster = value),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: Get.height * 0.9, // 90% of screen height
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            // Header
+            Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Row(
+                children: [
+                  TextWidget(
+                    text: 'Select Equipment Type',
+                    style: Get.theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            // Search bar
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: TextField(
+                controller: _searchController,
+                onChanged: _filterTypes,
+                decoration: InputDecoration(
+                  hintText: 'Search equipment type',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            _filterTypes('');
+                          },
+                          icon: const Icon(Icons.clear),
+                        ),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 14.h,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 8.h),
+
+            // Custom type section — shown when the typed text is not an
+            // exact match in the master list
+            if (_showCustomOption) _buildCustomTypeSection(),
+
+            // Type list
+            Expanded(
+              child: _filteredTypes.isEmpty
+                  ? Center(
+                      child: Text(
+                        _showCustomOption
+                            ? 'No matching equipment types.\nTap the Add option above to create one.'
+                            : 'No equipment types found',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: _filteredTypes.length,
+                      separatorBuilder: (_, __) => Divider(height: 1.h),
+                      itemBuilder: (context, index) {
+                        final type = _filteredTypes[index];
+                        return Material(
+                          child: ListTile(
+                            title: Text(type.typeName),
+                            onTap: () => widget.onSelect(type.typeName),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

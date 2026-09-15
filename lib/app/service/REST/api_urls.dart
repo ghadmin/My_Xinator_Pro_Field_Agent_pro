@@ -1,9 +1,9 @@
 class ApiUrl {
   /// Base URL
+   static const baseUrl =
+       "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
   // static const baseUrl =
-  //     "https://testsite.myserviceforce.com/cec/Services/DeviceService.asmx";
-  static const baseUrl =
-      "https://mxp.myserviceforce.com/cec/Services/DeviceService.asmx";
+  //     "https://mxp.myserviceforce.com/cec/Services/DeviceService.asmx";
   // "https://jobs-msschedules.myserviceforce.com/Services/DeviceService.asmx";
 
   static const paymentBaseUrl =
@@ -73,6 +73,8 @@ class ApiUrl {
       "$baseUrl/GetAllAppointmentCustomFields";
   static const saveAttachedCustomFieldsUrl =
       "$baseUrl/SaveAppointmentCustomFields";
+  static const deleteAppointmentCustomFieldsUrl =
+      "$baseUrl/DeleteAppointmentCustomFields";
   static const generateTuaPaymentLink = "$baseUrl/GenerateTuaPaymentLink";
   static const getCustomerSitesUrl = "$baseUrl/GetCustomerSites";
   static const getAllCustomerSitesUrl = '$baseUrl/GetCustomerSiteList';

@@ -88,6 +88,11 @@ class _SignatureDialogModalState extends State<SignatureDialogModal>
     _provider.clearDrawnSignature();
     _nameController.clear();
     _provider.fullName.value = '';
+    // The provider is a globally registered GetX instance that survives across
+    // dialog opens. Re-sync its tab index with this dialog's actual tab,
+    // otherwise a stale index (e.g. left on "Type" from a previous session)
+    // keeps the Save button disabled even after drawing.
+    _provider.currentTabIndex.value = _tabController.index;
     kLog('Signature cleared');
   }
 
@@ -222,22 +227,6 @@ class _SignatureDialogModalState extends State<SignatureDialogModal>
                 controller: _signatureController,
                 backgroundColor: Colors.white,
                 height: 300.h,
-              ),
-            ),
-          ),
-
-          SizedBox(height: 16.h),
-
-          // Clear button
-          Obx(
-            () => ElevatedButton.icon(
-              onPressed: _provider.drawnSignatureData.isNotEmpty
-                  ? _clearSignature
-                  : null,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Clear Canvas'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
               ),
             ),
           ),

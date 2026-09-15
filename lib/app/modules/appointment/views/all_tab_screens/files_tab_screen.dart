@@ -1,22 +1,15 @@
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:video_player/video_player.dart';
 import 'package:myxinator_pro_field_agent_pro/app/components/global-widgets/my_snackbar.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/appointment_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/file/controllers/file_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/parts/file/models/file_item_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/widgets/warm_organic_components.dart';
-import 'package:myxinator_pro_field_agent_pro/app/service/REST/api_urls.dart';
-import 'package:myxinator_pro_field_agent_pro/app/service/REST/dio_client.dart';
 import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
 
@@ -460,6 +453,12 @@ class _FilesTabScreenState extends State<FilesTabScreen> {
   }
 
   Future<void> _downloadFile(FileItem file) async {
+    final appointment = controller.selectedAppointment.value;
+    if (appointment == null) {
+      MySnackBar.showErrorToast(message: "No appointment selected");
+      return;
+    }
+
     if (!mounted) return;
 
     // Show loading dialog
@@ -470,45 +469,12 @@ class _FilesTabScreenState extends State<FilesTabScreen> {
           const Center(child: CircularProgressIndicator()),
     );
 
-    try {
-      kLog("Downloading file: ${file.fileName} from ${file.fileUrl}");
+    await fileController.downloadFile(
+      file: file,
+      companyId: appointment.companyID,
+    );
 
-      // Use the simple download approach with app's dio instance
-      final dio = Dio(); // This should use the same dio instance used for app login
-      final fileName = file.fileName;
-      final extension = file.extension;
-
-      String finalFileName = fileName;
-      if (!fileName.endsWith('.$extension')) {
-        finalFileName = '$fileName.$extension';
-      }
-
-      final dir = await getApplicationDocumentsDirectory();
-      final savePath = '${dir.path}/$finalFileName';
-
-      await dio.download(file.fileUrl, savePath);
-
-      kLog("File downloaded successfully to: $savePath");
-
-      if (mounted) Navigator.pop(context);
-
-      // Verify file was saved
-      final savedFile = File(savePath);
-      if (await savedFile.exists()) {
-        final fileSize = await savedFile.length();
-        MySnackBar.showToast(
-          message: 'Downloaded: ${file.fileName} (${(fileSize / 1024).toStringAsFixed(1)} KB)',
-        );
-        kLog("File saved successfully. Size: $fileSize bytes");
-      } else {
-        MySnackBar.showErrorToast(message: 'File was not saved properly');
-      }
-    } catch (e, s) {
-      kLog("Download failed: $e");
-      kLog("Stack trace: $s");
-      if (mounted) Navigator.pop(context);
-      MySnackBar.showErrorToast(message: 'Failed to download file: ${e.toString()}');
-    }
+    if (mounted) Navigator.pop(context);
   }
 
   bool _isImageFile(String? fileType) {

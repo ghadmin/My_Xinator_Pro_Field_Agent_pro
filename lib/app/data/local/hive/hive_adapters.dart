@@ -7,6 +7,7 @@ import '../../../modules/item/models/item_group_model.dart';
 import '../../../modules/item/models/item_bundle_model.dart';
 import '../../../modules/settings/models/appointment_status_setting.dart';
 import '../../../modules/settings/models/ticket_status_model.dart';
+import '../../../service/location/models/pending_location_model.dart';
 import 'my_hive.dart';
 
 class HiveAdapters {
@@ -25,7 +26,6 @@ class HiveAdapters {
         ..registerAdapter(PaymentAdapter())
         ..registerAdapter(SignatureAdapter())
         ..registerAdapter(scheduling_models.PaymentSignatureAdapter())
-
         // HiveAdapter for TicketStatusSettings
         ..registerAdapter(TicketStatusSettingsAdapter())
         // HiveAdapter for AppointmentStatusSetting
@@ -39,7 +39,8 @@ class HiveAdapters {
         // HiveAdapter for ItemGroupModel
         ..registerAdapter(ItemGroupModelAdapter())
         // HiveAdapter for ItemBundleModel
-        ..registerAdapter(ItemBundleModelAdapter());
+        ..registerAdapter(ItemBundleModelAdapter())
+        ..registerAdapter(PendingLocationModelAdapter());
     });
   }
 }

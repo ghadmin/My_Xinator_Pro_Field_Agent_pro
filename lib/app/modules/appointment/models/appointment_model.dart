@@ -1866,6 +1866,9 @@ class Invoices {
   @HiveField(30)
   String? _qboLocationId;
   // "QboLocationId": null,
+  @HiveField(31)
+  bool? _isWarranty;
+  // "IsWarranty": null,
 
   Invoices({
     String? invoiceID,
@@ -1898,6 +1901,7 @@ class Invoices {
     dynamic requestedAmountType,
     String? qboClassId,
     String? qboLocationId,
+    bool? isWarranty,
     List<Payment>? paymentList,
   }) {
     _invoiceID = invoiceID;
@@ -1910,6 +1914,7 @@ class Invoices {
     _qBOId = qBOId;
     _qboClassId = qboClassId;
     _qboLocationId = qboLocationId;
+    _isWarranty = isWarranty ?? false;
     _number = number;
     _invoiceDate = invoiceDate;
     _subtotal = subtotal;
@@ -1952,6 +1957,7 @@ class Invoices {
     _status = json['Status'];
     _qboClassId = json['QboClassId']?.toString();
     _qboLocationId = json['QboLocationId']?.toString();
+    _isWarranty = json['IsWarranty'] == true || json['IsWarranty'] == 'true';
     _type = json['Type'] == "Proposal" ? "Estimate" : json['Type'];
     _note = json['Note'];
     _due = json['Due'];
@@ -2002,6 +2008,7 @@ class Invoices {
     dynamic surcharge,
     String? qboClassId,
     String? qboLocationId,
+    bool? isWarranty,
     List<Items>? items,
     String? discountOption,
     String? taxType,
@@ -2027,6 +2034,7 @@ class Invoices {
     tax: tax ?? _tax,
     qboClassId: qboClassId ?? _qboClassId,
     qboLocationId: qboLocationId ?? _qboLocationId,
+    isWarranty: isWarranty ?? _isWarranty,
     status: status ?? _status,
     type: type ?? _type,
     note: note ?? _note,
@@ -2065,6 +2073,7 @@ class Invoices {
   String? get due => _due;
   String? get qboClassId => _qboClassId;
   String? get qboLocationId => _qboLocationId;
+  bool get isWarranty => _isWarranty ?? false;
   bool? get isConverted => _isConverted;
   String? get convertedInvoiceID => _convertedInvoiceID;
   dynamic get surcharge => _surcharge;
@@ -2089,6 +2098,7 @@ class Invoices {
     map['Number'] = _number;
     map['QboClassId'] = _qboClassId;
     map['QboLocationId'] = _qboLocationId;
+    map['IsWarranty'] = _isWarranty ?? false;
     map['InvoiceDate'] = _invoiceDate;
     map['Subtotal'] = _subtotal;
     map['AmountCollect'] = _amountCollect;

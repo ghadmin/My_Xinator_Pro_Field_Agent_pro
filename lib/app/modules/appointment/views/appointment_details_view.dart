@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
@@ -30,6 +31,7 @@ import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/text_widget.dart';
+import '../../../components/signature/signature_dialog.dart';
 import '../../../modules/forms/controllers/forms_controller.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/appointment_controller.dart';
@@ -175,6 +177,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
     return Theme(
       data: WarmOrganicBlueTheme.themeData,
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: Get.size.width <= 440
             ? AppBar(elevation: 1, title: Text("Appointment Details"))
             : PreferredSize(
@@ -342,11 +345,17 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                                                 top: 0,
                                                 right: 0,
                                                 child: GestureDetector(
-                                                  onTap: () {
-                                                    customFieldsController
-                                                        .selectedCustomFields
-                                                        .removeAt(index);
-                                                    setState(() {});
+                                                  onTap: () async {
+                                                    await customFieldsController
+                                                        .deleteAppointmentCustomField(
+                                                          appointmentId: controller
+                                                              .selectedAppointment
+                                                              .value!
+                                                              .apptID,
+                                                          fieldId:
+                                                              field.fieldID ??
+                                                              0,
+                                                        );
                                                   },
                                                   child: Container(
                                                     padding: EdgeInsets.all(
@@ -2571,6 +2580,134 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
             onChanged: (value) => field.numberValue = value,
           ),
         ],
+      );
+
+    case 'time':
+      return StatefulBuilder(
+        builder: (context, setFieldState) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                field.fieldName!,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              SizedBox(height: 10.h),
+              InkWell(
+                onTap: () async {
+                  final TimeOfDay? picked = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.now(),
+                  );
+                  if (picked == null) return;
+                  field.timeValue = DateFormat(
+                    'hh:mm a',
+                  ).format(DateTime(2000, 1, 1, picked.hour, picked.minute));
+                  setFieldState(() {});
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: "Select ${field.fieldName}",
+                    suffixIcon: Icon(Icons.access_time),
+                  ),
+                  child: Text(
+                    field.timeValue ?? '',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+    case 'date':
+      return StatefulBuilder(
+        builder: (context, setFieldState) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                field.fieldName!,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              SizedBox(height: 10.h),
+              InkWell(
+                onTap: () async {
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (picked == null) return;
+                  field.dateValue = DateFormat('MM/dd/yyyy').format(picked);
+                  setFieldState(() {});
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: "Select ${field.fieldName}",
+                    suffixIcon: Icon(Icons.calendar_today_outlined),
+                  ),
+                  child: Text(
+                    field.dateValue ?? '',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+    case 'signature':
+      return StatefulBuilder(
+        builder: (context, setFieldState) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                field.fieldName!,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              SizedBox(height: 10.h),
+              InkWell(
+                onTap: () async {
+                  await showSignatureDialog(
+                    context: context,
+                    title: field.fieldName!,
+                    onSignatureSaved: (signatureBase64, fullName) {
+                      field.signatureValue = signatureBase64;
+                      setFieldState(() {});
+                    },
+                  );
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.draw_outlined),
+                  ),
+                  child: (field.signatureValue ?? '').isNotEmpty
+                      ? Image.memory(
+                          base64Decode(field.signatureValue!.split(',').last),
+                          height: 100.h,
+                          fit: BoxFit.contain,
+                          alignment: Alignment.centerLeft,
+                        )
+                      : Text(
+                          "Tap to sign",
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                ),
+              ),
+            ],
+          );
+        },
       );
 
     default:

@@ -2091,6 +2091,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
                 inputTime: DateTime.now().toString(),
                 outputFormat: "yyyy/MM/dd",
               ),
+              'IsWarranty': forNonCoveredItems.value,
               "AmountCollect": 0.00,
               "TaxType": selectedTaxID.value,
               "AppointmentId": appointmentID,
@@ -2138,7 +2139,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
           },
         )
         .catchError(handleError);
-
     if (response == null) return;
 
     invoiceID.value = response["Id"].toString();

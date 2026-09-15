@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../../../utils/version_controller.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/my_shared_pref.dart';
+import '../../../modules/location_tracking/controllers/location_tracking_controller.dart';
 import '../../../routes/app_pages.dart';
 import '../../../service/REST/api_urls.dart';
 import '../../../service/REST/dio_client.dart';
@@ -172,6 +173,18 @@ class AuthController extends GetxController with ExceptionHandler {
   Future<void> doLogout() async {
     showLoading();
     await 2.delay();
+
+    // Stop location tracking and clear its queued/sync state before the
+    // session data goes away
+    try {
+      final locationController = Get.isRegistered<LocationTrackingController>()
+          ? Get.find<LocationTrackingController>()
+          : Get.put(LocationTrackingController());
+      await locationController.clearUserData();
+    } catch (e) {
+      log('❌ Failed to stop location tracking on logout: $e');
+    }
+
     await MySharedPref.clearExceptEmail();
     appointmentController.stop();
     hideLoading();

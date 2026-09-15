@@ -35,10 +35,25 @@ class LocationForegroundService : Service() {
         private const val ACTION_START_TRACKING = "ACTION_START_TRACKING"
         private const val ACTION_STOP_TRACKING = "ACTION_STOP_TRACKING"
 
-        // Location settings (updated to 5 minutes as per FaProTrack spec)
-        private const val UPDATE_INTERVAL_IN_MILLISECONDS = 300000L // 5 minutes
-        private const val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 150000L // 2.5 minutes
-        private const val SMALLEST_DISPLACEMENT_IN_METERS = 100f // 100 meters
+        // Location settings (distance-based sending per FaProTrack spec):
+        // GPS samples frequently, but a location is only forwarded to Flutter
+        // when the device has moved SEND_DISTANCE_THRESHOLD meters from the
+        // last forwarded location — sending is distance-triggered, not time-based.
+        private const val UPDATE_INTERVAL_IN_MILLISECONDS = 30000L // 30s sampling cadence
+        private const val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 15000L // 15s
+        private const val SEND_DISTANCE_THRESHOLD_IN_METERS = 200f // 200 meters
+
+        // SharedPreferences keys for the last location forwarded to Flutter
+        private const val PREFS_NAME = "location_data"
+        private const val PREF_LAST_LOCATION_DATA = "last_location_data"
+        private const val PREF_LAST_LOCATION_ERROR = "last_location_error"
+        private const val PREF_LAST_SENT_LAT = "last_sent_lat"
+        private const val PREF_LAST_SENT_LNG = "last_sent_lng"
+        private const val PREF_LAST_SENT_TIME = "last_sent_time"
+
+        // Heartbeat: when the device is stationary, re-send the current location
+        // after this long so the server keeps receiving updates.
+        private const val HEARTBEAT_INTERVAL_IN_MILLISECONDS = 1800000L // 30 minutes
 
         // User data extras
         private const val EXTRA_COMPANY_ID = "company_id"
@@ -93,8 +108,8 @@ class LocationForegroundService : Service() {
          */
         fun getLastLocationData(context: Context): String? {
             android.util.Log.d(TAG, "📡 [NATIVE-POLL] Flutter polling for location data...")
-            val prefs = context.getSharedPreferences("location_data", Context.MODE_PRIVATE)
-            val locationData = prefs.getString("last_location_data", null)
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val locationData = prefs.getString(PREF_LAST_LOCATION_DATA, null)
 
             if (locationData != null) {
                 android.util.Log.d(TAG, "✅ [NATIVE-POLL] Location data found: ${locationData.length} chars")
@@ -109,16 +124,22 @@ class LocationForegroundService : Service() {
          * Get the last location error for Flutter
          */
         fun getLastLocationError(context: Context): String? {
-            val prefs = context.getSharedPreferences("location_data", Context.MODE_PRIVATE)
-            return prefs.getString("last_location_error", null)
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            return prefs.getString(PREF_LAST_LOCATION_ERROR, null)
         }
 
         /**
-         * Clear location data
+         * Clear pending location data handed to Flutter.
+         * Preserves the last-sent reference point used by the distance gate —
+         * Flutter calls this after every pickup, and wiping the reference
+         * would make every GPS sample send again.
          */
         fun clearLocationData(context: Context) {
-            val prefs = context.getSharedPreferences("location_data", Context.MODE_PRIVATE)
-            prefs.edit().clear().apply()
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .remove(PREF_LAST_LOCATION_DATA)
+                .remove(PREF_LAST_LOCATION_ERROR)
+                .apply()
         }
     }
 
@@ -145,31 +166,14 @@ class LocationForegroundService : Service() {
         // Create notification channel
         createNotificationChannel()
 
-        // Setup location callback with enhanced error handling
+        // Setup location callback
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                try {
-                    android.util.Log.d(TAG, "🛰️ [NATIVE] Location callback fired!")
-                    locationResult.lastLocation?.let { location ->
-                        android.util.Log.d(TAG, "📍 [NATIVE] Raw GPS location received: ${location.latitude}, ${location.longitude}")
-                        handleLocationUpdate(location)
-                    } ?: android.util.Log.w(TAG, "⚠️ [NATIVE] Location result had no last location")
-                } catch (e: SecurityException) {
-                    android.util.Log.e(TAG, "🔒 [NATIVE] Security exception in location callback: ${e.message}")
-                    sendLocationErrorToFlutter("PERMISSION_DENIED", "Location permission denied in callback")
-                } catch (e: Exception) {
-                    android.util.Log.e(TAG, "❌ [NATIVE] Error processing location in callback: ${e.message}")
-                    sendLocationErrorToFlutter("LOCATION_ERROR", "Failed to process location: ${e.message}")
-                }
-            }
-
-            override fun onLocationAvailability(availability: com.google.android.gms.location.LocationAvailability) {
-                if (!availability.isLocationAvailable) {
-                    android.util.Log.w(TAG, "⚠️ [NATIVE] Location services unavailable")
-                    sendLocationErrorToFlutter("LOCATION_UNAVAILABLE", "Location services currently unavailable")
-                } else {
-                    android.util.Log.d(TAG, "✅ [NATIVE] Location services available")
-                }
+                android.util.Log.d(TAG, "🛰️ [NATIVE] Location callback fired!")
+                locationResult.lastLocation?.let { location ->
+                    android.util.Log.d(TAG, "📍 [NATIVE] Raw GPS location received: ${location.latitude}, ${location.longitude}")
+                    handleLocationUpdate(location)
+                } ?: android.util.Log.w(TAG, "⚠️ [NATIVE] Location result had no last location")
             }
         }
 
@@ -220,7 +224,6 @@ class LocationForegroundService : Service() {
         return LocationRequest.create().apply {
             interval = UPDATE_INTERVAL_IN_MILLISECONDS
             fastestInterval = FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS
-            smallestDisplacement = SMALLEST_DISPLACEMENT_IN_METERS
             priority = Priority.PRIORITY_BALANCED_POWER_ACCURACY
         }
     }
@@ -236,7 +239,7 @@ class LocationForegroundService : Service() {
                         Looper.getMainLooper()
                     )
                     android.util.Log.d(TAG, "✅ [NATIVE] Location updates requested successfully")
-                    android.util.Log.d(TAG, "⏰ [NATIVE] GPS updates will occur every ${UPDATE_INTERVAL_IN_MILLISECONDS}ms")
+                    android.util.Log.d(TAG, "📏 [NATIVE] Location will be sent when device moves ${SEND_DISTANCE_THRESHOLD_IN_METERS}m from last sent location")
                 }
             }
         } catch (e: SecurityException) {
@@ -253,6 +256,13 @@ class LocationForegroundService : Service() {
 
     private fun handleLocationUpdate(location: Location) {
         android.util.Log.d(TAG, "Location update: ${location.latitude}, ${location.longitude}, accuracy: ${location.accuracy}")
+
+        // Distance gate: only forward when the device moved far enough from
+        // the last location we actually sent to Flutter.
+        if (!shouldSendLocation(location)) {
+            android.util.Log.d(TAG, "⏭️ [NATIVE] Skipped: moved less than ${SEND_DISTANCE_THRESHOLD_IN_METERS}m from last sent location")
+            return
+        }
 
         // Send location to Flutter via MainActivity
         val locationData = mapOf(
@@ -285,8 +295,58 @@ class LocationForegroundService : Service() {
 
         sendLocationToFlutter(locationDataWithMetadata)
 
+        // Remember this location as the new reference point for the distance gate
+        storeLastSentLocation(location)
+
         // Update notification to show recent location
         updateNotification(location)
+    }
+
+    /**
+     * Distance gate: a location is only forwarded when it is the first fix
+     * after start, or when the device has moved at least
+     * [SEND_DISTANCE_THRESHOLD_IN_METERS] from the last location that was
+     * actually sent to Flutter.
+     */
+    private fun shouldSendLocation(location: Location): Boolean {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val lastLat = prefs.getFloat(PREF_LAST_SENT_LAT, Float.NaN)
+        val lastLng = prefs.getFloat(PREF_LAST_SENT_LNG, Float.NaN)
+
+        // No reference point yet (fresh install / cleared data) — always send
+        if (lastLat.isNaN() || lastLng.isNaN()) return true
+
+        val lastSent = Location("lastSent").apply {
+            latitude = lastLat.toDouble()
+            longitude = lastLng.toDouble()
+        }
+        val distance = lastSent.distanceTo(location)
+        android.util.Log.d(TAG, "📏 [NATIVE] Distance from last sent location: ${String.format("%.1f", distance)}m")
+        if (distance >= SEND_DISTANCE_THRESHOLD_IN_METERS) return true
+
+        // Heartbeat: stationary for too long — send the current location anyway
+        val lastSentTime = prefs.getLong(PREF_LAST_SENT_TIME, 0L)
+        if (lastSentTime > 0L) {
+            val elapsed = System.currentTimeMillis() - lastSentTime
+            if (elapsed >= HEARTBEAT_INTERVAL_IN_MILLISECONDS) {
+                android.util.Log.d(TAG, "💓 [NATIVE] Heartbeat: stationary for ${elapsed / 60000} min, sending current location")
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun storeLastSentLocation(location: Location) {
+        try {
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit()
+                .putFloat(PREF_LAST_SENT_LAT, location.latitude.toFloat())
+                .putFloat(PREF_LAST_SENT_LNG, location.longitude.toFloat())
+                .putLong(PREF_LAST_SENT_TIME, System.currentTimeMillis())
+                .apply()
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "❌ [NATIVE] Error storing last sent location: ${e.message}")
+        }
     }
 
     /**
@@ -297,7 +357,7 @@ class LocationForegroundService : Service() {
             android.util.Log.d(TAG, "📍 [NATIVE] Storing location data for Flutter polling...")
 
             // Store location data for Flutter to retrieve
-            val prefs = getSharedPreferences("location_data", Context.MODE_PRIVATE)
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             prefs.edit().apply {
                 // Convert Map to JSON string
                 val json = org.json.JSONObject(locationData).toString()
@@ -307,7 +367,7 @@ class LocationForegroundService : Service() {
                 val encoded = android.util.Base64.encodeToString(json.toByteArray(), android.util.Base64.NO_WRAP)
                 android.util.Log.d(TAG, "🔐 [NATIVE] Encoded location data (${encoded.length} chars)")
 
-                putString("last_location_data", encoded)
+                putString(PREF_LAST_LOCATION_DATA, encoded)
                 putLong("last_location_time", System.currentTimeMillis())
                 apply()
             }
@@ -320,28 +380,16 @@ class LocationForegroundService : Service() {
     }
 
     /**
-     * Send location error to Flutter application with enhanced error details
+     * Send location error to Flutter application
      */
-    private fun sendLocationErrorToFlutter(errorCode: String, errorMessage: String) {
+    private fun sendLocationErrorToFlutter(error: String) {
         try {
-            android.util.Log.e(TAG, "Location error [$errorCode]: $errorMessage")
-
+            android.util.Log.e(TAG, "Location error: $error")
             // Store error for Flutter to retrieve
-            val prefs = getSharedPreferences("location_data", Context.MODE_PRIVATE)
-            val errorData = mapOf(
-                "error_code" to errorCode,
-                "error_message" to errorMessage,
-                "timestamp" to System.currentTimeMillis()
-            )
-
-            prefs.edit().apply {
-                putString("last_location_error", org.json.JSONObject(errorData).toString())
-                apply()
-            }
-
-            android.util.Log.d(TAG, "✅ [NATIVE] Error data stored for Flutter: $errorCode")
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putString(PREF_LAST_LOCATION_ERROR, error).apply()
         } catch (e: Exception) {
-            android.util.Log.e(TAG, "❌ [NATIVE] Error sending location error to Flutter: ${e.message}")
+            android.util.Log.e(TAG, "Error sending location error to Flutter: ${e.message}")
         }
     }
 
@@ -374,8 +422,10 @@ class LocationForegroundService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Field Agent - Location Tracking")
             .setContentText("Your location is being tracked")
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
 
@@ -388,7 +438,9 @@ class LocationForegroundService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Field Agent - Location Tracking")
             .setContentText("Last update: $timestamp (${String.format("%.1f", location.accuracy)}m accuracy)")
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
 

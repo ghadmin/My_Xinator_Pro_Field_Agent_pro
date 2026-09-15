@@ -55,12 +55,8 @@ class MySnackBar {
           ],
         ),
         backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.fixed,
-        margin: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 10,
-          left: 10,
-          right: 10,
-        ),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(left: 10, right: 10, bottom: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -111,12 +107,8 @@ class MySnackBar {
           ],
         ),
         backgroundColor: color ?? Colors.redAccent,
-        behavior: SnackBarBehavior.fixed,
-        margin: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 10,
-          left: 10,
-          right: 10,
-        ),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(left: 10, right: 10, bottom: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );

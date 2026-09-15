@@ -25,6 +25,8 @@ import '../../../service/helper/network_connectivity.dart';
 import '../../customer/controllers/customer_controller.dart';
 import '../../invoice/controllers/invoice_controller.dart';
 import '../../item/models/item_list_model.dart';
+// TODO: re-enable location tracking
+import '../../location_tracking/controllers/location_tracking_controller.dart';
 import '../../settings/controllers/settings_controller.dart';
 import '../models/appointment_model.dart';
 import '../models/file_model.dart';
@@ -57,8 +59,15 @@ class AppointmentController extends GetxController
 
     WidgetsBinding.instance.addObserver(this);
 
-    Future.delayed(const Duration(seconds: 3), () {
-      // startPeriodic();
+    // Initial appointments load: the connectivity listener only refreshes on
+    // reconnect transitions, so without this the list (and the location
+    // tracking auto-start, which needs the resource id from appointments)
+    // never loads on a normal launch. Delayed so login prefs are ready.
+    Future.delayed(const Duration(seconds: 6), () {
+      final companyId = MySharedPref.getCompanyID();
+      if (companyId != null && companyId.isNotEmpty && appointments.isEmpty) {
+        getAppointments(showLoader: false);
+      }
     });
   }
 
@@ -128,6 +137,9 @@ class AppointmentController extends GetxController
   final appointments = RxList<Appointments>();
   final extendedAppointments = RxList<Appointments>();
   final sortedAppointments = RxList<Appointments>();
+
+  /// Ensures the location-tracking auto-start runs only once per session
+  bool _locationTrackingTriggered = false;
   final selectedDateString = RxString('');
   final isEquipmentExpanded = RxBool(false);
 
@@ -844,6 +856,32 @@ class AppointmentController extends GetxController
     _pollingTimer = null;
   }
 
+  /// Auto-starts location tracking once appointment data (and its resource id)
+  /// is available. Runs at most once per session and only when the user has
+  /// the Tracking switch enabled in the drawer.
+  void _triggerLocationTrackingOnce() {
+    if (_locationTrackingTriggered) return;
+    _locationTrackingTriggered = true;
+
+    if (!MySharedPref.getTrackingEnabled()) {
+      kLog('📍 Tracking switch is off, tracking stays off until the user '
+          'enables it from the drawer');
+      return;
+    }
+
+    Future(() async {
+      try {
+        final locationController = Get.isRegistered<LocationTrackingController>()
+            ? Get.find<LocationTrackingController>()
+            : Get.put(LocationTrackingController());
+        await locationController.initializeTracking();
+        await locationController.startTracking();
+      } catch (e) {
+        kLog('❌ Location tracking auto-start failed: $e');
+      }
+    });
+  }
+
   Future<void> getAppointments({bool showLoader = true}) async {
     try {
       if (showLoader) showLoading();
@@ -869,7 +907,7 @@ class AppointmentController extends GetxController
               },
             )
             .catchError(!showLoader ? handleError : () {});
-        log("refreshing appointments ${jsonEncode(response)}");
+        log("refreshing appointments ${jsonEncode(response)} ");
         if (response == null) {
           hideLoading();
           showEmptyWidget();
@@ -893,6 +931,7 @@ class AppointmentController extends GetxController
               // )
               .toList(),
         );
+        _triggerLocationTrackingOnce();
 
         sortedAppointments.assignAll(
           response
@@ -935,6 +974,7 @@ class AppointmentController extends GetxController
         if (savedAppointments.isNotEmpty) {
           appointments.assignAll(savedAppointments);
           savedAppointments.assignAll(savedAppointments);
+          _triggerLocationTrackingOnce();
           //hideLoading();
           MySnackBar.showErrorToast(message: "No network!");
           NetworkConnectivity.connectionChangeCount = 1;
