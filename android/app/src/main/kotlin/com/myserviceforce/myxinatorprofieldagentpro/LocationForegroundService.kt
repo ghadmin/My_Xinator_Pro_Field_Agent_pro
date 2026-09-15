@@ -437,7 +437,7 @@ class LocationForegroundService : Service() {
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Field Agent - Location Tracking")
-            .setContentText("Last update: $timestamp (${String.format("%.1f", location.accuracy)}m accuracy)")
+            .setContentText("Location is being sent - last update $timestamp (${String.format("%.1f", location.accuracy)}m accuracy)")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

@@ -211,6 +211,11 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         eventSink(locationData)
         lastSentDate = Date()
         NSLog("📤 Location event sent to Flutter")
+
+        // Keep the notification-bar indicator truthful: bump "last update"
+        // like Android's foreground service does. Same identifier replaces
+        // the delivered copy in place — no duplicate entries.
+        postTrackingNotification(immediate: true)
     }
 
     // MARK: - Stationary Heartbeat
@@ -294,14 +299,30 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    private func postTrackingNotification() {
+    private func postTrackingNotification(immediate: Bool = false) {
         let content = UNMutableNotificationContent()
         content.title = "Field Agent - Location Tracking"
-        content.body = "Your location is being tracked"
+
+        // Body mirrors Android's foreground-service notification: once a fix
+        // has been delivered, show when it was last sent so the user can see
+        // from the notification bar that location is actively being sent.
+        if let sent = lastSentDate {
+            let time = Self.notificationTimeFormatter.string(from: sent)
+            content.body = "Location is being sent — last update \(time)"
+        } else {
+            content.body = "Your location is being tracked"
+        }
+
+        // Shown in place of the body when iOS masks preview content (lock
+        // screen with previews hidden), instead of a bare "Notification".
+        content.hiddenPreviewsBodyPlaceholder = "Location is being sent"
+
         content.sound = nil
         content.interruptionLevel = .passive // silent: NC entry only, no banner/sound/screen wake
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
+        let trigger: UNNotificationTrigger? = immediate
+            ? nil // replaces a delivered copy right away when refreshing after a send
+            : UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
         let request = UNNotificationRequest(identifier: Self.trackingNotificationId, content: content, trigger: trigger)
 
         UNUserNotificationCenter.current().add(request) { error in
@@ -312,6 +333,12 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
             }
         }
     }
+
+    private static let notificationTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
 
     private func stopTrackingNotification() {
         stopTrackingNotificationTimer()

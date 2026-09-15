@@ -181,10 +181,10 @@ class LocationNotificationService {
     );
 
     await _notificationsPlugin.show(
-     id: id,
-     title: title,
-    body:  body,
-      
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: platformChannelSpecifics,
     );
 
     log('📱 Notification shown: $title');
