@@ -306,6 +306,13 @@ class LocationTrackingController extends GetxController
             '⚠️ Background location permission not granted, foreground tracking may work',
           );
           await _showBackgroundLocationWarning();
+          // "Open App Settings" sends the user to OS settings in the middle of
+          // this start attempt. Abort here instead of continuing in the
+          // background (requesting the notification permission / starting the
+          // native service from the background fails on Android 12+) —
+          // tracking auto-starts when the user returns, via
+          // didChangeAppLifecycleState → _resumeTrackingStartAfterSettings.
+          if (_pendingSettingsReturn) return false;
         }
       }
 
@@ -522,7 +529,10 @@ class LocationTrackingController extends GetxController
           'only track your location while it is open. For continuous tracking, '
           '$howToEnable',
       primaryLabel: 'Open App Settings',
-      onPrimary: openAppSettings,
+      onPrimary: () {
+        _pendingSettingsReturn = true;
+        openAppSettings();
+      },
       secondaryLabel: 'I Understand',
       barrierDismissible: false,
     );

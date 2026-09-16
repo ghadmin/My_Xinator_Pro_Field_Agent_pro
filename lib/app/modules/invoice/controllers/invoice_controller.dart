@@ -1272,7 +1272,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     webController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..enableZoom(true)
-      ..setBackgroundColor(Colors.white)
+      ..setBackgroundColor(Colors.transparent)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
@@ -1281,14 +1281,36 @@ class InvoiceController extends GetxController with ExceptionHandler {
           },
           onPageFinished: (url) {
             isLoading.value = false;
-            webController.runJavaScript("""
-      var meta = document.createElement('meta');
-      meta.name = 'viewport';
-      meta.content = 'width=device-width, initial-scale=.8, maximum-scale=1.0 user-scalable=no';
-      document.getElementsByTagName('head')[0].appendChild(meta);
-      document.body.style.zoom = "1"; 
-    """);
+            // Delay JavaScript injection to avoid conflicts with page scripts
+            Future.delayed(const Duration(milliseconds: 500), () {
+              webController
+                  .runJavaScript("""
+        (function() {
+          try {
+            // Only inject viewport if not already present
+            if (!document.querySelector('meta[name="viewport"]')) {
+              var meta = document.createElement('meta');
+              meta.name = 'viewport';
+              meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0 user-scalable=yes';
+              document.getElementsByTagName('head')[0].appendChild(meta);
+            }
+            // Don't override body zoom to avoid breaking layouts
+          } catch(e) {
+            console.log('WebView injection error:', e);
+          }
+        })();
+      """)
+                  .catchError((e) {
+                    log('JavaScript injection error: $e');
+                  });
+            });
             log('Page finished: $url');
+          },
+          onWebResourceError: (error) {
+            log(
+              'WebView resource error: ${error.description} - ${error.errorType}',
+            );
+            isLoading.value = false;
           },
           onNavigationRequest: (request) {
             return NavigationDecision.navigate;

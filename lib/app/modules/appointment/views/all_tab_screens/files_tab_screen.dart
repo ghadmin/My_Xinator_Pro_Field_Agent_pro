@@ -477,11 +477,7 @@ class _FilesTabScreenState extends State<FilesTabScreen> {
     if (mounted) Navigator.pop(context);
   }
 
-  bool _isImageFile(String? fileType) {
-    if (fileType == null) return false;
-    final type = fileType.toLowerCase();
-    return type.startsWith('image/');
-  }
+
 
   IconData? _getFileIconData(String? extension) {
     if (extension == null) return null;

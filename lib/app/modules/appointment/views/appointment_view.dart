@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:myxinator_pro_field_agent_pro/app/modules/customer/controllers/customer_controller.dart';
-
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
