@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import '../../../components/drawer/adaptive_nav_shell.dart';
 import '../../../components/drawer/custom_drawer.dart';
 import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
+import '../../../../utils/responsive.dart';
 import '../../../utils/simple_phone_formatter.dart';
 import '../controllers/customer_controller.dart';
 
@@ -19,7 +21,7 @@ class CustomerView extends GetView<CustomerController> {
     // final appointmentC = Get.find<AppointmentController>();
     var theme = Theme.of(context);
     return Scaffold(
-      drawer: CustomDrawer(indexClicked: 2),
+      drawer: context.isTabletLayout ? null : CustomDrawer(indexClicked: 2),
       appBar: AppBar(
         toolbarHeight: Platform.isAndroid
             ? kToolbarHeight
@@ -47,7 +49,9 @@ class CustomerView extends GetView<CustomerController> {
           // ),
         ],
       ),
-      body: SafeArea(
+      body: AdaptiveNavShell(
+        indexClicked: 2,
+        child: SafeArea(
         child: Obx(
           () => Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
@@ -76,7 +80,8 @@ class CustomerView extends GetView<CustomerController> {
                           color: theme.primaryColor,
                           onRefresh: () async =>
                               await controller.getCustomers(),
-                          child: ListView.separated(
+                          child: AdaptiveListGrid(
+                            tabletChildAspectRatio: 2.2,
                             padding: EdgeInsets.zero,
                             physics: BouncingScrollPhysics(),
                             itemCount: controller.sortedCustomers.length,
@@ -406,6 +411,7 @@ class CustomerView extends GetView<CustomerController> {
                     ],
                   ),
           ),
+        ),
         ),
       ),
     );

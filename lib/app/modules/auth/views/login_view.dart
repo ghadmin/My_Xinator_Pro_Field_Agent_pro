@@ -948,6 +948,7 @@ import 'package:remixicon/remixicon.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
+import '../../../../utils/responsive.dart';
 import '../../../components/global-widgets/my_buttons.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../controllers/auth_controller.dart';
@@ -974,7 +975,9 @@ class LoginView extends GetView<AuthController> {
                 () => SingleChildScrollView(
                   reverse: true, // Helps push focused field above keyboard
                   padding: EdgeInsets.symmetric(horizontal: 20.sp),
-                  child: Column(
+                  child: ResponsiveCenter(
+                    maxWidth: 500,
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(height: 20.h),
@@ -1105,6 +1108,7 @@ class LoginView extends GetView<AuthController> {
                         ),
                       ),
                     ],
+                    ),
                   ),
                 ),
               ),

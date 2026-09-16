@@ -313,10 +313,6 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
             content.body = "Your location is being tracked"
         }
 
-        // Shown in place of the body when iOS masks preview content (lock
-        // screen with previews hidden), instead of a bare "Notification".
-        content.hiddenPreviewsBodyPlaceholder = "Location is being sent"
-
         content.sound = nil
         content.interruptionLevel = .passive // silent: NC entry only, no banner/sound/screen wake
 

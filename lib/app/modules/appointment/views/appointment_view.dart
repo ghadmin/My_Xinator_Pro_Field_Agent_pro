@@ -6,6 +6,8 @@ import 'package:myxinator_pro_field_agent_pro/app/modules/customer/controllers/c
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
+import '../../../../utils/responsive.dart';
+import '../../../components/drawer/adaptive_nav_shell.dart';
 import '../../../components/drawer/custom_drawer.dart';
 import '../../../components/global-widgets/asset_image_box.dart';
 import '../../../components/global-widgets/empty_widget.dart';
@@ -84,8 +86,10 @@ class AppointmentView extends GetView<AppointmentController> {
                 ),
               ),
             ),
-      drawer: CustomDrawer(indexClicked: 0),
-      body: Obx(
+      drawer: context.isTabletLayout ? null : CustomDrawer(indexClicked: 0),
+      body: AdaptiveNavShell(
+        indexClicked: 0,
+        child: Obx(
         () => Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
           child: controller.isAppointmentEmpty.value
@@ -172,7 +176,7 @@ class AppointmentView extends GetView<AppointmentController> {
                         onRefresh: () async {
                           await controller.getAppointments();
                         },
-                        child: ListView.separated(
+                        child: AdaptiveListGrid(
                           padding: EdgeInsets.zero,
                           itemCount: controller.sortedAppointments
                               .where((e) => e.status!.statusName != "Completed")
@@ -431,6 +435,7 @@ class AppointmentView extends GetView<AppointmentController> {
                     ),
                   ],
                 ),
+          ),
         ),
       ),
       floatingActionButton: Column(
