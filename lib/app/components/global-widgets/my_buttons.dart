@@ -33,9 +33,9 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: inactive ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -96,9 +96,9 @@ class SecondaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: inactive ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -167,9 +167,9 @@ class SecondaryButtonWithIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: inactive ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -256,9 +256,9 @@ class PrimaryButtonWithIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: inactive ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -330,9 +330,9 @@ class SocialButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(

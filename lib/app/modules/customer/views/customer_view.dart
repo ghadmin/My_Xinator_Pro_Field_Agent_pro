@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import '../../../components/drawer/adaptive_nav_shell.dart';
 import '../../../components/drawer/custom_drawer.dart';
 import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/general_text_field.dart';
@@ -20,8 +19,12 @@ class CustomerView extends GetView<CustomerController> {
   Widget build(BuildContext context) {
     // final appointmentC = Get.find<AppointmentController>();
     var theme = Theme.of(context);
+    // The drawer is the standard overlay: hidden until the hamburger tap
+    // (or edge swipe), on phones and tablets alike. Inside the tablet shell
+    // the drawer swaps the hosted screen (see TabletShellScope) instead of
+    // pushing a route.
     return Scaffold(
-      drawer: context.isTabletLayout ? null : CustomDrawer(indexClicked: 2),
+      drawer: CustomDrawer(indexClicked: 2),
       appBar: AppBar(
         toolbarHeight: Platform.isAndroid
             ? kToolbarHeight
@@ -49,9 +52,7 @@ class CustomerView extends GetView<CustomerController> {
           // ),
         ],
       ),
-      body: AdaptiveNavShell(
-        indexClicked: 2,
-        child: SafeArea(
+      body: SafeArea(
         child: Obx(
           () => Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.sp, vertical: 20.sp),
@@ -81,7 +82,13 @@ class CustomerView extends GetView<CustomerController> {
                           onRefresh: () async =>
                               await controller.getCustomers(),
                           child: AdaptiveListGrid(
-                            tabletChildAspectRatio: 2.2,
+                            // Fixed cell height (not aspect-ratio derived):
+                            // fits name (2 lines @ 27px) + email/address/
+                            // phone rows + Create Appointment button (incl.
+                            // its 48px Material tap-target box) at any
+                            // column count/orientation. Aspect 2.2
+                            // overflowed ~15px, 200 still 7.7px → 220 safe.
+                            tabletMainAxisExtent: 220,
                             padding: EdgeInsets.zero,
                             physics: BouncingScrollPhysics(),
                             itemCount: controller.sortedCustomers.length,
@@ -411,7 +418,6 @@ class CustomerView extends GetView<CustomerController> {
                     ],
                   ),
           ),
-        ),
         ),
       ),
     );

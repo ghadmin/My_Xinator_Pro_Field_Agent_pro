@@ -238,6 +238,7 @@ class CustomFieldsController extends GetxController
                 fieldOptions: fieldDef.fieldOptions,
                 isActive: fieldDef.isActive,
                 options: fieldDef.options,
+                lastUpdated: attachedField.lastUpdated,
               );
 
               // Set the value based on field type and attached field value

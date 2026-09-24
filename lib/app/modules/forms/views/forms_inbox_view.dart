@@ -176,107 +176,106 @@ class FormsInboxView extends GetView<FormsController> {
       },
       child: Padding(
         padding: EdgeInsets.all(15.sp),
-        child: IntrinsicHeight(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    form.template.name,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (form.template.description.isNotEmpty) ...[
+                    SizedBox(height: 2.sp),
                     Text(
-                      form.template.name,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w500,
+                      form.template.description,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: LightThemeColors.hintTextColor,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (form.template.description.isNotEmpty) ...[
-                      SizedBox(height: 2.sp),
-                      Text(
-                        form.template.description,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: LightThemeColors.hintTextColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                  ],
+                  SizedBox(height: 4.sp),
+                  Text(
+                    "Appointment: #${form.appointmentId}",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: LightThemeColors.hintTextColor,
+                    ),
+                  ),
+                  SizedBox(height: 2.sp),
+                  Text(
+                    "Created: ${dateTimeConverter(inputFormat: "yyyy-MM-ddTHH:mm:ss", inputTime: form.createdDateTime.toIso8601String(), outputFormat: "MM/dd/yyyy hh:mm a")}",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: LightThemeColors.hintTextColor,
+                    ),
+                  ),
+                  if (form.sendToCustomerOnSubmit) ...[
                     SizedBox(height: 4.sp),
-                    Text(
-                      "Appointment: #${form.appointmentId}",
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: LightThemeColors.hintTextColor,
-                      ),
-                    ),
-                    SizedBox(height: 2.sp),
-                    Text(
-                      "Created: ${dateTimeConverter(inputFormat: "yyyy-MM-ddTHH:mm:ss", inputTime: form.createdDateTime.toIso8601String(), outputFormat: "MM/dd/yyyy hh:mm a")}",
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: LightThemeColors.hintTextColor,
-                      ),
-                    ),
-                    if (form.sendToCustomerOnSubmit) ...[
-                      SizedBox(height: 4.sp),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.email,
-                            size: 14.sp,
-                            color: theme.primaryColor,
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            "Will email customer",
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.primaryColor,
-                              fontSize: 11.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              SizedBox(
-                width: 100.sp,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10.sp,
-                        vertical: 5.sp,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15.r),
-                        color: statusColor,
-                      ),
-                      child: Text(
-                        statusText,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 11.sp,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.email,
+                          size: 14.sp,
+                          color: theme.primaryColor,
                         ),
-                      ),
-                    ),
-                    Text(
-                      "Tap to open",
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.primaryColor,
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          "Will email customer",
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.primaryColor,
+                            fontSize: 11.sp,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+            SizedBox(
+              width: 100.sp,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10.sp,
+                      vertical: 5.sp,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15.r),
+                      color: statusColor,
+                    ),
+                    child: Text(
+                      statusText,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 11.sp,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 6.sp),
+                  Text(
+                    "Tap to open",
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.primaryColor,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -322,7 +321,9 @@ class FormsInboxView extends GetView<FormsController> {
 
           if (responseData != null && responseData.success == true) {
             responses = responseData.responses;
-            kLog('Loaded form response with ${responses?.length ?? 0} field values');
+            kLog(
+              'Loaded form response with ${responses?.length ?? 0} field values',
+            );
           }
         } catch (e) {
           debugPrint('Could not load form response: $e');
@@ -342,9 +343,7 @@ class FormsInboxView extends GetView<FormsController> {
             mode: PdfFormMode.viewer,
             config: {
               'pdfBase64': pdfBase64,
-              'form': {
-                'fields': fields,
-              },
+              'form': {'fields': fields},
               'smartFieldValues': smartFieldValues,
               'formInstanceId': form.formInstanceId,
               'templateId': form.templateId,

@@ -1492,12 +1492,14 @@ class FormsController extends GetxController with ExceptionHandler {
   /// Toggle form template selection
   void toggleTemplateSelection(FormOption form) {
     if (pendingForms
-        .where(
-          (f) =>
-              f.appointmentId ==
+        .where((f) {
+          kLog(
+            'Checking pending form: ${f.templateId} for appointment ${f.appointmentId}',
+          );
+          return f.appointmentId ==
               appointmentController.selectedAppointment.value!.apptID
-                  .toString(),
-        )
+                  .toString();
+        })
         .any((formItem) => formItem.templateId == form.templateId)) {
       MySnackBar.showInfoToast(
         message: 'Form "${form.name}" is already in the pending list.',

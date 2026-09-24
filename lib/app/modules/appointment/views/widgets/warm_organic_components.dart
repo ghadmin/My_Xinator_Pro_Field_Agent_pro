@@ -261,7 +261,7 @@ class OrganicPrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: width ?? double.infinity,
-      height: height ?? 48.h,
+      constraints: BoxConstraints(minHeight: height ?? 48.h),
       decoration: BoxDecoration(
         gradient: WarmOrganicBlueTheme.primaryGradient,
         borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusMd),
@@ -320,7 +320,7 @@ class OrganicSecondaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      height: height ?? 44.h,
+      constraints: BoxConstraints(minHeight: height ?? 44.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusMd),

@@ -49,6 +49,7 @@ abstract class Routes {
   static const BILLABLE_ITEM_SCREEN = _Paths.BILLABLE_ITEM_SCREEN;
   static const LOCATION_TRACKING = _Paths.LOCATION_TRACKING;
   static const TRAINING = _Paths.TRAINING;
+  static const TABLET_SHELL = _Paths.TABLET_SHELL;
 }
 
 abstract class _Paths {
@@ -96,4 +97,5 @@ abstract class _Paths {
   static const BILLABLE_ITEM_SCREEN = '/billable-item-screen';
   static const LOCATION_TRACKING = '/location-tracking';
   static const TRAINING = '/training';
+  static const TABLET_SHELL = '/tablet-shell';
 }

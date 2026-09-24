@@ -9,6 +9,7 @@ import 'package:remixicon/remixicon.dart';
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
+import '../../../../utils/responsive.dart';
 import '../../../../utils/url_launcher.dart';
 import '../../../components/global-widgets/asset_image_box.dart';
 import '../../../components/global-widgets/customer_signature_section.dart';
@@ -959,8 +960,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                       SizedBox(height: 8.sp),
                       Builder(
                         builder: (context) {
-                          return SizedBox(
-                            height: 48.sp,
+                          return Container(
+                            constraints: BoxConstraints(minHeight: 52.sp),
                             child: SecondaryButtonWithIcon(
                               title: "Add item",
                               onPressed: () {
@@ -1647,147 +1648,151 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                             ListTile(
                               title: Builder(
                                 builder: (context) {
-                                  return SplashContainer(
-                                    color: Colors.white,
-                                    radius: 8,
-                                    onPressed: () {
-                                      FocusScope.of(context).unfocus();
-                                      controller
-                                          .createInvoiceDiscountFocusnode
-                                          .value
-                                          .unfocus();
-                                      controller
-                                          .createInvoiceNotesFocusnode
-                                          .value
-                                          .unfocus();
-                                      controller
-                                          .createInvoiceSearchFocusnode
-                                          .value
-                                          .unfocus();
-                                      controller
-                                          .createInvoiceEmailToFocusnode
-                                          .value
-                                          .unfocus();
-                                      controller
-                                          .createInvoiceEmailBccFocusnode
-                                          .value
-                                          .unfocus();
-                                      controller
-                                          .createInvoiceEmailSubjectFocusnode
-                                          .value
-                                          .unfocus();
-                                      controller
-                                          .createInvoiceEmailBodyFocusnode
-                                          .value
-                                          .unfocus();
-                                      RenderBox renderBox =
-                                          context.findRenderObject()
-                                              as RenderBox;
-                                      Offset offset = renderBox.localToGlobal(
-                                        Offset(0, 32.sp),
-                                      );
-                                      final RenderBox overlay =
-                                          Overlay.of(
-                                                context,
-                                              ).context.findRenderObject()
-                                              as RenderBox;
-                                      showMenu(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                            Radius.circular(8.r),
-                                          ),
-                                        ),
-                                        context: context,
-                                        position: RelativeRect.fromRect(
-                                          offset &
-                                              Size(
-                                                32.sp,
-                                                32.sp,
-                                              ), // smaller rect, the touch area
-                                          Offset.zero &
-                                              overlay
-                                                  .size, // Bigger rect, the entire screen
-                                        ),
-                                        items: [
-                                          PopupMenuItem(
-                                            value: "",
-                                            child: Text(
-                                              "NO TAX",
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                              ),
+                                  return Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        FocusScope.of(context).unfocus();
+                                        controller
+                                            .createInvoiceDiscountFocusnode
+                                            .value
+                                            .unfocus();
+                                        controller
+                                            .createInvoiceNotesFocusnode
+                                            .value
+                                            .unfocus();
+                                        controller
+                                            .createInvoiceSearchFocusnode
+                                            .value
+                                            .unfocus();
+                                        controller
+                                            .createInvoiceEmailToFocusnode
+                                            .value
+                                            .unfocus();
+                                        controller
+                                            .createInvoiceEmailBccFocusnode
+                                            .value
+                                            .unfocus();
+                                        controller
+                                            .createInvoiceEmailSubjectFocusnode
+                                            .value
+                                            .unfocus();
+                                        controller
+                                            .createInvoiceEmailBodyFocusnode
+                                            .value
+                                            .unfocus();
+                                        RenderBox renderBox =
+                                            context.findRenderObject()
+                                                as RenderBox;
+                                        Offset offset = renderBox.localToGlobal(
+                                          Offset(0, 32.sp),
+                                        );
+                                        final RenderBox overlay =
+                                            Overlay.of(
+                                                  context,
+                                                ).context.findRenderObject()
+                                                as RenderBox;
+                                        showMenu(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.all(
+                                              Radius.circular(8.r),
                                             ),
                                           ),
-                                          ...controller.taxes.map((tax) {
-                                            return PopupMenuItem(
-                                              value: tax.id,
-                                              child: Text(tax.name ?? ""),
-                                            );
-                                          }),
-                                        ],
-                                      ).then((selectedValue) async {
-                                        if (selectedValue != null) {
-                                          if (selectedValue == "") {
-                                            controller.selectedTaxName.value =
-                                                "NO TAX";
-                                            controller.tax.value = "0.00";
-                                            controller.selectedTaxID.value = "";
-                                            controller.createTotal();
-                                          } else if (selectedValue == -1) {
-                                            _showManualTaxDialog(context);
-                                          } else {
-                                            final selectedTax = controller.taxes
-                                                .firstWhere(
-                                                  (tax) =>
-                                                      tax.id == selectedValue,
-                                                );
-                                            controller.selectedTaxName.value =
-                                                selectedTax.name ?? "";
-                                            controller.tax.value =
-                                                selectedTax.rate
-                                                    ?.toStringAsFixed(2) ??
-                                                "0.00";
-                                            controller.selectedTaxID.value =
-                                                selectedTax.id.toString();
-                                            controller.createTotal();
-                                          }
-                                        }
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 8.sp,
-                                        vertical: 5.sp,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(
-                                          5.r,
-                                        ),
-                                        border: Border.all(
-                                          color: LightThemeColors.primaryColor,
-                                          width: 1.sp,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            "Tax Rate",
-                                            style: theme.textTheme.bodyLarge
-                                                ?.copyWith(
-                                                  color: LightThemeColors
-                                                      .hintTextColor,
-                                                  fontSize: 14.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
+                                          context: context,
+                                          position: RelativeRect.fromRect(
+                                            offset &
+                                                Size(
+                                                  32.sp,
+                                                  32.sp,
+                                                ), // smaller rect, the touch area
+                                            Offset.zero &
+                                                overlay
+                                                    .size, // Bigger rect, the entire screen
                                           ),
-                                          SizedBox(width: 5.sp),
-                                          Icon(
-                                            Icons.arrow_drop_down,
+                                          items: [
+                                            PopupMenuItem(
+                                              value: "",
+                                              child: Text(
+                                                "NO TAX",
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ),
+                                            ...controller.taxes.map((tax) {
+                                              return PopupMenuItem(
+                                                value: tax.id,
+                                                child: Text(tax.name ?? ""),
+                                              );
+                                            }),
+                                          ],
+                                        ).then((selectedValue) async {
+                                          if (selectedValue != null) {
+                                            if (selectedValue == "") {
+                                              controller.selectedTaxName.value =
+                                                  "NO TAX";
+                                              controller.tax.value = "0.00";
+                                              controller.selectedTaxID.value =
+                                                  "";
+                                              controller.createTotal();
+                                            } else if (selectedValue == -1) {
+                                              _showManualTaxDialog(context);
+                                            } else {
+                                              final selectedTax = controller
+                                                  .taxes
+                                                  .firstWhere(
+                                                    (tax) =>
+                                                        tax.id == selectedValue,
+                                                  );
+                                              controller.selectedTaxName.value =
+                                                  selectedTax.name ?? "";
+                                              controller.tax.value =
+                                                  selectedTax.rate
+                                                      ?.toStringAsFixed(2) ??
+                                                  "0.00";
+                                              controller.selectedTaxID.value =
+                                                  selectedTax.id.toString();
+                                              controller.createTotal();
+                                            }
+                                          }
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 8.sp,
+                                          vertical: 5.sp,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            5.r,
+                                          ),
+                                          border: Border.all(
                                             color:
                                                 LightThemeColors.primaryColor,
+                                            width: 1.sp,
                                           ),
-                                        ],
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              "Tax Rate",
+                                              style: theme.textTheme.bodyLarge
+                                                  ?.copyWith(
+                                                    color: LightThemeColors
+                                                        .hintTextColor,
+                                                    fontSize: 14.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                            ),
+                                            SizedBox(width: 5.sp),
+                                            Icon(
+                                              Icons.arrow_drop_down,
+                                              color:
+                                                  LightThemeColors.primaryColor,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   );
@@ -1921,8 +1926,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                       CustomerSignatureSection(),
                       MainDivider(),
                       SizedBox(height: 20.sp),
-                      SizedBox(
-                        height: 48.sp,
+                      Container(
+                        constraints: BoxConstraints(minHeight: 50.sp),
                         width: double.infinity,
                         child: PrimaryButton(
                           title: "Create",
@@ -1945,7 +1950,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
   }
 
   PreferredSizeWidget buildAppBar(BuildContext context, ThemeData theme) {
-    return Get.size.width <= 440
+    return Get.size.width <= 440 || context.isTabletLayout
         ? AppBar(
             title: Text('Create ${controller.selectedCreateType.value}'),
             actions: [
@@ -2092,8 +2097,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                             Row(
                                               children: [
                                                 Expanded(
-                                                  child: SizedBox(
-                                                    height: 48.sp,
+                                                  child: Container(
+                                                    constraints: BoxConstraints(
+                                                      minHeight: 48.sp,
+                                                    ),
                                                     child: SecondaryButton(
                                                       title: "Cancel",
                                                       onPressed: () {
@@ -2119,8 +2126,10 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                 ),
                                                 SizedBox(width: 10.sp),
                                                 Expanded(
-                                                  child: SizedBox(
-                                                    height: 48.sp,
+                                                  child: Container(
+                                                    constraints: BoxConstraints(
+                                                      minHeight: 48.sp,
+                                                    ),
                                                     child: PrimaryButton(
                                                       title: "Send",
                                                       onPressed: () async {
@@ -2317,8 +2326,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                 Row(
                                                   children: [
                                                     Expanded(
-                                                      child: SizedBox(
-                                                        height: 48.sp,
+                                                      child: Container(
+                                                        constraints:
+                                                            BoxConstraints(
+                                                          minHeight: 48.sp,
+                                                        ),
                                                         child: SecondaryButton(
                                                           title: "Cancel",
                                                           onPressed: () {
@@ -2345,8 +2357,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                                     ),
                                                     SizedBox(width: 10.sp),
                                                     Expanded(
-                                                      child: SizedBox(
-                                                        height: 48.sp,
+                                                      child: Container(
+                                                        constraints:
+                                                            BoxConstraints(
+                                                          minHeight: 48.sp,
+                                                        ),
                                                         child: PrimaryButton(
                                                           title: "Send",
                                                           onPressed: () async {
@@ -2541,8 +2556,8 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                 SizedBox(height: 15.sp),
                 Padding(
                   padding: EdgeInsets.all(16.sp),
-                  child: SizedBox(
-                    height: 50.sp,
+                  child: Container(
+                    constraints: BoxConstraints(minHeight: 50.sp),
                     width: .5.sw,
                     child: PrimaryButton(
                       title: "Close",

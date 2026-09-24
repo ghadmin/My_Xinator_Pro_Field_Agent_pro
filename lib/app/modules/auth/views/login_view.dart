@@ -977,137 +977,146 @@ class LoginView extends GetView<AuthController> {
                   padding: EdgeInsets.symmetric(horizontal: 20.sp),
                   child: ResponsiveCenter(
                     maxWidth: 500,
+                    alignment: Alignment.center,
+                    // Fill the viewport so `center` really centers
+                    // vertically inside the scroll view (unbounded there —
+                    // see ResponsiveCenter.minHeight). Insets subtracted
+                    // here, before SafeArea consumes them, give the height
+                    // SafeArea will leave.
+                    minHeight:
+                        MediaQuery.sizeOf(context).height -
+                        MediaQuery.paddingOf(context).vertical,
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(height: 20.h),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextWidget(
-                          text: "Login",
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            color: LightThemeColors.bodyTextColor,
-                            fontWeight: FontWeight.bold,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(height: 20.h),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextWidget(
+                            text: "Login",
+                            style: theme.textTheme.headlineLarge?.copyWith(
+                              color: LightThemeColors.bodyTextColor,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(height: 40.sp),
-                      Image.asset(
-                        AppImages.kFSMProIcon,
-                        width: 180.sp,
-                        height: 100.sp,
-                        fit: BoxFit.contain,
-                      ),
-                      SizedBox(height: 40.sp),
+                        SizedBox(height: 40.sp),
+                        Image.asset(
+                          AppImages.kFSMProIcon,
+                          width: 180.sp,
+                          height: 100.sp,
+                          fit: BoxFit.contain,
+                        ),
+                        SizedBox(height: 40.sp),
 
-                      // Email Field
-                      TextFormField(
-                        controller: controller.emailLoginTextController,
-                        focusNode: controller.emailFocusNode,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        cursorColor: LightThemeColors.primaryColor,
-                        onTapOutside: (_) =>
-                            FocusManager.instance.primaryFocus?.unfocus(),
-                        onEditingComplete: () => FocusScope.of(
-                          context,
-                        ).requestFocus(controller.passwordFocusNode),
-                        decoration: InputDecoration(
-                          hintText: "Email",
-                          prefixIcon: Icon(Remix.mail_line),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.r),
+                        // Email Field
+                        TextFormField(
+                          controller: controller.emailLoginTextController,
+                          focusNode: controller.emailFocusNode,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          cursorColor: LightThemeColors.primaryColor,
+                          onTapOutside: (_) =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
+                          onEditingComplete: () => FocusScope.of(
+                            context,
+                          ).requestFocus(controller.passwordFocusNode),
+                          decoration: InputDecoration(
+                            hintText: "Email",
+                            prefixIcon: Icon(Remix.mail_line),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
                           ),
                         ),
-                      ),
-                      if (controller.emailValidator.value.isNotEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextWidget(
-                              text: controller.emailValidator.value,
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12.sp,
+                        if (controller.emailValidator.value.isNotEmpty)
+                          Padding(
+                            padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextWidget(
+                                text: controller.emailValidator.value,
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12.sp,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      SizedBox(height: 20.h),
+                        SizedBox(height: 20.h),
 
-                      // Password Field
-                      TextFormField(
-                        controller: controller.passwordLoginTextController,
-                        focusNode: controller.passwordFocusNode,
-                        obscureText: !controller.isPasswordVisible.value,
-                        textInputAction: TextInputAction.done,
-                        decoration: InputDecoration(
-                          hintText: "Password",
-                          prefixIcon: Icon(Remix.lock_line),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              controller.isPasswordVisible.value
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
+                        // Password Field
+                        TextFormField(
+                          controller: controller.passwordLoginTextController,
+                          focusNode: controller.passwordFocusNode,
+                          obscureText: !controller.isPasswordVisible.value,
+                          textInputAction: TextInputAction.done,
+                          decoration: InputDecoration(
+                            hintText: "Password",
+                            prefixIcon: Icon(Remix.lock_line),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                controller.isPasswordVisible.value
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: controller.togglePasswordVisibility,
+                              iconSize: 18.sp,
                             ),
-                            onPressed: controller.togglePasswordVisibility,
-                            iconSize: 18.sp,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.r),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
                           ),
                         ),
-                      ),
-                      if (controller.passwordValidator.value.isNotEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextWidget(
-                              text: controller.passwordValidator.value,
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12.sp,
+                        if (controller.passwordValidator.value.isNotEmpty)
+                          Padding(
+                            padding: EdgeInsets.only(top: 5.sp, left: 5.sp),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextWidget(
+                                text: controller.passwordValidator.value,
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12.sp,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      SizedBox(height: 25.sp),
+                        SizedBox(height: 25.sp),
 
-                      // Sign In Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52.h,
-                        child: PrimaryButton(
-                          title: "Sign in",
-                          onPressed: () async {
-                            // Unfocus all focus nodes when button is clicked
-                            controller.emailFocusNode.unfocus();
-                            controller.passwordFocusNode.unfocus();
+                        // Sign In Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52.h,
+                          child: PrimaryButton(
+                            title: "Sign in",
+                            onPressed: () async {
+                              // Unfocus all focus nodes when button is clicked
+                              controller.emailFocusNode.unfocus();
+                              controller.passwordFocusNode.unfocus();
 
-                            final email =
-                                controller.emailLoginTextController.text;
-                            final password =
-                                controller.passwordLoginTextController.text;
-                            if (email.isNotEmpty && password.isNotEmpty) {
-                              controller.emailValidator.value = '';
-                              controller.passwordValidator.value = '';
-                              await controller.login(email, password);
-                            } else {
-                              controller.emailValidator.value = email.isEmpty
-                                  ? "Email address is not valid!"
-                                  : '';
-                              controller.passwordValidator.value =
-                                  password.isEmpty
-                                  ? "Password is required!"
-                                  : '';
-                            }
-                          },
-                          inactive: !controller.isButtonActive.value,
+                              final email =
+                                  controller.emailLoginTextController.text;
+                              final password =
+                                  controller.passwordLoginTextController.text;
+                              if (email.isNotEmpty && password.isNotEmpty) {
+                                controller.emailValidator.value = '';
+                                controller.passwordValidator.value = '';
+                                await controller.login(email, password);
+                              } else {
+                                controller.emailValidator.value = email.isEmpty
+                                    ? "Email address is not valid!"
+                                    : '';
+                                controller.passwordValidator.value =
+                                    password.isEmpty
+                                    ? "Password is required!"
+                                    : '';
+                              }
+                            },
+                            inactive: !controller.isButtonActive.value,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
                     ),
                   ),
                 ),
@@ -1122,7 +1131,7 @@ class LoginView extends GetView<AuthController> {
                     child: Image.asset(
                       AppImages.kCECBrand,
                       width: 130.sp,
-                    fit: BoxFit.cover,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),

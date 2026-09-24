@@ -19,6 +19,12 @@
             "request": "launch",
             "deviceId": "00008120-000A058A0207601E"
         },
+        {
+            "name": "My_Xinator_Pro_Field_Agent_pro (Flutter iPad Pro 13-inch (M5) (16GB))",
+            "type": "dart",
+            "request": "launch",
+            "deviceId": "F353F795-769F-49D6-B8B2-47D399685201"
+        },
 
         {
             "type": "sweetpad-lldb",

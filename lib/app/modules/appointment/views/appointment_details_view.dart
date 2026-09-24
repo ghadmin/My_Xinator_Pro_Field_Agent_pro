@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +27,7 @@ import 'widgets/warm_organic_components.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/klog.dart';
+import '../../../../utils/responsive.dart';
 import '../../../components/global-widgets/empty_widget.dart';
 import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/my_buttons.dart';
@@ -178,7 +180,7 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
       data: WarmOrganicBlueTheme.themeData,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        appBar: Get.size.width <= 440
+        appBar: Get.size.width <= 440 || context.isTabletLayout
             ? AppBar(elevation: 1, title: Text("Appointment Details"))
             : PreferredSize(
                 preferredSize: Size.fromHeight(40.sp),
@@ -218,201 +220,212 @@ class _AppointmentDetailsViewState extends State<AppointmentDetailsView>
                           constraints: BoxConstraints(
                             minHeight: constraints.maxHeight,
                           ),
-                          child: Column(
-                            children: [
-                              // _buildGradientHeader(context),
-                              _buildTimeCard(),
-                              // _buildGradientHeader(context),
-                              SizedBox(height: 5.h),
+                          child: ResponsiveCenter(
+                            maxWidth: 900,
+                            child: Column(
+                              children: [
+                                // _buildGradientHeader(context),
+                                _buildTimeCard(),
+                                // _buildGradientHeader(context),
+                                SizedBox(height: 5.h),
 
-                              // Notes Card
-                              OrganicCard(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Any Details',
-                                      style: WarmOrganicBlueTheme.headingSmall,
-                                    ),
-                                    SizedBox(height: 8.h),
-                                    Container(
-                                      width: double.infinity,
-                                      padding: EdgeInsets.all(14.r),
-                                      decoration: BoxDecoration(
-                                        color: WarmOrganicBlueTheme.warmGray,
-                                        borderRadius: BorderRadius.circular(
-                                          WarmOrganicBlueTheme.radiusMd,
+                                // Notes Card
+                                OrganicCard(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Any Details',
+                                        style:
+                                            WarmOrganicBlueTheme.headingSmall,
+                                      ),
+                                      SizedBox(height: 8.h),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.all(14.r),
+                                        decoration: BoxDecoration(
+                                          color: WarmOrganicBlueTheme.warmGray,
+                                          borderRadius: BorderRadius.circular(
+                                            WarmOrganicBlueTheme.radiusMd,
+                                          ),
+                                        ),
+                                        child: GeneralTextField(
+                                          maxLine: 4,
+                                          hint: "Add a note here..",
+                                          theme: Theme.of(context),
+                                          textEditingController:
+                                              controller.noteController,
+                                          textInputAction:
+                                              TextInputAction.newline,
+                                          textInputType:
+                                              TextInputType.multiline,
+                                          onChanged: (v) {
+                                            controller.isTyping(true);
+                                            controller.noteText(v);
+                                          },
+                                          onEditingComplete: () =>
+                                              controller.isTyping(false),
                                         ),
                                       ),
-                                      child: GeneralTextField(
-                                        maxLine: 4,
-                                        hint: "Add a note here..",
-                                        theme: Theme.of(context),
-                                        textEditingController:
-                                            controller.noteController,
-                                        textInputAction:
-                                            TextInputAction.newline,
-                                        textInputType: TextInputType.multiline,
-                                        onChanged: (v) {
-                                          controller.isTyping(true);
-                                          controller.noteText(v);
-                                        },
-                                        onEditingComplete: () =>
-                                            controller.isTyping(false),
+                                      SizedBox(height: 12.h),
+                                      OrganicPrimaryButton(
+                                        text: 'Save Notes',
+                                        height: 43.h,
+                                        onPressed: () async => await controller
+                                            .updateAppointment(),
                                       ),
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    OrganicPrimaryButton(
-                                      text: 'Save Notes',
-                                      height: 40.h,
-                                      onPressed: () async =>
-                                          await controller.updateAppointment(),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 12.h),
+                                SizedBox(height: 12.h),
 
-                              // Custom Fields Card
-                              OrganicCard(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Custom Fields',
-                                      style: WarmOrganicBlueTheme.headingSmall,
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    DropdownButton<CustomFieldModel>(
-                                      isExpanded: true,
-                                      icon: Icon(
-                                        Icons.add,
-                                        color: WarmOrganicBlueTheme.primaryBlue,
+                                // Custom Fields Card
+                                OrganicCard(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Custom Fields',
+                                        style:
+                                            WarmOrganicBlueTheme.headingSmall,
                                       ),
-                                      value: null,
-                                      items: customFieldsController
-                                          .allCustomFields
-                                          .map((field) {
-                                            return DropdownMenuItem<
-                                              CustomFieldModel
-                                            >(
-                                              value: field,
-                                              child: Text(
-                                                field.fieldName!,
-                                                softWrap: true,
+                                      SizedBox(height: 12.h),
+                                      DropdownButton<CustomFieldModel>(
+                                        isExpanded: true,
+                                        icon: Icon(
+                                          Icons.add,
+                                          color:
+                                              WarmOrganicBlueTheme.primaryBlue,
+                                        ),
+                                        value: null,
+                                        items: customFieldsController
+                                            .allCustomFields
+                                            .map((field) {
+                                              return DropdownMenuItem<
+                                                CustomFieldModel
+                                              >(
+                                                value: field,
+                                                child: Text(
+                                                  field.fieldName!,
+                                                  softWrap: true,
+                                                ),
+                                              );
+                                            })
+                                            .toList(),
+                                        onChanged: (value) {
+                                          kLog("value: ${value?.fieldName}");
+                                          if (value != null) {
+                                            customFieldsController
+                                                .saveCustomField(value);
+                                          }
+                                        },
+                                      ),
+                                      SizedBox(height: 12.h),
+                                      Obx(
+                                        () => ListView.separated(
+                                          shrinkWrap: true,
+                                          physics:
+                                              NeverScrollableScrollPhysics(),
+                                          itemCount: customFieldsController
+                                              .selectedCustomFields
+                                              .length,
+                                          separatorBuilder: (context, index) =>
+                                              Divider(
+                                                color: WarmOrganicBlueTheme
+                                                    .warmSilver,
+                                                thickness: 1,
+                                                height: 24.h,
                                               ),
+                                          itemBuilder: (context, index) {
+                                            final field = customFieldsController
+                                                .selectedCustomFields[index];
+                                            return Stack(
+                                              children: [
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    right: 30.w,
+                                                  ),
+                                                  child: buildCustomFieldWidget(
+                                                    field,
+                                                    context,
+                                                  ),
+                                                ),
+                                                Positioned(
+                                                  top: 0,
+                                                  right: 0,
+                                                  child: GestureDetector(
+                                                    onTap: () async {
+                                                      await customFieldsController
+                                                          .deleteAppointmentCustomField(
+                                                            appointmentId:
+                                                                controller
+                                                                    .selectedAppointment
+                                                                    .value!
+                                                                    .apptID,
+                                                            fieldId:
+                                                                field.fieldID ??
+                                                                0,
+                                                          );
+                                                    },
+                                                    child: Container(
+                                                      padding: EdgeInsets.all(
+                                                        8.r,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red
+                                                            .withValues(
+                                                              alpha: 0.1,
+                                                            ),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: Icon(
+                                                        Icons.close,
+                                                        color: Colors.red,
+                                                        size: 20.sp,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             );
-                                          })
-                                          .toList(),
-                                      onChanged: (value) {
-                                        kLog("value: ${value?.fieldName}");
-                                        if (value != null) {
-                                          customFieldsController
-                                              .saveCustomField(value);
-                                        }
-                                      },
-                                    ),
-                                    SizedBox(height: 12.h),
-                                    Obx(
-                                      () => ListView.separated(
-                                        shrinkWrap: true,
-                                        physics: NeverScrollableScrollPhysics(),
-                                        itemCount: customFieldsController
-                                            .selectedCustomFields
-                                            .length,
-                                        separatorBuilder: (context, index) =>
-                                            Divider(
-                                              color: WarmOrganicBlueTheme
-                                                  .warmSilver,
-                                              thickness: 1,
-                                              height: 24.h,
-                                            ),
-                                        itemBuilder: (context, index) {
-                                          final field = customFieldsController
-                                              .selectedCustomFields[index];
-                                          return Stack(
-                                            children: [
-                                              Padding(
+                                          },
+                                        ),
+                                      ),
+                                      Obx(
+                                        () =>
+                                            customFieldsController
+                                                .selectedCustomFields
+                                                .isNotEmpty
+                                            ? Padding(
                                                 padding: EdgeInsets.only(
-                                                  right: 30.w,
+                                                  top: 12.h,
                                                 ),
-                                                child: buildCustomFieldWidget(
-                                                  field,
-                                                  context,
-                                                ),
-                                              ),
-                                              Positioned(
-                                                top: 0,
-                                                right: 0,
-                                                child: GestureDetector(
-                                                  onTap: () async {
+                                                child: OrganicPrimaryButton(
+                                                  text: "Save Custom Fields",
+                                                  onPressed: () async {
                                                     await customFieldsController
-                                                        .deleteAppointmentCustomField(
+                                                        .saveAttachedCustomFields(
                                                           appointmentId: controller
                                                               .selectedAppointment
                                                               .value!
                                                               .apptID,
-                                                          fieldId:
-                                                              field.fieldID ??
-                                                              0,
                                                         );
                                                   },
-                                                  child: Container(
-                                                    padding: EdgeInsets.all(
-                                                      8.r,
-                                                    ),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.red
-                                                          .withValues(
-                                                            alpha: 0.1,
-                                                          ),
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.close,
-                                                      color: Colors.red,
-                                                      size: 20.sp,
-                                                    ),
-                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          );
-                                        },
+                                              )
+                                            : const SizedBox.shrink(),
                                       ),
-                                    ),
-                                    Obx(
-                                      () =>
-                                          customFieldsController
-                                              .selectedCustomFields
-                                              .isNotEmpty
-                                          ? Padding(
-                                              padding: EdgeInsets.only(
-                                                top: 12.h,
-                                              ),
-                                              child: OrganicPrimaryButton(
-                                                text: "Save Custom Fields",
-                                                onPressed: () async {
-                                                  await customFieldsController
-                                                      .saveAttachedCustomFields(
-                                                        appointmentId: controller
-                                                            .selectedAppointment
-                                                            .value!
-                                                            .apptID,
-                                                      );
-                                                },
-                                              ),
-                                            )
-                                          : const SizedBox.shrink(),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 12.h),
+                                SizedBox(height: 12.h),
 
-                              _buildTabsGrid(),
-                              SizedBox(height: 70.h),
-                            ],
+                                _buildTabsGrid(),
+                                SizedBox(height: 70.h),
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -2475,6 +2488,37 @@ Color getStatusColor(String statusName) {
   }
 }
 
+/// Decoded PNG bytes for a signature value (data URI or raw base64), or null if malformed.
+Uint8List? signatureBytesFromBase64(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return null;
+  try {
+    final payload = raw.split(',').last.replaceAll(RegExp(r'\s'), '');
+    if (payload.isEmpty) return null;
+    return base64Decode(payload);
+  } catch (e) {
+    debugPrint('Error decoding signature image: $e');
+    return null;
+  }
+}
+
+/// Formatted last-updated date for display, or null when unparseable.
+String? formatLastUpdatedDate(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return null;
+  DateTime? date = DateTime.tryParse(raw);
+  if (date == null) {
+    // Same epoch format as CreatedDateTime: /Date(1760000000000)/
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    final millis = digits.isNotEmpty ? int.tryParse(digits) : null;
+    if (millis != null) {
+      date = digits.length <= 11
+          ? DateTime.fromMillisecondsSinceEpoch(millis * 1000)
+          : DateTime.fromMillisecondsSinceEpoch(millis);
+    }
+  }
+  if (date == null) return null;
+  return DateFormat('MM/dd/yyyy hh:mm a').format(date);
+}
+
 Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
   final apptC = Get.find<AppointmentController>();
   switch (field.fieldType) {
@@ -2667,6 +2711,9 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
     case 'signature':
       return StatefulBuilder(
         builder: (context, setFieldState) {
+          // Data URI or raw base64 → bytes; null when missing or malformed
+          final signatureBytes = signatureBytesFromBase64(field.signatureValue);
+          final lastUpdatedLabel = formatLastUpdatedDate(field.lastUpdated);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -2692,12 +2739,16 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
                     border: OutlineInputBorder(),
                     suffixIcon: Icon(Icons.draw_outlined),
                   ),
-                  child: (field.signatureValue ?? '').isNotEmpty
+                  child: signatureBytes != null
                       ? Image.memory(
-                          base64Decode(field.signatureValue!.split(',').last),
+                          signatureBytes,
                           height: 100.h,
                           fit: BoxFit.contain,
                           alignment: Alignment.centerLeft,
+                          errorBuilder: (_, _, _) => Text(
+                            "Tap to sign",
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         )
                       : Text(
                           "Tap to sign",
@@ -2705,6 +2756,15 @@ Widget buildCustomFieldWidget(CustomFieldModel field, BuildContext context) {
                         ),
                 ),
               ),
+              if (lastUpdatedLabel != null) ...[
+                SizedBox(height: 6.h),
+                Text(
+                  'Last updated: $lastUpdatedLabel',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: WarmOrganicBlueTheme.coolGray,
+                  ),
+                ),
+              ],
             ],
           );
         },

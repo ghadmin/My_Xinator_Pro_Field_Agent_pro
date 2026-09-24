@@ -57,21 +57,36 @@ class ResponsiveCenter extends StatelessWidget {
     required this.child,
     this.maxWidth = 640,
     this.alignment = Alignment.topCenter,
+    this.minHeight,
   });
 
   final Widget child;
   final double maxWidth;
   final AlignmentGeometry alignment;
 
+  /// Min height for the alignment box on tablets. Non-top alignments do
+  /// nothing inside a scroll view — it passes unbounded height, so Align
+  /// shrink-wraps — pass the viewport height to make e.g.
+  /// [Alignment.center] actually center vertically.
+  final double? minHeight;
+
   @override
   Widget build(BuildContext context) {
     if (!context.isTabletLayout) return child;
-    return Align(
+    final aligned = Align(
       alignment: alignment,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: child,
       ),
+    );
+    // minHeight (Align lost its `constraints` param): only meaningful for
+    // non-top alignments inside a scroll view, where unbounded height
+    // would otherwise make Align shrink-wrap and the alignment a no-op.
+    if (minHeight == null) return aligned;
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: minHeight!),
+      child: aligned,
     );
   }
 }
@@ -93,8 +108,15 @@ class AdaptiveListGrid extends StatelessWidget {
     this.controller,
     this.shrinkWrap = false,
     this.tabletMaxColumnExtent = 420,
+
     /// width / height of a grid cell; tune per screen to fit its card.
     this.tabletChildAspectRatio = 3.2,
+
+    /// Fixed logical height for every grid cell. When set it overrides
+    /// [tabletChildAspectRatio], which alone cannot guarantee enough height:
+    /// cell height = width / ratio, so narrow columns (more of them, rotated
+    /// window) yield short cells and cards with multi-line text overflow.
+    this.tabletMainAxisExtent,
     this.tabletSpacing = 12,
   });
 
@@ -107,6 +129,7 @@ class AdaptiveListGrid extends StatelessWidget {
   final bool shrinkWrap;
   final double tabletMaxColumnExtent;
   final double tabletChildAspectRatio;
+  final double? tabletMainAxisExtent;
   final double tabletSpacing;
 
   @override
@@ -130,6 +153,7 @@ class AdaptiveListGrid extends StatelessWidget {
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: tabletMaxColumnExtent,
         childAspectRatio: tabletChildAspectRatio,
+        mainAxisExtent: tabletMainAxisExtent,
         crossAxisSpacing: tabletSpacing,
         mainAxisSpacing: tabletSpacing,
       ),
