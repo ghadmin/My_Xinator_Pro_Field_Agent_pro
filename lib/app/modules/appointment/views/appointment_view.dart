@@ -219,7 +219,7 @@ class AppointmentView extends GetView<AppointmentController> {
                                 radius: 8,
                                 color: Colors.white,
                                 border: Border.all(
-                                  color: Colors.transparent,
+                                  color: Colors.white,
                                   width: 0,
                                 ),
                                 onPressed: () async {
@@ -316,6 +316,8 @@ class AppointmentView extends GetView<AppointmentController> {
                                   child: Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: Column(

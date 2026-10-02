@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+
+import '../../../../utils/responsive.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
@@ -33,7 +35,7 @@ class FormsInboxView extends GetView<FormsController> {
 
     var theme = Theme.of(context);
     return Scaffold(
-      appBar: Get.size.width <= 440
+      appBar: Get.size.width <= 440 || context.isTabletLayout
           ? AppBar(
               title: const Text("Forms Inbox"),
               actions: [
@@ -352,7 +354,7 @@ class FormsInboxView extends GetView<FormsController> {
               'queueId': form.queueId,
               'formName': form.template.name,
               // Add response data for pre-populating fields
-              if (responses != null) 'responses': responses,
+              'responses': ?responses,
               'isReadOnly': isReadOnly,
             },
           ),

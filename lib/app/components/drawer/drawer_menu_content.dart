@@ -23,7 +23,7 @@ import '../global-widgets/text_widget.dart';
 /// hosted screen. When null (standalone phone routes) items keep their
 /// original Get.toNamed behavior.
 class DrawerMenuContent extends StatelessWidget {
-  DrawerMenuContent({super.key, required this.indexClicked, this.onItemTap});
+  const DrawerMenuContent({super.key, required this.indexClicked, this.onItemTap});
 
   final int indexClicked;
 

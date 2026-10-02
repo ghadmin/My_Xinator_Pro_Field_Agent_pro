@@ -6,7 +6,7 @@ import 'package:myxinator_pro_field_agent_pro/app/service/location/models/locati
 
 /// Enhanced location tracking control with debugging and retry options
 class LocationTrackingControlWithRetry extends StatelessWidget {
-  const LocationTrackingControlWithRetry({Key? key}) : super(key: key);
+  const LocationTrackingControlWithRetry({super.key});
 
   @override
   Widget build(BuildContext context) {

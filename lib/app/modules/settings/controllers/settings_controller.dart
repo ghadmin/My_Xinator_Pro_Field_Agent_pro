@@ -19,7 +19,7 @@ class SettingsController extends GetxController with ExceptionHandler {
   final selectedTicket = Rx<TicketStatusSettings?>(null);
   Future<void> getTicketStatus() async {
     if (await NetworkConnectivity.isNetworkAvailable()) {
-      var companyID = await MySharedPref.getCompanyID();
+      var companyID = MySharedPref.getCompanyID();
 
       var response = await DioClient()
           .get(
@@ -60,7 +60,7 @@ class SettingsController extends GetxController with ExceptionHandler {
   final selectedAppointmentsStatus = Rx<AppointmentStatusSetting?>(null);
   Future<void> getAppointmentStatus() async {
     if (await NetworkConnectivity.isNetworkAvailable()) {
-      var companyID = await MySharedPref.getCompanyID();
+      var companyID = MySharedPref.getCompanyID();
 
       var response = await DioClient()
           .get(

@@ -805,7 +805,7 @@ class OrganicAvatar extends StatelessWidget {
             ? Image.network(
                 imageUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildInitials(),
+                errorBuilder: (_, _, _) => _buildInitials(),
               )
             : _buildInitials(),
       ),

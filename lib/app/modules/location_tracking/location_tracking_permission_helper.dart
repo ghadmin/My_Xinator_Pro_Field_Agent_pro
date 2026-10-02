@@ -198,7 +198,7 @@ class LocationTrackingPermissionHelper {
 
       return true;
     } catch (e) {
-      print('Error requesting permissions: $e');
+      debugPrint('Error requesting permissions: $e');
       return false;
     }
   }

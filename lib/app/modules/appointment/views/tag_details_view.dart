@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../../utils/responsive.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
@@ -10,7 +12,7 @@ class TagSelectionScreen extends GetView<AppointmentController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Get.size.width <= 440
+      appBar: Get.size.width <= 440 || context.isTabletLayout
           ? AppBar(title: Text("Select or Add Tag"), centerTitle: false)
           : PreferredSize(
               preferredSize: Size.fromHeight(40.sp),

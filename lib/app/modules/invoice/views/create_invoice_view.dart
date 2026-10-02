@@ -33,11 +33,11 @@ class CreateInvoiceView extends GetView<InvoiceController> {
     });
 
     var theme = Theme.of(context);
-    return WillPopScope(
+    return PopScope(
       // Save backup when navigating back without submitting
-      onWillPop: () async {
-        controller.saveBackup(controller.selectedCreateType.value);
-        return true;
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) controller.saveBackup(controller.selectedCreateType.value);
       },
       child: Scaffold(
         appBar: buildAppBar(context, theme),
@@ -435,7 +435,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                       );
                                     },
                                     buildDefaultDragHandles: false,
-                                    onReorder: (oldIndex, newIndex) {
+                                    onReorderItem: (oldIndex, newIndex) {
                                       controller.reorderBillableItems(
                                         oldIndex,
                                         newIndex,
@@ -2542,7 +2542,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 controller.markAsDirty();
                                 controller.selectedItemList[index].isTaxable =
                                     value;
-                                controller.createTotalForEdit();
+                                controller.createTotal();
                                 controller.selectedItemList.refresh();
                                 controller.updateRequestedDepositAmount();
                               },

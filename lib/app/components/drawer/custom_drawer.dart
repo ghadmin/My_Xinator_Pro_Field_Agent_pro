@@ -14,7 +14,7 @@ import 'tablet_shell_scope.dart';
 /// Hosted by TabletShellView ([TabletShellScope]): items swap the shell's
 /// screen instead, and the active entry comes from the scope's selection.
 class CustomDrawer extends StatelessWidget {
-  CustomDrawer({super.key, required this.indexClicked});
+  const CustomDrawer({super.key, required this.indexClicked});
   final int indexClicked;
 
   @override

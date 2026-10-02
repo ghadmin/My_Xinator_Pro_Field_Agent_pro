@@ -3,10 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/appointment_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/resource_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/service_type_model.dart';
-import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/site_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/models/time_slot_model.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/customer/models/customer_model.dart';
 
@@ -264,7 +262,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
       }
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
+        var companyID = MySharedPref.getCompanyID();
 
         var response = await DioClient()
             .get(
@@ -320,7 +318,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
       isLoadingServiceTypes.value = true;
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
+        var companyID = MySharedPref.getCompanyID();
 
         // Build request body based on selected calendar
         Map<String, dynamic> requestBody = {
@@ -399,7 +397,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
       isLoadingResources.value = true;
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
+        var companyID = MySharedPref.getCompanyID();
 
         // Build request body based on selected service type and calendar
         Map<String, dynamic> requestBody = {
@@ -471,7 +469,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
   /// Auto-select resource that matches logged-in user's email
   Future<void> _autoSelectResourceByEmail() async {
     try {
-      final userEmail = await MySharedPref.getEmail();
+      final userEmail = MySharedPref.getEmail();
       if (userEmail == null || userEmail.isEmpty) {
         kLog("No user email found in shared preferences");
         return;
@@ -506,7 +504,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
       isAppointmentIdLoading.value = true;
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
+        var companyID = MySharedPref.getCompanyID();
 
         var response = await DioClient()
             .post(
@@ -694,9 +692,9 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
         final customer = selectedCustomer.value;
 
         // Get required user data
-        final companyID = await MySharedPref.getCompanyID();
+        final companyID = MySharedPref.getCompanyID();
         final userID = MySharedPref.getResourceID();
-        final userEmail = await MySharedPref.getEmail();
+        final userEmail = MySharedPref.getEmail();
 
         // Get the selected time slot model to extract TimeSlotId (if time slot is selected)
         final timeSlotId = selectedTimeSlot.value != null
@@ -719,7 +717,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
             "CustomerID": customer?.customerID ?? '',
             "ServiceTypeId": selectedServiceType.value?.toString() ?? '',
             "ResourceID": selectedResource.value ?? 0,
-            if (timeSlotId != null) "TimeSlotId": timeSlotId,
+            "TimeSlotId": ?timeSlotId,
             "StartDateTime": startDateTime,
             "EndDateTime": endDateTime,
             "StatusId": selectedStatus.value?.toString() ?? '2',
@@ -1213,7 +1211,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
         final customer = selectedCustomer.value;
-        final companyID = await MySharedPref.getCompanyID();
+        final companyID = MySharedPref.getCompanyID();
 
         // Create site data according to new API requirements
         final siteData = {
@@ -1305,7 +1303,7 @@ class CreateAppointmentController extends GetxController with ExceptionHandler {
       isLoadingSites.value = true;
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        final companyID = await MySharedPref.getCompanyID();
+        final companyID = MySharedPref.getCompanyID();
 
         final requestData = {
           "companyId": companyID,

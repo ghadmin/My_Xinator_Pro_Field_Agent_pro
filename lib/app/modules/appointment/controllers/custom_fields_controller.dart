@@ -42,7 +42,7 @@ class CustomFieldsController extends GetxController
   /// );
   /// ```
 
-  setInitialCustomFieldValues() {}
+  void setInitialCustomFieldValues() {}
 
   Future<void> saveCustomFieldToServer({
     required int appointmentId,
@@ -126,7 +126,7 @@ class CustomFieldsController extends GetxController
     // showLoading();
     try {
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
+        var companyID = MySharedPref.getCompanyID();
         log("getCustomFields: CompanyID = $companyID");
 
         var response = await DioClient()
@@ -183,7 +183,7 @@ class CustomFieldsController extends GetxController
   }) async {
     log("getAttachedCustomFields: Starting to fetch attached custom fields...");
     try {
-      var companyID = await MySharedPref.getCompanyID();
+      var companyID = MySharedPref.getCompanyID();
       showLoading();
       if (await NetworkConnectivity.isNetworkAvailable()) {
         var response = await DioClient()

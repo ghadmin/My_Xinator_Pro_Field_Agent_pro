@@ -1815,6 +1815,7 @@ void showDialogStatusChange(
                         v.statusName ?? "N/A",
                         WarmOrganicBlueTheme.primaryBlue,
                         () async {
+                          Get.back(); // close the sheet, stay on details page
                           controller.settingController
                               .selectedAppointmentsStatus(v);
                           controller.selectedStatusValue(v.statusId!);
@@ -1998,6 +1999,7 @@ void showDialogTicketStatus(
                         v.statusName ?? "N/A",
                         WarmOrganicBlueTheme.primaryBlue,
                         () async {
+                          Get.back(); // close the sheet, stay on details page
                           controller.settingController.selectedTicket(v);
                           controller.selectedTicketStatusValue(v.statusId!);
                           await controller.updateAppointment();
@@ -2211,9 +2213,7 @@ void showSingleFilePickerBottomSheet(BuildContext context) {
                 if (result != null &&
                     result.files.isNotEmpty &&
                     context.mounted) {
-                  final validFiles = await _validateAndFilterFiles([
-                    File(result.files.single.path!),
-                  ], context);
+                  final validFiles = [File(result.files.single.path!)];
                   if (validFiles.isNotEmpty) {
                     // Add files to upload list
                     controller.fileUploadList.add(
@@ -2239,9 +2239,7 @@ void showSingleFilePickerBottomSheet(BuildContext context) {
                 if (result != null &&
                     result.files.isNotEmpty &&
                     context.mounted) {
-                  final validFiles = await _validateAndFilterFiles([
-                    File(result.files.single.path!),
-                  ], context);
+                  final validFiles = [File(result.files.single.path!)];
                   if (validFiles.isNotEmpty) {
                     // Upload file directly using FileController
                     final appointment = controller.selectedAppointment.value;
@@ -2296,10 +2294,9 @@ void showFileBottomSheet(BuildContext context, int index) {
                 if (result != null &&
                     result.files.isNotEmpty &&
                     context.mounted) {
-                  final validFiles = await _validateAndFilterFiles(
-                    result.files.map((e) => File(e.path!)).toList(),
-                    context,
-                  );
+                  final validFiles = result.files
+                      .map((e) => File(e.path!))
+                      .toList();
                   if (validFiles.isNotEmpty) {
                     if (index != -1) {
                       controller.fileUploadList[index].files.addAll(validFiles);
@@ -2328,10 +2325,9 @@ void showFileBottomSheet(BuildContext context, int index) {
                 if (result != null &&
                     result.files.isNotEmpty &&
                     context.mounted) {
-                  final validFiles = await _validateAndFilterFiles(
-                    result.files.map((e) => File(e.path!)).toList(),
-                    context,
-                  );
+                  final validFiles = result.files
+                      .map((e) => File(e.path!))
+                      .toList();
                   if (validFiles.isNotEmpty) {
                     if (index != -1) {
                       controller.fileUploadList[index].files.addAll(validFiles);
@@ -2353,38 +2349,6 @@ void showFileBottomSheet(BuildContext context, int index) {
       ),
     ),
   );
-}
-
-Future<List<File>> _validateAndFilterFiles(
-  List<File> files,
-  BuildContext context,
-) async {
-  const maxSizeInBytes = 10 * 1024 * 1024;
-  final validFiles = <File>[];
-  final skippedFiles = <String>[];
-
-  for (var file in files) {
-    try {
-      final fileSize = await file.length();
-      if (fileSize <= maxSizeInBytes) {
-        validFiles.add(file);
-      } else {
-        final sizeInMB = (fileSize / (1024 * 1024)).toStringAsFixed(1);
-        skippedFiles.add('${file.uri.pathSegments.last} ($sizeInMB MB)');
-      }
-    } catch (e) {
-      skippedFiles.add('${file.uri.pathSegments.last} (Error: $e)');
-    }
-  }
-
-  if (skippedFiles.isNotEmpty && context.mounted) {
-    MySnackBar.showErrorToast(
-      message:
-          'Skipped ${skippedFiles.length} file(s) over 10MB limit:\n${skippedFiles.take(3).join("\n")}${skippedFiles.length > 3 ? "\n..." : ""}',
-    );
-  }
-
-  return validFiles;
 }
 
 Future<String> compressImage(String filePath) async {

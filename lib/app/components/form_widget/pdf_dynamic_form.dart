@@ -2664,7 +2664,6 @@ class _FilePickerDialogState extends State<FilePickerDialog> {
 /// ============================================
 /// PDF GENERATOR - Export Filled Forms
 /// ============================================
-/// TODO: Implement PDF generation using syncfusion_flutter_pdf or similar
 /// This will allow generating filled PDFs from form submissions
 ///
 /// Example usage:

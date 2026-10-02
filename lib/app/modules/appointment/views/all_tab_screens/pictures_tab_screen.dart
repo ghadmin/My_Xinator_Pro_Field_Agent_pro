@@ -426,13 +426,13 @@ class _PicturesTabScreenState extends State<PicturesTabScreen> {
                                       child: CachedNetworkImage(
                                         imageUrl: item.fileUrl,
                                         fit: BoxFit.fill,
-                                        placeholder: (_, __) => Container(
+                                        placeholder: (_, _) => Container(
                                           color: Colors.grey[200],
                                           child: const Center(
                                             child: CircularProgressIndicator(),
                                           ),
                                         ),
-                                        errorWidget: (_, __, ___) => Container(
+                                        errorWidget: (_, _, _) => Container(
                                           color: Colors.grey[300],
                                           child: const Icon(Icons.error),
                                         ),

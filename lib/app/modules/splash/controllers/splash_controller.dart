@@ -27,8 +27,8 @@ class SplashController extends GetxController
 
   void _navigateToNextScreen() {
     Future.delayed(const Duration(seconds: 4), () async {
-      var companyID = await MySharedPref.getCompanyID();
-      var email = await MySharedPref.getEmail();
+      var companyID = MySharedPref.getCompanyID();
+      var email = MySharedPref.getEmail();
       if (companyID != null && companyID != "") {
         // Tablets open the landing shell (menu rail + swappable pane);
         // phones keep the plain appointments screen.

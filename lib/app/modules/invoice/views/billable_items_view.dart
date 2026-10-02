@@ -7,6 +7,7 @@ import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/infinite_scroll_listview.dart';
 import '../../../modules/item/models/item_bundle_model.dart';
 import '../../../modules/item/models/item_list_model.dart';
+import '../../../modules/item/controllers/item_controller.dart';
 import '../controllers/invoice_controller.dart';
 
 class BillableItemsView extends GetView<InvoiceController> {

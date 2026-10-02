@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 /// FaProTrack GPS location point model
 /// Matches the FaProTrack API specification exactly

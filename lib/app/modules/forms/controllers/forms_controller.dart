@@ -129,7 +129,7 @@ class FormsController extends GetxController with ExceptionHandler {
       }
 
       // Get company ID from shared preferences
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
 
       if (companyId == null || companyId.isEmpty) {
         errorMessage.value = "Company ID not found. Please login again.";
@@ -333,7 +333,7 @@ class FormsController extends GetxController with ExceptionHandler {
         return;
       }
 
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
       if (companyId == null || companyId.isEmpty) {
         errorMessage.value = "Company ID not found";
         isAcknowledging.value = false;
@@ -379,7 +379,7 @@ class FormsController extends GetxController with ExceptionHandler {
         return false;
       }
 
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
       if (companyId == null || companyId.isEmpty) {
         errorMessage.value = "Company ID not found";
         isSubmitting.value = false;
@@ -597,7 +597,7 @@ class FormsController extends GetxController with ExceptionHandler {
     try {
       showLoading();
 
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
 
       if (companyId == null || companyId.isEmpty) {
         MySnackBar.showErrorToast(message: "Company ID not found");
@@ -796,7 +796,7 @@ class FormsController extends GetxController with ExceptionHandler {
         throw Exception('No network connection');
       }
 
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
       if (companyId == null || companyId.isEmpty) {
         throw Exception('Company ID not found');
       }
@@ -829,7 +829,7 @@ class FormsController extends GetxController with ExceptionHandler {
         return null;
       }
 
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
       if (companyId == null || companyId.isEmpty) {
         MySnackBar.showErrorToast(message: "Company ID not found");
         return null;
@@ -875,7 +875,7 @@ class FormsController extends GetxController with ExceptionHandler {
         return null;
       }
 
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
       if (companyId == null || companyId.isEmpty) {
         MySnackBar.showErrorToast(message: "Company ID not found");
         return null;
@@ -913,7 +913,7 @@ class FormsController extends GetxController with ExceptionHandler {
         throw Exception('No network connection');
       }
 
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
       if (companyId == null || companyId.isEmpty) {
         throw Exception('Company ID not found');
       }
@@ -1113,9 +1113,9 @@ class FormsController extends GetxController with ExceptionHandler {
       final apiSmartFields = parseSmartFieldData(form);
 
       // Get app-level values as fallback
-      final technicianName = await MySharedPref.getUserName() ?? 'Unknown';
+      final technicianName = MySharedPref.getUserName() ?? 'Unknown';
       final technicianId = MySharedPref.getResourceID();
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
 
       final appSmartFields = {
         'technician_name': technicianName,
@@ -1412,7 +1412,7 @@ class FormsController extends GetxController with ExceptionHandler {
       }
 
       // Get company ID from shared preferences
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
 
       if (companyId == null || companyId.isEmpty) {
         kLog('⚠️ CompanyId is null or empty');
@@ -1564,7 +1564,7 @@ class FormsController extends GetxController with ExceptionHandler {
       }
 
       // Get company ID from shared preferences
-      final companyId = await MySharedPref.getCompanyID();
+      final companyId = MySharedPref.getCompanyID();
 
       if (companyId == null || companyId.isEmpty) {
         kLog('⚠️ CompanyId is null or empty');
@@ -1594,7 +1594,7 @@ class FormsController extends GetxController with ExceptionHandler {
       );
 
       // Get filledBy from shared preferences (technician name)
-      final filledBy = await MySharedPref.getUserName();
+      final filledBy = MySharedPref.getUserName();
 
       final response = await _formsApiService.attachTemplates(
         companyId: companyId,
