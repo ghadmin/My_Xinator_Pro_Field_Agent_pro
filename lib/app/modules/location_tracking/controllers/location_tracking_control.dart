@@ -8,7 +8,7 @@ import '../../../service/location/models/location_tracking_status.dart';
 /// Simple location tracking control widget that can be added to any page
 /// Usage: Just add LocationTrackingControl() to any page in your app
 class LocationTrackingControl extends StatelessWidget {
-  const LocationTrackingControl({Key? key}) : super(key: key);
+  const LocationTrackingControl({super.key});
 
   @override
   Widget build(BuildContext context) {

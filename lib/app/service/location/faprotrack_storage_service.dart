@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/faprotrack_pending_location.dart';
 import 'models/faprotrack_location_model.dart';
@@ -26,9 +27,9 @@ class FaProTrackStorageService {
       _trackingStatusBox = await Hive.openBox(_trackingStatusBoxName);
 
       _isInitialized = true;
-      print('✅ FaProTrack storage service initialized');
+      debugPrint('✅ FaProTrack storage service initialized');
     } catch (e) {
-      print('❌ Failed to initialize FaProTrack storage: $e');
+      debugPrint('❌ Failed to initialize FaProTrack storage: $e');
       rethrow;
     }
   }
@@ -40,9 +41,9 @@ class FaProTrackStorageService {
     try {
       final pendingLocation = FaProTrackPendingLocation.fromLocation(location);
       await _pendingLocationsBox.put(pendingLocation.id, pendingLocation);
-      print('📦 Location queued: ${pendingLocation.id}');
+      debugPrint('📦 Location queued: ${pendingLocation.id}');
     } catch (e) {
-      print('❌ Failed to queue location: $e');
+      debugPrint('❌ Failed to queue location: $e');
     }
   }
 
@@ -54,7 +55,7 @@ class FaProTrackStorageService {
       final allLocations = _pendingLocationsBox.values.toList();
       return allLocations.where((loc) => loc.resourceId == resourceId).toList();
     } catch (e) {
-      print('❌ Failed to get pending locations: $e');
+      debugPrint('❌ Failed to get pending locations: $e');
       return [];
     }
   }
@@ -66,7 +67,7 @@ class FaProTrackStorageService {
     try {
       return _pendingLocationsBox.values.toList();
     } catch (e) {
-      print('❌ Failed to get all pending locations: $e');
+      debugPrint('❌ Failed to get all pending locations: $e');
       return [];
     }
   }
@@ -83,9 +84,9 @@ class FaProTrackStorageService {
 
     try {
       await _pendingLocationsBox.delete(id);
-      print('🗑️ Location removed from queue: $id');
+      debugPrint('🗑️ Location removed from queue: $id');
     } catch (e) {
-      print('❌ Failed to remove location: $e');
+      debugPrint('❌ Failed to remove location: $e');
     }
   }
 
@@ -98,10 +99,10 @@ class FaProTrackStorageService {
       if (location != null) {
         final updatedLocation = location.incrementRetry();
         await _pendingLocationsBox.put(id, updatedLocation);
-        print('🔄 Updated retry count for $id: $newRetryCount');
+        debugPrint('🔄 Updated retry count for $id: $newRetryCount');
       }
     } catch (e) {
-      print('❌ Failed to update retry count: $e');
+      debugPrint('❌ Failed to update retry count: $e');
     }
   }
 
@@ -122,9 +123,9 @@ class FaProTrackStorageService {
         await _pendingLocationsBox.delete(key);
       }
 
-      print('🗑️ Cleared $keysToRemove.length locations for technician $resourceId');
+      debugPrint('🗑️ Cleared $keysToRemove.length locations for technician $resourceId');
     } catch (e) {
-      print('❌ Failed to clear user locations: $e');
+      debugPrint('❌ Failed to clear user locations: $e');
     }
   }
 
@@ -135,9 +136,9 @@ class FaProTrackStorageService {
     try {
       final count = _pendingLocationsBox.length;
       await _pendingLocationsBox.clear();
-      print('🗑️ Cleared all $count pending locations');
+      debugPrint('🗑️ Cleared all $count pending locations');
     } catch (e) {
-      print('❌ Failed to clear all locations: $e');
+      debugPrint('❌ Failed to clear all locations: $e');
     }
   }
 
@@ -159,12 +160,12 @@ class FaProTrackStorageService {
       }
 
       if (keysToRemove.isNotEmpty) {
-        print('🧹 Cleaned up ${keysToRemove.length} old/expired locations');
+        debugPrint('🧹 Cleaned up ${keysToRemove.length} old/expired locations');
       }
 
       return keysToRemove.length;
     } catch (e) {
-      print('❌ Failed to cleanup old locations: $e');
+      debugPrint('❌ Failed to cleanup old locations: $e');
       return 0;
     }
   }
@@ -257,7 +258,7 @@ class FaProTrackStorageService {
         'high_retry': highRetry,
       };
     } catch (e) {
-      print('❌ Failed to get queue stats: $e');
+      debugPrint('❌ Failed to get queue stats: $e');
       return {};
     }
   }
@@ -275,7 +276,7 @@ class FaProTrackStorageService {
       await _pendingLocationsBox.close();
       await _trackingStatusBox.close();
       _isInitialized = false;
-      print('✅ FaProTrack storage service closed');
+      debugPrint('✅ FaProTrack storage service closed');
     }
   }
 }

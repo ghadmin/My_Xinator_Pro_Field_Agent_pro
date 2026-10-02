@@ -24,8 +24,8 @@ class RAGService {
     Map<String, dynamic>? filters,
   }) async {
     try {
-      final userID = await MySharedPref.getUserName();
-      final companyID = await MySharedPref.getCompanyID();
+      final userID = MySharedPref.getUserName();
+      final companyID = MySharedPref.getCompanyID();
 
       final response = await _dio.post(
         queryEndpoint,
@@ -33,7 +33,7 @@ class RAGService {
           'question': question,
           'user_id': userID,
           'company_id': companyID,
-          if (filters != null) 'filters': filters,
+          'filters': ?filters,
         },
       );
 
@@ -50,8 +50,8 @@ class RAGService {
   /// Sync appointments to RAG system using the actual API response format
   Future<bool> syncAppointments(List<dynamic> appointments) async {
     try {
-      final userID = await MySharedPref.getUserName();
-      final companyID = await MySharedPref.getCompanyID();
+      final userID = MySharedPref.getUserName();
+      final companyID = MySharedPref.getCompanyID();
 
       // Convert appointments to the format expected by RAG API
       final appointmentsData = appointments.map((apt) {

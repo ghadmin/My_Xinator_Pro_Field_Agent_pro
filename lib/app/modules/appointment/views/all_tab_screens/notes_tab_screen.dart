@@ -83,7 +83,7 @@ class _NotesTabScreenState extends State<NotesTabScreen> {
                 return ListView.separated(
                   padding: EdgeInsets.only(bottom: 80.h),
                   itemCount: notes.length,
-                  separatorBuilder: (_, __) => SizedBox(height: 8.h),
+                  separatorBuilder: (_, _) => SizedBox(height: 8.h),
                   itemBuilder: (context, index) {
                     final note = notes[index];
                     final createdAt =

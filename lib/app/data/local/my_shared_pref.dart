@@ -30,46 +30,46 @@ class MySharedPref {
   static const String _trackingEnabledKey = 'is_tracking_enabled';
 
   /// set email
-  static setEmail(String email) =>
+  static Future<bool> setEmail(String email) =>
       _sharedPreferences!.setString(_emailKey, email);
 
   /// get email
-  static getEmail() => _sharedPreferences!.getString(_emailKey);
+  static String? getEmail() => _sharedPreferences!.getString(_emailKey);
 
   /// remove email
   static Future<bool> removeEmail() => _sharedPreferences!.remove(_emailKey);
 
   /// set userName
-  static setUserName(String userName) =>
+  static Future<bool> setUserName(String userName) =>
       _sharedPreferences!.setString(_userNameKey, userName);
 
   /// get userName
-  static getUserName() => _sharedPreferences!.getString(_userNameKey);
+  static String? getUserName() => _sharedPreferences!.getString(_userNameKey);
 
   /// remove userName
   static Future<bool> removeUserName() =>
       _sharedPreferences!.remove(_userNameKey);
 
   /// set company_id
-  static setCompanyID(String companyID) =>
+  static Future<bool> setCompanyID(String companyID) =>
       _sharedPreferences!.setString(_companyIDKey, companyID);
 
   /// get company_id
-  static getCompanyID() => _sharedPreferences!.getString(_companyIDKey);
+  static String? getCompanyID() => _sharedPreferences!.getString(_companyIDKey);
 
   /// remove company_id
   static Future<bool> removeCompanyID() =>
       _sharedPreferences!.remove(_companyIDKey);
 
   /// set company_name
-  static setCompanyName(String companyName) =>
+  static Future<bool> setCompanyName(String companyName) =>
       _sharedPreferences!.setString(_companyNameKey, companyName);
 
   /// get company_name
-  static getCompanyName() => _sharedPreferences!.getString(_companyNameKey);
+  static String? getCompanyName() => _sharedPreferences!.getString(_companyNameKey);
 
   /// set company_tag
-  static setCompanyType(String companyType) =>
+  static Future<bool> setCompanyType(String companyType) =>
       _sharedPreferences!.setString(_companyTypeKey, companyType);
 
   /// get company_tag
@@ -77,7 +77,7 @@ class MySharedPref {
       _sharedPreferences!.getString(_companyTypeKey);
 
   /// set resource_id
-  static setResourceID(int resourceID) =>
+  static Future<bool> setResourceID(int resourceID) =>
       _sharedPreferences!.setInt(_resourceIDKey, resourceID);
 
   /// get resource_id

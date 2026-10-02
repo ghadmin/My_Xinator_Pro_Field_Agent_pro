@@ -20,6 +20,7 @@ class CustomFieldModel {
   String? timeValue; // For time field
   String? dateValue; // For date field
   String? signatureValue; // For signature field (base64 PNG data URI)
+  String? lastUpdated; // Attached value's last-updated date (display only)
 
   CustomFieldModel(
       {this.fieldID,
@@ -30,7 +31,8 @@ class CustomFieldModel {
       this.options,
       this.appliesTo,
       this.createdDateTime,
-      this.companyId});
+      this.companyId,
+      this.lastUpdated});
 
   CustomFieldModel.fromJson(Map<String, dynamic> json) {
     fieldID = json['FieldID'];

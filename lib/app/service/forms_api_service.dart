@@ -590,9 +590,6 @@ class FormsApiService {
         final success = response['success'] as bool? ?? false;
         log('✅ Attach response: success=$success, count=$count');
 
-        // Check if any forms were already attached
-        final items = response['items'] as List? ?? [];
-
         return response;
       }
 

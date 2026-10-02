@@ -33,15 +33,18 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: inactive ? null : onPressed,
         style: ElevatedButton.styleFrom(
           foregroundColor: foregroundColor ?? Colors.white,
           backgroundColor:
-              backgroundColor ?? (isDark ? DarkThemeColors.buttonColor : LightThemeColors.buttonColor),
+              backgroundColor ??
+              (isDark
+                  ? DarkThemeColors.buttonColor
+                  : LightThemeColors.buttonColor),
           disabledBackgroundColor: isDark
               ? DarkThemeColors.buttonDisabledColor
               : LightThemeColors.buttonDisabledColor,
@@ -56,20 +59,25 @@ class PrimaryButton extends StatelessWidget {
           ),
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
         ),
-        child: TextWidget(
-          text: title,
-          style: TextStyle(
-            fontSize: 15.sp,
-            color: inactive
-                ? (isDark
-                    ? DarkThemeColors.buttonDisabledTextColor
-                    : LightThemeColors.buttonDisabledTextColor)
-                : (fontColor ?? Colors.white),
-            fontWeight: FontWeight.w600,
-            height: 1.2,
+        // Scale the label down to fit instead of ellipsizing, so the full
+        // text stays visible on narrow layouts (tablet grid cells, small
+        // phones). No-op whenever the label already fits.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: TextWidget(
+            text: title,
+            style: TextStyle(
+              fontSize: 15.sp,
+              color: inactive
+                  ? (isDark
+                        ? DarkThemeColors.buttonDisabledTextColor
+                        : LightThemeColors.buttonDisabledTextColor)
+                  : (fontColor ?? Colors.white),
+              fontWeight: FontWeight.w600,
+              height: 1.2,
+            ),
+            maxLines: 1,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
@@ -96,9 +104,9 @@ class SecondaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: inactive ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -125,20 +133,24 @@ class SecondaryButton extends StatelessWidget {
           ),
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 14.h),
         ),
-        child: TextWidget(
-          text: title,
-          style: TextStyle(
-            fontSize: 15.sp,
-            fontWeight: FontWeight.w600,
-            height: 1.2,
-            color: inactive
-                ? (isDark
-                    ? DarkThemeColors.buttonDisabledTextColor
-                    : LightThemeColors.buttonDisabledTextColor)
-                : null,
+        // Scale the label down to fit instead of ellipsizing (tablet grid
+        // cells, small phones); no-op whenever the label already fits.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: TextWidget(
+            text: title,
+            style: TextStyle(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w600,
+              height: 1.2,
+              color: inactive
+                  ? (isDark
+                        ? DarkThemeColors.buttonDisabledTextColor
+                        : LightThemeColors.buttonDisabledTextColor)
+                  : null,
+            ),
+            maxLines: 1,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
@@ -167,9 +179,9 @@ class SecondaryButtonWithIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: inactive ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -196,38 +208,42 @@ class SecondaryButtonWithIcon extends StatelessWidget {
           ),
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              iconData,
-              size: 18.sp,
-              color: inactive
-                  ? (isDark
-                      ? DarkThemeColors.buttonDisabledTextColor
-                      : LightThemeColors.buttonDisabledTextColor)
-                  : (isDark
-                      ? DarkThemeColors.primaryColor
-                      : LightThemeColors.primaryColor),
-            ),
-            SizedBox(width: 12.w),
-            TextWidget(
-              text: title,
-              style: TextStyle(
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
+        // Scale icon+label together to fit instead of ellipsizing the label;
+        // no-op whenever the content already fits.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                iconData,
+                size: 18.sp,
                 color: inactive
                     ? (isDark
-                        ? DarkThemeColors.buttonDisabledTextColor
-                        : LightThemeColors.buttonDisabledTextColor)
-                    : null,
+                          ? DarkThemeColors.buttonDisabledTextColor
+                          : LightThemeColors.buttonDisabledTextColor)
+                    : (isDark
+                          ? DarkThemeColors.primaryColor
+                          : LightThemeColors.primaryColor),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              SizedBox(width: 12.w),
+              TextWidget(
+                text: title,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                  color: inactive
+                      ? (isDark
+                            ? DarkThemeColors.buttonDisabledTextColor
+                            : LightThemeColors.buttonDisabledTextColor)
+                      : null,
+                ),
+                maxLines: 1,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -256,15 +272,16 @@ class PrimaryButtonWithIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: inactive ? null : onPressed,
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
-          backgroundColor:
-              isDark ? DarkThemeColors.buttonColor : LightThemeColors.buttonColor,
+          backgroundColor: isDark
+              ? DarkThemeColors.buttonColor
+              : LightThemeColors.buttonColor,
           disabledBackgroundColor: isDark
               ? DarkThemeColors.buttonDisabledColor
               : LightThemeColors.buttonDisabledColor,
@@ -276,36 +293,38 @@ class PrimaryButtonWithIcon extends StatelessWidget {
           ),
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              iconData,
-              size: 18.sp,
-              color: inactive
-                  ? (isDark
-                      ? DarkThemeColors.buttonDisabledTextColor
-                      : LightThemeColors.buttonDisabledTextColor)
-                  : Colors.white,
-            ),
-            SizedBox(width: 12.w),
-            TextWidget(
-              text: title,
-              style: TextStyle(
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                iconData,
+                size: 18.sp,
                 color: inactive
                     ? (isDark
-                        ? DarkThemeColors.buttonDisabledTextColor
-                        : LightThemeColors.buttonDisabledTextColor)
+                          ? DarkThemeColors.buttonDisabledTextColor
+                          : LightThemeColors.buttonDisabledTextColor)
                     : Colors.white,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              SizedBox(width: 12.w),
+              TextWidget(
+                text: title,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                  color: inactive
+                      ? (isDark
+                            ? DarkThemeColors.buttonDisabledTextColor
+                            : LightThemeColors.buttonDisabledTextColor)
+                      : Colors.white,
+                ),
+                maxLines: 1,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -330,9 +349,9 @@ class SocialButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SizedBox(
+    return Container(
       width: width,
-      height: height ?? 52.h,
+      constraints: BoxConstraints(minHeight: height ?? 52.h),
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -341,20 +360,18 @@ class SocialButton extends StatelessWidget {
               : LightThemeColors.primaryColor,
           backgroundColor: Colors.white,
           splashFactory: InkSplash.splashFactory,
-          shadowColor: (isDark
-                  ? DarkThemeColors.primaryColor
-                  : LightThemeColors.primaryColor)
-              .withValues(alpha: 0.15),
+          shadowColor:
+              (isDark
+                      ? DarkThemeColors.primaryColor
+                      : LightThemeColors.primaryColor)
+                  .withValues(alpha: 0.15),
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
           ),
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 14.h),
         ),
-        child: Image.asset(
-          socialIcon,
-          height: 24.sp,
-        ),
+        child: Image.asset(socialIcon, height: 24.sp),
       ),
     );
   }
@@ -383,7 +400,8 @@ class TextButtonWidget extends StatelessWidget {
     return TextButton(
       onPressed: inactive ? null : onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: textColor ??
+        foregroundColor:
+            textColor ??
             (isDark
                 ? DarkThemeColors.primaryColor
                 : LightThemeColors.primaryColor),
@@ -425,7 +443,8 @@ class IconButtonWidget extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
-      color: backgroundColor ??
+      color:
+          backgroundColor ??
           (isDark
               ? DarkThemeColors.surfaceColor
               : LightThemeColors.surfaceColor),
@@ -442,12 +461,12 @@ class IconButtonWidget extends StatelessWidget {
             size: 20.sp,
             color: inactive
                 ? (isDark
-                    ? DarkThemeColors.textDisabled
-                    : LightThemeColors.textDisabled)
+                      ? DarkThemeColors.textDisabled
+                      : LightThemeColors.textDisabled)
                 : (iconColor ??
-                    (isDark
-                        ? DarkThemeColors.iconActiveColor
-                        : LightThemeColors.iconActiveColor)),
+                      (isDark
+                          ? DarkThemeColors.iconActiveColor
+                          : LightThemeColors.iconActiveColor)),
           ),
         ),
       ),

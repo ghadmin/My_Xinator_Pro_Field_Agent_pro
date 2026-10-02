@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../../../../utils/responsive.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/item/models/item_list_model.dart';
@@ -465,22 +467,20 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
 
-    return WillPopScope(
+    return PopScope(
       // important! controls hardware back button behavior
-      onWillPop: () async {
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
         if (controller.isDirty.value) {
           final shouldSave = await _showUnsavedChangesDialogAsync(context);
           if (shouldSave == true) {
             await controller.editInvoice();
-            // controller.isDetailsView(false); // Save automatically
-            return true;
-          } else {
-            // controller.isDetailsView(false);
-            Get.back();
-            return false; // Prevent pop
           }
+          Get.back(); // Leave the screen, with or without saving
+        } else {
+          Get.back(); // Allow leaving
         }
-        return true; // Allow pop
       },
       child: Scaffold(
         appBar: buildPreferredSize(context, theme),
@@ -628,7 +628,8 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                   controller.billableItemsScrollController,
                               scrollDirection: Axis.horizontal,
                               child: SizedBox(
-                                width: 1200.sp, // Much wider table for more space
+                                width:
+                                    1200.sp, // Much wider table for more space
                                 child: Theme(
                                   data: theme.copyWith(
                                     canvasColor: Colors.white,
@@ -651,7 +652,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                                       );
                                     },
                                     buildDefaultDragHandles: false,
-                                    onReorder: (oldIndex, newIndex) {
+                                    onReorderItem: (oldIndex, newIndex) {
                                       controller.reorderBillableItems(
                                         oldIndex,
                                         newIndex,
@@ -931,7 +932,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
     BuildContext context,
     ThemeData theme,
   ) {
-    return Get.size.width <= 440
+    return Get.size.width <= 440 || context.isTabletLayout
         ? AppBar(
             title: Text('${controller.type.value} Details'),
             actions: [
@@ -3976,7 +3977,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 child: Image.memory(
                   imageBytes,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, _, _) => Container(
                     color: Colors.grey.shade300,
                     child: Icon(
                       Icons.broken_image,
@@ -4037,7 +4038,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           child: CachedNetworkImage(
             imageUrl: fullUrl,
             fit: BoxFit.cover,
-            placeholder: (_, __) => Container(
+            placeholder: (_, _) => Container(
               color: Colors.grey.shade200,
               child: Center(
                 child: SizedBox(
@@ -4050,7 +4051,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 ),
               ),
             ),
-            errorWidget: (_, __, ___) => Container(
+            errorWidget: (_, _, _) => Container(
               color: Colors.grey.shade300,
               child: Icon(Icons.broken_image, size: 20.sp, color: Colors.grey),
             ),
@@ -4207,7 +4208,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
           child: Image.memory(
             imageBytes,
             fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               height: 200.sp,
               width: double.infinity,
               color: Colors.grey.shade300,
@@ -4288,7 +4289,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
         child: CachedNetworkImage(
           imageUrl: fullUrl,
           fit: BoxFit.contain,
-          placeholder: (_, __) => Container(
+          placeholder: (_, _) => Container(
             height: 200.sp,
             width: double.infinity,
             color: Colors.grey.shade200,
@@ -4296,7 +4297,7 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
               child: CircularProgressIndicator(color: Get.theme.primaryColor),
             ),
           ),
-          errorWidget: (_, __, ___) => Container(
+          errorWidget: (_, _, _) => Container(
             height: 200.sp,
             width: double.infinity,
             color: Colors.grey.shade300,

@@ -51,7 +51,7 @@ class DeviceInfoService {
   static String _generateDeviceId() {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final random = DateTime.now().microsecondsSinceEpoch;
-    return 'DEVICE_${timestamp}_${random}';
+    return 'DEVICE_${timestamp}_$random';
   }
 
   /// Get current battery level (0-100)

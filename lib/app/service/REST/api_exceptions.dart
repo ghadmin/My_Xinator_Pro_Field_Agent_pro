@@ -55,7 +55,7 @@ class DioExceptions implements Exception {
   String _messageForUnknown(DioException dioException) {
     final error = dioException.error;
     if (error is FormatException) {
-      return "The server sent an invalid response. Please try again later.";
+      return "Service is currently unavailable. Please try again later.";
     }
     if (error is HandshakeException) {
       return "Secure connection failed. Please check your network or try again later.";

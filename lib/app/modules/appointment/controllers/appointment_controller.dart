@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
@@ -25,7 +26,6 @@ import '../../../service/helper/network_connectivity.dart';
 import '../../customer/controllers/customer_controller.dart';
 import '../../invoice/controllers/invoice_controller.dart';
 import '../../item/models/item_list_model.dart';
-// TODO: re-enable location tracking
 import '../../location_tracking/controllers/location_tracking_controller.dart';
 import '../../settings/controllers/settings_controller.dart';
 import '../models/appointment_model.dart';
@@ -156,7 +156,7 @@ class AppointmentController extends GetxController
       }
 
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
+        var companyID = MySharedPref.getCompanyID();
 
         var response = await DioClient()
             .get(
@@ -224,7 +224,7 @@ class AppointmentController extends GetxController
           return;
         }
 
-        var companyID = await MySharedPref.getCompanyID();
+        var companyID = MySharedPref.getCompanyID();
 
         final response = await DioClient()
             .get(
@@ -442,7 +442,7 @@ class AppointmentController extends GetxController
   Future<void> sendSMS() async {
     showLoading(debugInfo: "sendSMS - Start");
     try {
-      var companyID = await MySharedPref.getCompanyID();
+      var companyID = MySharedPref.getCompanyID();
       var response = await DioClient()
           .get(
             url: ApiUrl.sendCustomerSMS,
@@ -572,7 +572,7 @@ class AppointmentController extends GetxController
 
   final userId = Rx<dynamic>(null);
   Future<void> getCurrentUserId() async {
-    var userID = await MySharedPref.getUserName();
+    var userID = MySharedPref.getUserName();
     userId(userID);
   }
 
@@ -677,7 +677,7 @@ class AppointmentController extends GetxController
     await Future.delayed(Duration.zero);
     // <- give UI a chance to render
     try {
-      var companyID = await MySharedPref.getCompanyID();
+      var companyID = MySharedPref.getCompanyID();
       // ============================================
       // OLD QUERY PARAMETERS (Kept for reference)
       // ============================================
@@ -788,7 +788,7 @@ class AppointmentController extends GetxController
     if (showLoader) showLoading();
     await Future.delayed(Duration.zero);
     try {
-      var companyID = await MySharedPref.getCompanyID();
+      var companyID = MySharedPref.getCompanyID();
 
       // Prepare request params
       final queryParams = {
@@ -833,7 +833,7 @@ class AppointmentController extends GetxController
   Timer? _pollingTimer;
   final isSelectSingleNeedToCall = RxBool(false);
   Future<void> startPeriodic() async {
-    var companyID = await MySharedPref.getCompanyID();
+    var companyID = MySharedPref.getCompanyID();
     _pollingTimer = Timer.periodic(const Duration(seconds: 120), (timer) async {
       if (companyID != null && companyID != "") {
         await getAppointments(showLoader: false);
@@ -889,8 +889,8 @@ class AppointmentController extends GetxController
       // showLoading();
       if (showLoader) isAppointmentEmpty.value = false;
       if (await NetworkConnectivity.isNetworkAvailable()) {
-        var companyID = await MySharedPref.getCompanyID();
-        var userID = await MySharedPref.getUserName();
+        var companyID = MySharedPref.getCompanyID();
+        var userID = MySharedPref.getUserName();
         var currentDateTime = DateTime.now();
 
         var response = await DioClient()
@@ -1000,8 +1000,8 @@ class AppointmentController extends GetxController
     if (showLoader) showLoading();
 
     if (await NetworkConnectivity.isNetworkAvailable()) {
-      var companyID = await MySharedPref.getCompanyID();
-      var userID = await MySharedPref.getUserName();
+      var companyID = MySharedPref.getCompanyID();
+      var userID = MySharedPref.getUserName();
       var currentDateTime = DateTime.now();
 
       var response = await DioClient()
@@ -1199,8 +1199,8 @@ class AppointmentController extends GetxController
 
   Future<void> updateAppointment() async {
     showLoading();
-    var companyID = await MySharedPref.getCompanyID();
-    var userID = await MySharedPref.getUserName();
+    var companyID = MySharedPref.getCompanyID();
+    var userID = MySharedPref.getUserName();
     kLog(
       "body ${{
         "appointment": {"CompanyID": companyID, "ApptID": appointmentID, "AppoinmentUId": appointmentUID, "CustomerID": customerID, "ServiceType": serviceType, "ServiceTypeId": serviceTypeID, "ResourceID": resourceID, "TimeSlotId": timeSlotID, "ApptDateTime": dateTimeConverter(inputTime: requestDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "StartDateTime": dateTimeConverter(inputTime: startDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "EndDateTime": dateTimeConverter(inputTime: endDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "CreatedDateTime": dateTimeConverter(inputTime: requestDate, outputFormat: "yyyy/MM/dd hh:mm a", inputFormat: "MM/dd/yyyy hh:mm a"), "TimeSlot": timeSlot, "Note": noteText.value, "PromoCode": promoCode, "StatusId": selectedStatusValue.value, "TicketStatusId": selectedTicketStatusValue.value, "UserID": userID, "CreatedBy": createdBy},
@@ -1257,7 +1257,8 @@ class AppointmentController extends GetxController
     await getInvoiceList();
 
     hideLoading();
-    Get.back();
+    // Stay on the details page after an update — callers close their own
+    // dialogs/sheets, and popping here kicked the user back to the list.
     MySnackBar.showToast(message: response);
   }
 
@@ -1265,8 +1266,8 @@ class AppointmentController extends GetxController
   Future<void> saveNote(bool isForUpdate) async {
     showLoading();
 
-    var companyID = await MySharedPref.getCompanyID();
-    var userID = await MySharedPref.getUserName();
+    var companyID = MySharedPref.getCompanyID();
+    var userID = MySharedPref.getUserName();
     final appointment = selectedAppointment.value;
     final site = selectedSite.value;
 

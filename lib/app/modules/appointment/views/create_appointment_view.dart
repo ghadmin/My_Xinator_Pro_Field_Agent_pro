@@ -437,7 +437,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                         width: 100.sp,
                         height: 12.sp,
                         decoration: BoxDecoration(
-                          color: theme.disabledColor.withOpacity(0.3),
+                          color: theme.disabledColor.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -446,7 +446,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                         width: double.infinity,
                         height: 20.sp,
                         decoration: BoxDecoration(
-                          color: theme.disabledColor.withOpacity(0.3),
+                          color: theme.disabledColor.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -455,7 +455,7 @@ class CreateAppointmentView extends GetView<CreateAppointmentController> {
                 )
               : Container(
                   decoration: BoxDecoration(
-                    color: theme.disabledColor.withOpacity(0.1),
+                    color: theme.disabledColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: theme.dividerColor),
                   ),

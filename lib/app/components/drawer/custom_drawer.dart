@@ -1,246 +1,41 @@
 //ignore_for_file: must_be_immutable
 
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'package:get/get.dart';
 
-import '../../../config/theme/light_theme_colors.dart';
-import '../../../utils/constants.dart';
-import '../../data/local/my_shared_pref.dart';
-import '../../modules/auth/controllers/auth_controller.dart';
-import '../../modules/location_tracking/controllers/location_tracking_controller.dart';
-import '../../routes/app_pages.dart';
-import '../global-widgets/asset_image_box.dart';
-import '../global-widgets/text_widget.dart';
+import 'drawer_menu_content.dart';
+import 'tablet_shell_scope.dart';
 
+/// Drawer hosting the shared menu, hidden until opened (hamburger tap or
+/// edge swipe).
+///
+/// Standalone (phone routes): items push their route via Get.toNamed.
+/// Hosted by TabletShellView ([TabletShellScope]): items swap the shell's
+/// screen instead, and the active entry comes from the scope's selection.
 class CustomDrawer extends StatelessWidget {
-  CustomDrawer({super.key, required this.indexClicked});
-  late int indexClicked;
-
-  /// The controller owns the tracking state (and persists it), so the switch
-  /// also updates by itself when tracking auto-starts after the user returns
-  /// from the permission settings page.
-  LocationTrackingController get _trackingController =>
-      Get.isRegistered<LocationTrackingController>()
-          ? Get.find<LocationTrackingController>()
-          : Get.put(LocationTrackingController());
+  const CustomDrawer({super.key, required this.indexClicked});
+  final int indexClicked;
 
   @override
   Widget build(BuildContext context) {
-    // var theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
-    final authController = Get.put(AuthController());
-    final trackingController = _trackingController;
+    final shell = TabletShellScope.maybeOf(context);
+    // Tablet width is a literal (like the old side rail): a 230.w drawer
+    // shrank with ScreenUtil's scaleWidth when the window was narrower than
+    // the launch design size (iPad Split View → ~200px) and the profile row
+    // overflowed 16px. Phone (≤600) keeps the default 304px drawer.
     return Drawer(
-      width: size.width > 600 ? 230.w : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15.0),
-        child: Column(
-          children: [
-            /// Scrollable part (all menu items including Logout)
-            Expanded(
-              child: ListView(
-                children: [
-                  /// profile section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          ClipOval(
-                            child: AssetImageBox(
-                              height: 40.sp,
-                              width: 40.sp,
-                              assetImage: AppImages.kDemoUser,
-                            ),
-                          ),
-                          SizedBox(width: 12.sp),
-                          SizedBox(
-                            width: 116.sp,
-                            child: TextWidget(
-                              text: "${MySharedPref.getUserName()}",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 16.sp,
-                                color: Colors.black,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        onPressed: () => Get.back(),
-                        icon: Image.asset(
-                          SideBar.profileGoIcon,
-                          color: LightThemeColors.primaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 35.h),
-
-                  /// drawer items
-                  _drawerItem(
-                    icon: SideBar.homeIcon,
-                    text: 'Home',
-                    indexNumber: 0,
-                    onTap: () => Get.toNamed(Routes.APPOINTMENT),
-                  ),
-                  SizedBox(height: 10.h),
-
-                  // _drawerItem(
-                  //   icon: SideBar.formIcon,
-                  //   text: 'Forms',
-                  //   indexNumber: 1,
-                  //   onTap: () => Get.toNamed(Routes.FORMS),
-                  // ),
-                  SizedBox(height: 10.h),
-
-                  _drawerItem(
-                    icon: SideBar.itemsIcon,
-                    text: 'Items',
-                    indexNumber: 1,
-                    onTap: () => Get.toNamed(Routes.ITEM),
-                  ),
-                  SizedBox(height: 10.h),
-
-                  _drawerItem(
-                    icon: SideBar.customerServiceIcon,
-                    text: 'Customers',
-                    indexNumber: 2,
-                    onTap: () => Get.toNamed(Routes.CUSTOMER),
-                  ),
-                  SizedBox(height: 10.h),
-
-                  //no need for now.. when i prompt to open it.. please uncomment it, and remove this comment .
-                  // _drawerItem(
-                  //   iconWidget: Icon(
-                  //     Icons.school_outlined,
-                  //     size: 25.h,
-                  //     color: LightThemeColors.primaryColor,
-                  //   ),
-                  //   text: 'Training',
-                  //   indexNumber: 4,
-                  //   onTap: () => Get.toNamed(Routes.TRAINING),
-                  // ),
-                  SizedBox(height: 10.h),
-
-                  /// tracking toggle
-                  Obx(
-                    () => _drawerItem(
-                      iconWidget: Icon(
-                        Icons.location_on_outlined,
-                        size: 25.h,
-                        color: LightThemeColors.primaryColor,
-                      ),
-                      text: 'Tracking',
-                      indexNumber: 5,
-                      onTap: () => trackingController.toggleTracking(),
-                      trailing: Switch(
-                        value: trackingController.isTrackingEnabled.value,
-                        activeThumbColor: LightThemeColors.primaryColor,
-                        onChanged: (_) =>
-                            trackingController.toggleTracking(),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: 10.h),
-
-                  /// 👇 logout is still part of ListView, right under Customers
-                  _drawerItem(
-                    icon: SideBar.logoutIcon,
-                    text: 'Log out',
-                    indexNumber: 3,
-                    onTap: () async {
-                      Get.back();
-                      showAdaptiveDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const TextWidget(
-                            text: 'Log out',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                          content: const TextWidget(
-                            text: 'Are you sure you want to log out?',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Get.back(),
-                              child: const TextWidget(text: 'Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                Get.back();
-                                await authController.doLogout();
-                              },
-                              child: TextWidget(
-                                text: 'Log out',
-                                style: TextStyle(
-                                  color:
-                                      LightThemeColors.bodyTextSecondaryColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            /// fixed version text at very bottom
-            Text(
-              'Version: ${authController.versionController.appVersion.value}',
-              style: TextStyle(
-                fontSize: Get.size.width <= 440 ? 12.sp : 8.sp,
-                color: LightThemeColors.bodyTextSecondaryColor,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 20.h),
-          ],
-        ),
+      width: size.width > 600 ? 250 : null,
+      child: DrawerMenuContent(
+        indexClicked: shell?.selectedIndex ?? indexClicked,
+        onItemTap: shell == null
+            ? null
+            : (indexNumber) {
+                Get.back(); // close the drawer, then swap the hosted screen
+                shell.onItemTap(indexNumber);
+              },
       ),
-    );
-  }
-
-  Widget _drawerItem({
-    String? icon,
-    Widget? iconWidget,
-    required String text,
-    required int indexNumber,
-    required GestureTapCallback onTap,
-    Widget? trailing,
-  }) {
-    return ListTile(
-      selected: indexClicked == indexNumber,
-      selectedTileColor: Colors.white,
-      contentPadding: EdgeInsets.symmetric(horizontal: 20.sp),
-      title: Row(
-        children: [
-          iconWidget ?? Image.asset(height: 25.h, width: 25.w, icon!),
-          Padding(
-            padding: EdgeInsets.only(left: 15.sp),
-            child: TextWidget(
-              text: text,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w400,
-                color: indexClicked == indexNumber
-                    ? LightThemeColors.primaryColor
-                    : LightThemeColors.bodyTextColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-      onTap: onTap,
-      trailing: trailing,
     );
   }
 }

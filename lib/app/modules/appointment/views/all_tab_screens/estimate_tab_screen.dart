@@ -335,9 +335,8 @@ class _EstimateTabScreenState extends State<EstimateTabScreen> {
                     ),
                   ),
                   SizedBox(width: 10.sp),
-                  Expanded(
+                  Flexible(
                     child: Container(
-                      alignment: Alignment.center,
                       padding: EdgeInsets.symmetric(
                         horizontal: 8.sp,
                         vertical: 2.sp,
@@ -352,7 +351,6 @@ class _EstimateTabScreenState extends State<EstimateTabScreen> {
                             : Colors.yellow,
                       ),
                       child: Text(
-                        overflow: TextOverflow.visible,
                         proposal.number ?? "",
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontSize: 14.sp,

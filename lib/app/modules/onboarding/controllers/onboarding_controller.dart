@@ -12,12 +12,12 @@ class OnboardingController extends GetxController {
   Timer? autoScrollTimer;
 
   /// Next
-  forwardAction() {
+  void forwardAction() {
     pageController.nextPage(duration: 300.milliseconds, curve: Curves.ease);
   }
 
   /// Previous
-  backwardAction() {
+  void backwardAction() {
     pageController.previousPage(duration: 300.milliseconds, curve: Curves.ease);
   }
 

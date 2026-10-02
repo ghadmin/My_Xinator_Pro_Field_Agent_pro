@@ -24,6 +24,7 @@ import '../modules/customer/views/customer_view.dart';
 import '../modules/forms/binding/form_bindings.dart';
 import '../modules/forms/views/forms_inbox_view.dart';
 import '../components/form_widget/pdf_dynamic_form.dart';
+import '../components/drawer/tablet_shell_view.dart';
 import '../modules/invoice/bindings/invoice_binding.dart';
 import '../modules/invoice/views/billable_items_view.dart';
 import '../modules/invoice/views/create_invoice_view.dart';
@@ -277,6 +278,10 @@ class AppPages {
         );
       },
       binding: FormBindings(),
+    ),
+    GetPage(
+      name: _Paths.TABLET_SHELL,
+      page: () => const TabletShellView(),
     ),
     GetPage(
       name: _Paths.TRAINING,
