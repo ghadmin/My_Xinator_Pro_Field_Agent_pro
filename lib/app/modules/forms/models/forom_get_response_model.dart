@@ -35,7 +35,7 @@ class FormGetResponseModel {
     if (json['responses'] != null) {
       responses = <Responses>[];
       json['responses'].forEach((v) {
-        responses!.add(new Responses.fromJson(v));
+        responses!.add(Responses.fromJson(v));
       });
     }
     responsesRaw = json['responsesRaw'];
@@ -74,7 +74,7 @@ class Responses {
     type = json['type'];
     value = json['value'];
     position = json['position'] != null
-        ? new Position.fromJson(json['position'])
+        ? Position.fromJson(json['position'])
         : null;
   }
 

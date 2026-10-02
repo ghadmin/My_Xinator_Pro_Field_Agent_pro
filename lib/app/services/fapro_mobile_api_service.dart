@@ -84,11 +84,11 @@ class FaProMobileApiService {
         'customerId': customerId,
         'siteId': siteId,
         'description': description,
-        if (reference != null) 'reference': reference,
-        if (taggedTo != null) 'taggedTo': taggedTo,
-        if (taggedFrom != null) 'taggedFrom': taggedFrom,
-        if (userId != null) 'userId': userId,
-        if (appointmentId != null) 'appointmentId': appointmentId,
+        'reference': ?reference,
+        'taggedTo': ?taggedTo,
+        'taggedFrom': ?taggedFrom,
+        'userId': ?userId,
+        'appointmentId': ?appointmentId,
       };
 
       kLog('POST $url');
@@ -154,9 +154,9 @@ class FaProMobileApiService {
       final body = {
         'noteId': noteId,
         'description': description,
-        if (reference != null) 'reference': reference,
-        if (taggedTo != null) 'taggedTo': taggedTo,
-        if (taggedFrom != null) 'taggedFrom': taggedFrom,
+        'reference': ?reference,
+        'taggedTo': ?taggedTo,
+        'taggedFrom': ?taggedFrom,
       };
 
       kLog('POST $url');
@@ -253,9 +253,9 @@ class FaProMobileApiService {
       final formData = FormData.fromMap({
         'customerId': customerId,
         'siteId': siteId.toString(),
-        if (appointmentId != null) 'appointmentId': appointmentId,
-        if (reference != null) 'reference': reference,
-        if (uploadedBy != null) 'uploadedBy': uploadedBy,
+        'appointmentId': ?appointmentId,
+        'reference': ?reference,
+        'uploadedBy': ?uploadedBy,
         'file': await MultipartFile.fromFile(file.path),
       });
 
@@ -294,9 +294,9 @@ class FaProMobileApiService {
       final Map<String, dynamic> formDataMap = {
         'customerId': customerId,
         'siteId': siteId.toString(),
-        if (appointmentId != null) 'appointmentId': appointmentId,
-        if (reference != null) 'reference': reference,
-        if (uploadedBy != null) 'uploadedBy': uploadedBy,
+        'appointmentId': ?appointmentId,
+        'reference': ?reference,
+        'uploadedBy': ?uploadedBy,
       };
 
       final List<MultipartFile> multipartFiles = [];
@@ -470,9 +470,9 @@ class FaProMobileApiService {
       final formData = FormData.fromMap({
         'customerId': customerId,
         'siteId': siteId.toString(),
-        if (appointmentId != null) 'appointmentId': appointmentId,
-        if (reference != null) 'reference': reference,
-        if (uploadedBy != null) 'uploadedBy': uploadedBy,
+        'appointmentId': ?appointmentId,
+        'reference': ?reference,
+        'uploadedBy': ?uploadedBy,
         'file': await MultipartFile.fromFile(file.path),
       });
 
@@ -511,9 +511,9 @@ class FaProMobileApiService {
       final Map<String, dynamic> formDataMap = {
         'customerId': customerId,
         'siteId': siteId.toString(),
-        if (appointmentId != null) 'appointmentId': appointmentId,
-        if (reference != null) 'reference': reference,
-        if (uploadedBy != null) 'uploadedBy': uploadedBy,
+        'appointmentId': ?appointmentId,
+        'reference': ?reference,
+        'uploadedBy': ?uploadedBy,
       };
 
       final List<MultipartFile> multipartFiles = [];
@@ -556,8 +556,8 @@ class FaProMobileApiService {
 
       final body = {
         'fileId': fileId,
-        if (fileName != null) 'fileName': fileName,
-        if (reference != null) 'reference': reference,
+        'fileName': ?fileName,
+        'reference': ?reference,
       };
 
       kLog('POST $url');
@@ -691,17 +691,17 @@ class FaProMobileApiService {
         'customerId': customerId,
         'customerGuid': customerGuid,
         'siteId': siteId,
-        if (make != null) 'make': make,
-        if (model != null) 'model': model,
-        if (notes != null) 'notes': notes,
-        if (equipmentTypeId != null) 'equipmentTypeId': equipmentTypeId,
-        if (barcode != null) 'barcode': barcode,
-        if (serialNumber != null) 'serialNumber': serialNumber,
-        if (warrantyStart != null) 'warrantyStart': warrantyStart,
-        if (warrantyEnd != null) 'warrantyEnd': warrantyEnd,
-        if (laborWarrantyStart != null) 'laborWarrantyStart': laborWarrantyStart,
-        if (laborWarrantyEnd != null) 'laborWarrantyEnd': laborWarrantyEnd,
-        if (installDate != null) 'installDate': installDate,
+        'make': ?make,
+        'model': ?model,
+        'notes': ?notes,
+        'equipmentTypeId': ?equipmentTypeId,
+        'barcode': ?barcode,
+        'serialNumber': ?serialNumber,
+        'warrantyStart': ?warrantyStart,
+        'warrantyEnd': ?warrantyEnd,
+        'laborWarrantyStart': ?laborWarrantyStart,
+        'laborWarrantyEnd': ?laborWarrantyEnd,
+        'installDate': ?installDate,
       };
 
       kLog('POST $url');
@@ -750,17 +750,17 @@ class FaProMobileApiService {
         'siteId': siteId,
         'customerId': customerId,
         'customerGuid': customerGuid,
-        if (make != null) 'make': make,
-        if (model != null) 'model': model,
-        if (notes != null) 'notes': notes,
-        if (equipmentTypeId != null) 'equipmentTypeId': equipmentTypeId,
-        if (barcode != null) 'barcode': barcode,
-        if (serialNumber != null) 'serialNumber': serialNumber,
-        if (warrantyStart != null) 'warrantyStart': warrantyStart,
-        if (warrantyEnd != null) 'warrantyEnd': warrantyEnd,
-        if (laborWarrantyStart != null) 'laborWarrantyStart': laborWarrantyStart,
-        if (laborWarrantyEnd != null) 'laborWarrantyEnd': laborWarrantyEnd,
-        if (installDate != null) 'installDate': installDate,
+        'make': ?make,
+        'model': ?model,
+        'notes': ?notes,
+        'equipmentTypeId': ?equipmentTypeId,
+        'barcode': ?barcode,
+        'serialNumber': ?serialNumber,
+        'warrantyStart': ?warrantyStart,
+        'warrantyEnd': ?warrantyEnd,
+        'laborWarrantyStart': ?laborWarrantyStart,
+        'laborWarrantyEnd': ?laborWarrantyEnd,
+        'installDate': ?installDate,
       };
 
       kLog('POST $url');

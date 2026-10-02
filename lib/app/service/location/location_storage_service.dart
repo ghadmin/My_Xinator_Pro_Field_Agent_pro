@@ -40,7 +40,7 @@ class LocationStorageService {
     _ensureInitialized();
 
     final allLocations = _pendingLocationsBox.values.toList();
-    return allLocations.where((loc) => loc.user_id == userId).toList();
+    return allLocations.where((loc) => loc.userId == userId).toList();
   }
 
   /// Get all pending locations (all users)
@@ -62,7 +62,7 @@ class LocationStorageService {
     final keysToRemove = _pendingLocationsBox.keys
         .where((key) {
           final location = _pendingLocationsBox.get(key);
-          return location?.user_id == userId;
+          return location?.userId == userId;
         })
         .toList();
 
@@ -101,7 +101,7 @@ class LocationStorageService {
     _ensureInitialized();
 
     return _pendingLocationsBox.values
-        .where((loc) => loc.user_id == userId)
+        .where((loc) => loc.userId == userId)
         .length;
   }
 

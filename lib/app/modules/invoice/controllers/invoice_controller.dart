@@ -1153,23 +1153,6 @@ import '../models/qbo_class_dropdown_model.dart';
 import '../models/qbo_location_dropdown_model.dart';
 import '../models/tax_model.dart';
 
-enum SearchByType { name, group, bundle, ItemsCategory }
-
-extension SearchByTypeExtension on SearchByType {
-  String get displayName {
-    switch (this) {
-      case SearchByType.name:
-        return "Name";
-      case SearchByType.group:
-        return "Group";
-      case SearchByType.bundle:
-        return "Bundle";
-      case SearchByType.ItemsCategory:
-        return "Items Category";
-    }
-  }
-}
-
 class InvoiceController extends GetxController with ExceptionHandler {
   late final WebViewController webController;
   late final WebViewController webController2;
@@ -1227,6 +1210,18 @@ class InvoiceController extends GetxController with ExceptionHandler {
   @override
   void onInit() async {
     super.onInit();
+    // Placeholder UX: pre-select the existing text when the discount field is
+    // focused so typing replaces it and no manual erasing is needed.
+    // No value/calculation change — text stays "0.00" unless the user types.
+    invoiceDetailsEditDiscountFocusnode.value.addListener(() {
+      if (invoiceDetailsEditDiscountFocusnode.value.hasFocus &&
+          editDiscountTextController.text.isNotEmpty) {
+        editDiscountTextController.selection = TextSelection(
+          baseOffset: 0,
+          extentOffset: editDiscountTextController.text.length,
+        );
+      }
+    });
     try {
       log("=== Starting Invoice Controller Initialization ===");
       await Future.delayed(Duration(seconds: 1), () {});
@@ -1495,12 +1490,8 @@ class InvoiceController extends GetxController with ExceptionHandler {
 
   /// Reorders billable items and keeps their corresponding controllers in sync
   void reorderBillableItems(int oldIndex, int newIndex) {
-    // Adjust newIndex when moving an item down the list
-    // ReorderableListView reports the index after the item would be removed,
-    // so we need to subtract 1 when moving down to get the correct position
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
+    // newIndex is already adjusted by ReorderableListView.onReorderItem
+    // (it accounts for the item being removed when moving down the list)
 
     // Reorder the item in the list
     final item = selectedItemList.removeAt(oldIndex);

@@ -2,7 +2,8 @@ name: myxinator_pro_field_agent_pro
 description: "A new Flutter project."
 
 publish_to: "none"
-version: 1.0.3+1
+version: 1.0.3+2
+
 
 environment:
   sdk: ^3.9.2
@@ -70,6 +71,7 @@ dependencies:
   flutter_local_notifications: ^22.3.0
   battery_plus: ^7.1.1
 
+  device_info_plus: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

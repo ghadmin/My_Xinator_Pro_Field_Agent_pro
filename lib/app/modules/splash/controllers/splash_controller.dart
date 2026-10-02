@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../routes/app_pages.dart';
+import '../../../../utils/responsive.dart';
 
 class SplashController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -26,10 +27,14 @@ class SplashController extends GetxController
 
   void _navigateToNextScreen() {
     Future.delayed(const Duration(seconds: 4), () async {
-      var companyID = await MySharedPref.getCompanyID();
-      var email = await MySharedPref.getEmail();
+      var companyID = MySharedPref.getCompanyID();
+      var email = MySharedPref.getEmail();
       if (companyID != null && companyID != "") {
-        Get.offAllNamed(Routes.APPOINTMENT);
+        // Tablets open the landing shell (menu rail + swappable pane);
+        // phones keep the plain appointments screen.
+        Get.offAllNamed(
+          AppDevice.isTabletDevice ? Routes.TABLET_SHELL : Routes.APPOINTMENT,
+        );
         // Location tracking auto-starts after appointments load (see
         // AppointmentController._triggerLocationTrackingOnce) so the
         // resource id is available

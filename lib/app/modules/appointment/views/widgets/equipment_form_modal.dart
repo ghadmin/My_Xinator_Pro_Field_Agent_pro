@@ -616,7 +616,6 @@ class _EquipmentTypeSelectorSheetState
     if (query.isEmpty) return;
 
     if (_addToMaster) {
-      // TODO(API): Save this new type to the Equipment Master List.
       // Call the create-equipment-type API here, e.g.:
       //   await equipmentController.addEquipmentTypeToMaster(typeName: query);
       // On success, re-fetch equipment types so the new entry comes back
@@ -783,7 +782,7 @@ class _EquipmentTypeSelectorSheetState
                     )
                   : ListView.separated(
                       itemCount: _filteredTypes.length,
-                      separatorBuilder: (_, __) => Divider(height: 1.h),
+                      separatorBuilder: (_, _) => Divider(height: 1.h),
                       itemBuilder: (context, index) {
                         final type = _filteredTypes[index];
                         return Material(

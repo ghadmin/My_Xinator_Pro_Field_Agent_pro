@@ -42,11 +42,7 @@ class LocationTrackingController extends GetxController
   /// only ever toggle once.
   bool _pendingSettingsReturn = false;
 
-  // User data (FIXED: Updated to match service requirements)
-  String? _currentCompanyId;
   int? _currentResourceId;
-  String? _currentUsername;
-  String? _currentEmail;
 
   @override
   void onInit() {
@@ -103,8 +99,6 @@ class LocationTrackingController extends GetxController
 
       // FIXED: Get correct user data from preferences
       final companyId = MySharedPref.getCompanyID();
-      final username = MySharedPref.getUserName();
-      final email = MySharedPref.getEmail();
 
       // Resource id: prefer the loaded appointment list, fall back to the
       // stored resource_id so tracking can start before the API returns
@@ -123,11 +117,7 @@ class LocationTrackingController extends GetxController
         return;
       }
 
-      // FIXED: Store user data correctly
-      _currentCompanyId = companyId;
       _currentResourceId = resourceId;
-      _currentUsername = username;
-      _currentEmail = email;
 
       // FIXED: Initialize location service with correct parameters
       log('🔧 Initializing location service...');
@@ -159,8 +149,8 @@ class LocationTrackingController extends GetxController
     } catch (e, stackTrace) {
       log('❌ Failed to initialize tracking: $e');
       errorMessage.value = 'Failed to initialize tracking: $e';
-      print('Error initializing tracking: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('Error initializing tracking: $e');
+      debugPrint('Stack trace: $stackTrace');
     }
   }
 
@@ -234,8 +224,8 @@ class LocationTrackingController extends GetxController
       log('❌ [CONTROLLER] Failed to start tracking: $e');
       errorMessage.value = 'Failed to start tracking: $e';
       isTrackingEnabled.value = false; // Ensure UI shows correct state
-      print('Error starting tracking: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('Error starting tracking: $e');
+      debugPrint('Stack trace: $stackTrace');
     }
   }
 
@@ -336,7 +326,7 @@ class LocationTrackingController extends GetxController
       return true;
     } catch (e) {
       log('❌ Error checking permissions: $e');
-      print('Error checking permissions: $e');
+      debugPrint('Error checking permissions: $e');
       return false;
     }
   }
@@ -561,8 +551,8 @@ class LocationTrackingController extends GetxController
     } catch (e, stackTrace) {
       log('❌ Failed to stop tracking: $e');
       errorMessage.value = 'Failed to stop tracking: $e';
-      print('Error stopping tracking: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('Error stopping tracking: $e');
+      debugPrint('Stack trace: $stackTrace');
     }
   }
 
@@ -588,7 +578,7 @@ class LocationTrackingController extends GetxController
     } catch (e, stackTrace) {
       log('❌ Manual retry failed: $e');
       errorMessage.value = 'Failed to start tracking: $e';
-      print('Stack trace: $stackTrace');
+      debugPrint('Stack trace: $stackTrace');
     }
   }
 
@@ -669,18 +659,13 @@ class LocationTrackingController extends GetxController
     errorMessage.value = '';
 
     // FIXED: Clear all user data fields including resourceId
-    _currentCompanyId = null;
     _currentResourceId = null;
-    _currentUsername = null;
-    _currentEmail = null;
   }
 
   /// Update user information (for user switching)
   Future<void> updateUserInformation() async {
     // FIXED: Get correct data from preferences
     final companyId = MySharedPref.getCompanyID();
-    final username = MySharedPref.getUserName();
-    final email = MySharedPref.getEmail();
 
     final apptC = Get.find<AppointmentController>();
 
@@ -692,10 +677,7 @@ class LocationTrackingController extends GetxController
       );
 
       // Update stored user data
-      _currentCompanyId = companyId;
       _currentResourceId = apptC.appointments.first.resource!.id;
-      _currentUsername = username ?? '';
-      _currentEmail = email ?? '';
     }
   }
 
@@ -734,7 +716,7 @@ class LocationTrackingController extends GetxController
 
     // Subscribe to status updates
     _statusSubscription = _locationService.statusUpdates.listen((status) {
-      log('📊 Status update: ${status}');
+      log('📊 Status update: $status');
       trackingStatus.value = status;
     });
 

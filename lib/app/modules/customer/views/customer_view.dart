@@ -9,6 +9,7 @@ import '../../../components/global-widgets/general_text_field.dart';
 import '../../../components/global-widgets/splash_container.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../routes/app_pages.dart';
+import '../../../../utils/responsive.dart';
 import '../../../utils/simple_phone_formatter.dart';
 import '../controllers/customer_controller.dart';
 
@@ -18,6 +19,10 @@ class CustomerView extends GetView<CustomerController> {
   Widget build(BuildContext context) {
     // final appointmentC = Get.find<AppointmentController>();
     var theme = Theme.of(context);
+    // The drawer is the standard overlay: hidden until the hamburger tap
+    // (or edge swipe), on phones and tablets alike. Inside the tablet shell
+    // the drawer swaps the hosted screen (see TabletShellScope) instead of
+    // pushing a route.
     return Scaffold(
       drawer: CustomDrawer(indexClicked: 2),
       appBar: AppBar(
@@ -76,7 +81,14 @@ class CustomerView extends GetView<CustomerController> {
                           color: theme.primaryColor,
                           onRefresh: () async =>
                               await controller.getCustomers(),
-                          child: ListView.separated(
+                          child: AdaptiveListGrid(
+                            // Fixed cell height (not aspect-ratio derived):
+                            // fits name (2 lines @ 27px) + email/address/
+                            // phone rows + Create Appointment button (incl.
+                            // its 48px Material tap-target box) at any
+                            // column count/orientation. Aspect 2.2
+                            // overflowed ~15px, 200 still 7.7px → 220 safe.
+                            tabletMainAxisExtent: 220,
                             padding: EdgeInsets.zero,
                             physics: BouncingScrollPhysics(),
                             itemCount: controller.sortedCustomers.length,

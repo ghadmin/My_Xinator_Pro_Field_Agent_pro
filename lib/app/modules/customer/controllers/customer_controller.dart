@@ -62,7 +62,7 @@ class CustomerController extends GetxController with ExceptionHandler {
   Future<void> getCustomers() async {
     isCustomerEmpty.value = false;
     if (await NetworkConnectivity.isNetworkAvailable()) {
-      var companyID = await MySharedPref.getCompanyID();
+      var companyID = MySharedPref.getCompanyID();
       var currentDateTime = DateTime.now();
       var response = await DioClient()
           .get(

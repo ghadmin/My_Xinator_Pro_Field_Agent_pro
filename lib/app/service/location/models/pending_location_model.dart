@@ -12,10 +12,10 @@ class PendingLocationModel extends HiveObject {
   final String id;
 
   @HiveField(1)
-  final String company_id;
+  final String companyId;
 
   @HiveField(2)
-  final String user_id;
+  final String userId;
 
   @HiveField(3)
   final String username;
@@ -43,8 +43,8 @@ class PendingLocationModel extends HiveObject {
 
   PendingLocationModel({
     required this.id,
-    required this.company_id,
-    required this.user_id,
+    required this.companyId,
+    required this.userId,
     required this.username,
     required this.email,
     required this.latitude,
@@ -59,8 +59,8 @@ class PendingLocationModel extends HiveObject {
   factory PendingLocationModel.fromLocationModel(LocationModel location) {
     return PendingLocationModel(
       id: _generateId(location.resourceId, location.recordedAt),
-      company_id: location.companyId,
-      user_id: location.resourceId.toString(), // Convert int resourceId to string for storage
+      companyId: location.companyId,
+      userId: location.resourceId.toString(), // Convert int resourceId to string for storage
       username: '', // Not used in new model
       email: '', // Not used in new model
       latitude: location.latitude,
@@ -75,8 +75,8 @@ class PendingLocationModel extends HiveObject {
   /// Convert to LocationModel for API upload
   LocationModel toLocationModel() {
     return LocationModel(
-      companyId: company_id,
-      resourceId: int.tryParse(user_id) ?? 55,
+      companyId: companyId,
+      resourceId: int.tryParse(userId) ?? 55,
       deviceId: '', // Will be filled by caller
       latitude: latitude,
       longitude: longitude,
@@ -98,8 +98,8 @@ class PendingLocationModel extends HiveObject {
   PendingLocationModel incrementRetry() {
     return PendingLocationModel(
       id: id,
-      company_id: company_id,
-      user_id: user_id,
+      companyId: companyId,
+      userId: userId,
       username: username,
       email: email,
       latitude: latitude,
@@ -127,7 +127,7 @@ class PendingLocationModel extends HiveObject {
 
   @override
   String toString() {
-    return 'PendingLocationModel(id: $id, company_id: $company_id, user_id: $user_id, '
+    return 'PendingLocationModel(id: $id, companyId: $companyId, userId: $userId, '
         'retryCount: $retryCount, queuedAt: ${queuedAt.toIso8601String()}';
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:myxinator_pro_field_agent_pro/app/modules/customer/controllers/customer_controller.dart';
 
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
+import '../../../../utils/responsive.dart';
 import '../../../components/drawer/custom_drawer.dart';
 import '../../../components/global-widgets/asset_image_box.dart';
 import '../../../components/global-widgets/empty_widget.dart';
@@ -19,8 +19,12 @@ class AppointmentView extends GetView<AppointmentController> {
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
+    // The drawer is the standard overlay: hidden until the hamburger tap
+    // (or edge swipe), on phones and tablets alike. Inside the tablet shell
+    // the drawer swaps the hosted screen (see TabletShellScope) instead of
+    // pushing a route.
     return Scaffold(
-      appBar: Get.size.width <= 440
+      appBar: Get.size.width <= 440 || context.isTabletLayout
           ? AppBar(
               title: Text("Appointments"),
               actions: [
@@ -172,8 +176,19 @@ class AppointmentView extends GetView<AppointmentController> {
                         onRefresh: () async {
                           await controller.getAppointments();
                         },
-                        child: ListView.separated(
-                          padding: EdgeInsets.zero,
+                        child: AdaptiveListGrid(
+                          // Fixed cell height (not aspect-ratio derived):
+                          // fits the card incl. a wrapped address line at any
+                          // column count/orientation.
+                          tabletMainAxisExtent: 170,
+                          // FAB clearance lives in the scroll padding —
+                          // a per-item bottom Padding sits INSIDE the
+                          // fixed-height grid cell on tablets and shrinks
+                          // the last card (~50px left), overflowing it.
+                          padding: context.isTabletLayout
+                              ? const EdgeInsets.only(bottom: 90)
+                              : EdgeInsets.zero,
+
                           itemCount: controller.sortedAppointments
                               .where((e) => e.status!.statusName != "Completed")
                               .length,
@@ -184,18 +199,27 @@ class AppointmentView extends GetView<AppointmentController> {
                                 )
                                 .toList()[index];
                             return Padding(
-                              padding: EdgeInsets.only(
-                                bottom:
-                                    index ==
-                                        controller.sortedAppointments.length - 1
-                                    ? 90.h
-                                    : 0,
-                              ),
+                              // Phones: per-item FAB clearance (unchanged).
+                              // Tablets: zero — see AdaptiveListGrid padding
+                              // above; a bottom inset here sits inside the
+                              // fixed-height cell and squeezes the last card.
+                              padding: context.isTabletLayout
+                                  ? EdgeInsets.zero
+                                  : EdgeInsets.only(
+                                      bottom:
+                                          index ==
+                                              controller
+                                                      .sortedAppointments
+                                                      .length -
+                                                  1
+                                          ? 90.h
+                                          : 0,
+                                    ),
                               child: SplashContainer(
                                 radius: 8,
                                 color: Colors.white,
                                 border: Border.all(
-                                  color: Colors.transparent,
+                                  color: Colors.white,
                                   width: 0,
                                 ),
                                 onPressed: () async {
@@ -289,136 +313,133 @@ class AppointmentView extends GetView<AppointmentController> {
                                 },
                                 child: Padding(
                                   padding: EdgeInsets.all(15.sp),
-                                  child: IntrinsicHeight(
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
+                                              style: theme
+                                                  .textTheme
+                                                  .headlineSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            SizedBox(height: 2.sp),
+                                            Text(
+                                              appointment
+                                                      .serviceType
+                                                      ?.serviceName ??
+                                                  "",
+                                            ),
+                                            Text(
+                                              "${appointment.customer?.address1}, "
+                                              "${appointment.customer?.city}, "
+                                              "${appointment.customer?.state}, ",
+                                            ),
+                                            SizedBox(height: 4.sp),
+                                            Text(
+                                              dateTimeConverter(
+                                                inputFormat:
+                                                    "yyyy/MM/dd hh:mm a",
+                                                inputTime: appointment
+                                                    .startDateTime
+                                                    .toString(),
+                                                outputFormat:
+                                                    "MM/dd/yyyy hh:mm a",
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 130.sp,
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 10.sp,
+                                                vertical: 5.sp,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(15.r),
+                                                color:
+                                                    appointment
+                                                            .status
+                                                            ?.statusName ==
+                                                        "Installation In Progress"
+                                                    ? Color(0xffE98862)
+                                                    : appointment
+                                                              .status
+                                                              ?.statusName ==
+                                                          "Installation in Progress"
+                                                    ? Color(0xffE98862)
+                                                    : appointment
+                                                              .status
+                                                              ?.statusName ==
+                                                          "Scheduled"
+                                                    ? Color(0xff2E888B)
+                                                    : appointment
+                                                              .status
+                                                              ?.statusName ==
+                                                          "Cancelled"
+                                                    ? Colors.red
+                                                    : Color(0xff0CBC8B),
+                                              ),
+                                              child: Text(
+                                                appointment
+                                                            .status
+                                                            ?.statusName ==
+                                                        "Installation In Progress"
+                                                    ? "In Progress"
+                                                    : appointment
+                                                              .status
+                                                              ?.statusName ==
+                                                          "Installation in Progress"
+                                                    ? "In Progress"
+                                                    : appointment
+                                                              .status
+                                                              ?.statusName ??
+                                                          "",
                                                 style: theme
                                                     .textTheme
-                                                    .headlineSmall
+                                                    .bodyMedium
                                                     ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              SizedBox(height: 2.sp),
-                                              Text(
-                                                appointment
-                                                        .serviceType
-                                                        ?.serviceName ??
-                                                    "",
-                                              ),
-                                              Text(
-                                                "${appointment.customer?.address1}, "
-                                                "${appointment.customer?.city}, "
-                                                "${appointment.customer?.state}, ",
-                                              ),
-                                              SizedBox(height: 4.sp),
-                                              Text(
-                                                dateTimeConverter(
-                                                  inputFormat:
-                                                      "yyyy/MM/dd hh:mm a",
-                                                  inputTime: appointment
-                                                      .startDateTime
-                                                      .toString(),
-                                                  outputFormat:
-                                                      "MM/dd/yyyy hh:mm a",
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          width: 120.sp,
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: [
-                                              Container(
-                                                padding: EdgeInsets.symmetric(
-                                                  horizontal: 10.sp,
-                                                  vertical: 5.sp,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        15.r,
-                                                      ),
-                                                  color:
-                                                      appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Installation In Progress"
-                                                      ? Color(0xffE98862)
-                                                      : appointment
-                                                                .status
-                                                                ?.statusName ==
-                                                            "Installation in Progress"
-                                                      ? Color(0xffE98862)
-                                                      : appointment
-                                                                .status
-                                                                ?.statusName ==
-                                                            "Scheduled"
-                                                      ? Color(0xff2E888B)
-                                                      : appointment
-                                                                .status
-                                                                ?.statusName ==
-                                                            "Cancelled"
-                                                      ? Colors.red
-                                                      : Color(0xff0CBC8B),
-                                                ),
-                                                child: Text(
-                                                  appointment
-                                                              .status
-                                                              ?.statusName ==
-                                                          "Installation In Progress"
-                                                      ? "In Progress"
-                                                      : appointment
-                                                                .status
-                                                                ?.statusName ==
-                                                            "Installation in Progress"
-                                                      ? "In Progress"
-                                                      : appointment
-                                                                .status
-                                                                ?.statusName ??
-                                                            "",
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodyMedium
-                                                      ?.copyWith(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                ),
-                                              ),
-                                              Text(
-                                                "Click to see details",
-                                                style: theme.textTheme.bodySmall
-                                                    ?.copyWith(
-                                                      color: theme.primaryColor,
-                                                      fontSize: 11.sp,
+                                                      color: Colors.white,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                            SizedBox(height: 6.sp),
+                                            Text(
+                                              "Click to see details",
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                    color: theme.primaryColor,
+                                                    fontSize: 11.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),

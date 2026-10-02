@@ -11,6 +11,7 @@ import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/widg
 import 'package:myxinator_pro_field_agent_pro/app/modules/forms/controllers/forms_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
 import 'package:myxinator_pro_field_agent_pro/utils/klog.dart';
+import 'package:myxinator_pro_field_agent_pro/utils/responsive.dart';
 import 'package:remixicon/remixicon.dart';
 
 class FormsTabScreen extends StatefulWidget {
@@ -64,52 +65,61 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
 
         return SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-          child: Column(
-            children: [
-              SizedBox(height: 8.h),
-              Align(
-                alignment: Alignment.centerRight,
-                child: OrganicPrimaryButton(
-                  text: 'Add New',
-                  icon: Icons.add_rounded,
-                  height: 40.h,
-                  width: 140.w,
-                  onPressed: () => Get.to(() => const FormSelectionScreen()),
+          child: ResponsiveCenter(
+            maxWidth: 900,
+            child: Column(
+              children: [
+                SizedBox(height: 8.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OrganicPrimaryButton(
+                    text: 'Add New',
+                    icon: Icons.add_rounded,
+                    height: 40.h,
+                    width: 140.w,
+                    onPressed: () => Get.to(() => const FormSelectionScreen()),
+                  ),
                 ),
-              ),
-              SizedBox(height: 10.h),
+                SizedBox(height: 10.h),
 
-              appointmentForms.isEmpty
-                  ? Center(
-                      child: Column(
-                        children: [
-                          OrganicEmptyState(
-                            icon: Icons.description_outlined,
-                            title: 'No Forms',
-                            subtitle: appointmentId.isNotEmpty
-                                ? 'No forms attached to this appointment.'
-                                : 'Select an appointment to view forms.',
-                          ),
-                          SizedBox(height: 50.h),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      primary: false,
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      itemCount: appointmentForms.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: 12.h),
-                          child: _buildFormCard(
+                appointmentForms.isEmpty
+                    ? Center(
+                        child: Column(
+                          children: [
+                            OrganicEmptyState(
+                              icon: Icons.description_outlined,
+                              title: 'No Forms',
+                              subtitle: appointmentId.isNotEmpty
+                                  ? 'No forms attached to this appointment.'
+                                  : 'Select an appointment to view forms.',
+                            ),
+                            SizedBox(height: 50.h),
+                          ],
+                        ),
+                      )
+                    : AdaptiveListGrid(
+                        itemCount: appointmentForms.length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        tabletMaxColumnExtent: 480,
+                        tabletMainAxisExtent: 175,
+                        itemBuilder: (context, index) {
+                          final card = _buildFormCard(
                             context,
                             appointmentForms[index],
-                          ),
-                        );
-                      },
-                    ),
-            ],
+                          );
+                          // Phones keep the per-item spacing wrapper; the
+                          // tablet grid gets its gap from mainAxisSpacing.
+                          return context.isTabletLayout
+                              ? card
+                              : Padding(
+                                  padding: EdgeInsets.only(bottom: 12.h),
+                                  child: card,
+                                );
+                        },
+                      ),
+              ],
+            ),
           ),
         );
       }),
@@ -117,8 +127,11 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
   }
 
   Widget _buildFormCard(BuildContext context, FormQueueItem form) {
+    // Grid cells have a fixed height on tablets — clamp the variable text
+    // there so cards can't overflow. Phones keep the unclamped rendering.
+    final isTablet = context.isTabletLayout;
     return OrganicCard(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: isTablet ? EdgeInsets.zero : EdgeInsets.only(bottom: 12.h),
       shadow: WarmOrganicBlueTheme.softShadow,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,6 +141,8 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
               Expanded(
                 child: Text(
                   form.template.name,
+                  maxLines: isTablet ? 2 : null,
+                  overflow: isTablet ? TextOverflow.ellipsis : null,
                   style: WarmOrganicBlueTheme.headingSmall.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -318,13 +333,14 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
             SizedBox(height: 4.h),
             Text(
               form.template.description,
+              maxLines: isTablet ? 2 : null,
+              overflow: isTablet ? TextOverflow.ellipsis : null,
               style: WarmOrganicBlueTheme.bodySmall.copyWith(
                 color: WarmOrganicBlueTheme.coolGray,
               ),
             ),
           ],
-
-          SizedBox(height: 8.h),
+          Spacer(),
 
           OrganicSecondaryButton(
             text: 'View Form',

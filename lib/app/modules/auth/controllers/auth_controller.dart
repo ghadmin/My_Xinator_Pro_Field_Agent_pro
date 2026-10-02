@@ -9,6 +9,7 @@ import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../data/local/my_shared_pref.dart';
 import '../../../modules/location_tracking/controllers/location_tracking_controller.dart';
 import '../../../routes/app_pages.dart';
+import '../../../../utils/responsive.dart';
 import '../../../service/REST/api_urls.dart';
 import '../../../service/REST/dio_client.dart';
 import '../../../service/handler/exception_handler.dart';
@@ -102,7 +103,11 @@ class AuthController extends GetxController with ExceptionHandler {
         log("✅ Profile all data: ${response.toString()}");
         await storeUserData(response);
         MySnackBar.showToast(message: "Login Successful");
-        Get.offAllNamed(Routes.APPOINTMENT);
+        // Tablets open the landing shell (menu rail + swappable pane);
+        // phones keep the plain appointments screen.
+        Get.offAllNamed(
+          AppDevice.isTabletDevice ? Routes.TABLET_SHELL : Routes.APPOINTMENT,
+        );
       } else {
         log("⚠️ Invalid credentials - Response: $response");
         MySnackBar.showErrorToast(message: "Wrong Credentials");

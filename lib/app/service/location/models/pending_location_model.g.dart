@@ -18,8 +18,8 @@ class PendingLocationModelAdapter extends TypeAdapter<PendingLocationModel> {
     };
     return PendingLocationModel(
       id: fields[0] as String,
-      company_id: fields[1] as String,
-      user_id: fields[2] as String,
+      companyId: fields[1] as String,
+      userId: fields[2] as String,
       username: fields[3] as String,
       email: fields[4] as String,
       latitude: fields[5] as double,
@@ -38,9 +38,9 @@ class PendingLocationModelAdapter extends TypeAdapter<PendingLocationModel> {
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.company_id)
+      ..write(obj.companyId)
       ..writeByte(2)
-      ..write(obj.user_id)
+      ..write(obj.userId)
       ..writeByte(3)
       ..write(obj.username)
       ..writeByte(4)

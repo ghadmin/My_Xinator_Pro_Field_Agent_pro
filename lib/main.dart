@@ -6,13 +6,24 @@ import 'app/data/local/hive/hive_adapters.dart';
 import 'app/data/local/my_shared_pref.dart';
 import 'app/service/helper/network_connectivity.dart';
 import 'my_app.dart';
+import 'utils/responsive.dart';
 import 'utils/version_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Get.put(VersionController());
-  // Device orientation
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Device orientation: phones stay portrait-locked; tablets/iPads get all
+  // orientations so the adaptive layouts can be used in landscape too.
+  SystemChrome.setPreferredOrientations(
+    AppDevice.isTabletDevice
+        ? const [
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]
+        : const [DeviceOrientation.portraitUp],
+  );
 
   // init hive and adapters
   await HiveAdapters.registerAll();

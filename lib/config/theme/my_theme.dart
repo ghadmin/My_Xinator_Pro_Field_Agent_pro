@@ -7,7 +7,7 @@ import 'light_theme_colors.dart';
 import 'my_styles.dart';
 
 class MyTheme {
-  static getThemeData({required bool isLight}) {
+  static ThemeData getThemeData({required bool isLight}) {
     return ThemeData(
       useMaterial3: false,
 
@@ -84,7 +84,7 @@ class MyTheme {
 
   /// update app theme and save theme type to shared pref
   /// (so when the app is killed and up again theme will remain the same)
-  static changeTheme() {
+  static void changeTheme() {
     // *) check if the current theme is light (default is light)
     bool isLightTheme = MySharedPref.getThemeIsLight();
 

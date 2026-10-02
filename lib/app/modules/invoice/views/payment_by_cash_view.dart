@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../../utils/responsive.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
@@ -16,7 +18,7 @@ class PaymentByCashView extends GetView<InvoiceController> {
     var theme = Theme.of(context);
 
     return Scaffold(
-      appBar: Get.size.width <= 440
+      appBar: Get.size.width <= 440 || context.isTabletLayout
           ? AppBar(title: Text('Payment by Cash'), centerTitle: false)
           : PreferredSize(
               preferredSize: Size.fromHeight(40.sp),
