@@ -25,8 +25,6 @@
             "request": "launch",
             "deviceId": "00008120-000A058A0207601E"
         },
-<<<<<<< HEAD
-=======
         {
             "name": "My_Xinator_Pro_Field_Agent_pro (Flutter iPhone)",
             "type": "dart",
@@ -45,7 +43,6 @@
             "request": "launch",
             "deviceId": "Pixel 5"
         },
->>>>>>> refs/remotes/origin/main
 
         {
             "type": "sweetpad-lldb",

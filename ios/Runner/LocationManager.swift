@@ -313,7 +313,6 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
             content.body = "Your location is being tracked"
         }
 
-<<<<<<< HEAD
         // Shown in place of the body when iOS masks preview content (lock
         // screen with previews hidden), instead of a bare "Notification".
         // Removed from UNNotificationContent in the iOS 27 SDK (Xcode 27 /
@@ -322,8 +321,6 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         content.hiddenPreviewsBodyPlaceholder = "Location is being sent"
         #endif
 
-=======
->>>>>>> refs/remotes/origin/main
         content.sound = nil
         content.interruptionLevel = .passive // silent: NC entry only, no banner/sound/screen wake
 

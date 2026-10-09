@@ -324,7 +324,10 @@ class AppointmentView extends GetView<AppointmentController> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
+                                              appointment
+                                                      .customer
+                                                      ?.businessName ??
+                                                  "",
                                               style: theme
                                                   .textTheme
                                                   .headlineSmall
@@ -335,6 +338,19 @@ class AppointmentView extends GetView<AppointmentController> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             SizedBox(height: 2.sp),
+                                            Text(
+                                              "(${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""})",
+
+                                              style: theme
+                                                  .textTheme
+                                                  .headlineSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w100,
+                                                    fontSize: 15.sp,
+                                                  ),
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                             Text(
                                               appointment
                                                       .serviceType

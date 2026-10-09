@@ -193,15 +193,15 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
       );
     }
 
-    // Close the modal only on success
+    // Close the modal only on success — a single pop. The isCurrent guard
+    // makes sure we only pop when this sheet is still the top route: the
+    // loading helper sweeps popups during the await, and if the sheet were
+    // already closing, popping again would land on the screen below it.
     if (success && mounted) {
-      // Use Navigator.pop to close this specific modal
-      Navigator.of(context).pop();
-    }
-
-    // Close the modal only on success
-    if (success) {
-      Get.back();
+      final route = ModalRoute.of(context);
+      if (route == null || route.isCurrent) {
+        Navigator.of(context).pop();
+      }
     }
   }
 
@@ -601,8 +601,8 @@ class _EquipmentTypeSelectorSheetState
   /// Whether the current search text is an exact (case-insensitive)
   /// match of an existing master equipment type.
   bool _hasExactMatch(String query) => widget.equipmentTypes.any(
-        (t) => t.typeName.trim().toLowerCase() == query.trim().toLowerCase(),
-      );
+    (t) => t.typeName.trim().toLowerCase() == query.trim().toLowerCase(),
+  );
 
   /// Whether to show the custom type section — the user typed something
   /// that is not an exact match in the master list.
@@ -680,10 +680,7 @@ class _EquipmentTypeSelectorSheetState
               Expanded(
                 child: Text(
                   'Add to Equipment Master List',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
                 ),
               ),
               Switch(
