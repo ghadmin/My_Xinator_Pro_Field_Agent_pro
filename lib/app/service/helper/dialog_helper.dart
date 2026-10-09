@@ -179,6 +179,10 @@ class DialogHelper {
   /// screen, so we keep our own source of truth here.
   static bool _isLoaderVisible = false;
 
+  /// Route name of the loader dialog, so [hideLoading] can tell the loader
+  /// apart from other PopupRoutes (bottom sheets, dialogs) on the stack.
+  static const String _loaderRouteName = 'app_loading_dialog';
+
   ///show loading
   static Future<void> showLoading() async {
     // Prevent stacking a second loader while one is already open/pending
@@ -197,6 +201,7 @@ class DialogHelper {
         Get.dialog(
           barrierDismissible: false,
           barrierColor: Colors.black.withValues(alpha: .1),
+          routeSettings: const RouteSettings(name: _loaderRouteName),
           // barrierColor: LightThemeColors.bodyTextColor,
           Center(
             child: Container(
@@ -263,7 +268,24 @@ class DialogHelper {
       // `Get.isDialogOpen` flag — that flag can be false while the loader
       // is still on screen, which used to leave the spinner stuck forever.
       // popUntil is a no-op when no popup route exists.
-      Get.until((route) => route is! PopupRoute);
+      //
+      // Stop as soon as the loader itself is popped: bottom sheets pushed
+      // with Get.bottomSheet are PopupRoutes too, and sweeping every
+      // PopupRoute used to take the sheet that opened the loader down with
+      // it — the caller's own pop then went one screen too far, and sheets
+      // closed even when the API call failed and should have stayed open.
+      var loaderPopped = false;
+      Get.until((route) {
+        if (loaderPopped) return true;
+        if (route.settings.name == _loaderRouteName) {
+          loaderPopped = true;
+          return false;
+        }
+        // Loader not found yet — keep popping popups, but stop at any real
+        // page route (predicate true = stop), so a loader that never opened
+        // can't drain the stack.
+        return route is PageRoute;
+      });
       // Wait for dialog to fully close
       await Future.delayed(const Duration(milliseconds: 100));
     } catch (_) {

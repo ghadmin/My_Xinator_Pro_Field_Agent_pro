@@ -1064,9 +1064,7 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
           }
           kLog('📥 Loaded form data from API: ${formValues.length} fields');
 
-          kLog(
-            'loaded form data from api details $formValues',
-          );
+          kLog('loaded form data from api details $formValues');
         } else {
           kLog('📭 No form responses found in API data');
         }
@@ -1205,10 +1203,7 @@ class _PdfFormViewerState extends State<PdfFormViewer> {
               SizedBox(height: 16),
               Text(
                 'Loading form data...',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ],
           ),

@@ -340,7 +340,10 @@ class _FormsTabScreenState extends State<FormsTabScreen> {
               ),
             ),
           ],
-          Spacer(),
+          // Spacer needs a bounded-height parent: the tablet grid cells have
+          // a fixed extent, but phone list items get unbounded height and
+          // would throw a RenderFlex layout error.
+          isTablet ? const Spacer() : SizedBox(height: 12.h),
 
           OrganicSecondaryButton(
             text: 'View Form',

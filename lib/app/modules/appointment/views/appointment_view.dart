@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
@@ -325,7 +324,10 @@ class AppointmentView extends GetView<AppointmentController> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
+                                              appointment
+                                                      .customer
+                                                      ?.businessName ??
+                                                  "",
                                               style: theme
                                                   .textTheme
                                                   .headlineSmall
@@ -336,6 +338,19 @@ class AppointmentView extends GetView<AppointmentController> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             SizedBox(height: 2.sp),
+                                            Text(
+                                              "(${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""})",
+
+                                              style: theme
+                                                  .textTheme
+                                                  .headlineSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w100,
+                                                    fontSize: 15.sp,
+                                                  ),
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                             Text(
                                               appointment
                                                       .serviceType

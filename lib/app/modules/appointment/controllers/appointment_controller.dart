@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
@@ -15,6 +14,7 @@ import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../../utils/date_converter.dart';
+import '../../../utils/simple_phone_formatter.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../../data/local/hive/my_hive.dart';
@@ -97,6 +97,7 @@ class AppointmentController extends GetxController
   final appointmentDetailsNoteFocusnode = Rx<FocusNode>(FocusNode());
   final appointmentDetailsMessageFocusnode = Rx<FocusNode>(FocusNode());
   final TextEditingController smsController = TextEditingController();
+  final TextEditingController smsPhoneController = TextEditingController();
   final customFieldTextController = Rx<TextEditingController>(
     TextEditingController(),
   );
@@ -257,12 +258,13 @@ class AppointmentController extends GetxController
             firstName: customer?.firstName,
             lastName: customer?.lastName,
             address: customer?.address1,
+            city: customer?.city,
             state: customer?.state,
             zip: customer?.zipCode,
             email: customer?.email,
             phoneNumber: (customer?.mobile?.isNotEmpty == true)
                 ? customer?.mobile
-                : customer?.phone, 
+                : customer?.phone,
           );
         }
 
@@ -443,6 +445,12 @@ class AppointmentController extends GetxController
     showLoading(debugInfo: "sendSMS - Start");
     try {
       var companyID = MySharedPref.getCompanyID();
+      final mobile = SimplePhoneFormatter.clean(smsPhoneController.text);
+      final effectiveMobile = mobile.isNotEmpty
+          ? mobile
+          : mobileNumber.isNotEmpty
+          ? mobileNumber
+          : phoneNumber;
       var response = await DioClient()
           .get(
             url: ApiUrl.sendCustomerSMS,
@@ -450,11 +458,7 @@ class AppointmentController extends GetxController
               "companyId": companyID,
               "customerId": customerID,
               "SMSBody": smsController.text,
-              "mobile": mobileNumber.isNotEmpty
-                  ? mobileNumber
-                  : phoneNumber.isNotEmpty
-                  ? phoneNumber
-                  : "",
+              "mobile": effectiveMobile,
             },
           )
           .catchError((error) {
@@ -469,11 +473,7 @@ class AppointmentController extends GetxController
       }
 
       kLog(
-        "url ${ApiUrl.sendCustomerSMS} params ${{"companyId": companyID, "customerId": customerID, "SMSBody": smsController.text, "mobile": mobileNumber.isNotEmpty
-            ? mobileNumber
-            : phoneNumber.isNotEmpty
-            ? phoneNumber
-            : ""}}  message send $response",
+        "url ${ApiUrl.sendCustomerSMS} params ${{"companyId": companyID, "customerId": customerID, "SMSBody": smsController.text, "mobile": effectiveMobile}}  message send $response",
       );
 
       smsController.clear();
@@ -864,14 +864,17 @@ class AppointmentController extends GetxController
     _locationTrackingTriggered = true;
 
     if (!MySharedPref.getTrackingEnabled()) {
-      kLog('📍 Tracking switch is off, tracking stays off until the user '
-          'enables it from the drawer');
+      kLog(
+        '📍 Tracking switch is off, tracking stays off until the user '
+        'enables it from the drawer',
+      );
       return;
     }
 
     Future(() async {
       try {
-        final locationController = Get.isRegistered<LocationTrackingController>()
+        final locationController =
+            Get.isRegistered<LocationTrackingController>()
             ? Get.find<LocationTrackingController>()
             : Get.put(LocationTrackingController());
         await locationController.initializeTracking();
@@ -907,7 +910,7 @@ class AppointmentController extends GetxController
               },
             )
             .catchError(!showLoader ? handleError : () {});
-        log("refreshing appointments ${jsonEncode(response)} ");
+        kLog("refreshing appointments ${jsonEncode(response)} ");
         if (response == null) {
           hideLoading();
           showEmptyWidget();
