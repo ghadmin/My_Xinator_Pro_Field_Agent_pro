@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -2852,6 +2853,96 @@ class InvoiceDetailsView extends GetView<InvoiceController> {
                 ),
               ],
             ),
+            SizedBox(height: 10.sp),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  "Surcharge",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontSize: 14.sp,
+                    color: LightThemeColors.bodyTextSecondaryColor,
+                  ),
+                ),
+                SizedBox(width: 5.sp),
+                Transform.scale(
+                  scale: 0.65,
+                  child: SizedBox(
+                    width: 35.sp,
+                    child: CupertinoSwitch(
+                      activeTrackColor: theme.primaryColor,
+                      inactiveTrackColor: Colors.red,
+                      value: controller.isApplyingSurcharge.value,
+                      onChanged: (v) {
+                        controller.toggleBlockStatus(v);
+                        controller.updateSurchargeAmount();
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10.sp),
+                SizedBox(
+                  width: 70.sp,
+                  child: TextField(
+                    controller: controller.surchargePercentController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'^\d*\.?\d{0,2}'),
+                      ),
+                    ],
+                    onChanged: (_) => controller.updateSurchargeAmount(),
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      hintText: "0",
+                      suffixText: "%",
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 8.sp,
+                        vertical: 10.sp,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 20.sp),
+                Text(
+                  "\$${controller.surchargeAmount.value.toStringAsFixed(2)}",
+                  style: theme.textTheme.bodyLarge,
+                ),
+                SizedBox(width: 12.sp),
+              ],
+            ),
+            if (controller.isApplyingSurcharge.value) ...[
+              SizedBox(height: 10.sp),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    "Payable Amount",
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontSize: 14.sp,
+                      color: LightThemeColors.bodyTextSecondaryColor,
+                    ),
+                  ),
+                  SizedBox(width: 20.sp),
+                  Padding(
+                    padding: EdgeInsets.only(right: 12.sp),
+                    child: Text(
+                      "\$${controller.payableAmount.value.toStringAsFixed(2)}",
+                      style: theme.textTheme.bodyLarge!.copyWith(
+                        color: theme.primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             SizedBox(height: 10.sp),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 12.sp),

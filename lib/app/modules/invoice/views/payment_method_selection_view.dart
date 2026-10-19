@@ -64,7 +64,9 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                         ),
                         Text(
                           controller.type.value == "Invoice"
-                              ? '\$${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}'
+                              ? controller.isApplyingSurcharge.value
+                                    ? '\$${controller.payableAmount.value.toStringAsFixed(2)}'
+                                    : '\$${(double.parse(controller.invoiceTotal.value) - double.parse(controller.depositAmount.value)).toStringAsFixed(2)}'
                               : '\$${double.parse(controller.total.value).toStringAsFixed(2)}',
                           style: TextStyle(
                             color: Colors.white,
@@ -146,9 +148,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
               label: 'Pay by Cash',
               onTap: () {
                 controller.finalCollectionAmount.value =
-                    (double.parse(controller.total.value) -
-                            double.parse(controller.depositAmount.value))
-                        .toStringAsFixed(2);
+                    controller.collectionAmount;
                 controller.cashAmtTextController.text =
                     controller.finalCollectionAmount.value;
                 Get.toNamed(Routes.PAYMENT_BY_CASH);
@@ -160,9 +160,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
               label: 'Pay by Check',
               onTap: () {
                 controller.finalCollectionAmount.value =
-                    (double.parse(controller.total.value) -
-                            double.parse(controller.depositAmount.value))
-                        .toStringAsFixed(2);
+                    controller.collectionAmount;
                 controller.checkAmtTextController.text =
                     controller.finalCollectionAmount.value;
                 Get.toNamed(Routes.PAYMENT_BY_CHECK);
@@ -194,9 +192,7 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                     label: 'Credit/Debit Card',
                     onTap: () async {
                       controller.finalCollectionAmount.value =
-                          (double.parse(controller.total.value) -
-                                  double.parse(controller.depositAmount.value))
-                              .toStringAsFixed(2);
+                          controller.collectionAmount;
                       await controller.initializeWebController(
                         controller.finalCollectionAmount.value,
                       );

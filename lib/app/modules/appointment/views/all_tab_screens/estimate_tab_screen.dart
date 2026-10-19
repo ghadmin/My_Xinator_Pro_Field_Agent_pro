@@ -307,6 +307,10 @@ class _EstimateTabScreenState extends State<EstimateTabScreen> {
         final x = MySharedPref.getCompanyType() ?? '';
         controller.invoiceController.isLocAndClassShow.value = x == 'PCS';
         controller.invoiceController.selectedInvoice.value = proposal;
+
+        controller.invoiceController.isApplyingSurcharge.value = false;
+        
+        controller.invoiceController.surchargeAmount.value = 0.00;
         Get.toNamed(Routes.INVOICE_DETAILS);
         // controller.hideLoading();
       },

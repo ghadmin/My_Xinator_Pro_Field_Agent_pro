@@ -31,6 +31,15 @@ target 'Runner' do
   use_frameworks!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+
+  # Xplor Pay (formerly Clearent) Mobile EMV framework for the IDTech VP3300
+  # Bluetooth card reader. Not on CocoaPods trunk; pinned to the podspec at tag
+  # 4.0.182 (the podspec sits in a subfolder, so a bare `:git =>` ref is not
+  # resolvable). Vendored binaries: ClearentIdtechIOSFramework.xcframework,
+  # IDTech.xcframework, ClearentIdtechMessages.bundle; CocoaLumberjack ~> 3.8.
+  pod 'ClearentIdtechIOSFrameworkPod',
+      podspec: 'https://raw.githubusercontent.com/xplor-pay/ClearentIdtechIOSFrameworkPod/4.0.182/ClearentIdtechIOSFrameworkPod/ClearentIdtechIOSFrameworkPod.podspec'
+
   target 'RunnerTests' do
     inherit! :search_paths
   end

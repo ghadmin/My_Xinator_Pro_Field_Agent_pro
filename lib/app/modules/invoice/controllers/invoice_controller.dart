@@ -1436,6 +1436,42 @@ class InvoiceController extends GetxController with ExceptionHandler {
     isApplyingSurcharge.value = isBlocked;
   }
 
+  /// Surcharge rate (%) entered by the user in the details screen.
+  TextEditingController surchargePercentController = TextEditingController(
+    text: "3",
+  );
+
+  /// Surcharge amount on the Balance Due and the resulting payable amount
+  /// (balance due + surcharge) used when the surcharge toggle is on.
+  RxDouble surchargeAmount = 0.0.obs;
+  RxDouble payableAmount = 0.0.obs;
+
+  /// Recalculates [surchargeAmount] and [payableAmount] from the current
+  /// balance due (invoice total - paid amount) and the entered rate.
+  void updateSurchargeAmount() {
+    final total = double.tryParse(invoiceTotal.value) ?? 0.0;
+    final paid = double.tryParse(depositAmount.value) ?? 0.0;
+    double balanceDue = total - paid;
+    if (balanceDue < 0) balanceDue = 0;
+    double rate = double.tryParse(surchargePercentController.text) ?? 0.0;
+    if (rate < 0) rate = 0;
+    surchargeAmount.value = isApplyingSurcharge.value
+        ? (balanceDue * rate / 100)
+        : 0.0;
+    payableAmount.value = balanceDue + surchargeAmount.value;
+  }
+
+  /// Amount to collect: payable (incl. surcharge) when the surcharge toggle
+  /// is on, otherwise the usual balance due (total - paid amount).
+  String get collectionAmount {
+    if (isApplyingSurcharge.value) {
+      return payableAmount.value.toStringAsFixed(2);
+    }
+    final t = double.tryParse(total.value) ?? 0.0;
+    final d = double.tryParse(depositAmount.value) ?? 0.0;
+    return (t - d).toStringAsFixed(2);
+  }
+
   final qboClassList = RxList<QboClassModel>([]);
   final selectedQboClass = Rx<QboClassModel?>(null);
   final selectedClass = Rx<QboClassModel?>(null);
@@ -1809,6 +1845,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
       (taxOnTaxableTotal.isNaN ? 0.0 : taxOnTaxableTotal).toStringAsFixed(2),
     );
     invoiceTotal.value = (total.isNaN ? 0.0 : total).toStringAsFixed(2);
+    updateSurchargeAmount();
   }
 
   void removeItem(int index) {

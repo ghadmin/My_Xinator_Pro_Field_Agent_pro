@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Tap to Pay on iPhone (Apple Proximity Reader).
+	     NOT wired into CODE_SIGN_ENTITLEMENTS yet: device builds fail to sign
+	     until Apple Developer Program approves the "Proximity Reader Payment
+	     Acceptance" capability for the App ID. Once approved, attach this file
+	     in Xcode (Runner target > Signing & Capabilities) or set
+	     CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements in build settings.
+	     See docs/xplorpay/README.md "Tap to Pay" section. -->
+	<key>com.apple.developer.proximity-reader.payment.acceptance</key>
+	<true/>
+</dict>
+</plist>
