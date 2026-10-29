@@ -1,4 +1,9 @@
 PODS:
+  - ClearentIdtechIOSFrameworkPod (4.0.182):
+    - CocoaLumberjack (~> 3.8)
+  - CocoaLumberjack (3.9.1):
+    - CocoaLumberjack/Core (= 3.9.1)
+  - CocoaLumberjack/Core (3.9.1)
   - Flutter (1.0.0)
   - flutter_background_service_ios (0.0.3):
     - Flutter
@@ -35,6 +40,7 @@ PODS:
     - libwebp
 
 DEPENDENCIES:
+  - ClearentIdtechIOSFrameworkPod (from `https://raw.githubusercontent.com/xplor-pay/ClearentIdtechIOSFrameworkPod/4.0.182/ClearentIdtechIOSFrameworkPod/ClearentIdtechIOSFrameworkPod.podspec`)
   - Flutter (from `Flutter`)
   - flutter_background_service_ios (from `.symlinks/plugins/flutter_background_service_ios/ios`)
   - flutter_foreground_task (from `.symlinks/plugins/flutter_foreground_task/ios`)
@@ -45,11 +51,14 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - CocoaLumberjack
     - libwebp
     - OrderedSet
     - TOCropViewController
 
 EXTERNAL SOURCES:
+  ClearentIdtechIOSFrameworkPod:
+    :podspec: https://raw.githubusercontent.com/xplor-pay/ClearentIdtechIOSFrameworkPod/4.0.182/ClearentIdtechIOSFrameworkPod/ClearentIdtechIOSFrameworkPod.podspec
   Flutter:
     :path: Flutter
   flutter_background_service_ios:
@@ -66,6 +75,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/video_thumbnail/ios"
 
 SPEC CHECKSUMS:
+  ClearentIdtechIOSFrameworkPod: 9e57f469f90f5cec7f64b7edaac1c7d5da64fe8b
+  CocoaLumberjack: e4ba3b414dfca8c1916c6303d37f63b3a95134c6
   Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   flutter_background_service_ios: 00d31bdff7b4bfe06d32375df358abe0329cf87e
   flutter_foreground_task: a159d2c2173b33699ddb3e6c2a067045d7cebb89
@@ -77,6 +88,6 @@ SPEC CHECKSUMS:
   TOCropViewController: 80b8985ad794298fb69d3341de183f33d1853654
   video_thumbnail: b637e0ad5f588ca9945f6e2c927f73a69a661140
 
-PODFILE CHECKSUM: 31b87709718df68594a1d880ab71ccbe601f2608
+PODFILE CHECKSUM: f0337daeffcbfdc2bc016fc57ee71d0775c49dbd
 
 COCOAPODS: 1.17.0
