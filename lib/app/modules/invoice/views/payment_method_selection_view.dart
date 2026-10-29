@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -207,6 +209,50 @@ class PaymentMethodSelectionView extends GetView<InvoiceController> {
                     },
                   ),
             SizedBox(height: 8.sp),
+            // Xplor Pay card-present options (iOS only — the plugins are
+            // iOS-native). Android falls back to the web card flow above.
+            if (Platform.isIOS) ...[
+              PaymentOption(
+                icon: Remix.bank_card_2_fill,
+                label: 'Card Reader (VP3300)',
+                onTap: () {
+                  final amount = controller.depositRequestPay.value
+                      ? controller.requestedDepositAmountEditTextController.text
+                      : (double.parse(controller.total.value) -
+                              double.parse(controller.depositAmount.value))
+                          .toStringAsFixed(2);
+                  controller.finalCollectionAmount.value = amount;
+                  Get.toNamed(
+                    Routes.XPLORPAY_TERMINAL,
+                    arguments: {
+                      'amount': amount,
+                      'invoiceId': controller.invoiceID.value,
+                    },
+                  );
+                },
+              ),
+              SizedBox(height: 8.sp),
+              PaymentOption(
+                icon: Remix.wireless_charging_fill,
+                label: 'Tap to Pay on iPhone',
+                onTap: () {
+                  final amount = controller.depositRequestPay.value
+                      ? controller.requestedDepositAmountEditTextController.text
+                      : (double.parse(controller.total.value) -
+                              double.parse(controller.depositAmount.value))
+                          .toStringAsFixed(2);
+                  controller.finalCollectionAmount.value = amount;
+                  Get.toNamed(
+                    Routes.XPLORPAY_TAP_TO_PAY,
+                    arguments: {
+                      'amount': amount,
+                      'invoiceId': controller.invoiceID.value,
+                    },
+                  );
+                },
+              ),
+              SizedBox(height: 8.sp),
+            ],
 
             // PaymentOption(
             //   icon: Remix.bank_card_2_fill,

@@ -17,6 +17,12 @@ import UIKit
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     setupLocationChannels(engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "XplorPayPlugin") {
+      XplorPayPlugin.register(with: registrar)
+    }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "XplorPayTapToPayPlugin") {
+      XplorPayTapToPayPlugin.register(with: registrar)
+    }
   }
 
   /// Wires the location tracking method channel (same contract as Android's MainActivity)

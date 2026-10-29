@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Apple ProximityReader entitlement for Tap to Pay on iPhone
+	     (developer.apple.com/documentation/proximityreader/setting-up-the-entitlement-for-tap-to-pay-on-iphone).
+	     Requires the capability enabled on the App ID in the developer portal. -->
+	<key>com.apple.developer.proximity-reader.payment.acceptance</key>
+	<true/>
+</dict>
+</plist>
