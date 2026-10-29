@@ -84,6 +84,51 @@ class Equipment {
       if (installDate != null) 'installDate': installDate,
     };
   }
+
+  /// Parses the real equipment returned by the CreateEquipment (master
+  /// list) API. Accepts the record wrapped in an "equipment" object or
+  /// flat, with either PascalCase or camelCase keys. [typeName] and
+  /// [typeId] are used as fallbacks when the response omits them.
+  factory Equipment.fromMasterResponse(
+    Map<String, dynamic> json, {
+    String? typeName,
+    int? typeId,
+  }) {
+    final data =
+        (json['equipment'] as Map<String, dynamic>?) ??
+        (json['Equipment'] as Map<String, dynamic>?) ??
+        json;
+
+    dynamic read(String camel, String pascal) => data[camel] ?? data[pascal];
+
+    return Equipment(
+      id: int.tryParse(read('id', 'Id')?.toString() ?? '') ?? 0,
+      siteId: int.tryParse(read('siteId', 'SiteId')?.toString() ?? '') ?? 0,
+      customerGuid: read('customerGuid', 'CustomerGuid')?.toString() ?? '',
+      customerId: read('customerId', 'CustomerID')?.toString() ?? '',
+      customerName: read('customerName', 'CustomerName')?.toString() ?? '',
+      make: read('make', 'Make')?.toString(),
+      model: read('model', 'Model')?.toString(),
+      notes: read('notes', 'Notes')?.toString(),
+      barcode: read('barcode', 'Barcode')?.toString(),
+      serialNumber: read('serialNumber', 'SerialNumber')?.toString(),
+      equipmentTypeId: int.tryParse(
+            read('equipmentTypeId', 'EquipmentTypeID')?.toString() ?? '',
+          ) ??
+          typeId,
+      equipmentType:
+          read('equipmentType', 'EquipmentType')?.toString() ?? typeName,
+      createdDateTime:
+          read('createdDateTime', 'CreatedDateTime')?.toString() ?? '',
+      warrantyStart: read('warrantyStart', 'WarrantyStart')?.toString(),
+      warrantyEnd: read('warrantyEnd', 'WarrantyEnd')?.toString(),
+      laborWarrantyStart:
+          read('laborWarrantyStart', 'LaborWarrantyStart')?.toString(),
+      laborWarrantyEnd:
+          read('laborWarrantyEnd', 'LaborWarrantyEnd')?.toString(),
+      installDate: read('installDate', 'InstallDate')?.toString(),
+    );
+  }
 }
 
 class EquipmentType {

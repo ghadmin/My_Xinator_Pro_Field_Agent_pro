@@ -13,21 +13,6 @@ import '../models/item_list_model.dart';
 import '../models/item_group_model.dart';
 import '../models/item_bundle_model.dart';
 
-enum SearchByType { name, group, bundle }
-
-extension SearchByTypeExtension on SearchByType {
-  String get displayName {
-    switch (this) {
-      case SearchByType.name:
-        return "Name";
-      case SearchByType.group:
-        return "Group";
-      case SearchByType.bundle:
-        return "Bundle";
-    }
-  }
-}
-
 class ItemController extends GetxController with ExceptionHandler {
   RxBool isItemsEmpty = false.obs;
   RxBool isItemGroupsEmpty = false.obs;
@@ -42,10 +27,6 @@ class ItemController extends GetxController with ExceptionHandler {
   final Rx<ItemBundleModel?> selectedItemBundle = Rx<ItemBundleModel?>(null);
   final TextEditingController sortTextController = TextEditingController();
   final sortedItems = RxList<ItemListModel>();
-
-  /// Search and Filter logic (same as billable items view)
-  final Rx<SearchByType> searchByType = SearchByType.name.obs;
-  final List<SearchByType> searchOptions = SearchByType.values;
 
   /// Pagination ///
   final RxInt totalItems = 0.obs;
@@ -105,7 +86,7 @@ class ItemController extends GetxController with ExceptionHandler {
           .toList();
 
       items.assignAll(parsedItems);
-      sortItems();
+      sortedItems.addAll(items);
       await MyHive.saveItemList(items);
       if (isShowLoading) hideLoading(debugInfo: "getItems - Success");
       if (items.isEmpty) {
@@ -116,7 +97,7 @@ class ItemController extends GetxController with ExceptionHandler {
 
       if (savedItems.isNotEmpty) {
         items.assignAll(savedItems);
-        sortItems();
+        sortedItems.addAll(savedItems);
         hideLoading(debugInfo: "getItems - No network - Using cached");
         MySnackBar.showErrorToast(message: "No network!");
         NetworkConnectivity.connectionChangeCount = 1;
@@ -161,20 +142,8 @@ class ItemController extends GetxController with ExceptionHandler {
         return;
       }
 
-      // Server returned an unexpected body (e.g. an HTML error page instead
-      // of JSON) — treat it as an unavailable service, not an empty result.
-      if (response is! List) {
-        itemGroups.clear();
-        hideLoading(debugInfo: "getItemGroups - Unexpected response format");
-        MySnackBar.showErrorToast(
-          message: "Service is currently unavailable. Please try again later.",
-        );
-        showItemGroupsEmptyWidget();
-        return;
-      }
-
       itemGroups.assignAll(
-        response.map((e) => ItemGroupModel.fromJson(e)).toList(),
+        (response as List).map((e) => ItemGroupModel.fromJson(e)).toList(),
       );
       await MyHive.saveItemGroupList(itemGroups);
       hideLoading(debugInfo: "getItemGroups - Success");
@@ -236,27 +205,19 @@ class ItemController extends GetxController with ExceptionHandler {
         return;
       }
 
-      if (response is! Map) {
-        if (isShowLoading) {
-          hideLoading(debugInfo: "getItemGroupById - Unexpected response format");
-        }
-        MySnackBar.showErrorToast(
-          message: "Service is currently unavailable. Please try again later.",
-        );
-        return;
-      }
-
       final itemGroup = ItemGroupModel.fromJson(response);
 
       // Update pagination info from response
-      if (response.containsKey('TotalItems')) {
-        totalItems.value = response['TotalItems'] ?? 0;
-      }
-      if (response.containsKey('PageNumber')) {
-        currentPage.value = response['PageNumber'] ?? 1;
-      }
-      if (response.containsKey('PageSize')) {
-        this.pageSize.value = response['PageSize'] ?? 20;
+      if (response is Map) {
+        if (response.containsKey('TotalItems')) {
+          totalItems.value = response['TotalItems'] ?? 0;
+        }
+        if (response.containsKey('PageNumber')) {
+          currentPage.value = response['PageNumber'] ?? 1;
+        }
+        if (response.containsKey('PageSize')) {
+          this.pageSize.value = response['PageSize'] ?? 20;
+        }
       }
 
       // Check if there are more items to load
@@ -274,7 +235,6 @@ class ItemController extends GetxController with ExceptionHandler {
       selectedItemGroup.value = itemGroup;
       currentPage.value = page;
       this.pageSize.value = size;
-      sortItems();
 
       if (isShowLoading) hideLoading(debugInfo: "getItemGroupById - Success");
     } else {
@@ -297,17 +257,6 @@ class ItemController extends GetxController with ExceptionHandler {
     );
 
     isLoadingMore.value = false;
-  }
-
-  /// Auto-selects the first group (if any) and loads its items.
-  /// The user can still change the selection from the dropdown.
-  Future<void> autoSelectFirstGroup() async {
-    if (itemGroups.isEmpty) return;
-    final firstGroup = itemGroups.first;
-    selectedItemGroup.value = firstGroup;
-    if (firstGroup.id != null) {
-      await getItemGroupById(isShowLoading: false);
-    }
   }
 
   Future<void> getBundles(bool isShowLoading) async {
@@ -354,22 +303,8 @@ class ItemController extends GetxController with ExceptionHandler {
         return;
       }
 
-      // Server returned an unexpected body (e.g. an HTML error page instead
-      // of JSON) — treat it as an unavailable service, not an empty result.
-      if (response is! List) {
-        itemBundles.clear();
-        if (isShowLoading) {
-          hideLoading(debugInfo: "getBundles - Unexpected response format");
-        }
-        MySnackBar.showErrorToast(
-          message: "Service is currently unavailable. Please try again later.",
-        );
-        showItemBundlesEmptyWidget();
-        return;
-      }
-
       itemBundles.assignAll(
-        response.map((e) => ItemBundleModel.fromJson(e)).toList(),
+        (response as List).map((e) => ItemBundleModel.fromJson(e)).toList(),
       );
       await MyHive.saveItemBundleList(itemBundles);
 
@@ -448,27 +383,19 @@ class ItemController extends GetxController with ExceptionHandler {
         return;
       }
 
-      if (response is! Map) {
-        if (isShowLoading) {
-          hideLoading(debugInfo: "getItemsByBundleId - Unexpected response format");
-        }
-        MySnackBar.showErrorToast(
-          message: "Service is currently unavailable. Please try again later.",
-        );
-        return;
-      }
-
       final itemBundle = ItemBundleModel.fromJson(response);
 
       // Update pagination info from response
-      if (response.containsKey('TotalItems')) {
-        totalItems.value = response['TotalItems'] ?? 0;
-      }
-      if (response.containsKey('PageNumber')) {
-        currentPage.value = response['PageNumber'] ?? 1;
-      }
-      if (response.containsKey('PageSize')) {
-        this.pageSize.value = response['PageSize'] ?? 20;
+      if (response is Map) {
+        if (response.containsKey('TotalItems')) {
+          totalItems.value = response['TotalItems'] ?? 0;
+        }
+        if (response.containsKey('PageNumber')) {
+          currentPage.value = response['PageNumber'] ?? 1;
+        }
+        if (response.containsKey('PageSize')) {
+          this.pageSize.value = response['PageSize'] ?? 20;
+        }
       }
 
       // Check if there are more items to load
@@ -484,7 +411,6 @@ class ItemController extends GetxController with ExceptionHandler {
       selectedItemBundle.value = itemBundle;
       currentPage.value = page;
       this.pageSize.value = size;
-      sortItems();
 
       if (isShowLoading) {
         hideLoading(debugInfo: "getItemsByBundleId - Success");
@@ -511,42 +437,21 @@ class ItemController extends GetxController with ExceptionHandler {
     isLoadingMore.value = false;
   }
 
-  /// Auto-selects the first bundle (if any) and loads its items.
-  /// The user can still change the selection from the dropdown.
-  Future<void> autoSelectFirstBundle() async {
-    if (itemBundles.isEmpty) return;
-    final firstBundle = itemBundles.first;
-    selectedItemBundle.value = firstBundle;
-    if (firstBundle.id != null) {
-      await getItemsByBundleId(isShowLoading: false);
-    }
-  }
-
   void sortItems() {
-    // Source list depends on the current search-by mode; the view always
-    // renders [sortedItems], so search filters in every mode.
-    final List<ItemListModel> source;
-    switch (searchByType.value) {
-      case SearchByType.name:
-        source = items;
-        break;
-      case SearchByType.group:
-        source = selectedItemGroup.value?.items ?? const <ItemListModel>[];
-        break;
-      case SearchByType.bundle:
-        source = selectedItemBundle.value?.items ?? const <ItemListModel>[];
-        break;
-    }
+    if (items.isEmpty) return;
 
-    final query = sortTextController.text.trim().toLowerCase();
-    final list = query.isEmpty
-        ? source
-        : source
-            .where(
-              (item) => (item.name ?? '').toLowerCase().contains(query),
-            )
-            .toList();
-    sortedItems.assignAll(list);
+    if (sortTextController.text.isEmpty) {
+      sortedItems.clear();
+      sortedItems.addAll(items);
+    } else {
+      final list = items.where((p0) {
+        return p0.name!.toLowerCase().contains(
+          sortTextController.text.toLowerCase(),
+        );
+      }).toList();
+      sortedItems.clear();
+      sortedItems.addAll(list);
+    }
   }
 
   /// Pagination Methods ///
@@ -593,7 +498,6 @@ class ItemController extends GetxController with ExceptionHandler {
     currentPage.value = 1;
     totalItems.value = 0;
     pageSize.value = 20;
-    hasMoreItems.value = true;
   }
 
   void showEmptyWidget() {

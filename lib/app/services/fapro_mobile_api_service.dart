@@ -719,6 +719,63 @@ class FaProMobileApiService {
     }
   }
 
+  /// Create equipment with a brand-new type via the master-list endpoint
+  /// (POST /CreateEquipment). The body wraps the record in an "equipment"
+  /// object with PascalCase keys; the response returns the real equipment.
+  Future<Map<String, dynamic>?> createEquipmentToMaster({
+    required String companyId,
+    required String customerId,
+    required String customerGuid,
+    required int siteId,
+    required int equipmentTypeId,
+    String? make,
+    String? model,
+    String? notes,
+    String? barcode,
+    String? serialNumber,
+    String? warrantyStart,
+    String? warrantyEnd,
+    String? laborWarrantyStart,
+    String? laborWarrantyEnd,
+    String? installDate,
+  }) async {
+    try {
+      const url = ApiUrl.createEquipmentUrl;
+
+      final body = {
+        'equipment': {
+          'CompanyID': companyId,
+          'CustomerID': customerId,
+          'CustomerGuid': customerGuid,
+          'SiteId': siteId,
+          'Make': ?make,
+          'Model': ?model,
+          'SerialNumber': ?serialNumber,
+          'Barcode': ?barcode,
+          'EquipmentTypeID': equipmentTypeId.toString(),
+          'Notes': ?notes,
+          'WarrantyStart': ?warrantyStart,
+          'WarrantyEnd': ?warrantyEnd,
+          'LaborWarrantyStart': ?laborWarrantyStart,
+          'LaborWarrantyEnd': ?laborWarrantyEnd,
+          'InstallDate': ?installDate,
+        },
+      };
+
+      kLog('POST $url');
+      final response = await _dioClient.post(url: url, body: body);
+
+      kLog(
+        'Equipment created via master list: '
+        '${response?['Id'] ?? response?['id'] ?? ''}',
+      );
+      return response;
+    } catch (e) {
+      kLog('Exception creating equipment via master list: $e');
+      return null;
+    }
+  }
+
   /// Update equipment
   Future<Map<String, dynamic>?> updateEquipment({
     required String companyId,

@@ -50,8 +50,6 @@ abstract class Routes {
   static const LOCATION_TRACKING = _Paths.LOCATION_TRACKING;
   static const TRAINING = _Paths.TRAINING;
   static const TABLET_SHELL = _Paths.TABLET_SHELL;
-  static const XPLORPAY_TERMINAL = _Paths.XPLORPAY_TERMINAL;
-  static const XPLORPAY_TAP_TO_PAY = _Paths.XPLORPAY_TAP_TO_PAY;
 }
 
 abstract class _Paths {
@@ -100,6 +98,4 @@ abstract class _Paths {
   static const LOCATION_TRACKING = '/location-tracking';
   static const TRAINING = '/training';
   static const TABLET_SHELL = '/tablet-shell';
-  static const XPLORPAY_TERMINAL = '/xplorpay-terminal';
-  static const XPLORPAY_TAP_TO_PAY = '/xplorpay-tap-to-pay';
 }

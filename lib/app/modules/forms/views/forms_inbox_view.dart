@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-
-import '../../../../utils/responsive.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
@@ -35,7 +33,7 @@ class FormsInboxView extends GetView<FormsController> {
 
     var theme = Theme.of(context);
     return Scaffold(
-      appBar: Get.size.width <= 440 || context.isTabletLayout
+      appBar: Get.size.width <= 440
           ? AppBar(
               title: const Text("Forms Inbox"),
               actions: [

@@ -163,6 +163,100 @@ class EquipmentController extends GetxController with ExceptionHandler {
     }
   }
 
+  /// Create equipment with a brand-new type that should also be added to
+  /// the Equipment Master List (POST /CreateEquipment).
+  ///
+  /// The real equipment returned in the response is inserted directly into
+  /// the equipment list; the equipment types are re-fetched afterwards so
+  /// the new type shows up in the master list next time.
+  Future<bool> createEquipmentToMaster({
+    required String customerId,
+    required String customerGuid,
+    required int siteId,
+    required int equipmentTypeId,
+    String? typeName,
+    String? make,
+    String? model,
+    String? notes,
+    String? barcode,
+    String? serialNumber,
+    String? warrantyStart,
+    String? warrantyEnd,
+    String? laborWarrantyStart,
+    String? laborWarrantyEnd,
+    String? installDate,
+    String? companyId,
+  }) async {
+    try {
+      showLoading();
+
+      final response = await _service.createEquipmentToMaster(
+        companyId: companyId ?? '14590',
+        customerId: customerId,
+        customerGuid: customerGuid,
+        siteId: siteId,
+        equipmentTypeId: equipmentTypeId,
+        make: make,
+        model: model,
+        notes: notes,
+        barcode: barcode,
+        serialNumber: serialNumber,
+        warrantyStart: warrantyStart,
+        warrantyEnd: warrantyEnd,
+        laborWarrantyStart: laborWarrantyStart,
+        laborWarrantyEnd: laborWarrantyEnd,
+        installDate: installDate,
+      );
+
+      // The endpoint returns HTTP 200 even on failure — check the Status
+      // field (e.g. "Status: error, Response: Could not find stored
+      // procedure ...") before treating the body as a created equipment.
+      final status = (response?['Status'] ?? response?['status'])
+          ?.toString()
+          .toLowerCase();
+      final serverError =
+          (response?['Response'] ?? response?['response'])?.toString();
+
+      if (response != null && status != 'error') {
+        // Add the real equipment returned by the API to the list directly.
+        equipment.insert(
+          0,
+          Equipment.fromMasterResponse(
+            response,
+            typeName: typeName,
+            typeId: equipmentTypeId,
+          ),
+        );
+        Get.snackbar(
+          'Success',
+          'Equipment created successfully',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        // Refresh the master types so the new type shows up next time.
+        await fetchEquipmentTypes(companyId: companyId);
+        return true;
+      } else {
+        Get.snackbar(
+          'Error',
+          (serverError != null && serverError.isNotEmpty)
+              ? serverError
+              : _service.getErrorMessage(response),
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Exception: $e',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    } finally {
+      hideLoading();
+    }
+  }
+
   /// Update equipment
   Future<bool> updateEquipment({
     required int id,

@@ -247,10 +247,6 @@ class OrganicPrimaryButton extends StatelessWidget {
   final IconData? icon;
   final bool isLoading;
 
-  /// When set, renders a solid fill in this color instead of the default
-  /// gradient, with a matching tinted shadow.
-  final Color? color;
-
   const OrganicPrimaryButton({
     super.key,
     required this.text,
@@ -259,7 +255,6 @@ class OrganicPrimaryButton extends StatelessWidget {
     this.height,
     this.icon,
     this.isLoading = false,
-    this.color,
   });
 
   @override
@@ -268,18 +263,9 @@ class OrganicPrimaryButton extends StatelessWidget {
       width: width ?? double.infinity,
       constraints: BoxConstraints(minHeight: height ?? 48.h),
       decoration: BoxDecoration(
-        gradient: color != null ? null : WarmOrganicBlueTheme.primaryGradient,
-        color: color,
+        gradient: WarmOrganicBlueTheme.primaryGradient,
         borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusMd),
-        boxShadow: color != null
-            ? [
-                BoxShadow(
-                  color: color!.withValues(alpha: 0.18),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : WarmOrganicBlueTheme.softShadow,
+        boxShadow: WarmOrganicBlueTheme.softShadow,
       ),
       child: Material(
         color: Colors.transparent,
@@ -321,10 +307,6 @@ class OrganicSecondaryButton extends StatelessWidget {
   final double? height;
   final IconData? icon;
 
-  /// When set, tints the border, icon and label with this color instead of
-  /// the default WarmOrganicBlueTheme.primaryBlue.
-  final Color? color;
-
   const OrganicSecondaryButton({
     super.key,
     required this.text,
@@ -332,7 +314,6 @@ class OrganicSecondaryButton extends StatelessWidget {
     this.width,
     this.height,
     this.icon,
-    this.color,
   });
 
   @override
@@ -344,9 +325,7 @@ class OrganicSecondaryButton extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(WarmOrganicBlueTheme.radiusMd),
         border: Border.all(
-          color: (color ?? WarmOrganicBlueTheme.primaryBlue).withValues(
-            alpha: 0.3,
-          ),
+          color: WarmOrganicBlueTheme.primaryBlue.withValues(alpha: 0.3),
         ),
         boxShadow: WarmOrganicBlueTheme.subtleShadow,
       ),
@@ -362,7 +341,7 @@ class OrganicSecondaryButton extends StatelessWidget {
                 if (icon != null) ...[
                   Icon(
                     icon,
-                    color: color ?? WarmOrganicBlueTheme.primaryBlue,
+                    color: WarmOrganicBlueTheme.primaryBlue,
                     size: 16.sp,
                   ),
                   SizedBox(width: 6.w),
@@ -370,7 +349,7 @@ class OrganicSecondaryButton extends StatelessWidget {
                 Text(
                   text,
                   style: WarmOrganicBlueTheme.buttonLabel.copyWith(
-                    color: color ?? WarmOrganicBlueTheme.primaryBlue,
+                    color: WarmOrganicBlueTheme.primaryBlue,
                   ),
                 ),
               ],

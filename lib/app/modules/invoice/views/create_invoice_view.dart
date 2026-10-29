@@ -37,7 +37,9 @@ class CreateInvoiceView extends GetView<InvoiceController> {
       // Save backup when navigating back without submitting
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) controller.saveBackup(controller.selectedCreateType.value);
+        if (didPop) {
+          controller.saveBackup(controller.selectedCreateType.value);
+        }
       },
       child: Scaffold(
         appBar: buildAppBar(context, theme),
@@ -2542,7 +2544,7 @@ class CreateInvoiceView extends GetView<InvoiceController> {
                                 controller.markAsDirty();
                                 controller.selectedItemList[index].isTaxable =
                                     value;
-                                controller.createTotal();
+                                controller.createTotalForEdit();
                                 controller.selectedItemList.refresh();
                                 controller.updateRequestedDepositAmount();
                               },

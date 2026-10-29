@@ -282,7 +282,6 @@ class ManualPaymentView extends GetView<InvoiceController> {
               );
             }
           }
-
           invoiceC.createTotalForEdit();
           await 0.5.delay();
           invoiceC.selectedQboClass(

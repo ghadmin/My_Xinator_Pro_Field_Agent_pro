@@ -11,10 +11,8 @@ class SoftButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var theme = Theme.of(context);
-    return Container(
-      // minHeight (not fixed height) so the label can never be clipped
-      // vertically when the text needs more room.
-      constraints: BoxConstraints(minHeight: 40.w),
+    return SizedBox(
+      height: 40.w,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(

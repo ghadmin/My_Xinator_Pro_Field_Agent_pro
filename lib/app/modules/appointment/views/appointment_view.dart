@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+
 import '../../../../config/theme/light_theme_colors.dart';
 import '../../../../utils/constants.dart';
 import '../../../../utils/date_converter.dart';
@@ -218,7 +219,7 @@ class AppointmentView extends GetView<AppointmentController> {
                                 radius: 8,
                                 color: Colors.white,
                                 border: Border.all(
-                                  color: Colors.white,
+                                  color: Colors.transparent,
                                   width: 0,
                                 ),
                                 onPressed: () async {
@@ -315,8 +316,6 @@ class AppointmentView extends GetView<AppointmentController> {
                                   child: Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: Column(
@@ -324,10 +323,7 @@ class AppointmentView extends GetView<AppointmentController> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              appointment
-                                                      .customer
-                                                      ?.businessName ??
-                                                  "",
+                                              "${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""}",
                                               style: theme
                                                   .textTheme
                                                   .headlineSmall
@@ -338,19 +334,6 @@ class AppointmentView extends GetView<AppointmentController> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             SizedBox(height: 2.sp),
-                                            Text(
-                                              "(${appointment.customer?.firstName ?? ""} ${appointment.customer?.lastName ?? ""})",
-
-                                              style: theme
-                                                  .textTheme
-                                                  .headlineSmall
-                                                  ?.copyWith(
-                                                    fontWeight: FontWeight.w100,
-                                                    fontSize: 15.sp,
-                                                  ),
-                                              maxLines: 3,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
                                             Text(
                                               appointment
                                                       .serviceType

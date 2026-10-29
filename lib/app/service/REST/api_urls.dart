@@ -22,6 +22,7 @@ class ApiUrl {
   static const updateAppointment = "$baseUrl/UpdateAppointment";
   static const sendCustomerSMS = "$baseUrl/SendCustomerSMS";
   static const getCustomer = "$baseUrl/GetCustomerList";
+  static const getCustomerAppointmentsUrl = "$baseUrl/GetCustomerAppointments";
   static const getInvoices = "$baseUrl/GetInvoiceList";
   static const getTicketStatusList = "$baseUrl/GetTicketStatusList";
   static const getAppointmentStatusList = "$baseUrl/GetStatusList";
@@ -62,6 +63,7 @@ class ApiUrl {
   static const updateNoteUrl = "$baseUrl/UpdateNote";
   static const getAllNotesUrl = "$baseUrl/GetAllNote";
   static const saveEquipmentUrl = "$baseUrl/SaveEquipment";
+  static const createEquipmentUrl = "$baseUrl/CreateEquipment";
   static const updateEquipmentUrl = "$baseUrl/UpdateEquipment";
   static const getEquipmentUrl = "$baseUrl/GetEquipment";
   static const getEquipmentTypeUrl = "$baseUrl/GetEquipmentTypes";

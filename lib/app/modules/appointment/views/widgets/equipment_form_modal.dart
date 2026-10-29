@@ -30,6 +30,10 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
   late final Map<String, TextEditingController> _controllers;
   late final Map<String, FocusNode> _focusNodes;
 
+  /// Whether the selected custom type should also be saved to the
+  /// Equipment Master List (set from the type selector sheet).
+  bool _addToMaster = false;
+
   @override
   void initState() {
     super.initState();
@@ -172,6 +176,32 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
         installDate: equipment.installDate,
         companyId: companyId,
       );
+    } else if (_addToMaster && selectedType == null) {
+      // New custom type with "Add to Equipment Master List" ON — create it
+      // via CreateEquipment. The new type id is the last known master type
+      // id + 1; the real equipment from the response is added to the list.
+      final types = equipmentController.equipmentTypes;
+      final lastTypeId = types.isNotEmpty
+          ? int.tryParse(types.last.id) ?? 0
+          : 0;
+      success = await equipmentController.createEquipmentToMaster(
+        customerId: customerId,
+        customerGuid: customerGuid,
+        siteId: siteId,
+        equipmentTypeId: lastTypeId + 1,
+        typeName: _controllers['type']!.text.trim(),
+        make: equipment.make,
+        model: equipment.model,
+        notes: equipment.notes,
+        barcode: equipment.barcode,
+        serialNumber: equipment.serialNumber,
+        warrantyStart: equipment.warrantyStart,
+        warrantyEnd: equipment.warrantyEnd,
+        laborWarrantyStart: equipment.laborWarrantyStart,
+        laborWarrantyEnd: equipment.laborWarrantyEnd,
+        installDate: equipment.installDate,
+        companyId: companyId,
+      );
     } else {
       // Create new equipment
       success = await equipmentController.createEquipment(
@@ -193,15 +223,15 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
       );
     }
 
-    // Close the modal only on success — a single pop. The isCurrent guard
-    // makes sure we only pop when this sheet is still the top route: the
-    // loading helper sweeps popups during the await, and if the sheet were
-    // already closing, popping again would land on the screen below it.
+    // Close the modal only on success
     if (success && mounted) {
-      final route = ModalRoute.of(context);
-      if (route == null || route.isCurrent) {
-        Navigator.of(context).pop();
-      }
+      // Use Navigator.pop to close this specific modal
+      Navigator.of(context).pop();
+    }
+
+    // Close the modal only on success
+    if (success) {
+      Get.back();
     }
   }
 
@@ -535,9 +565,10 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
     Get.bottomSheet(
       _EquipmentTypeSelectorSheet(
         equipmentTypes: widget.equipmentTypes,
-        onSelect: (typeName) {
+        onSelect: (typeName, addToMaster) {
           setState(() {
             _controllers['type']!.text = typeName;
+            _addToMaster = addToMaster;
           });
           Get.back();
         },
@@ -559,7 +590,11 @@ class _EquipmentFormModalState extends State<EquipmentFormModal> {
 /// Bottom sheet content for selecting an equipment type
 class _EquipmentTypeSelectorSheet extends StatefulWidget {
   final List<EquipmentType> equipmentTypes;
-  final ValueChanged<String> onSelect;
+
+  /// Called with the picked type name and whether it should also be saved
+  /// to the Equipment Master List (true only when the user typed a custom
+  /// type with the toggle ON).
+  final void Function(String typeName, bool addToMaster) onSelect;
 
   const _EquipmentTypeSelectorSheet({
     required this.equipmentTypes,
@@ -601,8 +636,8 @@ class _EquipmentTypeSelectorSheetState
   /// Whether the current search text is an exact (case-insensitive)
   /// match of an existing master equipment type.
   bool _hasExactMatch(String query) => widget.equipmentTypes.any(
-    (t) => t.typeName.trim().toLowerCase() == query.trim().toLowerCase(),
-  );
+        (t) => t.typeName.trim().toLowerCase() == query.trim().toLowerCase(),
+      );
 
   /// Whether to show the custom type section — the user typed something
   /// that is not an exact match in the master list.
@@ -610,24 +645,13 @@ class _EquipmentTypeSelectorSheetState
       _searchController.text.trim().isNotEmpty &&
       !_hasExactMatch(_searchController.text);
 
-  /// Add the typed text as a custom equipment type.
+  /// Add the typed text as a custom equipment type. When the master-list
+  /// toggle is ON, the form's Add Equipment button will create it via the
+  /// CreateEquipment API on submit.
   void _addCustomType() {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
-
-    if (_addToMaster) {
-      // Call the create-equipment-type API here, e.g.:
-      //   await equipmentController.addEquipmentTypeToMaster(typeName: query);
-      // On success, re-fetch equipment types so the new entry comes back
-      // with a real equipmentTypeId.
-      //
-      // NOTE: Until the API is wired up, the type below is selected by name
-      // only — the equipment is saved without an equipmentTypeId.
-    }
-
-    // With the toggle OFF the name is used for this equipment only
-    // (equipmentTypeId stays null).
-    widget.onSelect(query);
+    widget.onSelect(query, _addToMaster);
   }
 
   /// Custom type section — lets the user use the typed text as a new
@@ -680,7 +704,10 @@ class _EquipmentTypeSelectorSheetState
               Expanded(
                 child: Text(
                   'Add to Equipment Master List',
-                  style: TextStyle(fontSize: 13.sp, color: Colors.grey[700]),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: Colors.grey[700],
+                  ),
                 ),
               ),
               Switch(
@@ -785,7 +812,8 @@ class _EquipmentTypeSelectorSheetState
                         return Material(
                           child: ListTile(
                             title: Text(type.typeName),
-                            onTap: () => widget.onSelect(type.typeName),
+                            onTap: () =>
+                                widget.onSelect(type.typeName, false),
                           ),
                         );
                       },
@@ -874,7 +902,7 @@ class EquipmentCard extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Equipment Type: ${equipment.equipmentType?.isEmpty == true ? "N/A" : equipment.equipmentType}',
+                      'Equipment Type: ${equipment.equipmentType?.isNotEmpty == true ? equipment.equipmentType : "N/A"}',
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: Colors.blue[700],
@@ -949,8 +977,7 @@ class EquipmentCard extends StatelessWidget {
             // All fields with labels (excluding Type since it's in header)
             _buildSingleDetailRow(
               'Serial Number',
-              equipment.serialNumber!.isNotEmpty &&
-                      equipment.serialNumber != null
+              equipment.serialNumber?.isNotEmpty == true
                   ? equipment.serialNumber!
                   : 'N/A',
             ),

@@ -49,10 +49,6 @@ import '../modules/settings/views/settings_view.dart';
 import '../modules/settings/views/ticket_status_view.dart';
 import '../modules/signature/bindings/signature_binding.dart';
 import '../modules/training/views/training_view.dart';
-import '../modules/xplorpay/bindings/xplorpay_binding.dart';
-import '../modules/xplorpay/bindings/xplorpay_tap_to_pay_binding.dart';
-import '../modules/xplorpay/views/xplorpay_terminal_view.dart';
-import '../modules/xplorpay/views/xplorpay_tap_to_pay_view.dart';
 import '../modules/signature/views/signature_view.dart';
 import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
@@ -290,16 +286,6 @@ class AppPages {
     GetPage(
       name: _Paths.TRAINING,
       page: () => const TrainingView(),
-    ),
-    GetPage(
-      name: _Paths.XPLORPAY_TERMINAL,
-      page: () => const XplorPayTerminalView(),
-      binding: XplorPayBinding(),
-    ),
-    GetPage(
-      name: _Paths.XPLORPAY_TAP_TO_PAY,
-      page: () => const XplorPayTapToPayView(),
-      binding: XplorPayTapToPayBinding(),
     ),
   ];
 }

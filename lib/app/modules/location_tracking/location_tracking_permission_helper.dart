@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -198,7 +200,7 @@ class LocationTrackingPermissionHelper {
 
       return true;
     } catch (e) {
-      debugPrint('Error requesting permissions: $e');
+      developer.log('Error requesting permissions: $e');
       return false;
     }
   }

@@ -1084,10 +1084,14 @@ class LoginView extends GetView<AuthController> {
                           ),
                         SizedBox(height: 25.sp),
 
-                        // Sign In Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52.h,
+                        // Sign In Button — minHeight (not a tight height)
+                        // so the label is never clipped; PrimaryButton
+                        // grows to fit its text when needed.
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: double.infinity,
+                            minHeight: 52.h,
+                          ),
                           child: PrimaryButton(
                             title: "Sign in",
                             onPressed: () async {

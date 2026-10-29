@@ -4,7 +4,6 @@ class SiteModel {
   String? customerGuid;
   String? siteName;
   String? address;
-  String? city;
   String? contact;
   String? email;
   String? phoneNumber;
@@ -23,7 +22,6 @@ class SiteModel {
     this.customerGuid,
     this.siteName,
     this.address,
-    this.city,
     this.contact,
     this.email,
     this.phoneNumber,
@@ -43,7 +41,6 @@ class SiteModel {
     customerGuid = json['CustomerGuid'];
     siteName = json['SiteName'];
     address = json['Address'];
-    city = json['City'];
     contact = json['Contact'];
     email = json['Email'];
     phoneNumber = json['PhoneNumber'];
@@ -64,7 +61,6 @@ class SiteModel {
     map['CustomerGuid'] = customerGuid;
     map['SiteName'] = siteName;
     map['Address'] = address;
-    map['City'] = city;
     map['Contact'] = contact;
     map['Email'] = email;
     map['PhoneNumber'] = phoneNumber;

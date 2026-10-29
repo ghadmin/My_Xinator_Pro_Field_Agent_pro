@@ -1,14 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get_state_manager/src/simple/get_view.dart';
+import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/controllers/appointment_controller.dart';
 import 'package:myxinator_pro_field_agent_pro/app/modules/appointment/views/widgets/warm_organic_components.dart';
 import 'package:myxinator_pro_field_agent_pro/app/utils/simple_phone_formatter.dart';
 import 'package:myxinator_pro_field_agent_pro/config/theme/warm_organic_blue_theme.dart';
+import 'package:myxinator_pro_field_agent_pro/app/components/global-widgets/appointment_history_section.dart';
 
-class CustomerLocationScreen extends GetView<AppointmentController> {
+/// CSL tab screen of the appointment details: customer/site info, location
+/// actions and the customer's appointment history (GetCustomerAppointments,
+/// fetched through AppointmentController.customerController).
+class CustomerLocationScreen extends StatefulWidget {
   const CustomerLocationScreen({super.key});
+
+  @override
+  State<CustomerLocationScreen> createState() => _CustomerLocationScreenState();
+}
+
+class _CustomerLocationScreenState extends State<CustomerLocationScreen> {
+  final controller = Get.find<AppointmentController>();
+
+  @override
+  void initState() {
+    super.initState();
+    final customerId =
+        controller.selectedAppointment.value?.customer?.customerID ??
+            controller.selectedSite.value?.customerID;
+    controller.customerController.getCustomerAppointments(
+      customerId: customerId,
+      siteId: controller.selectedSite.value?.id ?? 0,
+    );
+  }
+
+  /// Re-fetch with the same customer/site the screen was opened with.
+  Future<void> _refreshHistory() async {
+    final customerId =
+        controller.selectedAppointment.value?.customer?.customerID ??
+            controller.selectedSite.value?.customerID;
+    controller.customerController.getCustomerAppointments(
+      customerId: customerId,
+      siteId: controller.selectedSite.value?.id ?? 0,
+    );
+  }
 
   Future<void> openMapWithRoute(String address) async {
     final Uri url = Uri.parse(
@@ -300,6 +334,26 @@ class CustomerLocationScreen extends GetView<AppointmentController> {
                   //   ),
                   // ),
                 ],
+              ),
+            ),
+
+            SizedBox(height: 16.h),
+
+            /// ==============================
+            /// APPOINTMENT HISTORY CARD
+            /// ==============================
+            OrganicCard(
+              padding: EdgeInsets.zero,
+              child: AppointmentHistorySection(
+                history:
+                    controller.customerController.customerAppointmentHistory,
+                isLoading:
+                    controller.customerController.isCustomerHistoryLoading,
+                hasMore: controller.customerController.hasMoreCustomerHistory,
+                onRefresh: _refreshHistory,
+                onLoadMore: () async =>
+                    await controller.customerController
+                        .loadMoreCustomerAppointments(),
               ),
             ),
 

@@ -117,6 +117,13 @@ class CustomerView extends GetView<CustomerController> {
                                       customer.mobile ?? "";
                                   controller.email = customer.email ?? "";
                                   controller.selectedCustomer.value = customer;
+                                  // History for the tapped customer loads in
+                                  // the background while the details screen
+                                  // opens.
+                                  controller.getCustomerAppointments(
+                                    customerId: customer.customerID,
+                                    siteId: 0,
+                                  );
                                   Get.toNamed(Routes.CUSTOMER_DETAILS);
                                   // appointmentC.selectedAppointment.value = null;
 

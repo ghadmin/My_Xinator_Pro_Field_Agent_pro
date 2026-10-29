@@ -1153,6 +1153,23 @@ import '../models/qbo_class_dropdown_model.dart';
 import '../models/qbo_location_dropdown_model.dart';
 import '../models/tax_model.dart';
 
+enum SearchByType { name, group, bundle, itemsCategory }
+
+extension SearchByTypeExtension on SearchByType {
+  String get displayName {
+    switch (this) {
+      case SearchByType.name:
+        return "Name";
+      case SearchByType.group:
+        return "Group";
+      case SearchByType.bundle:
+        return "Bundle";
+      case SearchByType.itemsCategory:
+        return "Items Category";
+    }
+  }
+}
+
 class InvoiceController extends GetxController with ExceptionHandler {
   late final WebViewController webController;
   late final WebViewController webController2;
@@ -1267,7 +1284,7 @@ class InvoiceController extends GetxController with ExceptionHandler {
     webController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..enableZoom(true)
-      ..setBackgroundColor(Colors.transparent)
+      ..setBackgroundColor(Colors.white)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
@@ -1276,36 +1293,14 @@ class InvoiceController extends GetxController with ExceptionHandler {
           },
           onPageFinished: (url) {
             isLoading.value = false;
-            // Delay JavaScript injection to avoid conflicts with page scripts
-            Future.delayed(const Duration(milliseconds: 500), () {
-              webController
-                  .runJavaScript("""
-        (function() {
-          try {
-            // Only inject viewport if not already present
-            if (!document.querySelector('meta[name="viewport"]')) {
-              var meta = document.createElement('meta');
-              meta.name = 'viewport';
-              meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0 user-scalable=yes';
-              document.getElementsByTagName('head')[0].appendChild(meta);
-            }
-            // Don't override body zoom to avoid breaking layouts
-          } catch(e) {
-            console.log('WebView injection error:', e);
-          }
-        })();
-      """)
-                  .catchError((e) {
-                    log('JavaScript injection error: $e');
-                  });
-            });
+            webController.runJavaScript("""
+      var meta = document.createElement('meta');
+      meta.name = 'viewport';
+      meta.content = 'width=device-width, initial-scale=.8, maximum-scale=1.0 user-scalable=no';
+      document.getElementsByTagName('head')[0].appendChild(meta);
+      document.body.style.zoom = "1"; 
+    """);
             log('Page finished: $url');
-          },
-          onWebResourceError: (error) {
-            log(
-              'WebView resource error: ${error.description} - ${error.errorType}',
-            );
-            isLoading.value = false;
           },
           onNavigationRequest: (request) {
             return NavigationDecision.navigate;
@@ -1436,42 +1431,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
     isApplyingSurcharge.value = isBlocked;
   }
 
-  /// Surcharge rate (%) entered by the user in the details screen.
-  TextEditingController surchargePercentController = TextEditingController(
-    text: "3",
-  );
-
-  /// Surcharge amount on the Balance Due and the resulting payable amount
-  /// (balance due + surcharge) used when the surcharge toggle is on.
-  RxDouble surchargeAmount = 0.0.obs;
-  RxDouble payableAmount = 0.0.obs;
-
-  /// Recalculates [surchargeAmount] and [payableAmount] from the current
-  /// balance due (invoice total - paid amount) and the entered rate.
-  void updateSurchargeAmount() {
-    final total = double.tryParse(invoiceTotal.value) ?? 0.0;
-    final paid = double.tryParse(depositAmount.value) ?? 0.0;
-    double balanceDue = total - paid;
-    if (balanceDue < 0) balanceDue = 0;
-    double rate = double.tryParse(surchargePercentController.text) ?? 0.0;
-    if (rate < 0) rate = 0;
-    surchargeAmount.value = isApplyingSurcharge.value
-        ? (balanceDue * rate / 100)
-        : 0.0;
-    payableAmount.value = balanceDue + surchargeAmount.value;
-  }
-
-  /// Amount to collect: payable (incl. surcharge) when the surcharge toggle
-  /// is on, otherwise the usual balance due (total - paid amount).
-  String get collectionAmount {
-    if (isApplyingSurcharge.value) {
-      return payableAmount.value.toStringAsFixed(2);
-    }
-    final t = double.tryParse(total.value) ?? 0.0;
-    final d = double.tryParse(depositAmount.value) ?? 0.0;
-    return (t - d).toStringAsFixed(2);
-  }
-
   final qboClassList = RxList<QboClassModel>([]);
   final selectedQboClass = Rx<QboClassModel?>(null);
   final selectedClass = Rx<QboClassModel?>(null);
@@ -1547,10 +1506,10 @@ class InvoiceController extends GetxController with ExceptionHandler {
   }
 
   /// Reorders billable items and keeps their corresponding controllers in sync
+  ///
+  /// Called from [ReorderableListView.onReorderItem], whose newIndex is
+  /// already adjusted for the removed item.
   void reorderBillableItems(int oldIndex, int newIndex) {
-    // newIndex is already adjusted by ReorderableListView.onReorderItem
-    // (it accounts for the item being removed when moving down the list)
-
     // Reorder the item in the list
     final item = selectedItemList.removeAt(oldIndex);
     selectedItemList.insert(newIndex, item);
@@ -1845,7 +1804,6 @@ class InvoiceController extends GetxController with ExceptionHandler {
       (taxOnTaxableTotal.isNaN ? 0.0 : taxOnTaxableTotal).toStringAsFixed(2),
     );
     invoiceTotal.value = (total.isNaN ? 0.0 : total).toStringAsFixed(2);
-    updateSurchargeAmount();
   }
 
   void removeItem(int index) {

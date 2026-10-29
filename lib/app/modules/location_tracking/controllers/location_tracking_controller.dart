@@ -42,6 +42,7 @@ class LocationTrackingController extends GetxController
   /// only ever toggle once.
   bool _pendingSettingsReturn = false;
 
+  // User data (FIXED: Updated to match service requirements)
   int? _currentResourceId;
 
   @override
@@ -117,6 +118,7 @@ class LocationTrackingController extends GetxController
         return;
       }
 
+      // FIXED: Store user data correctly
       _currentResourceId = resourceId;
 
       // FIXED: Initialize location service with correct parameters
@@ -149,8 +151,8 @@ class LocationTrackingController extends GetxController
     } catch (e, stackTrace) {
       log('❌ Failed to initialize tracking: $e');
       errorMessage.value = 'Failed to initialize tracking: $e';
-      debugPrint('Error initializing tracking: $e');
-      debugPrint('Stack trace: $stackTrace');
+      log('Error initializing tracking: $e');
+      log('Stack trace: $stackTrace');
     }
   }
 
@@ -224,8 +226,8 @@ class LocationTrackingController extends GetxController
       log('❌ [CONTROLLER] Failed to start tracking: $e');
       errorMessage.value = 'Failed to start tracking: $e';
       isTrackingEnabled.value = false; // Ensure UI shows correct state
-      debugPrint('Error starting tracking: $e');
-      debugPrint('Stack trace: $stackTrace');
+      log('Error starting tracking: $e');
+      log('Stack trace: $stackTrace');
     }
   }
 
@@ -296,13 +298,6 @@ class LocationTrackingController extends GetxController
             '⚠️ Background location permission not granted, foreground tracking may work',
           );
           await _showBackgroundLocationWarning();
-          // "Open App Settings" sends the user to OS settings in the middle of
-          // this start attempt. Abort here instead of continuing in the
-          // background (requesting the notification permission / starting the
-          // native service from the background fails on Android 12+) —
-          // tracking auto-starts when the user returns, via
-          // didChangeAppLifecycleState → _resumeTrackingStartAfterSettings.
-          if (_pendingSettingsReturn) return false;
         }
       }
 
@@ -333,7 +328,7 @@ class LocationTrackingController extends GetxController
       return true;
     } catch (e) {
       log('❌ Error checking permissions: $e');
-      debugPrint('Error checking permissions: $e');
+      log('Error checking permissions: $e');
       return false;
     }
   }
@@ -519,10 +514,7 @@ class LocationTrackingController extends GetxController
           'only track your location while it is open. For continuous tracking, '
           '$howToEnable',
       primaryLabel: 'Open App Settings',
-      onPrimary: () {
-        _pendingSettingsReturn = true;
-        openAppSettings();
-      },
+      onPrimary: openAppSettings,
       secondaryLabel: 'I Understand',
       barrierDismissible: false,
     );
@@ -561,8 +553,8 @@ class LocationTrackingController extends GetxController
     } catch (e, stackTrace) {
       log('❌ Failed to stop tracking: $e');
       errorMessage.value = 'Failed to stop tracking: $e';
-      debugPrint('Error stopping tracking: $e');
-      debugPrint('Stack trace: $stackTrace');
+      log('Error stopping tracking: $e');
+      log('Stack trace: $stackTrace');
     }
   }
 
@@ -588,7 +580,7 @@ class LocationTrackingController extends GetxController
     } catch (e, stackTrace) {
       log('❌ Manual retry failed: $e');
       errorMessage.value = 'Failed to start tracking: $e';
-      debugPrint('Stack trace: $stackTrace');
+      log('Stack trace: $stackTrace');
     }
   }
 

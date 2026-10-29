@@ -28,7 +28,6 @@ class MySharedPref {
   static const String _currentLocalKey = 'current_local';
   static const String _lightThemeKey = 'is_theme_light';
   static const String _trackingEnabledKey = 'is_tracking_enabled';
-  static const String _surchargeRateKey = 'surcharge_rate';
 
   /// set email
   static Future<bool> setEmail(String email) =>
@@ -107,14 +106,6 @@ class MySharedPref {
   /// get if tracking is enabled
   static bool getTrackingEnabled() =>
       _sharedPreferences!.getBool(_trackingEnabledKey) ?? false;
-
-  /// set the surcharge rate (percentage) applied on the balance due
-  static Future<bool> setSurchargeRate(double rate) =>
-      _sharedPreferences!.setDouble(_surchargeRateKey, rate);
-
-  /// get the surcharge rate (percentage) applied on the balance due
-  static double getSurchargeRate() =>
-      _sharedPreferences!.getDouble(_surchargeRateKey) ?? 3.0;
 
   /// save current locale
   static void setCurrentLanguage(String languageCode) =>

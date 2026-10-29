@@ -5,9 +5,7 @@ import 'controllers/location_tracking_controller.dart';
 
 /// Simple test widget to verify location tracking is working
 class LocationTrackingTestWidget extends StatelessWidget {
-  final LocationTrackingController controller = Get.put(
-    LocationTrackingController(),
-  );
+  final LocationTrackingController controller = Get.put(LocationTrackingController());
 
   LocationTrackingTestWidget({super.key});
 
@@ -20,28 +18,20 @@ class LocationTrackingTestWidget extends StatelessWidget {
         child: Column(
           children: [
             // Status Card
-            Obx(
-              () => Card(
-                child: ListTile(
-                  leading: Icon(
-                    controller.isTrackingEnabled.value
-                        ? Icons.location_on
-                        : Icons.location_off,
-                    color: controller.isTrackingEnabled.value
-                        ? Colors.green
-                        : Colors.grey,
-                  ),
-                  title: Text('Location Tracking'),
-                  subtitle: Text(
-                    _getStatusText(controller.trackingStatus.value),
-                  ),
-                  trailing: Switch(
-                    value: controller.isTrackingEnabled.value,
-                    onChanged: (_) => controller.toggleTracking(),
-                  ),
+            Obx(() => Card(
+              child: ListTile(
+                leading: Icon(
+                  controller.isTrackingEnabled.value ? Icons.location_on : Icons.location_off,
+                  color: controller.isTrackingEnabled.value ? Colors.green : Colors.grey,
+                ),
+                title: Text('Location Tracking'),
+                subtitle: Text(_getStatusText(controller.trackingStatus.value)),
+                trailing: Switch(
+                  value: controller.isTrackingEnabled.value,
+                  onChanged: (_) => controller.toggleTracking(),
                 ),
               ),
-            ),
+            )),
 
             // Error Message
             Obx(() {
@@ -72,12 +62,8 @@ class LocationTrackingTestWidget extends StatelessWidget {
                       children: [
                         Text('Current Location:'),
                         SizedBox(height: 8),
-                        Text(
-                          'Lat: ${location.latitude}, Lng: ${location.longitude}',
-                        ),
-                        Text(
-                          'Accuracy: ${location.accuracy.toStringAsFixed(1)}m',
-                        ),
+                        Text('Lat: ${location.latitude}, Lng: ${location.longitude}'),
+                        Text('Accuracy: ${location.accuracy.toStringAsFixed(1)}m'),
                         Text('Time: ${location.recordedAt}'),
                       ],
                     ),
@@ -112,36 +98,23 @@ class LocationTrackingTestWidget extends StatelessWidget {
             ),
 
             // Debug Info
-            Obx(
-              () => Card(
-                child: Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Debug Info:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Permissions: ${controller.hasPermissions.value ? "Granted" : "Not Granted"}',
-                      ),
-                      Text(
-                        'Tracking: ${controller.isTrackingEnabled.value ? "Enabled" : "Disabled"}',
-                      ),
-                      Text(
-                        'Status: ${_getStatusText(controller.trackingStatus.value)}',
-                      ),
-                      if (controller.lastLocationTime.value != null)
-                        Text(
-                          'Last Location: ${controller.lastLocationTime.value}',
-                        ),
-                    ],
-                  ),
+            Obx(() => Card(
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Debug Info:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Text('Permissions: ${controller.hasPermissions.value ? "Granted" : "Not Granted"}'),
+                    Text('Tracking: ${controller.isTrackingEnabled.value ? "Enabled" : "Disabled"}'),
+                    Text('Status: ${_getStatusText(controller.trackingStatus.value)}'),
+                    if (controller.lastLocationTime.value != null)
+                      Text('Last Location: ${controller.lastLocationTime.value}'),
+                  ],
                 ),
               ),
-            ),
+            )),
           ],
         ),
       ),

@@ -403,6 +403,7 @@ import '../../../../utils/url_launcher.dart';
 import '../../../utils/simple_phone_formatter.dart';
 import '../../../components/global-widgets/main_divider.dart';
 import '../../../components/global-widgets/my_snackbar.dart';
+import '../../../components/global-widgets/appointment_history_section.dart';
 import '../../../components/global-widgets/text_widget.dart';
 import '../../appointment/controllers/appointment_controller.dart';
 
@@ -433,6 +434,8 @@ class CustomerDetailsView extends GetView<AppointmentController> {
                   children: [
                     _buildCustomerInfoCard(theme),
                     SizedBox(height: 20.h),
+                    _buildAppointmentHistorySection(theme),
+                    SizedBox(height: 10.h),
                     // _buildCreateAppointmentButton(theme, context),
                     // SizedBox(height: 25.h),
                     // _buildAppointmentSection(theme),
@@ -543,6 +546,30 @@ class CustomerDetailsView extends GetView<AppointmentController> {
             theme,
           ),
         ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // APPOINTMENT HISTORY SECTION (GetCustomerAppointments)
+  // ---------------------------------------------------------------------------
+  Widget _buildAppointmentHistorySection(ThemeData theme) {
+    final customerController = controller.customerController;
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      child: AppointmentHistorySection(
+        history: customerController.customerAppointmentHistory,
+        isLoading: customerController.isCustomerHistoryLoading,
+        hasMore: customerController.hasMoreCustomerHistory,
+        onRefresh: () async {
+          final customer = customerController.selectedCustomer.value;
+          await customerController.getCustomerAppointments(
+            customerId: customer?.customerID,
+          );
+        },
+        onLoadMore: () async =>
+            await customerController.loadMoreCustomerAppointments(),
       ),
     );
   }
