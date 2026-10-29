@@ -34,8 +34,6 @@ class _XplorPayTapToPayViewState extends State<XplorPayTapToPayView> {
               () => Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _configSection(),
-                  16.verticalSpace,
                   _readinessSection(),
                   16.verticalSpace,
                   _saleSection(),
@@ -44,44 +42,6 @@ class _XplorPayTapToPayViewState extends State<XplorPayTapToPayView> {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ---------------- configuration ----------------
-
-  Widget _configSection() {
-    return Card(
-      color: Colors.grey.shade50,
-      child: Padding(
-        padding: EdgeInsets.all(12.w),
-        child: Obx(
-          () => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Gateway configuration',
-                  style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600)),
-              8.verticalSpace,
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: true, label: Text('Sandbox (INT)')),
-                  ButtonSegment(value: false, label: Text('Production')),
-                ],
-                selected: {controller.isSandbox.value},
-                onSelectionChanged: (selection) =>
-                    controller.isSandbox.value = selection.first,
-              ),
-              8.verticalSpace,
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: controller.busy.value ? null : controller.saveEnv,
-                  child: const Text('Save & verify device'),
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -112,11 +72,6 @@ class _XplorPayTapToPayViewState extends State<XplorPayTapToPayView> {
         icon = Icons.error_outline;
         color = Colors.red;
         label = 'Tap to Pay unavailable';
-        break;
-      case XplorPayTapToPayStage.needsLink:
-        icon = Icons.assignment_outlined;
-        color = Colors.orange;
-        label = 'Apple terms not accepted yet';
         break;
       case XplorPayTapToPayStage.ready:
         icon = Icons.check_circle_outline;
@@ -151,7 +106,7 @@ class _XplorPayTapToPayViewState extends State<XplorPayTapToPayView> {
                 style: TextStyle(fontSize: 12.sp, color: Colors.black54),
               ),
             ],
-            if (stage == XplorPayTapToPayStage.needsLink) ...[
+            if (controller.termsPending.value) ...[
               8.verticalSpace,
               SizedBox(
                 width: double.infinity,

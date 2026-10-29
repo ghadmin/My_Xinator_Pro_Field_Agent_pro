@@ -365,8 +365,12 @@ import ClearentIdtechIOSFramework
   @MainActor private func handleIsAccountLinked(result: @escaping FlutterResult) {
     #if canImport(ClearentIdtechIOSFramework)
     if #available(iOS 16.0, *) {
-      ClearentUIManager.shared.isAccountLinked { linked, _ in
+      ClearentUIManager.shared.isAccountLinked { linked, error in
         DispatchQueue.main.async {
+          self.logStage(
+            "isAccountLinked",
+            "linked=\(linked) hasError=\(error != nil) code=\(error?.type.rawValue ?? -1)"
+          )
           result(linked)
         }
       }

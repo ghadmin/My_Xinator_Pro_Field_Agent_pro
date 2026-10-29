@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../services/xplorpay/xplorpay_credentials.dart';
 import '../../../services/xplorpay/xplorpay_tap_to_pay_service.dart';
@@ -13,7 +12,6 @@ import '../invoice_payment_recorder.dart';
 enum XplorPayTapToPayStage {
   checking, // initialize/verify running
   unsupported, // hardware/OS/entitlement says no
-  needsLink, // merchant has not accepted Apple's terms yet
   preparing, // pre-warming the reader session
   ready, // ready to accept a tap
 }
@@ -27,20 +25,20 @@ enum XplorPayTapToPayTxnState { idle, processing, approved, declined, cancelled,
 /// (same `xplorpay_*` SharedPreferences keys). SECURITY: the API key lives in
 /// on-device prefs only; move to a backend-issued token before production.
 class XplorPayTapToPayController extends GetxController {
-  static const _prefPrefix = 'xplorpay_';
-
   final _service = XplorPayTapToPayService();
   StreamSubscription<XplorPayTapToPayEvent>? _sub;
+  final List<Worker> _workers = [];
 
   // ---- route context ----
   /// Invoice the payment flow started from (null/empty = standalone use).
   String? invoiceId;
 
   // ---- configuration ----
-  // Credentials are compiled in (XplorPayCredentials — user decision
-  // 2026-10-29, sandbox INT gateway); only the environment is selectable.
-  final isSandbox = true.obs;
+  // Credentials AND environment are pinned to [XplorPayCredentials] (TEST key
+  // → sandbox INT gateway, user decision 2026-10-29). Nothing persisted: a
+  // stale `xplorpay_env` pref must never route the TEST key to production.
   String get apiKey => XplorPayCredentials.apiKey;
+  bool get isSandbox => XplorPayCredentials.isSandbox;
 
   // ---- live state ----
   final stage = XplorPayTapToPayStage.checking.obs;
@@ -49,6 +47,11 @@ class XplorPayTapToPayController extends GetxController {
   final supportMessage = ''.obs;
   final amountInput = TextEditingController();
   final busy = false.obs;
+
+  /// Apple's terms are (probably) unaccepted — shows the explicit
+  /// "Review & accept" button. Advisory only: preparation remains the
+  /// authority (the SDK surfaces Apple's sheet itself when terms are missing).
+  final termsPending = false.obs;
 
   /// Amount of the sale in flight (the recorder needs the charged total).
   double? _lastChargeAmount;
@@ -68,11 +71,23 @@ class XplorPayTapToPayController extends GetxController {
       invoiceId = (id == null || '$id'.isEmpty) ? null : '$id';
     }
     _sub = _service.events.listen(_onEvent);
+    // Mirror every on-screen message into the console so device errors can be
+    // copied straight from `flutter run` output.
+    _workers.add(ever<String>(statusMessage, _logScreenMessage));
+    _workers.add(ever<String>(supportMessage, _logScreenMessage));
     _loadConfigAndStart();
+  }
+
+  void _logScreenMessage(String message) {
+    if (message.isEmpty) return;
+    debugPrint('[XplorPayTapToPay] screen: $message');
   }
 
   @override
   void onClose() {
+    for (final w in _workers) {
+      w.dispose();
+    }
     _sub?.cancel();
     // A stale warm session is only dropped when the flow did NOT end in an
     // approved sale (invalidateTapToPaySession must not run after a success).
@@ -86,25 +101,14 @@ class XplorPayTapToPayController extends GetxController {
 
   // ---------------- setup ----------------
 
-  /// Loads the persisted environment choice and starts the readiness flow.
-  /// The API key always comes from [XplorPayCredentials] — nothing to type.
+  /// Starts the readiness flow. The API key and gateway are pinned in
+  /// [XplorPayCredentials] — nothing to type or persist.
   Future<void> _loadConfigAndStart() async {
-    final prefs = await SharedPreferences.getInstance();
-    final envName = prefs.getString('${_prefPrefix}env');
-    isSandbox.value = envName != 'production';
-
     if (!Platform.isIOS) {
       stage.value = XplorPayTapToPayStage.unsupported;
       supportMessage.value = 'Tap to Pay on iPhone is only available on iOS.';
       return;
     }
-    await startFlow();
-  }
-
-  /// Persists the selected environment, then (re)starts the readiness flow.
-  Future<void> saveEnv() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('${_prefPrefix}env', isSandbox.value ? 'sandbox' : 'production');
     await startFlow();
   }
 
@@ -116,7 +120,11 @@ class XplorPayTapToPayController extends GetxController {
     stage.value = XplorPayTapToPayStage.checking;
     supportMessage.value = '';
     try {
-      await _service.initialize(apiKey: apiKey, isSandbox: isSandbox.value);
+      await _service.initialize(
+        apiKey: apiKey,
+        isSandbox: isSandbox,
+        baseUrl: XplorPayCredentials.baseUrl,
+      );
 
       // Hardware-only check first so unsupported devices bail out fast.
       if (!await _service.isSupported()) {
@@ -131,11 +139,11 @@ class XplorPayTapToPayController extends GetxController {
             support.errorMessage ?? 'Tap to Pay is unavailable on this device.';
         return;
       }
-      if (!await _service.isAccountLinked()) {
-        stage.value = XplorPayTapToPayStage.needsLink;
-        supportMessage.value = 'Accept Apple\'s Tap to Pay terms to continue.';
-        return;
-      }
+      // Terms are advisory: per the SDK docs, Apple's terms sheet also
+      // appears during preparation when terms are unaccepted, so a false
+      // "not linked" result can never deadlock the flow.
+      final linked = await _service.isAccountLinked();
+      termsPending.value = !linked;
       await _prepare();
     } on XplorPayTapToPayException catch (e) {
       stage.value = XplorPayTapToPayStage.unsupported;
@@ -145,19 +153,23 @@ class XplorPayTapToPayController extends GetxController {
     }
   }
 
-  /// Presents Apple's terms sheet. Linking auto-starts reader preparation.
+  /// Presents Apple's terms sheet explicitly. After the attempt (success or
+  /// already-linked), preparation runs — Apple's sheet also appears there if
+  /// terms are still unaccepted.
   Future<void> linkAccount() async {
     if (busy.value) return;
     busy.value = true;
+    statusMessage.value = 'Requesting Apple\'s terms sheet...';
     try {
       await _service.linkAccount();
       statusMessage.value = 'Terms accepted';
-      await _prepare();
+      termsPending.value = false;
     } on XplorPayTapToPayException catch (e) {
       statusMessage.value = 'Account linking failed: $e';
     } finally {
       busy.value = false;
     }
+    await _prepare();
   }
 
   Future<void> _prepare() async {
@@ -166,6 +178,8 @@ class XplorPayTapToPayController extends GetxController {
     try {
       await _service.prepare(amount: amount <= 0 ? 1.00 : amount);
       stage.value = XplorPayTapToPayStage.ready;
+      termsPending.value = false;
+      supportMessage.value = '';
       statusMessage.value = 'Ready — enter the amount and charge';
     } on XplorPayTapToPayException catch (e) {
       stage.value = XplorPayTapToPayStage.unsupported;

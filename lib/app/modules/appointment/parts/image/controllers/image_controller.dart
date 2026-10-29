@@ -26,9 +26,10 @@ class ImageController extends GetxController with ExceptionHandler {
     required String customerId,
     required int siteId,
     String? companyId,
+    bool showLoadingOverlay = true,
   }) async {
     try {
-      showLoading();
+      if (showLoadingOverlay) showLoading();
       picturesError.value = false;
       picturesErrorMessage.value = '';
 
@@ -53,7 +54,7 @@ class ImageController extends GetxController with ExceptionHandler {
       picturesErrorMessage.value = 'Exception: $e';
       kLog('Exception fetching pictures: $e');
     } finally {
-      hideLoading();
+      if (showLoadingOverlay) hideLoading();
     }
   }
 
@@ -272,34 +273,47 @@ class ImageController extends GetxController with ExceptionHandler {
 
   // ==================== GETTERS ====================
 
-  /// Group pictures by upload date, time, and reference
+  /// Group pictures by upload date, time, and reference.
+  /// Groups are ordered latest upload first.
   Map<String, List<Picture>> get picturesGroupedByDate {
     final Map<String, List<Picture>> grouped = {};
-    for (var picture in pictures) {
-      // Parse the upload date and format it with time and reference
-      try {
-        final dateTime = DateTime.parse(picture.uploadDate);
-        final formattedDateTime = DateFormat(
-          'MMMM dd, yyyy HH:mm',
-        ).format(dateTime);
-        final ref = picture.reference ?? 'No reference';
-        final groupKey = '$formattedDateTime - $ref';
+    final Map<String, DateTime> groupDates = {};
 
-        if (!grouped.containsKey(groupKey)) {
-          grouped[groupKey] = [];
+    for (var picture in pictures) {
+      DateTime? dateTime;
+      try {
+        dateTime = DateTime.parse(picture.uploadDate);
+      } catch (_) {
+        dateTime = null;
+      }
+
+      final ref = picture.reference ?? 'No reference';
+      final groupKey = dateTime != null
+          ? '${DateFormat('MMMM dd, yyyy HH:mm').format(dateTime)} - $ref'
+          : '${picture.uploadDate} - $ref';
+
+      grouped.putIfAbsent(groupKey, () => []).add(picture);
+      if (dateTime != null) {
+        final existing = groupDates[groupKey];
+        if (existing == null || dateTime.isAfter(existing)) {
+          groupDates[groupKey] = dateTime;
         }
-        grouped[groupKey]!.add(picture);
-      } catch (e) {
-        // If parsing fails, use original date with reference
-        final ref = picture.reference ?? 'No reference';
-        final groupKey = '${picture.uploadDate} - $ref';
-        if (!grouped.containsKey(groupKey)) {
-          grouped[groupKey] = [];
-        }
-        grouped[groupKey]!.add(picture);
       }
     }
-    return grouped;
+
+    // Sort groups latest first; unparseable dates sink to the bottom.
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) {
+        final da = groupDates[a];
+        final db = groupDates[b];
+        if (da == null || db == null) {
+          if (da == null && db == null) return 0;
+          return da == null ? 1 : -1;
+        }
+        return db.compareTo(da);
+      });
+
+    return {for (final key in sortedKeys) key: grouped[key]!};
   }
 
   // ==================== UTILITY METHODS ====================

@@ -168,12 +168,12 @@ class _PdfFormBuilderState extends State<PdfFormBuilder> {
         IconButton(
           icon: const Icon(Icons.undo),
           tooltip: 'Undo',
-          onPressed: _undo,
+          onPressed: null, // _undo,
         ),
         IconButton(
           icon: const Icon(Icons.redo),
           tooltip: 'Redo',
-          onPressed: _redo,
+          onPressed: null, // _redo,
         ),
         IconButton(
           icon: const Icon(Icons.save),
@@ -808,13 +808,6 @@ class _PdfFormBuilderState extends State<PdfFormBuilder> {
 
   int _getTotalPages() => 1;
 
-  void _undo() {
-    // TODO: Implement undo
-  }
-
-  void _redo() {
-    // TODO: Implement redo
-  }
 
   void _saveTemplate() {
     final template = {
